@@ -1,4 +1,5 @@
 @AGENTS.md
+@docs/team-rules.md
 
 # Claude Code 연결 규칙
 
