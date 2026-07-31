@@ -9,15 +9,20 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 8개 · 2026-07-31 ~ 2026-07-31
+커밋 10개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 8 | Feat 4 · Chore 2 · Fix 1 · Docs 1 | (루트), api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 10 | Chore 4 · Feat 4 · Fix 1 · Docs 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 
 ## 날짜별 기록
+
+### 2026-08-01
+
+- `[Chore]` CI에서 작업 기록 자동 갱신과 검증 실행 — SUJEONG CHOI · `2bb70d7`
+- `[Chore]` CLAUDE.md에 세션 로그 작성 규칙 추가 — SUJEONG CHOI · `32d093a`
 
 ### 2026-07-31
 
