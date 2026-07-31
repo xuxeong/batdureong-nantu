@@ -19,7 +19,7 @@
     "docs:check": "node tools/check-docs.mjs",
     "progress": "node tools/progress.mjs",
 
-    "test": "node --test tests/"
+    "test": "node --test"
   },
   "devDependencies": {
     "vite": "^5.4.0"

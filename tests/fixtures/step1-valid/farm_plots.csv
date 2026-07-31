@@ -1,0 +1,4 @@
+map_id,plot_id,x,y
+map.prototype_field,plot_01,600,350
+map.prototype_field,plot_02,800,350
+map.prototype_field,plot_03,1000,350

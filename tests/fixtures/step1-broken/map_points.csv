@@ -1,0 +1,7 @@
+map_id,point_id,point_role,x,y
+map.prototype_field,player_farm_start,player_farming_start,800,450
+map.prototype_field,dup_id,wildlife_spawn,400,40
+map.prototype_field,dup_id,wildlife_spawn,500,40
+map.prototype_field,center_spawn,wildlife_spawn,800,450
+map.nonexistent,orphan,wildlife_spawn,100,100
+map.prototype_field,missing_role,,300,300

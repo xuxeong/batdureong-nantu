@@ -1,0 +1,7 @@
+map_id,point_id,point_role,x,y
+map.prototype_field,player_farm_start,player_farming_start,800,450
+map.prototype_field,player_raid_start,player_raid_start,800,700
+map.prototype_field,resident_entry,resident_spawn,800,60
+map.prototype_field,ally_post,ally_support,1100,700
+map.prototype_field,wildlife_n1,wildlife_spawn,400,40
+map.prototype_field,wildlife_s1,wildlife_spawn,1200,860

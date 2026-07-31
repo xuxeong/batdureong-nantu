@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,world_width,world_height,farm_interaction_radius,wildlife_spawn_edge_margin,wildlife_spawn_min_player_distance
+map.prototype_field,map,approved,1,프로토타입 밭,단일 직사각형 맵,0,900,48,80,300
+crop.wrong_prefix,map,approved,1,접두어 틀린 맵,ID 접두어가 kind와 다름,1600,900,48,80,300
+map.bad_status,map,승인,1,상태 틀린 맵,없음,1600,900,48,80,300
