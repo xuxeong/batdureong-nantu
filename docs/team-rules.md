@@ -143,9 +143,15 @@ data/drafts/ → data/candidates/ → data/approved/ → generated/runtime/
 ### 자동 (손댈 것 없음)
 
 `docs/progress/PROGRESS.md`는 Git 커밋 이력에서 자동 생성한다. **직접 편집하지 않는다.**
+push하면 CI가 갱신해서 `[Docs] PROGRESS.md 갱신 [skip ci]` 커밋을 원격에 올린다.
+
+**그래서 작업을 시작할 때 항상 `git pull` 부터 한다.**
+안 하면 내 로컬에는 없는 봇 커밋 위에 작업하게 되고, 다음 push가 막히거나
+같은 파일을 두 번 생성해 충돌한다.
 
 ```bash
-npm run progress
+git pull            # 작업 시작할 때마다
+npm run progress    # 로컬에서 미리 보고 싶을 때만. 평소엔 CI가 한다
 ```
 
 ### 수동 (선택)
