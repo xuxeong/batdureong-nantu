@@ -1,0 +1,57 @@
+{
+  "file": "wildlife_spawn_entries.csv",
+  "step": 6,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "wildlife_spawn_profiles.csv",
+    "field": "wildlife_spawn_profile_id"
+  },
+  "unique_key": [
+    "wildlife_spawn_profile_id",
+    "wildlife_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-007",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "wildlife_spawn_profile_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "wildlife_spawn_profiles.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "wildlife_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "wildlife.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "spawn_weight",
+      "required": true,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "wildlife_spawn_entries.no_duplicate_pair",
+      "severity": "차단"
+    },
+    {
+      "id": "wildlife_spawn_entries.profile_has_positive_weight",
+      "severity": "차단"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "file": "dialogue_choices.csv",
+  "step": 10,
+  "entry_type": "independent",
+  "kind": "dialogue_choice",
+  "id_prefix": "dialogue_choice.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-009",
+    "DEC-CONTENT-017",
+    "DEC-RESIDENT-017",
+    "DEC-RESIDENT-019",
+    "DEC-RESIDENT-050"
+  ],
+  "fields": [
+    {
+      "name": "scenario_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "story_scenarios.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "dialogue_phase",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "precombat",
+        "surrender"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "choice_function",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "empathy",
+        "resource_negotiation",
+        "threat",
+        "recruit",
+        "retreat_reward",
+        "resume_combat"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "choice_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "judgement_rule_id",
+      "required": false,
+      "required_when": "dialogue_phase == precombat",
+      "empty_when": "dialogue_phase == surrender",
+      "type": "enum",
+      "values": [
+        "dialogue_judgement_rule.personality_choice",
+        "dialogue_judgement_rule.personality_resource_offer"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "direct_system_result_id",
+      "required": false,
+      "required_when": "dialogue_phase == surrender",
+      "empty_when": "dialogue_phase == precombat",
+      "type": "enum",
+      "values": [
+        "system_result.surrender.recruit",
+        "system_result.surrender.retreat_reward",
+        "system_result.surrender.resume_combat"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "resource_offer_quantity",
+      "required": false,
+      "required_when": "choice_function == resource_negotiation",
+      "empty_when": "choice_function != resource_negotiation",
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "dialogue_choice.three_per_block",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice.function_matches_phase",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice.judgement_rule_matches_function",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice.phase_field_combination",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice.responses_cover_reachable_results",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice.no_direct_surrender_link",
+      "severity": "차단"
+    }
+  ]
+}

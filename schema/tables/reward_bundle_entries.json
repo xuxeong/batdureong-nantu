@@ -1,0 +1,80 @@
+{
+  "file": "reward_bundle_entries.csv",
+  "step": 7,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "reward_bundles.csv",
+    "field": "reward_bundle_id"
+  },
+  "unique_key": [
+    "reward_bundle_id",
+    "resource_kind",
+    "resource_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-010",
+    "DEC-RESIDENT-042",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "reward_bundle_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "reward_bundles.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "resource_kind",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "money",
+        "crop",
+        "material",
+        "throwable_weapon",
+        "recovery_item"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "resource_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "quantity",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "reward_bundle_entries.kind_matches_id_prefix",
+      "severity": "차단"
+    },
+    {
+      "id": "reward_bundle_entries.no_duplicate_resource",
+      "severity": "차단"
+    },
+    {
+      "id": "reward_bundle_entries.approved_resource",
+      "severity": "차단"
+    },
+    {
+      "id": "reward_bundle_entries.no_state_reward",
+      "severity": "차단"
+    }
+  ]
+}

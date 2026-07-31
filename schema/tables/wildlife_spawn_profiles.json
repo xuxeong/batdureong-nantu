@@ -1,0 +1,52 @@
+{
+  "file": "wildlife_spawn_profiles.csv",
+  "step": 6,
+  "entry_type": "independent",
+  "kind": "wildlife_spawn_profile",
+  "id_prefix": "wildlife_spawn_profile.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-007",
+    "DEC-CONTENT-002"
+  ],
+  "fields": [
+    {
+      "name": "first_spawn_delay_seconds",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "spawn_interval_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "max_concurrent",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "total_spawn_limit",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "wildlife_spawn_profile.has_entry",
+      "severity": "차단"
+    },
+    {
+      "id": "wildlife_spawn_profile.value_ranges",
+      "severity": "차단"
+    }
+  ]
+}

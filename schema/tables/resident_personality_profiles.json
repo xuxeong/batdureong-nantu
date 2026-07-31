@@ -1,0 +1,19 @@
+{
+  "file": "resident_personality_profiles.csv",
+  "step": 8,
+  "entry_type": "independent",
+  "kind": "resident_personality_profile",
+  "id_prefix": "resident_personality_profile.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-009",
+    "DEC-RESIDENT-049"
+  ],
+  "fields": [],
+  "rules": [
+    {
+      "id": "personality_profile.has_three_outcomes",
+      "severity": "차단"
+    }
+  ]
+}

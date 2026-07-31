@@ -1,0 +1,145 @@
+{
+  "file": "resident_combat_profiles.csv",
+  "step": 9,
+  "entry_type": "independent",
+  "kind": "resident_combat_profile",
+  "id_prefix": "resident_combat_profile.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-008",
+    "DEC-RESIDENT-016",
+    "DEC-RESIDENT-029",
+    "DEC-CONTENT-010"
+  ],
+  "fields": [
+    {
+      "name": "max_health",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "move_speed",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "collision_radius",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_pattern_key",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "melee_chase",
+        "ranged_chase"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "attack_damage",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_range",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_cooldown_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "projectile_speed",
+      "required": false,
+      "required_when": "attack_pattern_key == ranged_chase",
+      "empty_when": "attack_pattern_key == melee_chase",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "projectile_radius",
+      "required": false,
+      "required_when": "attack_pattern_key == ranged_chase",
+      "empty_when": "attack_pattern_key == melee_chase",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "projectile_max_range",
+      "required": false,
+      "required_when": "attack_pattern_key == ranged_chase",
+      "empty_when": "attack_pattern_key == melee_chase",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "surrender_health_ratio",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "max_exclusive": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "retreat_reward_bundle_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "reward_bundles.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "kill_reward_bundle_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "reward_bundles.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "resident_combat_profile.one_to_one_with_resident",
+      "severity": "차단"
+    },
+    {
+      "id": "resident_combat_profile.projectile_fields_match_pattern",
+      "severity": "차단"
+    },
+    {
+      "id": "resident_combat_profile.projectile_range_ge_attack_range",
+      "severity": "차단"
+    },
+    {
+      "id": "resident_combat_profile.both_reward_bundles",
+      "severity": "차단"
+    },
+    {
+      "id": "resident_combat_profile.surrender_ratio_range",
+      "severity": "차단"
+    }
+  ]
+}

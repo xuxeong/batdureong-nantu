@@ -1,0 +1,66 @@
+{
+  "file": "maps.csv",
+  "step": 1,
+  "entry_type": "independent",
+  "kind": "map",
+  "id_prefix": "map.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-016"
+  ],
+  "fields": [
+    {
+      "name": "world_width",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "world_height",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "farm_interaction_radius",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "wildlife_spawn_edge_margin",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "wildlife_spawn_min_player_distance",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "map.exactly_one_approved",
+      "severity": "차단"
+    },
+    {
+      "id": "map.positive_dimensions",
+      "severity": "차단"
+    },
+    {
+      "id": "map.has_farm_plot",
+      "severity": "차단"
+    },
+    {
+      "id": "map.has_valid_wildlife_spawn",
+      "severity": "차단"
+    }
+  ]
+}

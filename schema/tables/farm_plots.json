@@ -1,0 +1,66 @@
+{
+  "file": "farm_plots.csv",
+  "step": 1,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "maps.csv",
+    "field": "map_id"
+  },
+  "unique_key": [
+    "map_id",
+    "plot_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-016",
+    "DEC-FARM-005",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "map_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "maps.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "plot_id",
+      "required": true,
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "owner": "designer"
+    },
+    {
+      "name": "x",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "y",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "farm_plots.at_least_one",
+      "severity": "차단"
+    },
+    {
+      "id": "farm_plots.coordinate_in_bounds",
+      "severity": "차단"
+    },
+    {
+      "id": "farm_plots.duplicate_coordinate",
+      "severity": "주의"
+    }
+  ]
+}

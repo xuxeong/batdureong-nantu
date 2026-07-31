@@ -1,0 +1,83 @@
+{
+  "$comment": "독립 콘텐츠 CSV가 공통으로 사용하는 열. 테이블 정의에서 common_columns가 true이면 이 열들이 파일 맨 앞에 순서대로 온다. 연결 CSV에는 반복하지 않는다. 각 열의 의미와 규칙은 아래 decisions의 DEC를 결정로그에서 직접 확인한다.",
+  "decisions": [
+    "DEC-CONTENT-001",
+    "DEC-PIPELINE-009"
+  ],
+  "fields": [
+    {
+      "name": "id",
+      "required": true,
+      "type": "string",
+      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$",
+      "allow_auto": true,
+      "owner": "ai"
+    },
+    {
+      "name": "kind",
+      "required": true,
+      "type": "enum",
+      "owner": "ai"
+    },
+    {
+      "name": "content_status",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "draft",
+        "in_review",
+        "approved",
+        "needs_review",
+        "retired"
+      ],
+      "owner": "ai"
+    },
+    {
+      "name": "content_version",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "ai"
+    },
+    {
+      "name": "display_name",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "design_intent",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "runtime_json": {
+    "$comment": "런타임 JSON 포함 여부. DEC-CONTENT-001.",
+    "include": [
+      "content_version"
+    ],
+    "exclude": [
+      "content_status",
+      "design_intent"
+    ]
+  },
+  "rules": [
+    {
+      "id": "common.id_unique",
+      "severity": "차단"
+    },
+    {
+      "id": "common.id_prefix_matches_kind",
+      "severity": "차단"
+    },
+    {
+      "id": "common.approved_no_placeholder",
+      "severity": "차단"
+    },
+    {
+      "id": "common.similar_display_name",
+      "severity": "주의"
+    }
+  ]
+}

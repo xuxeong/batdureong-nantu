@@ -1,0 +1,50 @@
+{
+  "file": "crop_attributes.csv",
+  "step": 2,
+  "entry_type": "independent",
+  "kind": "crop_attribute",
+  "id_prefix": "crop_attribute.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-012",
+    "DEC-CONTENT-013"
+  ],
+  "fields": [
+    {
+      "name": "player_description",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "combat_mechanic_key",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "damage_over_time",
+        "movement_slow"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "ending_prompt_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "crop_attribute.one_to_one_with_crop",
+      "severity": "차단"
+    },
+    {
+      "id": "crop_attribute.no_orphan",
+      "severity": "차단"
+    },
+    {
+      "id": "crop_attribute.implemented_mechanic_key",
+      "severity": "차단"
+    }
+  ]
+}

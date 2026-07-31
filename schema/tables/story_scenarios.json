@@ -1,0 +1,82 @@
+{
+  "file": "story_scenarios.csv",
+  "step": 10,
+  "entry_type": "independent",
+  "kind": "story_scenario",
+  "id_prefix": "story_scenario.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-017",
+    "DEC-RESIDENT-024",
+    "DEC-RESIDENT-025",
+    "DEC-RESIDENT-051"
+  ],
+  "fields": [
+    {
+      "name": "resident_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "residents.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "scenario_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "precombat_opening_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "precombat_opening_story_info_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "story_infos.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "surrender_opening_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "surrender_opening_story_info_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "story_infos.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "story_scenario.one_per_resident",
+      "severity": "차단"
+    },
+    {
+      "id": "story_scenario.opening_info_type_matches",
+      "severity": "차단"
+    },
+    {
+      "id": "story_scenario.info_same_scenario",
+      "severity": "차단"
+    },
+    {
+      "id": "story_scenario.has_basic_and_core",
+      "severity": "차단"
+    }
+  ]
+}

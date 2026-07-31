@@ -1,0 +1,107 @@
+{
+  "file": "ending_conditions.csv",
+  "step": 12,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "endings.csv",
+    "field": "ending_id"
+  },
+  "unique_key": [
+    "ending_id",
+    "condition_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-011",
+    "DEC-RESIDENT-052",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "ending_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "endings.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "condition_id",
+      "required": true,
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "owner": "designer"
+    },
+    {
+      "name": "condition_type",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "relationship_count",
+        "important_action_count",
+        "specific_resident_relationship",
+        "specific_resident_outcome",
+        "dominant_crop",
+        "dominant_crop_attribute"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "subject_key",
+      "required": false,
+      "required_when": "condition_type != dominant_crop | dominant_crop_attribute",
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "comparison",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "eq",
+        "gte",
+        "lte"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "target_value",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "ending_conditions.subject_matches_type",
+      "severity": "차단"
+    },
+    {
+      "id": "ending_conditions.comparison_matches_type",
+      "severity": "차단"
+    },
+    {
+      "id": "ending_conditions.target_value_valid",
+      "severity": "차단"
+    },
+    {
+      "id": "ending_conditions.parent_priority_ge_one",
+      "severity": "차단"
+    },
+    {
+      "id": "ending_conditions.dominant_crop_and_attribute_overlap",
+      "severity": "주의"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "ending_conditions.subject_key_for_dominant_crop",
+      "type": "규칙 누락",
+      "field": "subject_key",
+      "summary": "condition_type이 dominant_crop 또는 dominant_crop_attribute일 때 subject_key에 무엇을 넣어야 하는지 결정로그에 없다.",
+      "status": "기획 책임자 확정 대기"
+    }
+  ]
+}

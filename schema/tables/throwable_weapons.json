@@ -1,0 +1,150 @@
+{
+  "file": "throwable_weapons.csv",
+  "step": 4,
+  "entry_type": "independent",
+  "kind": "throwable_weapon",
+  "id_prefix": "throwable_weapon.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-005",
+    "DEC-CONTENT-013",
+    "DEC-INPUT-004",
+    "DEC-INPUT-005"
+  ],
+  "fields": [
+    {
+      "name": "player_description",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "crop_attribute_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "crop_attributes.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "base_damage",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "projectile_speed",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "max_range",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "cooldown_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "collision_radius",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "impact_mode",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "direct",
+        "area"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "area_radius",
+      "required": false,
+      "required_when": "impact_mode == area",
+      "empty_when": "impact_mode == direct",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "effect_rank",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "effect_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "effect_damage_per_tick",
+      "required": false,
+      "required_when": "crop_attribute.combat_mechanic_key == damage_over_time",
+      "empty_when": "crop_attribute.combat_mechanic_key == movement_slow",
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "effect_tick_interval_seconds",
+      "required": false,
+      "required_when": "crop_attribute.combat_mechanic_key == damage_over_time",
+      "empty_when": "crop_attribute.combat_mechanic_key == movement_slow",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "effect_move_speed_multiplier",
+      "required": false,
+      "required_when": "crop_attribute.combat_mechanic_key == movement_slow",
+      "empty_when": "crop_attribute.combat_mechanic_key == damage_over_time",
+      "type": "number",
+      "min_exclusive": 0,
+      "max_exclusive": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "throwable_weapon.exactly_one_recipe",
+      "severity": "차단"
+    },
+    {
+      "id": "throwable_weapon.recipe_includes_attribute_crop",
+      "severity": "차단"
+    },
+    {
+      "id": "throwable_weapon.area_radius_gt_collision",
+      "severity": "차단"
+    },
+    {
+      "id": "throwable_weapon.effect_fields_match_mechanic",
+      "severity": "차단"
+    },
+    {
+      "id": "throwable_weapon.tick_interval_le_duration",
+      "severity": "차단"
+    }
+  ]
+}

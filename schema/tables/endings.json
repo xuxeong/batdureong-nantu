@@ -1,0 +1,86 @@
+{
+  "file": "endings.csv",
+  "step": 12,
+  "entry_type": "independent",
+  "kind": "ending",
+  "id_prefix": "ending.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-011",
+    "DEC-ENDING-001",
+    "DEC-PIPELINE-012"
+  ],
+  "fields": [
+    {
+      "name": "fear_band_id",
+      "required": false,
+      "required_when": "is_global_fallback == false",
+      "empty_when": "is_global_fallback == true",
+      "type": "reference",
+      "ref": {
+        "table": "fear_bands.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "selection_priority",
+      "required": true,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "ending_title",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "ending_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "ending_prompt_direction",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "fallback_record_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "is_global_fallback",
+      "required": true,
+      "type": "boolean",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "ending.exactly_one_global_fallback",
+      "severity": "차단"
+    },
+    {
+      "id": "ending.global_fallback_shape",
+      "severity": "차단"
+    },
+    {
+      "id": "ending.band_has_exactly_one_default",
+      "severity": "차단"
+    },
+    {
+      "id": "ending.conditional_priority_ge_one",
+      "severity": "차단"
+    },
+    {
+      "id": "ending.no_priority_tie",
+      "severity": "차단"
+    }
+  ]
+}

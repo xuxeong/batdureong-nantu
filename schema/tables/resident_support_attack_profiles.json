@@ -1,0 +1,45 @@
+{
+  "file": "resident_support_attack_profiles.csv",
+  "step": 9,
+  "entry_type": "independent",
+  "kind": "resident_support_attack_profile",
+  "id_prefix": "resident_support_attack_profile.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-008",
+    "DEC-RESIDENT-021"
+  ],
+  "fields": [
+    {
+      "name": "damage",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "first_attack_delay_seconds",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_interval_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "support_profile.one_to_one_with_resident",
+      "severity": "차단"
+    },
+    {
+      "id": "support_profile.value_ranges",
+      "severity": "차단"
+    }
+  ]
+}

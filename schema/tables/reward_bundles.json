@@ -1,0 +1,28 @@
+{
+  "file": "reward_bundles.csv",
+  "step": 7,
+  "entry_type": "independent",
+  "kind": "reward_bundle",
+  "id_prefix": "reward_bundle.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-010",
+    "DEC-RESIDENT-041",
+    "DEC-RESIDENT-042"
+  ],
+  "fields": [],
+  "rules": [
+    {
+      "id": "reward_bundle.has_entry",
+      "severity": "차단"
+    },
+    {
+      "id": "reward_bundle.no_empty_bundle",
+      "severity": "차단"
+    },
+    {
+      "id": "reward_bundle.shared_reference_warning",
+      "severity": "주의"
+    }
+  ]
+}

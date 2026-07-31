@@ -1,0 +1,50 @@
+{
+  "file": "run_schedules.csv",
+  "step": 11,
+  "entry_type": "independent",
+  "kind": "run_schedule",
+  "id_prefix": "run_schedule.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-002",
+    "DEC-RUN-001",
+    "DEC-RUN-004",
+    "DEC-RUN-010"
+  ],
+  "fields": [
+    {
+      "name": "map_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "maps.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "total_days",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "farming_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "run_schedule.exactly_one_approved",
+      "severity": "차단"
+    },
+    {
+      "id": "run_schedule.days_continuous",
+      "severity": "차단"
+    }
+  ]
+}

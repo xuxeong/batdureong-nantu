@@ -1,0 +1,87 @@
+{
+  "file": "wildlife.csv",
+  "step": 6,
+  "entry_type": "independent",
+  "kind": "wildlife",
+  "id_prefix": "wildlife.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-007",
+    "DEC-FARM-006",
+    "DEC-FARM-010"
+  ],
+  "fields": [
+    {
+      "name": "max_health",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "move_speed",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "collision_radius",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_damage",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_range",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_windup_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_cooldown_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "crop_eat_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "target_mode",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "crop_first",
+        "player_only"
+      ],
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "wildlife.value_ranges",
+      "severity": "차단"
+    }
+  ]
+}

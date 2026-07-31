@@ -1,0 +1,76 @@
+{
+  "file": "recipe_inputs.csv",
+  "step": 5,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "recipes.csv",
+    "field": "recipe_id"
+  },
+  "unique_key": [
+    "recipe_id",
+    "input_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-015",
+    "DEC-CRAFT-002",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "recipe_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "recipes.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "input_kind",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "crop",
+        "material"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "input_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "crops.csv | crafting_materials.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "quantity",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "recipe_inputs.kind_matches_id",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe_inputs.no_duplicate_pair",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe_inputs.no_currency",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe_inputs.parent_has_both_kinds",
+      "severity": "차단"
+    }
+  ]
+}

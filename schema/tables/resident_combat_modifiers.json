@@ -1,0 +1,81 @@
+{
+  "file": "resident_combat_modifiers.csv",
+  "step": 8,
+  "entry_type": "independent",
+  "kind": "resident_combat_modifier",
+  "id_prefix": "resident_combat_modifier.",
+  "common_columns": true,
+  "fixed_ids": [
+    "resident_combat_modifier.weakened",
+    "resident_combat_modifier.normal",
+    "resident_combat_modifier.enraged"
+  ],
+  "decisions": [
+    "DEC-CONTENT-009",
+    "DEC-RESIDENT-037",
+    "DEC-RESIDENT-038"
+  ],
+  "fields": [
+    {
+      "name": "combat_state",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "weakened",
+        "normal",
+        "enraged"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "max_health_multiplier",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "move_speed_multiplier",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_damage_multiplier",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "attack_cooldown_multiplier",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "combat_modifier.exactly_three",
+      "severity": "차단"
+    },
+    {
+      "id": "combat_modifier.normal_all_one",
+      "severity": "차단"
+    },
+    {
+      "id": "combat_modifier.weakened_direction",
+      "severity": "차단"
+    },
+    {
+      "id": "combat_modifier.enraged_direction",
+      "severity": "차단"
+    },
+    {
+      "id": "combat_modifier.positive_multipliers",
+      "severity": "차단"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "file": "crop_mastery_unlocks.csv",
+  "step": 5,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "recipes.csv",
+    "field": "recipe_id"
+  },
+  "unique_key": [
+    "recipe_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-003",
+    "DEC-CONTENT-015",
+    "DEC-CRAFT-007",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "crop_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "crops.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "required_mastery",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "recipe_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "recipes.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "crop_mastery_unlocks.recipe_used_once",
+      "severity": "차단"
+    },
+    {
+      "id": "crop_mastery_unlocks.crop_is_recipe_input",
+      "severity": "차단"
+    },
+    {
+      "id": "crop_mastery_unlocks.parent_unlock_type",
+      "severity": "차단"
+    }
+  ]
+}

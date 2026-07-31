@@ -1,0 +1,86 @@
+{
+  "file": "map_points.csv",
+  "step": 1,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "maps.csv",
+    "field": "map_id"
+  },
+  "unique_key": [
+    "map_id",
+    "point_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-016",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "map_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "maps.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "point_id",
+      "required": true,
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "owner": "designer"
+    },
+    {
+      "name": "point_role",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "player_farming_start",
+        "player_raid_start",
+        "resident_spawn",
+        "ally_support",
+        "wildlife_spawn"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "x",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "y",
+      "required": true,
+      "type": "number",
+      "min": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "map_points.required_role_counts",
+      "severity": "차단"
+    },
+    {
+      "id": "map_points.coordinate_in_bounds",
+      "severity": "차단"
+    },
+    {
+      "id": "map_points.wildlife_spawn_on_edge",
+      "severity": "차단"
+    },
+    {
+      "id": "map_points.wildlife_spawn_player_distance",
+      "severity": "차단"
+    },
+    {
+      "id": "map_points.start_position_overlap",
+      "severity": "주의"
+    }
+  ]
+}

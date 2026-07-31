@@ -1,0 +1,113 @@
+{
+  "file": "crops.csv",
+  "step": 2,
+  "entry_type": "independent",
+  "kind": "crop",
+  "id_prefix": "crop.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-003",
+    "DEC-FARM-001",
+    "DEC-FARM-002",
+    "DEC-FARM-005"
+  ],
+  "fields": [
+    {
+      "name": "spawn_weight",
+      "required": true,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "seed_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "growth_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "base_yield",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "sell_price",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "is_raw_edible",
+      "required": true,
+      "type": "boolean",
+      "owner": "designer"
+    },
+    {
+      "name": "raw_heal_amount",
+      "required": false,
+      "required_when": "is_raw_edible == true",
+      "empty_when": "is_raw_edible == false",
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "raw_use_duration_seconds",
+      "required": false,
+      "required_when": "is_raw_edible == true",
+      "empty_when": "is_raw_edible == false",
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "raw_move_speed_multiplier",
+      "required": false,
+      "required_when": "is_raw_edible == true",
+      "empty_when": "is_raw_edible == false",
+      "type": "number",
+      "min_exclusive": 0,
+      "max_exclusive": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "crop_attribute_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "crop_attributes.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "crop.pool_has_positive_weight",
+      "severity": "차단"
+    },
+    {
+      "id": "crop.raw_edible_conditional_fields",
+      "severity": "차단"
+    },
+    {
+      "id": "crop.attribute_one_to_one",
+      "severity": "차단"
+    },
+    {
+      "id": "crop.has_base_recipe",
+      "severity": "차단"
+    }
+  ]
+}

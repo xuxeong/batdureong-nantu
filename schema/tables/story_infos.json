@@ -1,0 +1,57 @@
+{
+  "file": "story_infos.csv",
+  "step": 10,
+  "entry_type": "independent",
+  "kind": "story_info",
+  "id_prefix": "story_info.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-017",
+    "DEC-RESIDENT-022",
+    "DEC-RESIDENT-024"
+  ],
+  "fields": [
+    {
+      "name": "scenario_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "story_scenarios.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "info_type",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "basic",
+        "core"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "source_fact_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "ending_fact_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "story_info.scenario_has_both_types",
+      "severity": "차단"
+    },
+    {
+      "id": "story_info.source_not_exposed",
+      "severity": "차단"
+    }
+  ]
+}

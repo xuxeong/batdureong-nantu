@@ -1,0 +1,54 @@
+{
+  "file": "recovery_items.csv",
+  "step": 4,
+  "entry_type": "independent",
+  "kind": "recovery_item",
+  "id_prefix": "recovery_item.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-006",
+    "DEC-INPUT-008",
+    "DEC-RESOURCE-017",
+    "DEC-RESOURCE-018"
+  ],
+  "fields": [
+    {
+      "name": "player_description",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "heal_amount",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "use_duration_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "move_speed_multiplier",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "max_exclusive": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "recovery_item.exactly_one_recipe",
+      "severity": "차단"
+    },
+    {
+      "id": "recovery_item.value_ranges",
+      "severity": "차단"
+    }
+  ]
+}

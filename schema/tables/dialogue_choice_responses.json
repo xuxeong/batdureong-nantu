@@ -1,0 +1,84 @@
+{
+  "file": "dialogue_choice_responses.csv",
+  "step": 10,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "dialogue_choices.csv",
+    "field": "choice_id"
+  },
+  "unique_key": [
+    "choice_id",
+    "system_result_id"
+  ],
+  "decisions": [
+    "DEC-CONTENT-009",
+    "DEC-CONTENT-017",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "choice_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "dialogue_choices.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "system_result_id",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "system_result.precombat.resolve",
+        "system_result.precombat.combat_weakened",
+        "system_result.precombat.combat_normal",
+        "system_result.precombat.combat_enraged",
+        "system_result.surrender.recruit",
+        "system_result.surrender.retreat_reward",
+        "system_result.surrender.resume_combat"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "reaction_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "revealed_story_info_id",
+      "required": false,
+      "type": "reference",
+      "ref": {
+        "table": "story_infos.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "dialogue_choice_responses.covers_reachable_results",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice_responses.empathy_resolve_reveals_core",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice_responses.revealed_info_is_core_and_same_scenario",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice_responses.result_matches_phase",
+      "severity": "차단"
+    },
+    {
+      "id": "dialogue_choice_responses.no_duplicate_pair",
+      "severity": "차단"
+    }
+  ]
+}

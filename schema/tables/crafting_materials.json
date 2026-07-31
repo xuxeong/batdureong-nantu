@@ -1,0 +1,39 @@
+{
+  "file": "crafting_materials.csv",
+  "step": 3,
+  "entry_type": "independent",
+  "kind": "material",
+  "id_prefix": "material.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-004",
+    "DEC-RESOURCE-008",
+    "DEC-RESOURCE-009",
+    "DEC-RESOURCE-010"
+  ],
+  "fields": [
+    {
+      "name": "player_description",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "buy_price",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "material.used_by_recipe",
+      "severity": "차단"
+    },
+    {
+      "id": "material.positive_price",
+      "severity": "차단"
+    }
+  ]
+}

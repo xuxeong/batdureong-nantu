@@ -1,0 +1,82 @@
+{
+  "file": "residents.csv",
+  "step": 9,
+  "entry_type": "independent",
+  "kind": "resident",
+  "id_prefix": "resident.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-008",
+    "DEC-CONTENT-009",
+    "DEC-RESIDENT-051",
+    "DEC-RESIDENT-005"
+  ],
+  "fields": [
+    {
+      "name": "personality_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "combat_archetype_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "negotiation_tendency_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "personality_profile_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "resident_personality_profiles.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "combat_profile_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "resident_combat_profiles.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "support_attack_profile_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "resident_support_attack_profiles.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "resident.profiles_one_to_one",
+      "severity": "차단"
+    },
+    {
+      "id": "resident.has_story_scenario",
+      "severity": "차단"
+    },
+    {
+      "id": "resident.no_list_reference",
+      "severity": "차단"
+    },
+    {
+      "id": "resident.required_summaries",
+      "severity": "차단"
+    }
+  ]
+}

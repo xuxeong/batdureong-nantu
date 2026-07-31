@@ -1,0 +1,80 @@
+{
+  "file": "recipes.csv",
+  "step": 5,
+  "entry_type": "independent",
+  "kind": "recipe",
+  "id_prefix": "recipe.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-015",
+    "DEC-CRAFT-002",
+    "DEC-CRAFT-003",
+    "DEC-CRAFT-004",
+    "DEC-CRAFT-006"
+  ],
+  "fields": [
+    {
+      "name": "result_kind",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "throwable_weapon",
+        "recovery_item"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "result_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "throwable_weapons.csv | recovery_items.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "result_quantity",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "unlock_type",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "base",
+        "crop_mastery"
+      ],
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "recipe.result_kind_matches",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe.unique_result",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe.requires_crop_and_material",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe.unlock_type_matches_unlock_row",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe.weapon_attribute_crop_included",
+      "severity": "차단"
+    },
+    {
+      "id": "recipe.every_crop_has_base_recipe",
+      "severity": "차단"
+    }
+  ]
+}

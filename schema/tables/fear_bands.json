@@ -1,0 +1,54 @@
+{
+  "file": "fear_bands.csv",
+  "step": 12,
+  "entry_type": "independent",
+  "kind": "fear_band",
+  "id_prefix": "fear_band.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-011",
+    "DEC-RESIDENT-046",
+    "DEC-RESIDENT-047",
+    "DEC-RESIDENT-048"
+  ],
+  "fields": [
+    {
+      "name": "min_fear",
+      "required": true,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "max_fear",
+      "required": false,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "ending_prompt_summary",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "fear_band.continuous_from_zero",
+      "severity": "차단"
+    },
+    {
+      "id": "fear_band.only_last_unbounded",
+      "severity": "차단"
+    },
+    {
+      "id": "fear_band.min_le_max",
+      "severity": "차단"
+    },
+    {
+      "id": "fear_band.has_default_ending",
+      "severity": "차단"
+    }
+  ]
+}

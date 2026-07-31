@@ -1,0 +1,90 @@
+{
+  "file": "personality_choice_outcomes.csv",
+  "step": 8,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "resident_personality_profiles.csv",
+    "field": "personality_profile_id"
+  },
+  "unique_key": [
+    "personality_profile_id",
+    "choice_function"
+  ],
+  "decisions": [
+    "DEC-CONTENT-009",
+    "DEC-RESIDENT-049",
+    "DEC-RESIDENT-050",
+    "DEC-PIPELINE-011"
+  ],
+  "fields": [
+    {
+      "name": "personality_profile_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "resident_personality_profiles.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "choice_function",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "empathy",
+        "resource_negotiation",
+        "threat"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "result_when_available_id",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "system_result.precombat.resolve",
+        "system_result.precombat.combat_weakened",
+        "system_result.precombat.combat_normal",
+        "system_result.precombat.combat_enraged"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "result_when_unavailable_id",
+      "required": false,
+      "required_when": "choice_function == resource_negotiation",
+      "empty_when": "choice_function == empathy | threat",
+      "type": "enum",
+      "values": [
+        "system_result.precombat.combat_weakened",
+        "system_result.precombat.combat_normal",
+        "system_result.precombat.combat_enraged"
+      ],
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "personality_choice_outcomes.three_functions_exactly_once",
+      "severity": "차단"
+    },
+    {
+      "id": "personality_choice_outcomes.threat_no_resolve",
+      "severity": "차단"
+    },
+    {
+      "id": "personality_choice_outcomes.unavailable_only_for_negotiation",
+      "severity": "차단"
+    },
+    {
+      "id": "personality_choice_outcomes.unavailable_no_resolve",
+      "severity": "차단"
+    },
+    {
+      "id": "personality_choice_outcomes.reachable_responses_exist",
+      "severity": "차단"
+    }
+  ]
+}
