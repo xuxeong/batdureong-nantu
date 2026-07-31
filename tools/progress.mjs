@@ -120,6 +120,8 @@ function buildSummary(commits) {
 }
 
 function buildTimeline(commits) {
+  // 읽는 게 목적이라 한 줄씩만 둔다.
+  // 어떤 영역을 맡았는지는 담당자별 요약 표에서 본다.
   const lines = ['## 날짜별 기록', '']
 
   const byDate = new Map()
@@ -132,24 +134,11 @@ function buildTimeline(commits) {
   for (const date of dates) {
     lines.push(`### ${date}`)
     lines.push('')
-
-    const byAuthor = new Map()
     for (const c of byDate.get(date)) {
-      if (!byAuthor.has(c.author)) byAuthor.set(c.author, [])
-      byAuthor.get(c.author).push(c)
+      const tag = c.tag ? `\`[${c.tag}]\` ` : ''
+      lines.push(`- ${tag}${c.title} — ${c.author} · \`${c.hash}\``)
     }
-
-    for (const [author, list] of [...byAuthor.entries()].sort()) {
-      lines.push(`**${author}**`)
-      lines.push('')
-      for (const c of list) {
-        const tag = c.tag ? `\`[${c.tag}]\` ` : ''
-        const files = c.files.length
-        const areas = c.areas.length ? ` — ${c.areas.join(', ')}` : ''
-        lines.push(`- ${tag}${c.title}  <sub>\`${c.hash}\` · ${files}개 파일${areas}</sub>`)
-      }
-      lines.push('')
-    }
+    lines.push('')
   }
 
   return lines
