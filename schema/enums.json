@@ -1,0 +1,226 @@
+{
+  "$comment": "콘텐츠 담당자가 새로 만들거나 수정할 수 없는 고정 허용 목록. 각 항목의 values는 source에 적힌 DEC가 열거한 값을 그대로 옮긴 것이다. 새 값의 추가는 데이터 행 추가가 아니라 시스템·스키마 변경으로 처리한다.",
+
+  "content_status": {
+    "source": "DEC-CONTENT-001",
+    "values": ["draft", "in_review", "approved", "needs_review", "retired"]
+  },
+
+  "kind": {
+    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017",
+    "values": [
+      "map",
+      "crop_attribute",
+      "crop",
+      "material",
+      "throwable_weapon",
+      "recovery_item",
+      "recipe",
+      "wildlife",
+      "wildlife_spawn_profile",
+      "reward_bundle",
+      "resident_personality_profile",
+      "resident_combat_modifier",
+      "resident_combat_profile",
+      "resident_support_attack_profile",
+      "resident",
+      "story_scenario",
+      "story_info",
+      "dialogue_choice",
+      "run_schedule",
+      "fear_band",
+      "ending"
+    ]
+  },
+
+  "system_result_id": {
+    "source": "DEC-CONTENT-009",
+    "values": [
+      "system_result.precombat.resolve",
+      "system_result.precombat.combat_weakened",
+      "system_result.precombat.combat_normal",
+      "system_result.precombat.combat_enraged",
+      "system_result.surrender.recruit",
+      "system_result.surrender.retreat_reward",
+      "system_result.surrender.resume_combat"
+    ]
+  },
+
+  "judgement_rule_id": {
+    "source": "DEC-CONTENT-009",
+    "values": [
+      "dialogue_judgement_rule.personality_choice",
+      "dialogue_judgement_rule.personality_resource_offer"
+    ]
+  },
+
+  "dialogue_phase": {
+    "source": "DEC-CONTENT-009",
+    "values": ["precombat", "surrender"]
+  },
+
+  "choice_function": {
+    "source": "DEC-CONTENT-009",
+    "precombat": ["empathy", "resource_negotiation", "threat"],
+    "surrender": ["recruit", "retreat_reward", "resume_combat"]
+  },
+
+  "combat_state": {
+    "source": "DEC-CONTENT-009",
+    "values": ["weakened", "normal", "enraged"]
+  },
+
+  "combat_modifier_id": {
+    "source": "DEC-CONTENT-009",
+    "values": [
+      "resident_combat_modifier.weakened",
+      "resident_combat_modifier.normal",
+      "resident_combat_modifier.enraged"
+    ]
+  },
+
+  "final_outcome": {
+    "source": "DEC-RESIDENT-052",
+    "values": [
+      "empathy_resolve",
+      "resource_negotiation_resolve",
+      "recruited",
+      "retreated",
+      "killed"
+    ]
+  },
+
+  "combat_mechanic_key": {
+    "source": "DEC-CONTENT-013",
+    "values": ["damage_over_time", "movement_slow"]
+  },
+
+  "attack_pattern_key": {
+    "source": "DEC-CONTENT-008",
+    "values": ["melee_chase", "ranged_chase"]
+  },
+
+  "target_mode": {
+    "source": "DEC-CONTENT-007",
+    "values": ["crop_first", "player_only"]
+  },
+
+  "impact_mode": {
+    "source": "DEC-CONTENT-005",
+    "values": ["direct", "area"]
+  },
+
+  "resource_kind": {
+    "source": "DEC-CONTENT-010",
+    "values": ["money", "crop", "material", "throwable_weapon", "recovery_item"]
+  },
+
+  "currency_id": {
+    "source": "DEC-CONTENT-010",
+    "values": ["currency.money"]
+  },
+
+  "result_kind": {
+    "source": "DEC-CONTENT-015",
+    "values": ["throwable_weapon", "recovery_item"]
+  },
+
+  "input_kind": {
+    "source": "DEC-CONTENT-015",
+    "values": ["crop", "material"]
+  },
+
+  "unlock_type": {
+    "source": "DEC-CONTENT-015",
+    "values": ["base", "crop_mastery"]
+  },
+
+  "raid_type": {
+    "source": "DEC-CONTENT-002",
+    "values": ["none", "raid", "final_raid"]
+  },
+
+  "point_role": {
+    "source": "DEC-CONTENT-016",
+    "values": [
+      "player_farming_start",
+      "player_raid_start",
+      "resident_spawn",
+      "ally_support",
+      "wildlife_spawn"
+    ]
+  },
+
+  "info_type": {
+    "source": "DEC-CONTENT-017",
+    "values": ["basic", "core"]
+  },
+
+  "condition_type": {
+    "source": "DEC-CONTENT-011",
+    "values": [
+      "relationship_count",
+      "important_action_count",
+      "specific_resident_relationship",
+      "specific_resident_outcome",
+      "dominant_crop",
+      "dominant_crop_attribute"
+    ]
+  },
+
+  "comparison": {
+    "source": "DEC-CONTENT-011",
+    "values": ["eq", "gte", "lte"]
+  },
+
+  "relationship_count_subject": {
+    "source": "DEC-CONTENT-011",
+    "values": ["friendly", "trade", "companion", "coercive", "severed"]
+  },
+
+  "important_action_count_subject": {
+    "source": "DEC-CONTENT-011",
+    "values": [
+      "empathy_resolve",
+      "resource_negotiation_resolve",
+      "resource_negotiation_rejected",
+      "threat_selected",
+      "surrender_recruit",
+      "surrender_retreat_reward",
+      "surrender_resume_combat",
+      "resident_killed"
+    ]
+  },
+
+  "specific_resident_outcome_target": {
+    "source": "DEC-CONTENT-011",
+    "values": [
+      "empathy_resolve",
+      "resource_negotiation_resolve",
+      "recruited",
+      "retreated",
+      "killed"
+    ]
+  },
+
+  "placeholder": {
+    "source": "DEC-PIPELINE-013",
+    "$comment": "작업용 CSV와 승인 후보에서만 허용. 승인 CSV에는 남을 수 없다.",
+    "values": ["AUTO", "TBD"]
+  },
+
+  "forbidden_empty_marker": {
+    "source": "DEC-PIPELINE-013",
+    "$comment": "빈 값을 이 표기로 대신할 수 없다.",
+    "values": ["null", "NULL", "N/A", "없음", "-"]
+  },
+
+  "open_questions": [
+    {
+      "id": "enums.relationship_state_key",
+      "type": "규칙 누락",
+      "summary": "DEC-RESIDENT-012는 관계 상태를 미형성·우호·거래·동료·강압·단절로 열거하고, DEC-CONTENT-011은 relationship_count의 대상으로 friendly·trade·companion·coercive·severed를 열거한다. specific_resident_relationship의 target_value에 사용할 관계 키 목록과 미형성 상태의 키는 결정로그에 없다.",
+      "status": "기획 책임자 확정 대기"
+    }
+  ]
+}
