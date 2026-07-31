@@ -7,10 +7,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 
-function checkDocs(docsDir) {
+function checkDocs(docsDir, ref) {
   const env = docsDir ? { ...process.env, DOCS_DIR: docsDir } : process.env
+  const args = ['tools/check-docs.mjs', ...(ref ? [ref] : [])]
   try {
-    return { code: 0, out: execFileSync('node', ['tools/check-docs.mjs'], { encoding: 'utf8', env }) }
+    return { code: 0, out: execFileSync('node', args, { encoding: 'utf8', env }) }
   } catch (err) {
     return { code: err.status, out: (err.stdout ?? '') + (err.stderr ?? '') }
   }
@@ -48,9 +49,16 @@ test('구조 오류를 차단으로 잡는다', () => {
   }
 })
 
-test('기준 커밋에 문서가 없으면 원문 비교를 건너뛴다', () => {
-  const { out } = checkDocs('tests/fixtures/docs-broken')
+test('기준 커밋에서 문서를 읽을 수 없으면 원문 비교를 건너뛴다', () => {
+  // 해석되지 않는 ref를 주면 비교 대상이 없다.
+  // 픽스처의 커밋 여부에 의존하지 않게 하려고 ref 쪽을 흔든다.
+  const { out } = checkDocs('tests/fixtures/docs-broken', 'no-such-ref-for-test')
   assert.match(out, /원문 변경은 비교하지 않았다/)
   // git 오류 메시지가 출력에 섞이지 않아야 한다
   assert.doesNotMatch(out, /fatal:/)
+})
+
+test('확정 DEC의 원문이 바뀌지 않았으면 0건으로 보고한다', () => {
+  const { out } = checkDocs(null, 'HEAD')
+  assert.match(out, /확정 DEC 원문 변경 0건/)
 })

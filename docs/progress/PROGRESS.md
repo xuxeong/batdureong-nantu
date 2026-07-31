@@ -9,13 +9,13 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 4개 · 2026-07-31 ~ 2026-07-31
+커밋 8개 · 2026-07-31 ~ 2026-07-31
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 4 | Feat 2 · Chore 1 · Fix 1 | (루트), api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 8 | Feat 4 · Chore 2 · Fix 1 · Docs 1 | (루트), api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 
 ## 날짜별 기록
 
@@ -25,4 +25,8 @@
 - `[Fix]` 기획 문서를 요약한 서술 제거 — SUJEONG CHOI · `843aa2a`
 - `[Feat]` 콘텐츠 CSV 31종 스키마 정의 — SUJEONG CHOI · `a99a798`
 - `[Feat]` CSV 파싱·검수 보고 모듈과 작업 기록 자동화 — SUJEONG CHOI · `27f9631`
+- `[Docs]` PROGRESS 날짜별 형식 정리, 세션 로그 형식 추가 — SUJEONG CHOI · `eae4fc6`
+- `[Feat]` 콘텐츠 CSV 검증 도구 — SUJEONG CHOI · `e26b6a9`
+- `[Feat]` 정규화·런타임 생성·문서 검수 도구 — SUJEONG CHOI · `cf541d0`
+- `[Chore]` CLAUDE.md에서 team-rules.md 임포트 — SUJEONG CHOI · `349bcac`
 
