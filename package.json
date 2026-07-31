@@ -1,0 +1,27 @@
+{
+  "name": "batdureong-nantu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "밭두렁난투 — NAN 해커톤 사전과제 게임 프로토타입",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+
+    "data:normalize": "node tools/normalize.mjs",
+    "data:validate": "node tools/validate.mjs",
+    "data:build": "node tools/build-runtime.mjs",
+
+    "docs:check": "node tools/check-docs.mjs",
+    "progress": "node tools/progress.mjs",
+
+    "test": "node --test tests/"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

@@ -1,0 +1,32 @@
+# 의존성
+node_modules/
+
+# 빌드 산출물
+dist/
+.vite/
+
+# 환경변수 — 저장소가 공개(public)이므로 절대 커밋 금지
+.env
+.env.*
+!.env.example
+
+# 배포 도구
+.vercel/
+.netlify/
+
+# 자동 생성 런타임 데이터 (승인 CSV에서 언제든 재생성 — DEC-PIPELINE-002)
+# 3명이 각자 생성하면 매번 충돌하므로 커밋하지 않는다.
+generated/runtime/*.json
+
+# 엑셀 임시 파일 (CSV 편집 중 생김)
+~$*
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 에디터
+.idea/
+*.swp
+*.swo

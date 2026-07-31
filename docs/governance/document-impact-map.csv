@@ -1,0 +1,15 @@
+match_type,decision_key,system_doc_sections,content_guide_sections,review_level,full_semantic_audit_trigger,notes
+prefix,DEC-RUN-*,3|12|13,5.11|5.12|11|17,connected,단계 흐름·런 종료·엔딩 연결이 바뀔 때,런 구성과 단계 전환
+prefix,DEC-INPUT-*,4|13|16,11,local,입력 체계 전체 또는 접근성 원칙이 바뀔 때,조작과 입력 UI
+prefix,DEC-RESOURCE-*,5|7|13|16,5.3|5.4|5.5|7|8|9|10|11|17,connected,보관 단일 원본·거래 원자성이 바뀔 때,자원·보관함·거래
+prefix,DEC-FARM-*,6|13|15,5.2|5.6|11|17,connected,재배 상태 흐름 또는 출현 구조가 바뀔 때,재배와 야생동물
+prefix,DEC-CRAFT-*,7|13|16,5.3|5.4|5.5|7|8|9|10|17,connected,제작 처리·레시피 참조 구조가 바뀔 때,제작과 숙련도
+prefix,DEC-RESIDENT-*,9|10|11|12|13|15,5.7|5.8|5.9|5.10|5.12|11|17,connected,대화·전투·관계·엔딩 전달 경계가 바뀔 때,주민·사연·협상·전투·관계
+prefix,DEC-PIPELINE-*,1|14|16|17,1|2|3|4|7|8|9|10|11|12|13|14|15|16|17,connected,문서 권한·승인 흐름·스키마·동기화 정책이 바뀔 때,AI 제작·데이터·문서 파이프라인
+prefix,DEC-CONTENT-*,14|15|16,4|5|6|7|8|9|10|17,connected,공통 엔트리·필드·참조 방식이 바뀔 때,콘텐츠 데이터 구조
+prefix,DEC-ART-*,14|16,3|6|9|10|17,connected,논리 에셋 ID 또는 교체 파이프라인이 바뀔 때,아트 규격과 연결
+prefix,DEC-ENDING-*,12|13|16,5.12|11|17,connected,엔딩 선택·LLM 입력·폴백 구조가 바뀔 때,엔딩 콘텐츠
+prefix,DEC-UI-*,13|15,11,local,전체 화면 흐름·입력 소유권이 바뀔 때,UI/UX 보류와 확정
+exact,DEC-PIPELINE-015,1|17,1|2|3|11|12|13|16,connected,AI 권한 또는 결정 변경 절차가 바뀔 때,최상위 AI 규칙과 시스템 결정 변경 절차
+exact,DEC-PIPELINE-016,16,3|13|17,local,데이터와 시스템 로직의 경계가 바뀔 때,게임 데이터 하드코딩 금지
+exact,DEC-PIPELINE-017,1|17,1|2|3|12|13|14|15|16|17,structural,항상,영향 기반 부분 동기화 정책
