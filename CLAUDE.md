@@ -11,6 +11,10 @@
 - `docs/planning/밭두렁난투_시스템_UIUX_기획서_현재본.md`
 - `docs/planning/밭두렁난투_콘텐츠_데이터_준비도_점검.md`
 
+UI/UX 기획 작업(`DEC-UI-*` 확정)을 시작할 때는 위 첫 두 문서에 다음을 더해 함께 읽는다.
+
+- `docs/planning/밭두렁난투_UIUX_준비도_점검.md`
+
 ## 작업을 마칠 때
 
 작업 단락이 끝나면 **묻지 말고** `docs/progress/sessions/<본인>.md`에 항목을 추가한다.
@@ -30,10 +34,10 @@
 
 | 위치 | 내용 |
 |---|---|
-| `docs/planning/` | 기획 기준 문서 3종 |
+| `docs/planning/` | 기획 기준 문서 4종 |
 | `docs/governance/document-impact-map.csv` | DEC 변경 시 영향 문서·절 매핑 |
 | `docs/team-rules.md` | 커밋·브랜치·라이선스 기록 규칙 |
-| `schema/tables/` | 콘텐츠 CSV 32종의 필드·자료형·참조 정의 |
+| `schema/tables/` | 콘텐츠 CSV 33종의 필드·자료형·참조 정의 |
 | `schema/schema_manifest.json` | `schema_version` 등 3종 버전 |
 | `data/drafts/` `data/candidates/` `data/approved/` | 콘텐츠 CSV |
 | `generated/runtime/` | 승인 CSV에서 생성한 런타임 JSON |

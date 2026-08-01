@@ -1,0 +1,71 @@
+{
+  "file": "player_base_stats.csv",
+  "step": 1,
+  "entry_type": "independent",
+  "kind": "player_base_stats",
+  "id_prefix": "player_base_stats.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-019",
+    "DEC-RESOURCE-004",
+    "DEC-INPUT-002",
+    "DEC-INPUT-004"
+  ],
+  "fields": [
+    {
+      "name": "max_health",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "starting_money",
+      "required": true,
+      "type": "integer",
+      "min": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "move_speed",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "collision_radius",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "sickle_damage",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "sickle_range",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    },
+    {
+      "name": "sickle_cooldown_seconds",
+      "required": true,
+      "type": "number",
+      "min_exclusive": 0,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "player_base_stats.exactly_one_approved",
+      "severity": "차단"
+    }
+  ]
+}

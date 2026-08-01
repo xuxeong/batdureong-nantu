@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 2,
+  "schema_version": 3,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
 
@@ -20,6 +20,14 @@
       "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
       "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 journal_fallbacks.csv를 drafts부터 새로 작성해야 한다",
       "decisions": ["DEC-JOURNAL-003", "DEC-JOURNAL-004", "DEC-PIPELINE-010"]
+    },
+    {
+      "schema_version": { "from": 2, "to": 3 },
+      "date": "2026-08-02",
+      "change": "player_base_stats.csv(독립 콘텐츠) 테이블 신설 — 플레이어 최대 체력·시작 소지금·이동속도·충돌 반경과 낫(기본 근접 무기) 피해량·사거리·재사용 대기시간. 이전까지 이 값들을 담을 테이블 자체가 없었다",
+      "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
+      "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 player_base_stats.csv를 drafts부터 새로 작성해야 하며 승인 행은 정확히 1개여야 한다",
+      "decisions": ["DEC-CONTENT-019", "DEC-RESOURCE-004", "DEC-INPUT-002", "DEC-INPUT-004"]
     }
   ]
 }
