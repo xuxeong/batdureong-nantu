@@ -9,15 +9,16 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 23개 · 2026-07-31 ~ 2026-08-01
+커밋 25개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 14 | Chore 5 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 5 | Docs 5 | docs/progress |
+| github-actions[bot] | 6 | Docs 6 | docs/progress |
 | ming9 | 4 | Data 2 · (태그 없음) 2 | data/approved, data/drafts |
+| gamome44 | 1 | Docs 1 | (루트), docs/governance, docs/planning, docs/progress, docs/submission, schema |
 
 ## 날짜별 기록
 
@@ -36,6 +37,8 @@
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `0e7ba2a`
 - `[Data]` csv 파일들 drafts로 이동 — ming9 · `c8138f9`
 - Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — ming9 · `f2db02f`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `f675f43`
+- `[Docs]` 플레이어 일지 LLM 시스템(DEC-JOURNAL) 도입 + 문서 전체 동기화 — gamome44 · `3ef9bb8`
 
 ### 2026-07-31
 
