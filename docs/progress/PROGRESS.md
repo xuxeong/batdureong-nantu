@@ -9,14 +9,14 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 13개 · 2026-07-31 ~ 2026-08-01
+커밋 16개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 12 | Chore 4 · Feat 4 · Docs 3 · Fix 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 1 | Docs 1 | docs/progress |
+| SUJEONG CHOI | 14 | Chore 5 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| github-actions[bot] | 2 | Docs 2 | docs/progress |
 
 ## 날짜별 기록
 
@@ -26,6 +26,8 @@
 - `[Chore]` CLAUDE.md에 세션 로그 작성 규칙 추가 — SUJEONG CHOI · `32d093a`
 - `[Docs]` 8/1 세션 로그 추가 — SUJEONG CHOI · `0897d59`
 - `[Docs]` 작업 시작 전 git pull 규칙 명시 — SUJEONG CHOI · `0be4577`
+- `[Chore]` TypeScript 개발 환경 구성 및 진입점 main.ts 전환 — SUJEONG CHOI · `fde8300`
+- Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — SUJEONG CHOI · `5a16c03`
 
 ### 2026-07-31
 
@@ -38,4 +40,5 @@
 - `[Feat]` 정규화·런타임 생성·문서 검수 도구 — SUJEONG CHOI · `cf541d0`
 - `[Chore]` CLAUDE.md에서 team-rules.md 임포트 — SUJEONG CHOI · `349bcac`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `a541c74`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `2e7d840`
 
