@@ -1,0 +1,3 @@
+ending_id,condition_id,condition_type,subject_key,comparison,target_value
+ending.new_family,cond.all_recruited,important_action_count,surrender_recruit,eq,4
+ending.empty_village_master,cond.all_killed,important_action_count,resident_killed,eq,4
