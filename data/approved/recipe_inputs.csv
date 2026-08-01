@@ -1,0 +1,16 @@
+recipe_id,input_kind,input_id,quantity
+recipe.chili_pouch,crop,crop.chili,2
+recipe.chili_pouch,material,material.cloth_sack,1
+recipe.banana_peel,crop,crop.banana,1
+recipe.banana_peel,material,material.cloth_sack,1
+recipe.tomato_bomb,crop,crop.tomato,2
+recipe.tomato_bomb,material,material.empty_bottle,1
+recipe.rice_glue_bottle,crop,crop.glutinous_rice,1
+recipe.rice_glue_bottle,material,material.empty_bottle,1
+recipe.honey_tomato,crop,crop.tomato,1
+recipe.honey_tomato,material,material.honey,1
+recipe.honey_banana,crop,crop.banana,1
+recipe.honey_banana,material,material.honey,1
+recipe.fruit_honey_bowl,crop,crop.tomato,2
+recipe.fruit_honey_bowl,crop,crop.banana,2
+recipe.fruit_honey_bowl,material,material.honey,1

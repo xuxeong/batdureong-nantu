@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,player_description,heal_amount,use_duration_seconds,move_speed_multiplier
+recovery_item.honey_tomato,recovery_item,approved,1,꿀 토마토,기본 회복. 싸고 빨라 전투 중 부담 없이 먹는 응급 처치.,꿀을 바른 토마토 한 입. 금세 먹고 조금 기운을 차린다.,15,1.2,0.6
+recovery_item.honey_banana,recovery_item,approved,1,꿀바나나,묵직한 회복. 크게 차오르지만 오래 먹어야 해서 안전한 틈이 필요하다.,꿀에 푹 적신 바나나. 든든하지만 먹는 동안 발이 무겁다.,35,2.5,0.45
+recovery_item.fruit_honey_bowl,recovery_item,approved,1,과일 꿀범벅,숙련도 해금 최고급 회복. 크고 빠른 사치품으로 후반 습격의 보험.,토마토와 바나나를 꿀에 통째로 버무렸다. 큰 회복이 순식간에 넘어간다.,70,1.5,0.6
