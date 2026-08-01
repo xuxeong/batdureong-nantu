@@ -9,15 +9,15 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 20개 · 2026-07-31 ~ 2026-08-01
+커밋 23개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 14 | Chore 5 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 4 | Docs 4 | docs/progress |
-| ming9 | 2 | Data 1 · (태그 없음) 1 | data/approved |
+| github-actions[bot] | 5 | Docs 5 | docs/progress |
+| ming9 | 4 | Data 2 · (태그 없음) 2 | data/approved, data/drafts |
 
 ## 날짜별 기록
 
@@ -33,6 +33,9 @@
 - `[Data]` 콘텐츠 1~9·11~12단계 승인분 일괄 반입 — 5일 런 기준 밸런스 확정 — ming9 · `e4f7d49`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `4742c58`
 - Update resident_combat_profiles.csv — ming9 · `9af21bf`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `0e7ba2a`
+- `[Data]` csv 파일들 drafts로 이동 — ming9 · `c8138f9`
+- Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — ming9 · `f2db02f`
 
 ### 2026-07-31
 
