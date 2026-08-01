@@ -1,8 +1,8 @@
 id,kind,content_status,content_version,display_name,design_intent,result_kind,result_id,result_quantity,unlock_type
-recipe.chili_pouch,recipe,approved,1,고춧가루 주머니 제작,고추 기본 무기. 고추 2개로 화력 1발이라 회전이 좋다.,throwable_weapon,throwable_weapon.chili_pouch,1,base
-recipe.banana_peel,recipe,approved,1,바나나 껍질 제작,바나나 기본 무기. 껍질만 쓰는 느낌으로 1개당 2발 지급해 가벼운 견제를 부담 없게.,throwable_weapon,throwable_weapon.banana_peel,2,base
-recipe.tomato_bomb,recipe,approved,1,토마토 폭탄 제작,토마토 기본 무기. 다수확 작물이라 2개 요구로 물량 조절.,throwable_weapon,throwable_weapon.tomato_bomb,1,base
-recipe.rice_glue_bottle,recipe,approved,1,찹쌀풀 병 제작,찹쌀 기본 무기. 희귀 작물 1개로 결정적 제압 1발.,throwable_weapon,throwable_weapon.rice_glue_bottle,1,base
-recipe.honey_tomato,recipe,approved,1,꿀 토마토 제작,토마토 기본 회복. 응급 회복의 진입점.,recovery_item,recovery_item.honey_tomato,1,base
-recipe.honey_banana,recipe,approved,1,꿀바나나 제작,바나나 기본 회복. 묵직한 회복의 기본형.,recovery_item,recovery_item.honey_banana,1,base
-recipe.fruit_honey_bowl,recipe,approved,1,과일 꿀범벅 제작,바나나 숙련도 해금 상위 회복. 두 과일과 꿀을 모두 요구하는 사치품.,recovery_item,recovery_item.fruit_honey_bowl,1,crop_mastery
+recipe.chili_pouch,recipe,draft,1,고춧가루 주머니 제작,고추 기본 무기. 고추 2개로 화력 1발이라 회전이 좋다.,throwable_weapon,throwable_weapon.chili_pouch,1,base
+recipe.banana_peel,recipe,draft,1,바나나 껍질 제작,바나나 기본 무기. 껍질만 쓰는 느낌으로 1개당 2발 지급해 가벼운 견제를 부담 없게.,throwable_weapon,throwable_weapon.banana_peel,2,base
+recipe.tomato_bomb,recipe,draft,1,토마토 폭탄 제작,토마토 기본 무기. 다수확 작물이라 2개 요구로 물량 조절.,throwable_weapon,throwable_weapon.tomato_bomb,1,base
+recipe.rice_glue_bottle,recipe,draft,1,찹쌀풀 병 제작,찹쌀 기본 무기. 희귀 작물 1개로 결정적 제압 1발.,throwable_weapon,throwable_weapon.rice_glue_bottle,1,base
+recipe.honey_tomato,recipe,draft,1,꿀 토마토 제작,토마토 기본 회복. 응급 회복의 진입점.,recovery_item,recovery_item.honey_tomato,1,base
+recipe.honey_banana,recipe,draft,1,꿀바나나 제작,바나나 기본 회복. 묵직한 회복의 기본형.,recovery_item,recovery_item.honey_banana,1,base
+recipe.fruit_honey_bowl,recipe,draft,1,과일 꿀범벅 제작,바나나 숙련도 해금 상위 회복. 두 과일과 꿀을 모두 요구하는 사치품.,recovery_item,recovery_item.fruit_honey_bowl,1,crop_mastery
