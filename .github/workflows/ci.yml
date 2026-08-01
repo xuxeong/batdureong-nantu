@@ -5,7 +5,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
   workflow_dispatch:
 
@@ -13,8 +13,13 @@ jobs:
   progress:
     name: 작업 기록 갱신
     runs-on: ubuntu-latest
-    # 봇 자신의 커밋으로 다시 도는 것을 막는다
-    if: github.actor != 'github-actions[bot]' && github.event_name == 'push'
+    # 봇 자신의 커밋으로 다시 도는 것을 막는다.
+    # main 전용 — develop 개발 중에 봇 커밋이 끼면 매번 pull 충돌이 난다.
+    # 작업 기록은 develop → main 병합 시점에 한 번에 갱신된다.
+    if: >-
+      github.actor != 'github-actions[bot]'
+      && github.event_name == 'push'
+      && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     steps:
