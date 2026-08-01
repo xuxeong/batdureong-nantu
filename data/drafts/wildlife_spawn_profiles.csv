@@ -1,4 +1,4 @@
 id,kind,content_status,content_version,display_name,design_intent,first_spawn_delay_seconds,spawn_interval_seconds,max_concurrent,total_spawn_limit
-wildlife_spawn_profile.early_calm,wildlife_spawn_profile,approved,1,초반 한산,초반 일차용. 늦게 시작해 드문드문. 까마귀 위주로 수확 타이밍만 가르친다.,20,12,2,6
-wildlife_spawn_profile.mid_pressure,wildlife_spawn_profile,approved,1,중반 압박,중반 일차용. 고라니 비중 상승과 멧돼지 첫 등장으로 무기 제작을 강제한다.,12,9,3,10
-wildlife_spawn_profile.late_siege,wildlife_spawn_profile,approved,1,후반 공세,후반 일차용. 빠른 간격과 동시 4마리로 재배와 방어의 손 분배를 한계까지 압박한다.,8,7,4,14
+wildlife_spawn_profile.early_calm,wildlife_spawn_profile,draft,1,초반 한산,초반 일차용. 늦게 시작해 드문드문. 까마귀 위주로 수확 타이밍만 가르친다.,20,12,2,6
+wildlife_spawn_profile.mid_pressure,wildlife_spawn_profile,draft,1,중반 압박,중반 일차용. 고라니 비중 상승과 멧돼지 첫 등장으로 무기 제작을 강제한다.,12,9,3,10
+wildlife_spawn_profile.late_siege,wildlife_spawn_profile,draft,1,후반 공세,후반 일차용. 빠른 간격과 동시 4마리로 재배와 방어의 손 분배를 한계까지 압박한다.,8,7,4,14

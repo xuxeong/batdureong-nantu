@@ -1,5 +1,5 @@
 id,kind,content_status,content_version,display_name,design_intent,damage,first_attack_delay_seconds,attack_interval_seconds
-support_attack_profile.dusik,resident_support_attack_profile,draft,1,두식 돌팔매,잦고 약한 지원. 2일차 영입 시 남은 세 습격 전부 지원 — 영입 가치 최대.,4,2,3
-support_attack_profile.manbok,resident_support_attack_profile,draft,1,만복 병 던지기,중간 주기·중간 피해의 안정 지원.,8,3,5
-support_attack_profile.geumrye,resident_support_attack_profile,draft,1,금례 부지깽이,느리지만 아픈 지원. 5일차 이장 결투 지원 가능.,15,4,7
-support_attack_profile.village_head,resident_support_attack_profile,draft,1,이장 호통,마지막 습격 영입이라 실전 사용 없음. 스키마 1:1 참조 무결성용 명목값.,10,3,6
+resident_support_attack_profile.dusik,resident_support_attack_profile,draft,1,두식 돌팔매,잦고 약한 지원. 2일차 영입 시 남은 세 습격 전부 지원 — 영입 가치 최대.,4,2,3
+resident_support_attack_profile.manbok,resident_support_attack_profile,draft,1,만복 병 던지기,중간 주기·중간 피해의 안정 지원.,8,3,5
+resident_support_attack_profile.geumrye,resident_support_attack_profile,draft,1,금례 부지깽이,느리지만 아픈 지원. 5일차 이장 결투 지원 가능.,15,4,7
+resident_support_attack_profile.village_head,resident_support_attack_profile,draft,1,이장 호통,마지막 습격 영입이라 실전 사용 없음. 스키마 1:1 참조 무결성용 명목값.,10,3,6

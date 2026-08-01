@@ -1,2 +1,2 @@
 id,kind,content_status,content_version,display_name,design_intent,world_width,world_height,farm_interaction_radius,wildlife_spawn_edge_margin,wildlife_spawn_min_player_distance
-map.prototype_field,map,approved,1,프로토타입 밭,고정 카메라 한 화면에 밭과 외곽이 모두 보이는 단일 직사각형 맵. 중앙 경작지 주변에서 재배와 습격 전투가 모두 벌어진다.,1600,900,60,80,500
+map.prototype_field,map,draft,1,프로토타입 밭,고정 카메라 한 화면에 밭과 외곽이 모두 보이는 단일 직사각형 맵. 중앙 경작지 주변에서 재배와 습격 전투가 모두 벌어진다.,1600,900,60,80,500
