@@ -9,15 +9,15 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 27개 · 2026-07-31 ~ 2026-08-01
+커밋 30개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 15 | Chore 6 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 7 | Docs 7 | docs/progress |
-| ming9 | 4 | Data 2 · (태그 없음) 2 | data/approved, data/drafts |
+| github-actions[bot] | 8 | Docs 8 | docs/progress |
+| ming9 | 6 | Data 4 · (태그 없음) 2 | data/approved, data/drafts, docs/progress |
 | gamome44 | 1 | Docs 1 | (루트), docs/governance, docs/planning, docs/progress, docs/submission, schema |
 
 ## 날짜별 기록
@@ -41,6 +41,9 @@
 - `[Docs]` 플레이어 일지 LLM 시스템(DEC-JOURNAL) 도입 + 문서 전체 동기화 — gamome44 · `3ef9bb8`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `ff268ed`
 - `[Chore]` journal_fallbacks 검증 규칙 구현 및 검증 도구 하드코딩 개수 동적화 - journal_fallbacks.csv의 covers_all_bands_and_directions 검증 규칙 구현 및 parent_approved 적용 - checks.mjs에 currency.money 가짜 참조 오류 예외 처리 추가 - validate.mjs 및 check-docs.mjs 내 하드코딩된 CSV 개수 대조 로직을 동적으로 리팩토링 - 최수정 작업 세션 로그 갱신 — SUJEONG CHOI · `06ccff1`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `ea67467`
+- `[Data]` 11~12단계 누락된 CSV 추가 — ming9 · `27374a8`
+- `[Data]` resident_combat_profiles.csv 깨짐 해결 — ming9 · `87efafd`
 
 ### 2026-07-31
 
