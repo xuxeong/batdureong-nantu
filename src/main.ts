@@ -108,6 +108,12 @@ if (isDevBuild) {
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
   // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
   Object.assign(window, { __scenes: scenes, __bus: bus, __loop: loop })
+
+  // 필드 렌더·입력·카메라를 눈으로 확인하기 위해 필드를 바로 띄운다.
+  // 시작 화면은 타이틀이고 필드 입력은 재배·습격 단계에서만 열리는데(DEC-INPUT-009),
+  // run_schedules 승인 행이 없어 정상 흐름으로는 재배 단계까지 갈 수 없다.
+  // **승인 데이터가 들어오면 이 두 줄을 지운다.**
+  scenes.enterFieldPreview('farming')
 }
 
 loop.start()

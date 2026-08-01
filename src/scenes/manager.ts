@@ -79,6 +79,21 @@ export interface SceneManager {
 
   /** 승인 데이터가 로드된 뒤 흐름 판단 근거를 갈아끼운다 */
   setContext(ctx: FlowContext): void
+
+  /**
+   * **개발 전용.** 흐름을 건너뛰고 필드만 띄운다.
+   *
+   * 시작 화면은 타이틀이고 필드 입력은 재배·습격 단계에서만 열린다 (DEC-INPUT-009).
+   * 그런데 `run_schedules` 승인 행이 없어 정상 흐름으로는 재배 단계까지 갈 수 없다.
+   * 그래서 필드 렌더·입력·카메라를 눈으로 확인할 방법이 없다.
+   *
+   * 가짜 습격 일정을 만들어 뚫지 않는다 (로드맵 3-1). 대신 이 통로를 명시적으로 부른다 —
+   * `usePlaceholderStats()`와 같은 취급이다. 폴백이 아니라 선언이고, 부르지 않으면
+   * 존재하지 않는다. **승인 데이터가 들어오면 호출부를 지운다.**
+   *
+   * `step`은 건드리지 않는다. 이건 런의 상태가 아니라 화면 미리보기다.
+   */
+  enterFieldPreview(mode: FieldMode): void
 }
 
 /**
@@ -105,9 +120,13 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     // 정지 대상은 이동·조준·공격·상호작용 입력, 주민 AI, 투사체, 상태이상 틱이다.
     if (overlays.length > 0) {
       loop.pause('dialogue')
-    } else {
-      loop.resume('dialogue')
+      return
     }
+    // 'dialogue' 사유만 지우면 안 된다. 포커스 이탈은 루프가 'focus_lost' 를 따로 걸고
+    // 그것을 지우는 곳이 여기밖에 없어서, 알트탭 한 번이면 필드가 영구히 멈춘다.
+    // 오버레이가 전부 닫혔다는 것은 곧 일시정지 화면도 닫혔다는 뜻이고,
+    // 일시정지 화면이 포커스 이탈의 재개 경로다 (DEC-INPUT-009, DEC-UI-014).
+    loop.resumeAll()
   }
 
   function enterScreen(next: ScreenId): void {
@@ -213,6 +232,17 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
 
     setContext(next) {
       ctx = next
+    },
+
+    enterFieldPreview(mode) {
+      console.warn(
+        '[개발 전용] 흐름을 건너뛰고 필드를 띄운다. run_schedules 승인 행이 없어 ' +
+          '정상 흐름으로는 재배 단계에 갈 수 없기 때문이다. ' +
+          '승인되면 enterFieldPreview() 호출을 지운다.',
+      )
+      closeAllOverlays()
+      enterField(mode)
+      syncSimulation()
     },
   }
 
