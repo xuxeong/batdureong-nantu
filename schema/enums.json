@@ -7,7 +7,7 @@
   },
 
   "kind": {
-    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017",
+    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017, DEC-CONTENT-019",
     "values": [
       "map",
       "crop_attribute",
@@ -29,7 +29,8 @@
       "dialogue_choice",
       "run_schedule",
       "fear_band",
-      "ending"
+      "ending",
+      "player_base_stats"
     ]
   },
 
