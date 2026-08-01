@@ -6,6 +6,17 @@
 // 팀규칙 7절: 특정 호스팅 업체 전용 헬퍼를 쓰지 않고 표준 웹 Request/Response만 쓴다.
 // 이 시그니처는 Vercel·Cloudflare·Deno·Netlify에서 그대로 동작하므로
 // 배포처를 옮겨도 다시 짜지 않는다.
+//
+// ── runtime 선언이 필요한 이유 ────────────────────────────────
+//
+// Vercel 의 Node 런타임은 기본 export 를 `(req, res)` 시그니처로 취급한다.
+// 그러면 반환한 Response 가 버려지고 res.end() 가 끝내 호출되지 않아
+// 404도 500도 아닌 **무한 로딩**이 된다 (실제로 겪었다).
+// Edge 런타임은 Request → Response 의미가 보장된다.
+//
+// 이 한 줄은 배포 선언이지 핸들러 로직이 아니다. 다른 플랫폼에서는 무시되는
+// 여분의 export 일 뿐이라 아래 함수의 이식성은 그대로다.
+export const config = { runtime: 'edge' }
 
 export default function handler(request: Request): Response {
   if (request.method !== 'GET') {
