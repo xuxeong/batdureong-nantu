@@ -9,15 +9,15 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 38개 · 2026-07-31 ~ 2026-08-02
+커밋 40개 · 2026-07-31 ~ 2026-08-02
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 17 | Chore 7 · Feat 4 · Docs 4 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 12 | Docs 12 | docs/progress |
-| ming9 | 6 | Data 4 · (태그 없음) 2 | data/approved, data/drafts, docs/progress |
+| github-actions[bot] | 13 | Docs 13 | docs/progress |
+| ming9 | 7 | Data 5 · (태그 없음) 2 | data/approved, data/drafts, docs/progress |
 | gamome44 | 3 | Docs 3 | (루트), docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
 
 ## 날짜별 기록
@@ -28,6 +28,7 @@
 - `[Chore]` player_base_stats 검증 규칙 구현 및 세션 로그 갱신 — SUJEONG CHOI · `c5b0c18`
 - `[Docs]` 1차 빌드 개발 계획 수립 (8/2~8/5) — SUJEONG CHOI · `6ab8b0f`
 - `[Docs]` UI/UX 1단계 계속 — DEC-UI-017/024 확정, DEC-INPUT-012 신설, 로드맵 기준 순서 재배치 — gamome44 · `de900ea`
+- `[Data]` ID 접두어를 kind에 맞추고 문구·수치 정합 — ming9 · `817a7d1`
 
 ### 2026-08-01
 
@@ -55,6 +56,7 @@
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `426a81a`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `a300721`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `15e9c1f`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `3858267`
 
 ### 2026-07-31
 
