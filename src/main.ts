@@ -12,18 +12,62 @@ import { createEventBus } from './core/bus.ts'
 import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
+import { createInput } from './input/input.ts'
+import { createCamera } from './render/camera.ts'
+import { createFieldRenderer } from './render/field.ts'
+import { runConfig, usePlaceholderStats } from './data/run-config.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
 
+const gameRoot = document.getElementById('game')
+if (gameRoot === null) throw new Error('#game 요소가 없다')
+
 const bus = createEventBus()
+const camera = createCamera()
+const renderer = createFieldRenderer(gameRoot, camera)
+
+// player_base_stats.csv 는 초안조차 없어 승인 행이 없다 (DEC-CONTENT-019).
+// 임시 값은 폴백이 아니라 **명시적 선언**이며 콘솔에 경고가 남는다.
+// 승인 행이 올라오면 이 호출만 지우면 된다 — 다른 곳에 흩어져 있지 않다.
+usePlaceholderStats({
+  moveSpeed: 4,
+  collisionRadius: 0.4,
+  worldWidth: 40,
+  worldHeight: 24,
+})
+
+// 월드 크기도 maps.csv 승인 전까지는 임시 값이다.
+camera.setWorldSize(40, 24)
+
+const player = { x: 20, y: 12 }
+
+const input = createInput(renderer.canvas, {
+  onInteract: () => console.info('[입력] 상호작용 (E)'),
+  onThrow: () => console.info('[입력] 투척'),
+  onSickle: () => console.info('[입력] 낫'),
+  onQuickslotSelect: (index) => console.info(`[입력] 퀵슬롯 ${index + 1}`),
+  onQuickslotCycle: (dir) => console.info(`[입력] 퀵슬롯 순환 ${dir > 0 ? '다음' : '이전'}`),
+  onRecoverUse: () => console.info('[입력] 회복 사용'),
+  onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
+  onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
+  onEscape: () => scenes.handleEscape(),
+})
 
 const loop = createGameLoop(
   {
-    update() {
-      // 필드 시뮬레이션. 재배·전투가 붙기 전까지는 비어 있다.
+    update(dt) {
+      // 이동만 있는 최소 루프. 충돌·상호작용·전투는 8/2 이후에 붙는다.
+      const move = input.move()
+      const speed = runConfig.moveSpeed
+      player.x += move.x * speed * dt
+      player.y += move.y * speed * dt
     },
     render() {
-      // 캔버스 렌더. src/render/ 가 붙기 전까지는 비어 있다.
+      renderer.draw({
+        player,
+        aimAngle: input.aimAngle(),
+        collisionRadius: runConfig.collisionRadius,
+      })
     },
   },
   {
@@ -34,6 +78,20 @@ const loop = createGameLoop(
 )
 
 const scenes: SceneManager = createSceneManager(bus, loop)
+
+// 필드 입력 잠금을 화면 층위에 맞춘다 (DEC-INPUT-009).
+// 재배·습격 단계에서만 이동과 전투 입력을 받는다.
+function syncInputLock(): void {
+  const onField = scenes.currentFieldMode() !== null
+  const overlayOpen = scenes.openOverlays().length > 0
+  input.setFieldLocked(!onField || overlayOpen)
+}
+bus.on('screen.changed', syncInputLock)
+bus.on('field.entered', syncInputLock)
+bus.on('field.exited', syncInputLock)
+bus.on('overlay.opened', syncInputLock)
+bus.on('overlay.closed', syncInputLock)
+syncInputLock()
 
 // 개발 빌드에서만 화면 전환을 콘솔에 찍는다.
 // 제출 빌드에서는 개발용 표시를 모두 숨긴다 (DEC-UI-024, DEC-RESIDENT-047).

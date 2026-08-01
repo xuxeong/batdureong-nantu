@@ -4,6 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>밭두렁난투</title>
+
+    <!--
+      골격 스타일만 둔다. 캔버스에 크기가 없으면 아무것도 안 보이기 때문이다.
+      HUD·패널의 위치·크기·여백·색은 여기가 아니라 src/ui/layout.css 의
+      CSS 커스텀 프로퍼티에 모은다 (개발 로드맵 2절).
+      기획자 UI 사진을 받으면 그 파일 값만 고친다.
+
+      기준 해상도는 DEC-UI-025 가 보류라 아직 고정하지 않는다.
+      지금은 뷰포트를 그대로 채우고, 규격이 오면 그때 비율 유지 스케일을 넣는다.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #11170f;
+        overflow: hidden;
+      }
+
+      /* 필드. Canvas 2D 한 장이 여기 들어간다 */
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* DOM 오버레이. 필드 위에 얹힌다 */
+      #ui {
+        position: absolute;
+        inset: 0;
+        /*
+          비어 있는 영역이 캔버스 클릭을 가로채면 안 된다.
+          마우스가 HUD·버튼 위에 있을 때만 필드 클릭 공격이 막혀야 하므로
+          (DEC-INPUT-009) 실제 UI 요소에서만 pointer-events 를 되살린다.
+        */
+        pointer-events: none;
+      }
+
+      #ui > * {
+        pointer-events: auto;
+      }
+    </style>
   </head>
   <body>
     <!-- 필드 렌더링 영역 (src/render/) -->
