@@ -293,7 +293,7 @@ export function checkReferences(report, name, table, def, schema, dataset, idInd
 
     for (const record of table.records) {
       const value = (record.cells[field.name] ?? '').trim()
-      if (value === '' || isPlaceholder(value)) continue
+      if (value === '' || isPlaceholder(value) || value === 'currency.money') continue
 
       const at = { file: name, line: record.lineNumber, field: field.name }
       const found = idIndex.get(value)

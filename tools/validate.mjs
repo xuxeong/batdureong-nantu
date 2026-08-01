@@ -63,7 +63,7 @@ function main() {
     report.block({
       file: name,
       problem: '스키마에 정의되지 않은 CSV다',
-      basis: 'DEC-PIPELINE-014 · 이름이 확정된 CSV는 31개다',
+      basis: `DEC-PIPELINE-019 · 이름이 확정된 CSV는 ${schema.tables.size}개다`,
       fix: '파일명을 확인하거나 기획 책임자에게 스키마 추가를 요청한다',
     })
   }

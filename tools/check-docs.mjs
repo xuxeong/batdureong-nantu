@@ -334,12 +334,17 @@ function checkCsvList(report) {
   }
 
   const count = defined.size
-  if (text.includes('31개') && count !== 31) {
-    report.block({
-      file: CONTENT_DOC,
-      problem: `문서는 CSV가 31개라고 하는데 스키마에는 ${count}개다`,
-      basis: 'DEC-PIPELINE-014',
-    })
+  const match = text.match(/처음부터\s*(\d+)개\s*CSV/)
+  if (match) {
+    const docCount = parseInt(match[1], 10)
+    if (count !== docCount) {
+      report.block({
+        file: CONTENT_DOC,
+        problem: `문서에는 CSV가 ${docCount}개라고 정의되어 있으나 스키마에는 ${count}개 존재합니다`,
+        basis: 'DEC-PIPELINE-019',
+        fix: `문서의 텍스트("${docCount}개")를 스키마 수치("${count}개")로 갱신하거나 스키마 개수를 확인한다`,
+      })
+    }
   }
 }
 

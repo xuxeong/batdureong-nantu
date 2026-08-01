@@ -39,6 +39,7 @@ export const COVERED_BY_FIELD_CHECKS = new Set([
   // 참조 존재·승인 상태
   'reward_bundle_entries.approved_resource',
   'resident_combat_profile.both_reward_bundles',
+  'journal_fallbacks.parent_approved',
   // 열거형
   'reward_bundle_entries.no_state_reward',
   // 헤더 검사 (스키마에 없는 열 차단)
@@ -1180,6 +1181,31 @@ export const RULES = {
           basis: 'DEC-CONTENT-011 · 같은 우선순위의 엔딩이 동시에 성립하면 데이터 오류로 처리한다',
           fix: '우선순위를 다르게 준다',
         })
+      }
+    }
+  },
+
+  'journal_fallbacks.covers_all_bands_and_directions'({ report, h }) {
+    const bands = h.approved('fear_bands.csv')
+    if (bands.length === 0) return
+
+    const rows = h.rows('journal_fallbacks.csv')
+    const directions = ['up', 'same', 'down']
+
+    for (const band of bands) {
+      const bid = h.val(band, 'id')
+      const bandRows = rows.filter((r) => h.val(r, 'fear_band_id') === bid)
+
+      for (const dir of directions) {
+        const hasDir = bandRows.some((r) => h.val(r, 'change_direction') === dir)
+        if (!hasDir) {
+          report.block({
+            file: 'journal_fallbacks.csv',
+            problem: `공포도 구간 \`${bid}\` 에 대한 \`${dir}\` 방향의 폴백 일지가 정의되지 않았다`,
+            basis: 'DEC-JOURNAL-003 · 공포도 구간 × 변화 방향 조합의 고정 폴백 일지를 제공해야 한다',
+            fix: `journal_fallbacks.csv 에 fear_band_id=${bid}, change_direction=${dir} 행을 추가한다`,
+          })
+        }
       }
     }
   },
