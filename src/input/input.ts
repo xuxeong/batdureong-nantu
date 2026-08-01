@@ -1,4 +1,4 @@
-// 입력 계층 (DEC-INPUT-001 ~ 009).
+// 입력 계층 (DEC-INPUT-001 ~ 009, 012).
 //
 // 여기서 하는 일은 두 가지뿐이다.
 //
@@ -37,8 +37,15 @@ export interface InputEvents {
   onQuickslotSelect?(index: number): void
   /** 휠. 수량이 남은 무기만 순환하는 것은 시스템 쪽 판단이다 */
   onQuickslotCycle?(direction: 1 | -1): void
-  /** `Q` 짧게 — 회복 사용 시작 (DEC-INPUT-008) */
-  onRecoverUse?(): void
+  /**
+   * `Q` 짧게.
+   *
+   * 회복 중이 아니면 사용 시작(`DEC-INPUT-008`), 회복 게이지가 진행 중이면
+   * 자발적 취소다(`DEC-INPUT-012`). **어느 쪽인지는 입력이 판단하지 않는다** —
+   * 진행 상태를 아는 것은 시스템이고, 입력은 "짧게 눌렸다"만 알린다.
+   * 자발적 취소는 아이템을 소비하지 않고 선택도 유지한다.
+   */
+  onRecoverShortPress?(): void
   /** `Q` 길게 — 회복 퀵메뉴 열기 */
   onRecoverMenuOpen?(): void
   /** `Q` 뗌 — 퀵메뉴가 열려 있었으면 선택만 확정하고 소비하지 않는다 */
@@ -148,7 +155,7 @@ export function createInput(
     }
     // 잠긴 사이에 눌린 적이 없으면 무시한다.
     if (pressedAt === null || locked) return
-    events.onRecoverUse?.()
+    events.onRecoverShortPress?.()
   }
 
   function handleMouseDown(event: MouseEvent): void {
