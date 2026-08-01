@@ -9,18 +9,22 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 30개 · 2026-07-31 ~ 2026-08-01
+커밋 32개 · 2026-07-31 ~ 2026-08-02
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 15 | Chore 6 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 8 | Docs 8 | docs/progress |
+| github-actions[bot] | 9 | Docs 9 | docs/progress |
 | ming9 | 6 | Data 4 · (태그 없음) 2 | data/approved, data/drafts, docs/progress |
-| gamome44 | 1 | Docs 1 | (루트), docs/governance, docs/planning, docs/progress, docs/submission, schema |
+| gamome44 | 2 | Docs 2 | (루트), docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
 
 ## 날짜별 기록
+
+### 2026-08-02
+
+- `[Docs]` UI/UX 기획 착수(DEC-UI-014) + 플레이어 기본 수치 데이터 구조(DEC-CONTENT-019) 신설 — gamome44 · `6b89acd`
 
 ### 2026-08-01
 
@@ -44,6 +48,7 @@
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `ea67467`
 - `[Data]` 11~12단계 누락된 CSV 추가 — ming9 · `27374a8`
 - `[Data]` resident_combat_profiles.csv 깨짐 해결 — ming9 · `87efafd`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `9b1256b`
 
 ### 2026-07-31
 
