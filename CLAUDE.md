@@ -33,7 +33,7 @@
 | `docs/planning/` | 기획 기준 문서 3종 |
 | `docs/governance/document-impact-map.csv` | DEC 변경 시 영향 문서·절 매핑 |
 | `docs/team-rules.md` | 커밋·브랜치·라이선스 기록 규칙 |
-| `schema/tables/` | 콘텐츠 CSV 31종의 필드·자료형·참조 정의 |
+| `schema/tables/` | 콘텐츠 CSV 32종의 필드·자료형·참조 정의 |
 | `schema/schema_manifest.json` | `schema_version` 등 3종 버전 |
 | `data/drafts/` `data/candidates/` `data/approved/` | 콘텐츠 CSV |
 | `generated/runtime/` | 승인 CSV에서 생성한 런타임 JSON |

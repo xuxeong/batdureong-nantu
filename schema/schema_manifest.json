@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 1,
+  "schema_version": 2,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
 
@@ -12,5 +12,14 @@
     "ending_prompt_version": "고정 시스템 지시문과 출력 제약의 의미 변경"
   },
 
-  "history": []
+  "history": [
+    {
+      "schema_version": { "from": 1, "to": 2 },
+      "date": "2026-08-01",
+      "change": "journal_fallbacks.csv(연결 CSV, 부모: fear_bands.csv, 고유키: fear_band_id+change_direction) 테이블 신설",
+      "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
+      "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 journal_fallbacks.csv를 drafts부터 새로 작성해야 한다",
+      "decisions": ["DEC-JOURNAL-003", "DEC-JOURNAL-004", "DEC-PIPELINE-010"]
+    }
+  ]
 }

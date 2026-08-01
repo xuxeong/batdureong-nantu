@@ -10,6 +10,8 @@ prefix,DEC-CONTENT-*,14|15|16,4|5|6|7|8|9|10|17,connected,공통 엔트리·필�
 prefix,DEC-ART-*,14|16,3|6|9|10|17,connected,논리 에셋 ID 또는 교체 파이프라인이 바뀔 때,아트 규격과 연결
 prefix,DEC-ENDING-*,12|13|16,5.12|11|17,connected,엔딩 선택·LLM 입력·폴백 구조가 바뀔 때,엔딩 콘텐츠
 prefix,DEC-UI-*,13|15,11,local,전체 화면 흐름·입력 소유권이 바뀔 때,UI/UX 보류와 확정
-exact,DEC-PIPELINE-015,1|17,1|2|3|11|12|13|16,connected,AI 권한 또는 결정 변경 절차가 바뀔 때,최상위 AI 규칙과 시스템 결정 변경 절차
+exact,DEC-PIPELINE-015,1|17,1|2|3|11|12|13|16,connected,AI 권한 또는 결정 변경 절차가 바뀔 때,최상위 AI 규칙과 시스템 결정 변경 절차 (폐기 — DEC-PIPELINE-018 참고)
+exact,DEC-PIPELINE-018,1|17,1|2|3|11|12|13|16,connected,AI 권한 또는 결정 변경 절차가 바뀔 때,최상위 AI 규칙과 시스템 결정 변경 절차
 exact,DEC-PIPELINE-016,16,3|13|17,local,데이터와 시스템 로직의 경계가 바뀔 때,게임 데이터 하드코딩 금지
 exact,DEC-PIPELINE-017,1|17,1|2|3|12|13|14|15|16|17,structural,항상,영향 기반 부분 동기화 정책
+prefix,DEC-JOURNAL-*,2|3|12|14|16,5.12|6|17,connected,일지 노출 시점·입력 화이트리스트 또는 폴백 구조가 바뀔 때,플레이어 일지 LLM 시스템

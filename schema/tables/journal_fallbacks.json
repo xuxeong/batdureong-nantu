@@ -1,0 +1,57 @@
+{
+  "file": "journal_fallbacks.csv",
+  "step": 12,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "fear_bands.csv",
+    "field": "fear_band_id"
+  },
+  "unique_key": [
+    "fear_band_id",
+    "change_direction"
+  ],
+  "decisions": [
+    "DEC-JOURNAL-003",
+    "DEC-JOURNAL-004"
+  ],
+  "fields": [
+    {
+      "name": "fear_band_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "fear_bands.csv",
+        "require_status": "approved"
+      },
+      "owner": "ai"
+    },
+    {
+      "name": "change_direction",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "up",
+        "same",
+        "down"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "fallback_journal_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "journal_fallbacks.covers_all_bands_and_directions",
+      "severity": "차단"
+    },
+    {
+      "id": "journal_fallbacks.parent_approved",
+      "severity": "차단"
+    }
+  ]
+}
