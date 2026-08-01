@@ -9,14 +9,15 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 16개 · 2026-07-31 ~ 2026-08-01
+커밋 18개 · 2026-07-31 ~ 2026-08-01
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
 | SUJEONG CHOI | 14 | Chore 5 · Feat 4 · Docs 3 · Fix 1 · (태그 없음) 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| github-actions[bot] | 2 | Docs 2 | docs/progress |
+| github-actions[bot] | 3 | Docs 3 | docs/progress |
+| ming9 | 1 | Data 1 | data/approved |
 
 ## 날짜별 기록
 
@@ -28,6 +29,8 @@
 - `[Docs]` 작업 시작 전 git pull 규칙 명시 — SUJEONG CHOI · `0be4577`
 - `[Chore]` TypeScript 개발 환경 구성 및 진입점 main.ts 전환 — SUJEONG CHOI · `fde8300`
 - Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — SUJEONG CHOI · `5a16c03`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `063290c`
+- `[Data]` 콘텐츠 1~9·11~12단계 승인분 일괄 반입 — 5일 런 기준 밸런스 확정 — ming9 · `e4f7d49`
 
 ### 2026-07-31
 
