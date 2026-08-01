@@ -86,6 +86,18 @@ export const RULES = {
     }
   },
 
+  'player_base_stats.exactly_one_approved'({ report, h }) {
+    const n = h.approved('player_base_stats.csv').length
+    if (n !== 1) {
+      report.block({
+        file: 'player_base_stats.csv',
+        problem: `승인 플레이어 기본 수치가 ${n}개다. 정확히 하나여야 한다`,
+        basis: 'DEC-CONTENT-019',
+        fix: n === 0 ? '수치 행 하나를 approved 로 승인한다' : '하나만 남기고 나머지를 retired 로 바꾼다',
+      })
+    }
+  },
+
   'map.has_farm_plot'({ report, h }) {
     for (const map of h.approved('maps.csv')) {
       const id = h.val(map, 'id')

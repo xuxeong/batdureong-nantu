@@ -203,4 +203,20 @@ LLM 사용 여부는 회의에서 확정 필요.
 **막힌 것**
 - 없음.
 
+## 2026-08-02 플레이어 기본 수치 스키마(player_base_stats) 대응
+
+**한 일**
+- 새로 신설된 `player_base_stats.json` (플레이어 기본 수치: 체력, 소지금, 이동속도, 충돌반지름, 낫 공격 피해량/사거리/쿨타임) 스키마에 맞춰 `tools/lib/rules.mjs`에 `player_base_stats.exactly_one_approved` 검증 규칙을 추가 구현했다.
+- `npm run data:validate` (동적 33개 테이블 인식 확인), `npm test`, `npm run docs:check`를 전체 통과시켰다.
+
+**왜 이렇게 했나**
+- 기획 세션에서 플레이어 기본 수치 누락 건이 해결됨에 따라 `player_base_stats.csv` 스키마가 신설되었고, 검증기가 미구현 규칙 경고(`player_base_stats.exactly_one_approved`)를 내뿜지 않도록 선제 대응했다.
+
+**AI가 잘못한 것**
+- 없음.
+
+**막힌 것**
+- 없음.
+
+
 
