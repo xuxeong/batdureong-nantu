@@ -1,5 +1,0 @@
-id,kind,content_status,content_version,display_name,design_intent
-resident_personality_profile.timid,resident_personality_profile,draft,1,겁많음형,공감에 물러나고(위축) 위협에 겁먹어 폭주(격앙)하는 입문 성격. 협상은 자존심으로 거절. 두식 담당.
-resident_personality_profile.pragmatic,resident_personality_profile,draft,1,실리형,동정은 사절(일반)이고 셈은 환영(해결)하는 거래 성격. 위협 앞에선 몸을 사린다(위축). 만복 담당.
-resident_personality_profile.stubborn,resident_personality_profile,draft,1,완고형,진심에만 열리고(해결) 돈은 모욕(격앙)인 원칙 성격. 위협에도 물러서지 않는다(일반). 금례 담당.
-resident_personality_profile.chief,resident_personality_profile,draft,1,이장형,대화로 해결되지 않는 유일한 성격. 공감은 마음만 흔들고(위축) 협상은 매수 시도(일반) 위협엔 폭주(격앙). 결투는 피할 수 없으나 어떻게 싸울지는 말이 정한다.
