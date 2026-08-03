@@ -288,7 +288,23 @@ function updateRaid(dt: number): void {
   }
 
   // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
-  if (run.health <= 0) bus.emit('run.failed', {})
+  failRunIfDead()
+}
+
+/**
+ * 체력 0이면 런 전체를 실패로 끝낸다 (DEC-RUN-008).
+ *
+ * **이벤트만 쏘면 안 된다.** `run.failed` 는 UI 에게 알리는 결과 이벤트이고,
+ * 흐름을 옮기는 것은 `player_died` 입력이다. 이벤트만 쐈더니 체력이 0인 채로
+ * 계속 움직이고 야생동물도 계속 때렸다 — 화면에서는 "체력 바가 비었는데 안 죽네"
+ * 로만 보인다. 엔딩으로 가지 않고 런 실패 화면으로 간다 (DEC-UI-014).
+ */
+function failRunIfDead(): void {
+  if (run === null || run.health > 0) return
+  if (scenes.step().at === 'run_failed') return
+
+  bus.emit('run.failed', {})
+  scenes.send({ type: 'player_died' })
 }
 
 /** 투항 대화는 주민 한 명당 최대 한 번이다 (DEC-RESIDENT-016) */
@@ -665,9 +681,7 @@ const loop = createGameLoop(
       }
 
       // 재배 중 체력이 0이면 즉시 런 실패다 (DEC-RUN-008)
-      if (run !== null && run.health <= 0) {
-        bus.emit('run.failed', {})
-      }
+      failRunIfDead()
 
       // 수확 가능으로 바뀐 순간을 한 번만 강조한다 (DEC-UI-004)
       for (const plotId of farming?.justBecameReady ?? []) {
@@ -775,6 +789,27 @@ if (isDevBuild) {
   bus.on('data.error', ({ summary, detail }) =>
     console.error(`[데이터 오류] ${summary}: ${detail}`),
   )
+
+  // 전투 결과 이벤트. UI 가 붙기 전까지 이걸로만 확인된다.
+  //
+  // 없는 동안 `quickslot.allEmpty` 가 나가는지 아무도 알 수 없었다 — 버스로 쏘고
+  // 듣는 쪽이 없으면 "구현했다" 와 "구현 안 했다" 가 화면에서 똑같이 보인다.
+  bus.on('combat.playerDamaged', ({ amount, remainingHealth }) =>
+    console.info(`[전투] 피격 ${amount} → 체력 ${remainingHealth}`),
+  )
+  bus.on('combat.throwableSpent', ({ throwableId, remaining }) =>
+    console.info(`[투척] ${throwableId} 소비 — 남은 ${remaining}`),
+  )
+  bus.on('quickslot.autoSwitched', ({ fromIndex, toIndex }) =>
+    console.info(`[퀵슬롯] 소진 자동 전환 ${fromIndex + 1} → ${(toIndex ?? 0) + 1}`),
+  )
+  bus.on('quickslot.allEmpty', () =>
+    console.warn('[퀵슬롯] 투척 무기 없음 — 전체 비활성. 낫은 계속 쓸 수 있다'),
+  )
+  bus.on('surrender.offered', ({ residentId, remainingHealth }) =>
+    console.warn(`[조우] 투항 발동 — ${residentId} 체력 ${remainingHealth}`),
+  )
+  bus.on('run.failed', () => console.warn('[런] 체력 0 — 런 실패 (DEC-RUN-008)'))
 
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
   // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
