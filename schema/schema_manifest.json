@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 3,
+  "schema_version": 4,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
 
@@ -28,6 +28,14 @@
       "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
       "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 player_base_stats.csv를 drafts부터 새로 작성해야 하며 승인 행은 정확히 1개여야 한다",
       "decisions": ["DEC-CONTENT-019", "DEC-RESOURCE-004", "DEC-INPUT-002", "DEC-INPUT-004"]
+    },
+    {
+      "schema_version": { "from": 3, "to": 4 },
+      "date": "2026-08-03",
+      "change": "raid_notices.csv(독립 콘텐츠, raid_type·opening_text·hud_label)와 night_result_texts.csv(독립 콘텐츠, text) 테이블 신설. DEC-RUN-011이 습격 예고 문구를 코드가 아니라 승인 데이터에서 공급하도록 정했고 DEC-RUN-015가 밤 결과를 승인된 고정 문구로 한정했는데, 두 문구를 담을 테이블 자체가 없었다. 키 구조가 달라 한 테이블로 합치지 않는다",
+      "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
+      "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 두 CSV를 drafts부터 새로 작성해야 하며, raid_notices는 raid_type 세 값마다 승인 행이 정확히 하나, night_result_texts는 승인 행이 하나 이상이어야 한다. raid_notices는 재배 HUD의 습격 예고(DEC-UI-017)를 채우는 데 필요하고, night_result_texts는 밤 결과 화면에 필요하다",
+      "decisions": ["DEC-CONTENT-021", "DEC-RUN-011", "DEC-RUN-015", "DEC-UI-017"]
     }
   ]
 }

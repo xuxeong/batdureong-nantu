@@ -6,7 +6,7 @@
 // 왜 이렇게 하나:
 //
 //   거래·제작·협상·보상은 "조건 미달이면 아무것도 바꾸지 않는다"가 확정 규칙이다
-//   (DEC-RESOURCE-011, DEC-CRAFT-004, DEC-RESIDENT-033, DEC-RESIDENT-042).
+//   (DEC-RESOURCE-011, DEC-CRAFT-004, DEC-RESIDENT-050, DEC-RESIDENT-042).
 //   UI가 보관함을 직접 깎으면 "화면은 깎였는데 시스템은 거절"이 반드시 생긴다.
 //   실패가 눈에 안 보이는 종류의 버그라 8/5에 밸런스 붕괴로만 드러난다.
 //   요청과 결과를 갈라 두면 그 경로가 아예 존재하지 않는다.
@@ -158,6 +158,18 @@ export interface SystemEvents {
   // 재배 ─────────────────────────────────────────────────────
   /** 씨앗 단계에서는 종류를 공개하지 않는다. 그래서 cropId 를 싣지 않는다 (DEC-FARM-002) */
   'farm.planted': { plotId: string }
+  /**
+   * 수확 가능으로 바뀐 순간 (DEC-UI-004).
+   *
+   * **전환 시점이 필요해서 따로 둔다.** `field.changed` 스냅샷을 이전 것과 비교해
+   * 알아내는 방법도 있지만, DEC-UI-004 는 "바뀌는 순간 한 번 강조하고 반복하지 않는다"
+   * 와 짧은 효과음을 요구한다. 스냅샷 비교는 프레임을 한 번 건너뛰거나 같은 스냅샷이
+   * 두 번 오는 순간 강조가 사라지거나 두 번 울린다 — 둘 다 화면에서 원인을 못 찾는다.
+   *
+   * 상태 표식(유지되는 동안 계속 표시)은 이 이벤트가 아니라 `field.changed` 로 그린다.
+   * 이건 전환 한 번만 알린다.
+   */
+  'farm.plotReady': { plotId: string }
   'farm.harvested': { plotId: string; cropId: string; quantity: number }
   'farm.timeExpired': Record<string, never>
 

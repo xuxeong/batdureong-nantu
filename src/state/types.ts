@@ -114,16 +114,17 @@ export interface RecoveryInProgress {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * 주민 관계 (DEC-RESIDENT-012).
+ * 주민 관계 (DEC-RESIDENT-012, DEC-CONTENT-022).
  *
- * `미형성`은 이 타입의 값이 아니라 **null 로 표현한다.**
- * 미형성을 가리키는 데이터 키가 결정로그에 없기 때문이다
- * (schema/enums.json 의 open_questions: `enums.relationship_state_key`, 기획 책임자 확정 대기).
- * 임의로 키를 만들지 않기 위한 선택이며, 키가 정해지면 그때 바꾼다.
+ * `unformed` 는 런 시작 시 모든 주민의 초기 관계이며 **이 타입의 정식 값이다.**
+ * 확정 전에는 미형성을 가리키는 키가 없어 `null` 로 우회했는데,
+ * 그러면 "아직 안 정해짐"과 "미형성으로 확정됨"이 같은 값이 된다.
+ * DEC-CONTENT-022 가 키를 정해서 걷어냈다.
  *
- * 값 자체는 DEC-CONTENT-011 의 relationship_count 대상과 같은 5종이다.
+ * `RelationshipCountSubject` 와 한 글자 차이로 다르다 — 그쪽은 엔딩 조건이 세는
+ * 대상이라 `unformed` 를 포함하지 않는다. 둘을 합치지 않는다.
  */
-export type RelationshipState = RelationshipCountSubject
+export type RelationshipState = RelationshipCountSubject | 'unformed'
 
 /** 생존 여부 (DEC-RESIDENT-052) */
 export type ResidentLifeState = 'alive' | 'killed'
@@ -148,8 +149,8 @@ export interface ResidentRunState {
   finalOutcome: FinalOutcome | null
   lifeState: ResidentLifeState
   allegiance: ResidentAllegiance
-  /** 미형성이면 null */
-  relationship: RelationshipState | null
+  /** 런 시작 시 `unformed`. 조우 해결 순간 바뀐다 (DEC-CONTENT-022) */
+  relationship: RelationshipState
 
   /** 이번 런에서 실제로 뽑힌 사연 시나리오. 조우 전에 정해진다 */
   scenarioId: string | null
@@ -286,8 +287,14 @@ export interface EndingResult {
 // 필드 시뮬레이션 상태
 // ─────────────────────────────────────────────────────────────
 
-/** 경작지 한 칸 (DEC-FARM-001 ~ 005) */
-export type PlotStage = 'empty' | 'seed' | 'growing' | 'harvestable'
+/**
+ * 경작지 한 칸 (DEC-FARM-001 ~ 005).
+ *
+ * 마지막 단계 키는 `ready` 다. 이 계약 파일이 먼저 `harvestable` 로 적었는데
+ * 구현(`systems/farming.ts`)과 렌더가 `ready` 로 갔고, 그래서 계약 쪽 타입을
+ * 아무도 쓰지 않는 상태였다. 퍼져 있는 쪽에 맞춘다.
+ */
+export type PlotStage = 'empty' | 'seed' | 'growing' | 'ready'
 
 /**
  * 경작지 상태.
@@ -304,13 +311,20 @@ export interface PlotState {
   stageElapsedSeconds: number
 }
 
-/** 필드 위 개체의 공통 부분 */
+/**
+ * 필드 위 개체의 공통 부분.
+ *
+ * `effects` 가 여기 있는 이유: DEC-CONTENT-013 은 전투 효과를 **재배 단계의 적대
+ * 야생동물과 습격 단계의 적대 주민 양쪽에** 적용한다. 처음에 주민에만 달아 뒀는데,
+ * 그러면 야생동물에게 둔화 무기를 던졌을 때 조용히 아무 일도 안 일어난다.
+ */
 export interface FieldEntity {
   /** 런 안에서 고유한 실행 ID. 콘텐츠 ID 가 아니다 */
   instanceId: string
   x: number
   y: number
   health: number
+  effects: ActiveEffect[]
 }
 
 export interface WildlifeInstance extends FieldEntity {
@@ -323,7 +337,6 @@ export interface HostileResidentInstance extends FieldEntity {
   residentId: string
   /** 전투 전 대화 판정으로 확정된 보정 (DEC-CONTENT-009) */
   combatState: CombatState
-  effects: ActiveEffect[]
 }
 
 /**
