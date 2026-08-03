@@ -53,6 +53,14 @@ export interface CombatEvent {
   overTime?: boolean
 }
 
+/** 발사 뒤 슬롯이 어떻게 됐는가 (DEC-INPUT-007) */
+export interface SlotAfterThrow {
+  /** 소진돼 자동 전환됐으면 옮겨간 슬롯. 아니면 null */
+  autoSwitchedTo: number | null
+  /** 모든 투척 무기가 소진됐다. `투척 무기 없음` 상태 */
+  allEmpty: boolean
+}
+
 export interface SickleResult {
   /** 재사용 대기 중이면 false. 이때 아무 일도 일어나지 않는다 */
   swung: boolean
@@ -65,7 +73,7 @@ export type ThrowRejection =
   | 'out_of_ammo'
 
 export type ThrowResult =
-  | { ok: true; weaponId: string; projectileId: string }
+  | { ok: true; weaponId: string; projectileId: string; slot: SlotAfterThrow }
   | { ok: false; reason: ThrowRejection }
 
 export interface CombatOptions {
@@ -88,6 +96,14 @@ export interface CombatSystem {
 
   /** 우클릭 (DEC-INPUT-004) */
   swingSickle(origin: Vec2, aimAngle: number): SickleResult
+
+  /** `1~5` — 해당 위치를 직접 선택한다. 수량이 0이어도 선택된다 (DEC-INPUT-006) */
+  selectSlot(run: ThrowContext, index: number): void
+  /**
+   * 마우스 휠 — **수량이 남은 무기만 순환하고 수량 0인 슬롯은 건너뛴다**
+   * (DEC-INPUT-006). 전부 비었으면 아무 일도 하지 않는다.
+   */
+  cycleSlot(run: ThrowContext, direction: 1 | -1): void
   /**
    * 좌클릭 (DEC-INPUT-004, 005).
    *
@@ -260,6 +276,30 @@ export function createCombat(options: CombatOptions): CombatSystem {
     return distance <= radius ? t : null
   }
 
+  function hasAmmo(run: ThrowContext, index: number): boolean {
+    const id = run.quickslots.slots[index]
+    return id !== null && id !== undefined && (run.resources.throwables[id] ?? 0) > 0
+  }
+
+  /**
+   * 마지막 하나를 쓴 뒤 다음 순서의 비어 있지 않은 슬롯으로 옮긴다 (DEC-INPUT-007).
+   *
+   * 모든 투척 무기가 소진되면 퀵슬롯 전체가 비활성화되고 `투척 무기 없음` 상태가 된다.
+   * 그때 선택 위치는 그대로 둔다 — 어디로 옮겨도 쏠 수 있는 슬롯이 없다.
+   */
+  function autoSwitch(run: ThrowContext): SlotAfterThrow {
+    const count = run.quickslots.slots.length
+
+    for (let step = 1; step <= count; step += 1) {
+      const index = (run.quickslots.selectedIndex + step) % count
+      if (hasAmmo(run, index)) {
+        run.quickslots.selectedIndex = index
+        return { autoSwitchedTo: index, allEmpty: false }
+      }
+    }
+    return { autoSwitchedTo: null, allEmpty: true }
+  }
+
   return {
     get projectiles() {
       return projectiles
@@ -326,6 +366,10 @@ export function createCombat(options: CombatOptions): CombatSystem {
 
       throwCooldown = weapon.cooldown_seconds
 
+      // 슬롯 전환은 **던진 뒤**에 일어난다. 같은 입력으로 새 슬롯의 무기를 추가
+      // 발사하지 않는다 (DEC-INPUT-007). 그래서 발사 처리를 끝내고 마지막에 옮긴다.
+      const slot = remaining - 1 <= 0 ? autoSwitch(run) : { autoSwitchedTo: null, allEmpty: false }
+
       projectileSerial += 1
       const projectileId = `projectile.${projectileSerial}`
       projectiles.push({
@@ -340,7 +384,29 @@ export function createCombat(options: CombatOptions): CombatSystem {
         travelledDistance: 0,
       })
 
-      return { ok: true, weaponId, projectileId }
+      return { ok: true, weaponId, projectileId, slot }
+    },
+
+    selectSlot(run, index) {
+      // 수량이 0이어도 선택은 된다. `1~5`는 위치를 직접 고르는 입력이고
+      // 수량 조건은 발사 시점에 본다 (DEC-INPUT-006).
+      if (index < 0 || index >= run.quickslots.slots.length) return
+      run.quickslots.selectedIndex = index
+    },
+
+    cycleSlot(run, direction) {
+      const slots = run.quickslots.slots
+      const count = slots.length
+
+      for (let step = 1; step <= count; step += 1) {
+        const index = (run.quickslots.selectedIndex + direction * step + count * count) % count
+        if (hasAmmo(run, index)) {
+          run.quickslots.selectedIndex = index
+          return
+        }
+      }
+      // 전부 비었으면 그대로 둔다. 빈 슬롯으로 옮겨 놓으면 다음 발사가
+      // out_of_ammo 대신 no_slot_selected 로 떨어져 원인이 흐려진다.
     },
 
     update(deltaSeconds) {

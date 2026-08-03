@@ -528,7 +528,21 @@ function onThrow(): void {
   if (combat === null || run === null) return
 
   const result = combat.throwWeapon(player, input.aimAngle(), run)
-  if (result.ok) return
+  if (result.ok) {
+    // 소진 자동 전환과 `투척 무기 없음` 을 UI 에 알린다 (DEC-INPUT-007, DEC-UI-002)
+    if (result.slot.autoSwitchedTo !== null) {
+      bus.emit('quickslot.autoSwitched', {
+        fromIndex: run.quickslots.selectedIndex,
+        toIndex: result.slot.autoSwitchedTo,
+      })
+    }
+    if (result.slot.allEmpty) bus.emit('quickslot.allEmpty', {})
+    bus.emit('combat.throwableSpent', {
+      throwableId: result.weaponId,
+      remaining: run.resources.throwables[result.weaponId] ?? 0,
+    })
+    return
+  }
 
   // 거절 사유는 콘솔로만 남긴다. `투척 무기 없음`·빈 발사 안내의 화면 표시는
   // `DEC-UI-002` 의 HUD 몫이고 김민주 8/4 항목이다. 여기서 문구를 지어내면
@@ -542,8 +556,15 @@ const input = createInput(renderer.canvas, {
   onInteract,
   onThrow,
   onSickle,
-  onQuickslotSelect: (index) => console.info(`[입력] 퀵슬롯 ${index + 1}`),
-  onQuickslotCycle: (dir) => console.info(`[입력] 퀵슬롯 순환 ${dir > 0 ? '다음' : '이전'}`),
+  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-006).
+  onQuickslotSelect: (index) => {
+    if (combat === null || run === null) return
+    combat.selectSlot(run, index)
+  },
+  onQuickslotCycle: (dir) => {
+    if (combat === null || run === null) return
+    combat.cycleSlot(run, dir > 0 ? 1 : -1)
+  },
   onRecoverShortPress: () => console.info('[입력] 회복 짧게 누름 — 시작 또는 취소'),
   onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
   onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
@@ -766,13 +787,15 @@ if (isDevBuild) {
     __loop: loop,
     __dev: {
       fillThrowables: (count = 5) => devFillThrowables(count),
+      goToDay: (dayNumber: number) => devGoToDay(dayNumber),
       startRaid: (choiceIndex = 0) => devStartRaid(choiceIndex),
     },
   })
 
   console.info(
-    '[개발 전용] __dev.fillThrowables(5) 로 투척 무기를 채우고 ' +
-      '__dev.startRaid(0) 으로 습격을 시작한다. 0=공감 1=자원 협상 2=위협.',
+    '[개발 전용] __dev.fillThrowables(5) 투척 무기 채우기 · ' +
+      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협). ' +
+      '승인 일정상 습격은 2일차부터다.',
   )
 
 }
@@ -834,6 +857,28 @@ function devFillThrowables(count: number): void {
 }
 
 /**
+ * **개발 전용.** 일차를 옮긴다.
+ *
+ * 정상 흐름은 재배 → 정비 → (습격) → 결과 → 다음 일차인데, 정비 허브와 결과 화면이
+ * 아직 없어서(로드맵 8/4) 하루를 넘길 수단이 없다. 습격은 2일차부터라 1일차에
+ * 갇히면 습격을 한 번도 볼 수 없다.
+ *
+ * **런 상태의 일차만 바꾼다.** 자원·주민 상태·공포도는 건드리지 않으므로 이 통로로
+ * 넘긴 날은 실제 플레이와 다르다. 정비·결과 화면이 오면 지운다.
+ */
+function devGoToDay(dayNumber: number): void {
+  if (run === null) {
+    console.warn('[개발 전용] 런 상태가 없다')
+    return
+  }
+  run.dayNumber = dayNumber
+  console.warn(
+    `[개발 전용] 정비·결과 화면을 건너뛰고 ${dayNumber}일차로 옮겼다. ` +
+      '자원과 주민 상태는 그대로라 실제 플레이와 다르다.',
+  )
+}
+
+/**
  * **개발 전용.** 습격 모드로 들어가 적대 주민을 세운다.
  *
  * 전투 전 대화 UI(`DEC-UI-007/008`, 로드맵 8/4 김민주)가 없어서 선택지를 마우스로
@@ -852,7 +897,15 @@ function devStartRaid(choiceIndex = 0): void {
   const dayNumber = run.dayNumber
   const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
   if (residentId === null || residentId === '') {
-    console.warn(`[개발 전용] ${dayNumber}일차는 습격이 없는 날이다`)
+    // 어느 날에 습격이 있는지 같이 알려준다. 이 말이 없으면 "안 되는 건가" 로 읽힌다.
+    const raidDays = [...raidData.hostileResidentByDay]
+      .filter(([, id]) => id !== null && id !== '')
+      .map(([day, id]) => `${day}일차(${id})`)
+
+    console.warn(
+      `[개발 전용] ${dayNumber}일차는 습격이 없는 날이다. 습격일: ${raidDays.join(', ')}. ` +
+        '__dev.goToDay(n) 으로 일차를 옮긴다.',
+    )
     return
   }
 

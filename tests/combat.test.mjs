@@ -404,3 +404,101 @@ test('처치된 대상의 효과는 남지 않는다', () => {
   assert.equal(target.entity.health, 0)
   assert.deepEqual(target.entity.effects, [])
 })
+
+// ── 퀵슬롯 선택과 소진 자동 전환 (DEC-INPUT-006, DEC-INPUT-007) ──
+
+test('1~5 는 수량이 0인 슬롯도 직접 선택한다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, STICKY.id, null, null, null], { [STICKY.id]: 1 })
+
+  c.selectSlot(run, 1)
+  assert.equal(run.quickslots.selectedIndex, 1)
+
+  // 수량 0인 0번도 선택된다. 수량 조건은 발사 시점에 본다.
+  c.selectSlot(run, 0)
+  assert.equal(run.quickslots.selectedIndex, 0)
+})
+
+test('휠은 수량이 남은 슬롯만 순환하고 빈 슬롯을 건너뛴다', () => {
+  const c = combat()
+  // 0번만 비어 있고 1·2번에 수량이 있다
+  const run = runWith([BURN.id, STICKY.id, BURN_STRONG.id, null, null], {
+    [STICKY.id]: 1,
+    [BURN_STRONG.id]: 1,
+  })
+
+  c.cycleSlot(run, 1)
+  assert.equal(run.quickslots.selectedIndex, 1)
+
+  c.cycleSlot(run, 1)
+  assert.equal(run.quickslots.selectedIndex, 2)
+
+  // 3·4는 비어 있고 0은 수량 0이라 다시 1로 돌아온다
+  c.cycleSlot(run, 1)
+  assert.equal(run.quickslots.selectedIndex, 1)
+})
+
+test('휠 역방향도 빈 슬롯을 건너뛴다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, null, STICKY.id, null, null], {
+    [BURN.id]: 1,
+    [STICKY.id]: 1,
+  })
+
+  c.cycleSlot(run, -1)
+  assert.equal(run.quickslots.selectedIndex, 2)
+})
+
+test('쓸 수 있는 슬롯이 없으면 휠이 선택을 옮기지 않는다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, STICKY.id, null, null, null], {})
+
+  c.cycleSlot(run, 1)
+  assert.equal(run.quickslots.selectedIndex, 0, '빈 슬롯으로 옮기면 거절 사유가 흐려진다')
+})
+
+test('마지막 한 개를 쓰면 다음 비어 있지 않은 슬롯으로 자동 전환한다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, STICKY.id, null, null, null], {
+    [BURN.id]: 1,
+    [STICKY.id]: 3,
+  })
+
+  const result = c.throwWeapon({ x: 0, y: 0 }, 0, run)
+
+  assert.equal(result.ok, true)
+  assert.equal(result.weaponId, BURN.id, '전환 전에 이번 발사는 원래 무기로 나간다')
+  assert.equal(result.slot.autoSwitchedTo, 1)
+  assert.equal(run.quickslots.selectedIndex, 1)
+  assert.equal(result.slot.allEmpty, false)
+})
+
+test('모두 소진되면 투척 무기 없음 상태가 되고 선택 위치는 그대로다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, null, null, null, null], { [BURN.id]: 1 })
+
+  const result = c.throwWeapon({ x: 0, y: 0 }, 0, run)
+
+  assert.equal(result.slot.allEmpty, true)
+  assert.equal(result.slot.autoSwitchedTo, null)
+  assert.equal(run.quickslots.selectedIndex, 0)
+
+  // 다음 발사는 수량 없음으로 거절된다
+  c.update(BURN.cooldown_seconds)
+  const next = c.throwWeapon({ x: 0, y: 0 }, 0, run)
+  assert.equal(next.ok, false)
+  assert.equal(next.reason, 'out_of_ammo')
+})
+
+test('수량이 남아 있으면 자동 전환하지 않는다', () => {
+  const c = combat()
+  const run = runWith([BURN.id, STICKY.id, null, null, null], {
+    [BURN.id]: 2,
+    [STICKY.id]: 3,
+  })
+
+  const result = c.throwWeapon({ x: 0, y: 0 }, 0, run)
+
+  assert.equal(result.slot.autoSwitchedTo, null)
+  assert.equal(run.quickslots.selectedIndex, 0)
+})
