@@ -22,7 +22,16 @@ import { createFarming } from './systems/farming.ts'
 import type { FarmingSystem } from './systems/farming.ts'
 import { createStageTimer } from './systems/stage-timer.ts'
 import type { StageTimer } from './systems/stage-timer.ts'
-import type { Crop, ThrowableWeapon } from './data/types.ts'
+import { createCombat } from './systems/combat.ts'
+import type { CombatSystem, CombatTarget } from './systems/combat.ts'
+import { createWildlife } from './systems/wildlife.ts'
+import type { WildlifeSystem } from './systems/wildlife.ts'
+import type {
+  Crop,
+  ThrowableWeapon,
+  WildlifeSpawnEntry,
+  WildlifeSpawnProfile,
+} from './data/types.ts'
 import { createRunState } from './state/run-state.ts'
 import type { RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
@@ -44,6 +53,15 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 let throwablesById = new Map<string, ThrowableWeapon>()
 let run: RunState | null = null
+
+// 전투와 야생동물도 승인 데이터가 있어야 만들어진다. 없으면 null 로 남고
+// 우클릭·좌클릭이 아무 일도 하지 않는다 — 임시 수치를 지어내지 않는다.
+let combat: CombatSystem | null = null
+let wildlife: WildlifeSystem | null = null
+let spawnEntries: WildlifeSpawnEntry[] = []
+let spawnProfilesById = new Map<string, WildlifeSpawnProfile>()
+/** 일차 → 그날의 출현 프로필 ID. 없는 일차는 야생동물이 없다 (DEC-CONTENT-007) */
+let spawnProfileIdByDay = new Map<number, string | null>()
 
 const player = { x: 0, y: 0 }
 
@@ -86,6 +104,23 @@ async function bootData(): Promise<void> {
 
     throwablesById = new Map((data.throwable_weapons ?? []).map((w) => [w.id, w]))
 
+    const weapons = data.throwable_weapons ?? []
+    combat = createCombat({
+      stats: data.player_base_stats![0],
+      weapons,
+      attributes: data.crop_attributes ?? [],
+    })
+    wildlife = createWildlife({
+      map,
+      species: data.wildlife ?? [],
+      weapons,
+    })
+
+    // 1일차 재배의 출현 프로필. 일차가 넘어갈 때 다시 부른다.
+    // 프로필 참조가 비어 있는 일차는 야생동물이 없다 (DEC-CONTENT-007).
+    spawnEntries = (data.wildlife_spawn_profiles ?? []).flatMap((p) => p.entries ?? [])
+    spawnProfilesById = new Map((data.wildlife_spawn_profiles ?? []).map((p) => [p.id, p]))
+
     // 런 상태를 새로 만든다. 부분 초기화하지 않는다 (로드맵 9-5).
     // 이름 입력 화면이 아직 없어 playerName 은 비어 있다.
     run = createRunState({
@@ -97,6 +132,10 @@ async function bootData(): Promise<void> {
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.
     // 여기서 일정을 지어내지 않는다 — 없으면 흐름이 데이터 오류로 보고한다.
+    spawnProfileIdByDay = new Map(
+      (schedule.days ?? []).map((d) => [d.day_number, d.wildlife_spawn_profile_id]),
+    )
+
     const raidByDay = new Map((schedule.days ?? []).map((d) => [d.day_number, d.raid_type]))
     scenes.setContext({
       totalDays: schedule.total_days,
@@ -227,6 +266,23 @@ function plotViews(): readonly PlotView[] {
   })
 }
 
+/** 야생동물을 렌더가 쓰는 모양으로 옮긴다 */
+function hostileViews() {
+  return (wildlife?.instances ?? []).map((runtime) => ({
+    x: runtime.entity.x,
+    y: runtime.entity.y,
+    radius: runtime.species.collision_radius,
+    healthRatio: runtime.entity.health / runtime.species.max_health,
+    // 공격 예고는 야생동물만 있다. 적대 주민은 예고를 쓰지 않는다 (DEC-CONTENT-008)
+    windup:
+      runtime.windupSeconds === null
+        ? null
+        : runtime.windupSeconds / runtime.species.attack_windup_seconds,
+    slowed: runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
+    burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+  }))
+}
+
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
 function actionPrompt(): string | null {
   if (farming === null) return null
@@ -235,10 +291,59 @@ function actionPrompt(): string | null {
   return target.kind === 'harvest' ? 'E — 수확' : 'E — 심기'
 }
 
+/**
+ * 전투 시스템이 볼 대상 목록을 매 프레임 새로 만든다.
+ *
+ * 야생동물이 죽거나 새로 나오면 목록이 바뀌므로 한 번 만들어 두고 재사용하지 않는다.
+ * `CombatTarget` 은 `entity` 를 참조로 들고 있어서 체력을 깎으면 원본이 바뀐다.
+ */
+function combatTargets(): CombatTarget[] {
+  if (wildlife === null) return []
+
+  return wildlife.instances.map((runtime) => ({
+    entity: runtime.entity,
+    collisionRadius: runtime.species.collision_radius,
+    // 야생동물에게는 투항이 없다 (DEC-RESIDENT-016 은 주민 규칙이다)
+    surrenderThreshold: null,
+    surrenderOffered: false,
+  }))
+}
+
+/** 우클릭 — 낫 (DEC-INPUT-004) */
+function onSickle(): void {
+  if (combat === null) return
+
+  combat.setTargets(combatTargets())
+  const result = combat.swingSickle(player, input.aimAngle())
+  if (!result.swung) return // 재사용 대기 중
+
+  for (const hit of result.hits) {
+    // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
+    // 이 알림이 그 전환의 유일한 경로다.
+    wildlife?.notifyDamagedByPlayer(hit.targetId)
+    if (hit.outcome === 'killed') wildlife?.remove(hit.targetId)
+  }
+}
+
+/** 좌클릭 — 투척 (DEC-INPUT-004, 005) */
+function onThrow(): void {
+  if (combat === null || run === null) return
+
+  const result = combat.throwWeapon(player, input.aimAngle(), run)
+  if (result.ok) return
+
+  // 거절 사유는 콘솔로만 남긴다. `투척 무기 없음`·빈 발사 안내의 화면 표시는
+  // `DEC-UI-002` 의 HUD 몫이고 김민주 8/4 항목이다. 여기서 문구를 지어내면
+  // 나중에 두 곳이 다른 말을 한다.
+  if (isDevBuild && result.reason !== 'cooldown') {
+    console.info(`[투척] 거절 — ${result.reason}`)
+  }
+}
+
 const input = createInput(renderer.canvas, {
   onInteract,
-  onThrow: () => console.info('[입력] 투척'),
-  onSickle: () => console.info('[입력] 낫'),
+  onThrow,
+  onSickle,
   onQuickslotSelect: (index) => console.info(`[입력] 퀵슬롯 ${index + 1}`),
   onQuickslotCycle: (dir) => console.info(`[입력] 퀵슬롯 순환 ${dir > 0 ? '다음' : '이전'}`),
   onRecoverShortPress: () => console.info('[입력] 회복 짧게 누름 — 시작 또는 취소'),
@@ -291,6 +396,43 @@ const loop = createGameLoop(
       farming?.update(dt)
       advanceFeedback(dt)
 
+      // 야생동물 → 전투 순서로 돈다.
+      // 야생동물이 먼저 움직여야 투사체가 이번 프레임의 실제 위치를 맞힌다.
+      const events = wildlife?.update(dt, player, farming?.plots ?? []) ?? []
+      for (const event of events) {
+        if (event.type === 'playerDamaged' && run !== null) {
+          run.health = Math.max(0, run.health - event.amount)
+          bus.emit('combat.playerDamaged', {
+            amount: event.amount,
+            remainingHealth: run.health,
+          })
+        }
+        if (event.type === 'cropEaten') {
+          // 먹힌 작물은 보관함에 넣지 않는다 (DEC-FARM-006).
+          // 여기서 수확 처리를 부르면 잃은 작물이 오히려 쌓인다.
+          console.info(`[야생동물] ${event.plotId} 의 작물을 먹었다`)
+        }
+      }
+
+      if (combat !== null) {
+        combat.setTargets(combatTargets())
+        for (const event of combat.update(dt)) {
+          if (event.type === 'killed' && event.targetId !== undefined) {
+            wildlife?.remove(event.targetId)
+          }
+          // 지속 피해도 적대 전환의 계기다 (DEC-CONTENT-007 — 플레이어 공격으로
+          // 피해를 받으면). 투척 무기의 지속 피해는 플레이어 공격이다.
+          if (event.type === 'damaged' && event.overTime === true && event.targetId !== undefined) {
+            wildlife?.notifyDamagedByPlayer(event.targetId)
+          }
+        }
+      }
+
+      // 재배 중 체력이 0이면 즉시 런 실패다 (DEC-RUN-008)
+      if (run !== null && run.health <= 0) {
+        bus.emit('run.failed', {})
+      }
+
       // 수확 가능으로 바뀐 순간을 한 번만 강조한다 (DEC-UI-004)
       for (const plotId of farming?.justBecameReady ?? []) {
         readyFlashes.set(plotId, READY_FLASH_SECONDS)
@@ -318,6 +460,13 @@ const loop = createGameLoop(
           text: p.text,
           life: p.remaining / HARVEST_POPUP_SECONDS,
         })),
+        hostiles: hostileViews(),
+        projectiles: (combat?.projectiles ?? []).map((p) => ({
+          x: p.x,
+          y: p.y,
+          radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
+          hostile: p.source === 'resident',
+        })),
       })
       hud.render(hudView())
     },
@@ -341,6 +490,37 @@ function syncInputLock(): void {
 bus.on('screen.changed', syncInputLock)
 bus.on('field.entered', syncInputLock)
 bus.on('field.exited', syncInputLock)
+
+/**
+ * 재배에 들어갈 때 야생동물 출현을 시작하고 나갈 때 전부 제거한다.
+ *
+ * 출현 프로필은 그 일차의 데이터에서 온다. 프로필 참조가 비어 있는 일차는
+ * 야생동물이 없다 (DEC-CONTENT-007). 여기서 기본 프로필을 지어내지 않는다.
+ *
+ * 전역 투척 재사용 대기도 단계 진입마다 초기화한다 (DEC-CONTENT-005).
+ */
+bus.on('field.entered', ({ mode }) => {
+  combat?.reset()
+  if (mode !== 'farming') {
+    wildlife?.endFarming()
+    return
+  }
+
+  const day = run?.dayNumber ?? 1
+  const profileId = spawnProfileIdByDay.get(day) ?? null
+  const profile = profileId === null ? null : (spawnProfilesById.get(profileId) ?? null)
+
+  if (profileId !== null && profile === undefined) {
+    bus.emit('data.error', {
+      summary: '출현 프로필을 찾지 못했다',
+      detail: `${day}일차가 참조하는 ${profileId} 가 승인 데이터에 없다`,
+    })
+    return
+  }
+  wildlife?.beginFarming(profile, spawnEntries)
+})
+
+bus.on('field.exited', () => wildlife?.endFarming())
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)
 syncInputLock()

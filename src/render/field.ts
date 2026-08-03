@@ -74,6 +74,38 @@ export interface FieldView {
   timeUrgent?: boolean
   /** 수확 획득 표시 (DEC-UI-018) */
   harvestPopups?: readonly HarvestPopupView[]
+  /** 필드 위 적대 개체 (야생동물·적대 주민) */
+  hostiles?: readonly HostileView[]
+  /** 날아가는 투사체 */
+  projectiles?: readonly ProjectileView[]
+}
+
+/**
+ * 적대 개체 하나의 그리기용 표현.
+ *
+ * 야생동물과 적대 주민을 한 타입으로 받는다. 렌더 입장에서 다른 것은
+ * 색과 예고 표시뿐이고, 규칙 차이는 시스템 쪽에 있다.
+ */
+export interface HostileView {
+  x: number
+  y: number
+  radius: number
+  /** 0~1. 체력 막대 길이 */
+  healthRatio: number
+  /** 공격 예고 중인 정도 1~0. 야생동물만 쓴다 (DEC-CONTENT-007) */
+  windup: number | null
+  /** 둔화가 걸려 있는가 (DEC-CONTENT-013) */
+  slowed: boolean
+  /** 지속 피해가 걸려 있는가 */
+  burning: boolean
+}
+
+export interface ProjectileView {
+  x: number
+  y: number
+  radius: number
+  /** 플레이어 것인지 적 것인지 — 색을 가른다 */
+  hostile: boolean
 }
 
 export interface FieldRenderer {
@@ -132,6 +164,9 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.textAlign = 'start'
     }
 
+    for (const hostile of view.hostiles ?? []) drawHostile(hostile)
+    for (const projectile of view.projectiles ?? []) drawProjectile(projectile)
+
     const screen = camera.worldToScreen(view.player)
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
@@ -176,6 +211,54 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
    * 경작지와 작물 — 전부 플레이스홀더다 (AGENTS.md 6절).
    * 3단계를 색과 크기로만 구분한다. 실제 스프라이트는 논리 에셋 ID로 교체한다.
    */
+  /**
+   * 적대 개체 — 플레이스홀더 원.
+   *
+   * 공격 예고를 그린다. 야생동물만 예고가 있고(`DEC-CONTENT-007`) 적대 주민은
+   * 예고를 쓰지 않으므로(`DEC-CONTENT-008`) `windup` 이 항상 null 로 온다.
+   * **여기서 주민에게 예고를 그리면 확정 규칙 위반이 화면에서 시작된다.**
+   */
+  function drawHostile(hostile: HostileView): void {
+    const at = camera.worldToScreen(hostile)
+    const radius = hostile.radius * WORLD_TO_PIXEL
+
+    // 상태 효과는 테두리 색으로 구분한다. 실제 아트가 오면 교체한다.
+    ctx.fillStyle = hostile.slowed ? '#6a7f9c' : '#9c5b4a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    if (hostile.burning) {
+      ctx.strokeStyle = '#e07b39'
+      ctx.lineWidth = 3
+      ctx.stroke()
+    }
+
+    // 공격 예고 — 남은 정도가 줄면서 원이 좁아진다
+    if (hostile.windup !== null) {
+      ctx.strokeStyle = '#f2e34a'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius + 6 + hostile.windup * 14, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+
+    // 체력 막대
+    const barWidth = radius * 2
+    ctx.fillStyle = '#2a1c16'
+    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth, 4)
+    ctx.fillStyle = '#c94b3f'
+    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth * hostile.healthRatio, 4)
+  }
+
+  function drawProjectile(projectile: ProjectileView): void {
+    const at = camera.worldToScreen(projectile)
+    ctx.fillStyle = projectile.hostile ? '#d4622f' : '#cfe07a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, Math.max(3, projectile.radius * WORLD_TO_PIXEL), 0, Math.PI * 2)
+    ctx.fill()
+  }
+
   function drawPlot(plot: PlotView): void {
     const center = camera.worldToScreen(plot)
     const half = PLOT_HALF_SIZE * WORLD_TO_PIXEL
