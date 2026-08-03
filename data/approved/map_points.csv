@@ -1,0 +1,13 @@
+map_id,point_id,point_role,x,y
+map.prototype_field,pt_farming_start,player_farming_start,800,420
+map.prototype_field,pt_raid_start,player_raid_start,800,650
+map.prototype_field,pt_resident_spawn,resident_spawn,800,100
+map.prototype_field,pt_ally_support,ally_support,560,700
+map.prototype_field,pt_ws_left_top,wildlife_spawn,80,120
+map.prototype_field,pt_ws_right_top,wildlife_spawn,1520,120
+map.prototype_field,pt_ws_left_bottom,wildlife_spawn,80,780
+map.prototype_field,pt_ws_right_bottom,wildlife_spawn,1520,780
+map.prototype_field,pt_ws_top_left,wildlife_spawn,400,80
+map.prototype_field,pt_ws_top_right,wildlife_spawn,1200,80
+map.prototype_field,pt_ws_bottom_left,wildlife_spawn,400,820
+map.prototype_field,pt_ws_bottom_right,wildlife_spawn,1200,820
