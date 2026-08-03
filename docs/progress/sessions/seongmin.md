@@ -196,3 +196,24 @@
 
 - 최수정 — `DEC-PIPELINE-003` 확정됐다. 7/31에 올린 요청이다. 시스템 기획서 14절의 "이후 저장소 구조 결정에서 확정한다"도 함께 고쳤다.
 - 김민주 — 승인 절차를 막던 근거 DEC가 풀렸다. 맵·작물·플레이어 수치 5종 승인이 가장 급하다(로드맵 3-1). 다만 주민 관련 CSV는 참조가 끊긴 상태라 정리가 먼저다.
+
+## 2026-08-03 최수정 질의 2건 해소 (관계 키, 밤 결과 문구 출처) + DEC-PIPELINE-019 폐기
+
+**한 일** — `DEC-CONTENT-022`(관계 상태 데이터 키) 신설·확정, `DEC-CONTENT-021`(화면 고정 문구 테이블 구조) 확정, `DEC-PIPELINE-019` 폐기 후 `DEC-PIPELINE-020`으로 대체. 확정 143→145, 보류 33→32, 폐기 18→19.
+
+**왜 이렇게 했나**
+
+- **관계 키는 충돌이 아니라 누락이었다.** `DEC-RESIDENT-012`는 관계를 한글 여섯 개로, `DEC-CONTENT-011`은 `relationship_count`용 영문 키를 다섯 개로 열거했는데 둘이 모순되지는 않는다. 미형성의 영문 키와 `specific_resident_relationship`의 허용 목록이 그냥 없었다. 그래서 폐기 없이 `DEC-CONTENT-022`로 채웠다. **이 항목은 7/31부터 `schema/enums.json`의 `open_questions`와 최수정 세션 로그에 올라와 있었는데 사흘이 걸렸다.** 최수정은 그 사이 코드에서 `null`로 우회하고 있었다.
+- **`unformed`를 `specific_resident_relationship`에는 허용하고 `relationship_count`에는 넣지 않았다.** 승인 주민이 반드시 습격 일정에 배치되는 것은 아니라(`DEC-RESIDENT-043`은 중복 배치만 금지) "끝내 만나지 못한 주민"이 실제로 생길 수 있고, 특정 주민을 지목해 묻는 조건은 의미가 있다. 반면 미형성 주민의 **수**를 세는 조건은 일정 구성에 따라 뜻이 흔들려 쓸모가 없다. `relationship_count` 쪽은 `DEC-CONTENT-011` 확정 원문이라 건드리지 않았다.
+- **습격 예고와 밤 결과 문구를 한 테이블로 합치지 않았다.** 습격 예고는 `raid_type`에 1:1로 묶인 3행 고정이고 밤 결과는 개수가 정해지지 않은 목록이다. 한 표에 넣으면 조건부 열이 생기고 검증 규칙이 복잡해진다.
+- **`DEC-PIPELINE-019`를 폐기했다.** 확정 원문의 "이름이 확정된 CSV는 총 32개다"가 `DEC-CONTENT-019`의 `player_base_stats.csv` 신설로 이미 33과 어긋나 있었다. 8/1의 "CSV 31개" 사건과 **똑같은 패턴이 반복된 것**이다. `docs:check`는 준비도 점검 문서의 숫자만 스키마와 대조하고 결정 로그의 숫자는 보지 않는다. 대체본 `DEC-PIPELINE-020`에는 개수를 아예 적지 않고 `schema/tables/`를 단일 원본으로 지정해, 테이블이 늘 때마다 폐기·대체가 필요한 구조를 끊었다. 파생 문서 6곳의 "33종" 표기도 같이 지웠다.
+
+**AI가 잘못한 것**
+
+- **파생 문서 동기화 방식을 검수 도구가 막는 것을 뒤늦게 알았다.** 새 테이블 두 개를 준비도 점검 6절 목록에 백틱으로 적으면 `check-docs.mjs`의 `checkCsvList`가 "문서에 있는 CSV가 `schema/tables/`에 없다"로 차단한다. `schema/`는 최수정 영역이라 내가 파일을 만들 수 없다. 목록에 넣는 대신 확정 사실과 대기 상태를 문장으로 남겼다. **파생 문서를 고치기 전에 그 문서를 검사하는 도구가 무엇을 보는지 먼저 확인해야 한다.**
+
+**최수정에게 넘길 것**
+
+1. **관계 키 답 — `unformed`입니다.** 여섯 키는 `unformed`/`friendly`/`trade`/`companion`/`coercive`/`severed`. `specific_resident_relationship`의 `target_value`는 여섯 개 전부 허용, `relationship_count`는 기존 다섯 개 그대로. 코드의 `null` 우회를 걷어내면 된다. `schema/enums.json`에 `relationship_state` 항목을 추가하고 `open_questions`의 `enums.relationship_state_key`를 제거해야 한다.
+2. **밤 결과 문구 답 — `night_result_texts.csv` 신설입니다.** 습격 예고는 `raid_notices.csv`. 구조는 `DEC-CONTENT-021`에 있다. `schema/tables/` 파일 두 개 신설 + `schema_manifest.json` `schema_version` 3→4 + `history` 기록이 필요하다. 파일이 생기면 준비도 점검 6절 목록에 두 줄을 추가한다(지금은 도구가 차단해 못 넣었다).
+3. `schema/README.md`의 "콘텐츠 CSV 33종" 표기도 `DEC-PIPELINE-020`에 따라 숫자를 빼야 한다. 다른 문서 6곳은 이미 고쳤다.
