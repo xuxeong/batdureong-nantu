@@ -372,7 +372,7 @@ main     → 1차 빌드 병합 후 "언제 열어도 시연 가능한 상태". 
 
 | | 최수정 | 김민주 |
 |---|---|---|
-| 전담 | `src/core/`, `src/state/`, `src/scenes/`, `src/input/`, `src/render/`, `src/systems/combat.ts`, `encounter.ts`, `src/llm/`, `api/`, `schema/`, `tools/`, `.github/` | `src/systems/farming.ts`, `economy.ts`, `src/data/loader.ts`, `src/ui/` 전체 |
+| 전담 | `src/core/`, `src/state/`, `src/scenes/`, `src/input/`, `src/render/`, `src/systems/combat.ts`, `resident-combat.ts`, `encounter.ts`, `wildlife.ts`, `src/llm/`, `api/`, `schema/`, `tools/`, `.github/` | `src/systems/farming.ts`, `economy.ts`, `stage-timer.ts`, `src/data/loader.ts`, `src/ui/` 전체 |
 | 공용 | `index.html`, `package.json`, `src/main.ts`, `src/data/types.ts`, `src/data/run-config.ts`, `src/state/types.ts`, `data/approved/` — 건드리기 전에 말한다 | 좌동 |
 
 타입 파일은 **최수정이 8/1 밤에 확정해서 커밋**한다. 이후 변경이 필요하면 상대에게 먼저 말한다.
