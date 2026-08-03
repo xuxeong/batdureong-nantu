@@ -15,7 +15,7 @@
 | `schema_manifest.json` | `schema_version` 등 3종 버전 |
 | `ending_input.schema.json` | 엔딩 LLM 입력 객체 구조 |
 | `ending_prompt_system.md` | 엔딩 고정 시스템 프롬프트 |
-| `tables/*.json` | 콘텐츠 CSV 33종의 테이블 정의 |
+| `tables/*.json` | 콘텐츠 CSV의 테이블 정의. **이 폴더가 CSV 목록의 단일 원본이다** (`DEC-PIPELINE-020`) |
 
 ---
 
