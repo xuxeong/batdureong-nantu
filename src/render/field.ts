@@ -28,6 +28,13 @@ export interface PlotView {
   /** `E` 로 지금 상호작용할 대상인가 (DEC-INPUT-003) */
   highlighted: boolean
   /**
+   * 야생동물이 이 칸의 작물을 먹는 진행도 0~1. 먹는 중이 아니면 null.
+   *
+   * `DEC-UI-018` 이 "먹는 동안 진행 상태를 해당 경작지에 표시한다" 고 확정했다.
+   * 이게 없으면 플레이어는 작물이 사라진 뒤에야 알고, 그때는 막을 수 없다.
+   */
+  eatingProgress: number | null
+  /**
    * 수확 가능 전환 강조가 남은 정도 1~0.
    *
    * `DEC-UI-004` 는 전환 순간 한 번만 강조하고 반복하지 않는다고 정했다.
@@ -78,6 +85,15 @@ export interface FieldView {
   hostiles?: readonly HostileView[]
   /** 날아가는 투사체 */
   projectiles?: readonly ProjectileView[]
+  /**
+   * 낫 재사용 대기 남은 정도 1~0. **개발 빌드에서만 넘긴다.**
+   *
+   * 확정 DEC 어디에도 낫 대기 표시가 없다 — `DEC-UI-017`·`018`·`019` 셋 다
+   * 목록에 없고 투척과 달리 퀵슬롯 칸도 없다. 없는 UI 규칙을 지어내는 대신
+   * `DEC-UI-024` 가 세운 "개발 빌드에만 보이는 표시" 로 둔다.
+   * 표시가 필요하다고 판단되면 그때 결정 로그에 올린다.
+   */
+  devSickleCooldown?: number | null
 }
 
 /**
@@ -174,6 +190,22 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.fillStyle = '#e8d9a0'
     ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
 
+    // 낫 재사용 대기 — 개발 빌드에서만 온다. 플레이어 발밑에 호를 그린다.
+    // 확정 UI 규칙이 없어 HUD 에 자리를 만들지 않는다 (FieldView 주석 참고).
+    if (view.devSickleCooldown !== null && view.devSickleCooldown !== undefined) {
+      ctx.strokeStyle = '#8a8f7a'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(
+        screen.x,
+        screen.y,
+        radius + 8,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * view.devSickleCooldown,
+      )
+      ctx.stroke()
+    }
+
     // 조준선 — 마우스 커서 방향 (DEC-INPUT-002)
     const aimLength = radius * 2.5
     ctx.strokeStyle = '#e8d9a0'
@@ -269,6 +301,18 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.strokeStyle = plot.highlighted ? '#f4ecd0' : 'rgba(0, 0, 0, 0.45)'
     ctx.lineWidth = plot.highlighted ? 2 : 1
     ctx.strokeRect(center.x - half, center.y - half, half * 2, half * 2)
+
+    // 야생동물이 먹는 중이면 진행 상태를 이 칸에 그린다 (DEC-UI-018).
+    // 목표를 가리키는 선이나 화살표는 그리지 않는다 — 같은 DEC 가 금지한다.
+    if (plot.eatingProgress !== null) {
+      ctx.fillStyle = 'rgba(212, 98, 47, 0.35)'
+      ctx.fillRect(center.x - half, center.y - half, half * 2, half * 2)
+
+      ctx.fillStyle = '#2a1c16'
+      ctx.fillRect(center.x - half, center.y + half - 8, half * 2, 6)
+      ctx.fillStyle = '#d4622f'
+      ctx.fillRect(center.x - half, center.y + half - 8, half * 2 * plot.eatingProgress, 6)
+    }
 
     if (plot.stage === 'empty') return
 

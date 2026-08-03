@@ -262,8 +262,34 @@ function plotViews(): readonly PlotView[] {
       progress: Math.min(Math.max(progress, 0), 1),
       highlighted: target?.plot.plotId === plot.plotId,
       readyFlash: (readyFlashes.get(plot.plotId) ?? 0) / READY_FLASH_SECONDS,
+      eatingProgress: eatingProgressOf(plot.plotId),
     }
   })
+}
+
+/**
+ * 이 칸을 먹고 있는 야생동물의 진행도 0~1. 없으면 null (DEC-UI-018).
+ *
+ * 야생동물 쪽 남은 시간을 역산한다. 진행도를 따로 저장하면 두 곳이 어긋난다.
+ */
+function eatingProgressOf(plotId: string): number | null {
+  for (const runtime of wildlife?.instances ?? []) {
+    if (runtime.entity.targetPlotId !== plotId) continue
+    if (runtime.eatingSeconds === null) continue
+
+    const total = runtime.species.crop_eat_duration_seconds
+    return Math.min(Math.max(1 - runtime.eatingSeconds / total, 0), 1)
+  }
+  return null
+}
+
+/** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
+function devSickleRatio(): number | null {
+  if (!isDevBuild || combat === null || !runConfig.loaded) return null
+
+  const remaining = combat.sickleCooldownRemaining
+  if (remaining <= 0) return null
+  return Math.min(remaining / runConfig.sickleCooldownSeconds, 1)
 }
 
 /** 야생동물을 렌더가 쓰는 모양으로 옮긴다 */
@@ -410,7 +436,18 @@ const loop = createGameLoop(
         if (event.type === 'cropEaten') {
           // 먹힌 작물은 보관함에 넣지 않는다 (DEC-FARM-006).
           // 여기서 수확 처리를 부르면 잃은 작물이 오히려 쌓인다.
-          console.info(`[야생동물] ${event.plotId} 의 작물을 먹었다`)
+          //
+          // 사라진 사실을 그 자리에 짧게 표시한다 (DEC-UI-018). 이게 없으면
+          // 플레이어는 자기가 수확한 것과 먹힌 것을 구분할 수 없다.
+          const eaten = farming?.plots.find((p) => p.plotId === event.plotId)
+          if (eaten !== undefined) {
+            harvestPopups.push({
+              x: eaten.x,
+              y: eaten.y,
+              text: '먹혔다',
+              remaining: HARVEST_POPUP_SECONDS,
+            })
+          }
         }
       }
 
@@ -461,6 +498,9 @@ const loop = createGameLoop(
           life: p.remaining / HARVEST_POPUP_SECONDS,
         })),
         hostiles: hostileViews(),
+        // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
+        // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
+        devSickleCooldown: devSickleRatio(),
         projectiles: (combat?.projectiles ?? []).map((p) => ({
           x: p.x,
           y: p.y,

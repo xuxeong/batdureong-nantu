@@ -8,7 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
+    "predev": "npm run data:build",
     "dev": "vite",
+    "prebuild": "npm run data:validate && npm run data:build",
     "build": "vite build",
     "preview": "vite preview",
     "data:normalize": "node tools/normalize.mjs",

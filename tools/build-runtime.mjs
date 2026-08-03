@@ -9,7 +9,7 @@
 //
 // 생성물은 직접 수정하지 않는다. 언제든 이 명령으로 다시 만든다.
 
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs'
+import { writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { loadSchema, loadDataset, allFields } from './lib/schema.mjs'
@@ -181,8 +181,16 @@ function main() {
   }
 
   // 5. 파일로 쓴다
-  if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true })
+  //
+  // 폴더를 통째로 지우지 않는다. `.gitkeep` 이 같이 사라져서 폴더가 저장소에서
+  // 빠지고, 그 삭제가 다음 커밋에 조용히 딸려 들어간다. 실제로 8/3에 두 번 났다.
+  // 지울 대상은 이 도구가 만든 JSON 뿐이다.
   mkdirSync(OUT, { recursive: true })
+  if (existsSync(OUT)) {
+    for (const stale of readdirSync(OUT)) {
+      if (stale.endsWith('.json')) rmSync(join(OUT, stale), { force: true })
+    }
+  }
 
   const written = []
   for (const [name, byId] of independent) {
