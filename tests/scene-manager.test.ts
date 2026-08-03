@@ -79,13 +79,31 @@ test('필수 대화는 Esc 로 닫히지 않고 일시정지만 겹친다', () =
   assert.deepEqual(scenes.openOverlays(), ['precombat_dialogue'])
 })
 
-test('필수가 아닌 오버레이는 Esc 로 닫힌다', () => {
+test('회복 퀵메뉴는 Esc 로 닫힌다', () => {
+  const { scenes } = setup()
+  scenes.enterFieldPreview('farming')
+  scenes.openOverlay('recovery_quickmenu')
+
+  scenes.handleEscape()
+  assert.deepEqual(scenes.openOverlays(), [])
+})
+
+test('정비 허브는 Esc 로 닫히지 않고 일시정지만 겹친다', () => {
+  // DEC-UI-022: Esc 로 닫을 수 있는 오버레이는 회복 퀵메뉴뿐이다.
+  // DEC-RUN-006: 정비 허브는 하단 진행 버튼으로만 종료한다.
+  //
+  // 이 테스트가 없던 동안 Esc 로 정비가 닫혔다. 화면상으로는 "정비를 마쳤다"와
+  // 구분되지 않아서 사람 눈으로는 안 잡힌다 — 진행 버튼을 거치지 않았으므로
+  // 습격 여부에 따른 분기(DEC-UI-014)를 통째로 건너뛴 상태가 된다.
   const { scenes } = setup()
   scenes.enterFieldPreview('farming')
   scenes.openOverlay('maintenance_hub')
 
   scenes.handleEscape()
-  assert.deepEqual(scenes.openOverlays(), [])
+  assert.deepEqual(scenes.openOverlays(), ['maintenance_hub', 'pause'])
+
+  scenes.handleEscape()
+  assert.deepEqual(scenes.openOverlays(), ['maintenance_hub'])
 })
 
 test('승인 데이터가 없으면 일차로 넘어갈 때 데이터 오류 화면으로 간다', () => {

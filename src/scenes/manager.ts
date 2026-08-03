@@ -19,11 +19,18 @@ import type { GameLoop } from '../core/loop.ts'
 import { advance, INITIAL_STEP, isFlowError } from './flow.ts'
 import type { FlowContext, FlowInput, FlowStep } from './flow.ts'
 
-/** 필수 화면이라 `Esc`로 닫을 수 없다 (DEC-UI-014) */
-const MANDATORY_OVERLAYS: ReadonlySet<OverlayId> = new Set([
-  'precombat_dialogue',
-  'surrender_dialogue',
-])
+/**
+ * `Esc`로 닫을 수 있는 오버레이 (DEC-UI-022).
+ *
+ * **금지 목록이 아니라 허용 목록이다.** 확정 문구가 "`Esc`로 닫을 수 있는 오버레이는
+ * 회복 퀵메뉴뿐"이라 이 방향이 원문 그대로다. 금지 목록으로 두면 오버레이가 늘 때마다
+ * 넣는 것을 잊고, 잊으면 "닫히면 안 되는 것이 닫히는" 쪽으로 틀린다.
+ * 정비 허브가 실제로 그렇게 닫히고 있었다 — `DEC-RUN-006`은 하단 진행 버튼으로만
+ * 종료한다고 정해 두었다.
+ *
+ * 일시정지는 여기 없다. 자기 자신을 닫는 경로가 따로 있다.
+ */
+const ESC_CLOSABLE_OVERLAYS: ReadonlySet<OverlayId> = new Set(['recovery_quickmenu'])
 
 /** 흐름 단계가 어느 층위로 나타나는가 */
 type Presentation =
@@ -222,8 +229,9 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
         manager.closeOverlay('pause')
         return
       }
-      // 필수 대화는 Esc 로 닫지 않는다. 대화를 둔 채 일시정지만 겹친다.
-      if (top !== undefined && !MANDATORY_OVERLAYS.has(top)) {
+      // 정비 허브·전투 전 대화·투항 대화는 Esc 로 닫지 않는다.
+      // 그대로 둔 채 일시정지만 겹친다 (DEC-UI-022).
+      if (top !== undefined && ESC_CLOSABLE_OVERLAYS.has(top)) {
         manager.closeOverlay(top)
         return
       }
