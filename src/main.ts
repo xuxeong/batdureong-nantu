@@ -71,6 +71,14 @@ let residentCombat: ResidentCombatSystem | null = null
 let encounter: Encounter | null = null
 /** 이번 습격의 적대 주민. 한 번에 한 명이다 (DEC-CONTENT-002) */
 let hostile: HostileRuntime | null = null
+/**
+ * 전투 시스템이 보는 적대 주민 대상.
+ *
+ * **매 프레임 새로 만들지 않는다.** `combat.ts` 는 투항이 발동하면 이 객체의
+ * `surrenderOffered` 를 true 로 바꾸는데, 새로 만들면 그 표시가 매 프레임 지워져
+ * "투항 대화는 주민 한 명당 최대 한 번" (DEC-RESIDENT-016) 이 깨진다.
+ */
+let hostileTarget: CombatTarget | null = null
 /** 맵의 resident_spawn 지점 (DEC-CONTENT-016) */
 let raidSpawnPoint: { x: number; y: number } | null = null
 /** 습격 조우를 시작하는 데 필요한 승인 데이터 묶음 */
@@ -270,19 +278,13 @@ function updateRaid(dt: number): void {
   }
 
   // 플레이어 → 주민. 야생동물과 같은 시스템을 쓰되 대상만 바뀐다.
-  combat.setTargets([
-    {
-      entity: hostile.entity,
-      collisionRadius: hostile.collisionRadius,
-      surrenderThreshold: hostile.surrenderThreshold,
-      surrenderOffered: hostile.entity.health <= 0 ? true : surrenderOffered,
-    },
-  ])
+  combat.setTargets(currentTargets())
   for (const event of combat.update(dt)) {
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
       console.info('[습격] 주민을 처치했다. 보상 지급·조우 결과는 8/4.')
       hostile = null
+      hostileTarget = null
       return
     }
   }
@@ -307,9 +309,6 @@ function failRunIfDead(): void {
   scenes.send({ type: 'player_died' })
 }
 
-/** 투항 대화는 주민 한 명당 최대 한 번이다 (DEC-RESIDENT-016) */
-let surrenderOffered = false
-
 /**
  * 투항 발동 (DEC-RESIDENT-016, DEC-RESIDENT-039).
  *
@@ -318,8 +317,7 @@ let surrenderOffered = false
  * 열린다 — 오버레이가 열리면 `inRaidStage()` 가 false 가 되어 전투가 멈춘다.
  */
 function onSurrenderOffered(): void {
-  if (surrenderOffered || hostile === null) return
-  surrenderOffered = true
+  if (hostile === null) return
 
   residentCombat?.suspendForSurrender()
   scenes.openOverlay('surrender_dialogue')
@@ -445,7 +443,7 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
   // 시작 위치는 맵의 resident_spawn 지점에서 온다 (DEC-CONTENT-016).
   const spawn = raidSpawnPoint ?? { x: player.x + 400, y: player.y }
 
-  return residentCombat.spawn({
+  const runtime = residentCombat.spawn({
     instanceId: `hostile.${dayNumber}`,
     residentId,
     profile,
@@ -453,6 +451,14 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
     x: spawn.x,
     y: spawn.y,
   })
+
+  hostileTarget = {
+    entity: runtime.entity,
+    collisionRadius: runtime.collisionRadius,
+    surrenderThreshold: runtime.surrenderThreshold,
+    surrenderOffered: false,
+  }
+  return runtime
 }
 
 /** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
@@ -506,14 +512,21 @@ function actionPrompt(): string | null {
 }
 
 /**
- * 전투 시스템이 볼 대상 목록을 매 프레임 새로 만든다.
+ * 지금 때릴 수 있는 대상.
  *
- * 야생동물이 죽거나 새로 나오면 목록이 바뀌므로 한 번 만들어 두고 재사용하지 않는다.
- * `CombatTarget` 은 `entity` 를 참조로 들고 있어서 체력을 깎으면 원본이 바뀐다.
+ * **모드로 갈린다.** 재배에서는 야생동물, 습격에서는 적대 주민이다.
+ * 이걸 한 곳에 모으지 않았더니 `onSickle` 이 습격 중에도 야생동물 목록(0마리)을
+ * 넘겨서 낫이 아무도 못 때렸고, 그 호출이 `updateRaid` 가 세워 둔 대상까지 덮었다.
+ * **대상 선택이 두 군데 있으면 반드시 한쪽이 틀린다.**
  */
-function combatTargets(): CombatTarget[] {
+function currentTargets(): CombatTarget[] {
+  if (scenes.currentFieldMode() === 'raid') {
+    return hostileTarget === null ? [] : [hostileTarget]
+  }
   if (wildlife === null) return []
 
+  // 야생동물이 죽거나 새로 나오면 목록이 바뀌므로 매 프레임 만든다.
+  // `entity` 를 참조로 들고 있어 체력을 깎으면 원본이 바뀐다.
   return wildlife.instances.map((runtime) => ({
     entity: runtime.entity,
     collisionRadius: runtime.species.collision_radius,
@@ -527,15 +540,16 @@ function combatTargets(): CombatTarget[] {
 function onSickle(): void {
   if (combat === null) return
 
-  combat.setTargets(combatTargets())
+  combat.setTargets(currentTargets())
   const result = combat.swingSickle(player, input.aimAngle())
   if (!result.swung) return // 재사용 대기 중
 
   for (const hit of result.hits) {
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
-    // 이 알림이 그 전환의 유일한 경로다.
+    // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
     wildlife?.notifyDamagedByPlayer(hit.targetId)
     if (hit.outcome === 'killed') wildlife?.remove(hit.targetId)
+    if (hit.outcome === 'surrender_offered') onSurrenderOffered()
   }
 }
 
@@ -667,7 +681,7 @@ const loop = createGameLoop(
       }
 
       if (combat !== null) {
-        combat.setTargets(combatTargets())
+        combat.setTargets(currentTargets())
         for (const event of combat.update(dt)) {
           if (event.type === 'killed' && event.targetId !== undefined) {
             wildlife?.remove(event.targetId)
