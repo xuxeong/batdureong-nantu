@@ -39,6 +39,15 @@ export interface FarmingSystem {
   readonly harvested: ReadonlyMap<string, number>
 
   /**
+   * 이번 `update()` 에서 처음 수확 가능이 된 경작지들.
+   *
+   * 전환 순간을 **한 번만** 강조하기 위한 것이다 (DEC-UI-004).
+   * 상태가 유지되는 동안의 상시 표식은 `stage === 'ready'` 로 충분하므로
+   * 여기에 계속 담지 않는다.
+   */
+  readonly justBecameReady: readonly string[]
+
+  /**
    * 재배 단계에서만 호출한다. 정비·대화·습격·일시정지 중에는 부르지 않는다.
    * 부르지 않으면 잔여 시간이 그대로 보존되고, 다음 재배 단계에서 이어서 자란다
    * (DEC-FARM-003).
@@ -93,6 +102,7 @@ export function createFarming(options: FarmingOptions): FarmingSystem {
   }))
 
   const harvested = new Map<string, number>()
+  let justBecameReady: string[] = []
 
   /**
    * 가중치 추첨. 확률은 가중치를 합으로 나눈 값이며 합을 100으로 맞추지 않는다
@@ -128,8 +138,14 @@ export function createFarming(options: FarmingOptions): FarmingSystem {
   return {
     plots,
     harvested,
+    get justBecameReady() {
+      return justBecameReady
+    },
 
     update(deltaSeconds) {
+      // 지난 프레임의 전환 알림은 여기서 비운다. 안 비우면 강조가 계속 반복된다
+      // (DEC-UI-004 — 강조를 반복하지 않는다).
+      if (justBecameReady.length > 0) justBecameReady = []
       if (deltaSeconds <= 0) return
 
       for (const plot of plots) {
@@ -152,6 +168,7 @@ export function createFarming(options: FarmingOptions): FarmingSystem {
             // 성장 중 → 수확 가능. 여기엔 제한시간이 없다 (DEC-CONTENT-003)
             plot.stage = 'ready'
             plot.remainingSeconds = 0
+            justBecameReady.push(plot.plotId)
           }
         }
       }

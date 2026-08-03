@@ -27,7 +27,33 @@ export interface PlotView {
   progress: number
   /** `E` 로 지금 상호작용할 대상인가 (DEC-INPUT-003) */
   highlighted: boolean
+  /**
+   * 수확 가능 전환 강조가 남은 정도 1~0.
+   *
+   * `DEC-UI-004` 는 전환 순간 한 번만 강조하고 반복하지 않는다고 정했다.
+   * 시스템이 전환을 한 번 알리고 렌더가 그 여운을 짧게 재생한다.
+   */
+  readyFlash: number
 }
+
+/** 수확 시 획득 수량을 그 자리에 짧게 띄운 것 (DEC-UI-018) */
+export interface HarvestPopupView {
+  x: number
+  y: number
+  text: string
+  /** 남은 표시 정도 1~0 */
+  life: number
+}
+
+/**
+ * 경작지 한 변의 절반(월드 단위).
+ *
+ * `farm_plots.csv` 에는 좌표만 있고 크기가 없다. 크기는 콘텐츠 값이 아니라
+ * 플레이스홀더 아트의 표현이므로 여기 둔다 (개발 로드맵 2절).
+ * 승인된 경작지 간격이 x 140 · y 120 이라 45면 칸 사이가 붙지 않는다.
+ * 실제 스프라이트가 오면 `DEC-ART-001` 규격을 따른다.
+ */
+const PLOT_HALF_SIZE = 45
 
 export interface FieldView {
   player: Vec2
@@ -39,6 +65,15 @@ export interface FieldView {
   plots?: readonly PlotView[]
   /** 상호작용 안내 문구. 대상이 없으면 null (DEC-INPUT-003) */
   actionPrompt?: string | null
+  /**
+   * 재배 단계 남은 시간. HUD(`DEC-UI-017`)가 붙기 전까지 캔버스에 임시로 그린다.
+   * `hud.ts` 가 생기면 이 필드는 사라진다.
+   */
+  remainingSeconds?: number | null
+  /** 남은 시간이 임박한가 (DEC-UI-018) */
+  timeUrgent?: boolean
+  /** 수확 획득 표시 (DEC-UI-018) */
+  harvestPopups?: readonly HarvestPopupView[]
 }
 
 export interface FieldRenderer {
@@ -87,6 +122,16 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
     for (const plot of view.plots ?? []) drawPlot(plot)
 
+    // 수확 획득 표시 — 사라지면서 위로 떠오른다 (DEC-UI-018)
+    for (const popup of view.harvestPopups ?? []) {
+      const at = camera.worldToScreen(popup)
+      ctx.font = 'bold 16px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = `rgba(242, 227, 74, ${popup.life.toFixed(3)})`
+      ctx.fillText(popup.text, at.x, at.y - PLOT_HALF_SIZE * WORLD_TO_PIXEL - 24 - (1 - popup.life) * 20)
+      ctx.textAlign = 'start'
+    }
+
     const screen = camera.worldToScreen(view.player)
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
@@ -114,6 +159,17 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.fillText(view.actionPrompt, screen.x, screen.y - radius - 12)
       ctx.textAlign = 'start'
     }
+
+    // 남은 재배 시간 — hud.ts 가 생기면 여기서 지운다.
+    // 임박하면 강조한다 (DEC-UI-018).
+    if (view.remainingSeconds !== null && view.remainingSeconds !== undefined) {
+      const seconds = Math.ceil(view.remainingSeconds)
+      ctx.font = view.timeUrgent ? 'bold 28px sans-serif' : '22px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = view.timeUrgent ? '#e8613c' : '#f4ecd0'
+      ctx.fillText(`남은 시간 ${seconds}초`, width / 2, 36)
+      ctx.textAlign = 'start'
+    }
   }
 
   /**
@@ -122,7 +178,7 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
    */
   function drawPlot(plot: PlotView): void {
     const center = camera.worldToScreen(plot)
-    const half = WORLD_TO_PIXEL * 0.9
+    const half = PLOT_HALF_SIZE * WORLD_TO_PIXEL
 
     // 흙 바닥
     ctx.fillStyle = plot.stage === 'empty' ? '#3b2f22' : '#4a3a26'
@@ -140,6 +196,24 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
 
     ctx.fillStyle = colorByStage[plot.stage]
     ctx.fillRect(center.x - size, center.y - size, size * 2, size * 2)
+
+    // 수확 가능 상태가 유지되는 동안 표식을 계속 표시한다 (DEC-UI-004).
+    // 효과음이 없어도 이것만으로 수확 가능 여부를 판단할 수 있어야 한다.
+    if (plot.stage === 'ready') {
+      ctx.strokeStyle = '#f2e34a'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(center.x, center.y - half - 10, 5, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // 전환 순간의 1회 강조. 반복하지 않는다 (DEC-UI-004).
+      if (plot.readyFlash > 0) {
+        const spread = half * (1 + (1 - plot.readyFlash) * 0.6)
+        ctx.strokeStyle = `rgba(242, 227, 74, ${plot.readyFlash.toFixed(3)})`
+        ctx.lineWidth = 4
+        ctx.strokeRect(center.x - spread, center.y - spread, spread * 2, spread * 2)
+      }
+    }
 
     // 성장 중인 단계만 진행도 막대를 둔다. 수확 가능은 제한시간이 없다.
     if (plot.stage !== 'ready') {

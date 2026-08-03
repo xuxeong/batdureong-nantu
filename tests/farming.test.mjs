@@ -106,6 +106,22 @@ test('수확이 끝난 경작지에 바로 다시 심을 수 있다 (DEC-FARM-00
   assert.equal(again.type, 'planted')
 })
 
+test('수확 가능 전환을 한 번만 알린다 (DEC-UI-004)', () => {
+  const farming = createFarming(fixture())
+  farming.interact({ x: 0, y: 0 })
+
+  farming.update(49)
+  assert.deepEqual(farming.justBecameReady, [])
+
+  // 전환이 일어난 그 update 에서만 나온다
+  farming.update(1)
+  assert.deepEqual(farming.justBecameReady, ['plot_01'])
+
+  // 다음 update 에서는 비어야 한다. 안 그러면 강조가 매 프레임 반복된다.
+  farming.update(0.016)
+  assert.deepEqual(farming.justBecameReady, [])
+})
+
 test('상호작용 반경 밖에서는 대상이 없다 (DEC-INPUT-003)', () => {
   const farming = createFarming(fixture())
 
