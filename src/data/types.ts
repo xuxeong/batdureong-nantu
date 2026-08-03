@@ -506,6 +506,14 @@ export interface DialogueChoice extends CommonEntry {
   direct_system_result_id: SurrenderSystemResultId | null
   /** choice_function 이 'resource_negotiation' 일 때만 채워진다 (DEC-RESIDENT-050) */
   resource_offer_quantity: number | null
+
+  /**
+   * 결과별 반응 대사. 연결 CSV 라 부모에 중첩된다 (DEC-PIPELINE-010).
+   *
+   * 생성기는 처음부터 이렇게 내보내고 있었는데 이 타입에만 빠져 있었다.
+   * 타입에 없으면 다음 사람이 "반응 대사는 따로 읽어야 하나" 하고 없는 경로를 찾는다.
+   */
+  responses?: DialogueChoiceResponse[]
 }
 
 // ─────────────────────────────────────────────────────────────
