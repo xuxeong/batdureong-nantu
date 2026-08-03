@@ -1,0 +1,228 @@
+/*
+  UI 수치의 단일 원본 (개발 로드맵 2절).
+
+  패널 위치·크기·여백·색을 여기 커스텀 프로퍼티로 선언하고 각 UI 파일은 변수만 참조한다.
+  기획자 UI 사진을 받으면 **이 파일의 값만 고친다.** TS 를 건드리지 않으므로
+  김민주 담당 영역 안에서 끝나고 최수정 작업과 충돌하지 않는다.
+
+  여기 있는 수치는 DEC-PIPELINE-016 이 말하는 "변경 가능한 게임 데이터"가 아니다.
+  화면 표현이라 CSV 로 빼지 않는다. 반대로 작물 성장 시간·가격·확률은 여기 두지 않는다.
+
+  기준 해상도는 DEC-UI-025 가 보류라 아직 고정하지 않는다. 지금은 뷰포트를 그대로 쓰고,
+  규격이 오면 --ui-base-width / --ui-base-height 를 켜서 비율 유지 스케일을 넣는다.
+  색은 DEC-ART-001 이 보류라 전부 플레이스홀더다.
+*/
+
+:root {
+  /* ── 간격·모서리 ─────────────────────────────── */
+  --ui-gap-xs: 4px;
+  --ui-gap-sm: 8px;
+  --ui-gap-md: 12px;
+  --ui-gap-lg: 20px;
+  --ui-radius: 6px;
+
+  /* ── 색 (플레이스홀더, DEC-ART-001) ──────────── */
+  --ui-bg-panel: rgba(17, 23, 15, 0.82);
+  --ui-bg-slot: rgba(0, 0, 0, 0.45);
+  --ui-border: rgba(232, 217, 160, 0.35);
+  --ui-border-strong: #e8d9a0;
+  --ui-text: #f4ecd0;
+  --ui-text-dim: rgba(244, 236, 208, 0.55);
+  --ui-accent: #c8d94a;
+  --ui-danger: #e8613c;
+
+  /* ── 글자 ────────────────────────────────────── */
+  --ui-font: system-ui, 'Malgun Gothic', sans-serif;
+  --ui-font-sm: 12px;
+  --ui-font-md: 14px;
+  --ui-font-lg: 18px;
+  --ui-font-xl: 26px;
+
+  /* ── HUD (DEC-UI-017) ────────────────────────── */
+  --hud-edge: 16px;
+  --hud-health-width: 220px;
+  --hud-health-height: 18px;
+  --hud-slot-size: 48px;
+  --hud-slot-gap: 6px;
+}
+
+/* HUD 는 필드 위에 얹히지만 클릭을 가로채면 안 된다.
+   마우스가 HUD 위에 있을 때만 필드 클릭 공격이 막혀야 한다 (DEC-INPUT-009). */
+.hud {
+  position: absolute;
+  inset: 0;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: none;
+  user-select: none;
+}
+
+.hud__corner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+}
+
+.hud__corner--top-left {
+  top: var(--hud-edge);
+  left: var(--hud-edge);
+}
+
+.hud__corner--top-center {
+  top: var(--hud-edge);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.hud__corner--top-right {
+  top: var(--hud-edge);
+  right: var(--hud-edge);
+}
+
+.hud__corner--bottom-center {
+  bottom: var(--hud-edge);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: flex-end;
+}
+
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-017) ──── */
+.hud__health {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+.hud__health-bar {
+  width: var(--hud-health-width);
+  height: var(--hud-health-height);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  overflow: hidden;
+}
+
+.hud__health-fill {
+  height: 100%;
+  background: var(--ui-accent);
+  transition: width 120ms linear;
+}
+
+.hud__health-text {
+  font-size: var(--ui-font-md);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 일차·남은 시간 ────────────────────────────── */
+.hud__day {
+  font-size: var(--ui-font-lg);
+}
+
+.hud__time {
+  font-size: var(--ui-font-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 남은 시간이 임박하면 강조한다 (DEC-UI-018) */
+.hud__time--urgent {
+  color: var(--ui-danger);
+  font-weight: 700;
+}
+
+/* ── 습격 예고 (DEC-UI-017, DEC-RUN-011) ────────
+   문구는 raid_notices.csv 에서 온다. 아직 그 테이블이 없어 자리만 둔다.
+   임시 문구를 여기에도 TS 에도 넣지 않는다. */
+.hud__raid-notice {
+  min-height: 20px;
+  padding: 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hud__raid-notice:empty {
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius);
+  min-width: 120px;
+}
+
+/* ── 투척 퀵슬롯 5칸 (DEC-UI-002, DEC-UI-017) ──── */
+.hud__quickslots {
+  display: flex;
+  gap: var(--hud-slot-gap);
+}
+
+.hud__slot {
+  width: var(--hud-slot-size);
+  height: var(--hud-slot-size);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-font-sm);
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 현재 선택된 칸을 명확하게 강조한다 (DEC-UI-002) */
+.hud__slot--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+}
+
+/* 수량이 0이면 편성은 유지하고 사용 불가로만 구분한다 (DEC-RESOURCE-015) */
+.hud__slot--empty {
+  opacity: 0.4;
+}
+
+.hud__slot-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-dim);
+}
+
+/* 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화한다 (DEC-UI-002) */
+.hud__quickslots--exhausted .hud__slot {
+  opacity: 0.3;
+}
+
+.hud__no-throwable {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-danger);
+}
+
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
+.hud__recovery {
+  width: var(--hud-slot-size);
+  height: var(--hud-slot-size);
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-font-sm);
+  text-align: center;
+  color: var(--ui-text-dim);
+}
+
+/* ── 일시정지·설정 진입 (DEC-UI-017) ───────────── */
+.hud__icon-button {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: var(--ui-gap-xs) var(--ui-gap-sm);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+}
+
+.hud__icon-button:hover {
+  border-color: var(--ui-border-strong);
+}

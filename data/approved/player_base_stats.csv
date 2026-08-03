@@ -1,0 +1,2 @@
+id,kind,content_status,content_version,display_name,design_intent,max_health,starting_money,move_speed,collision_radius,sickle_damage,sickle_range,sickle_cooldown_seconds
+player_base_stats.prototype,player_base_stats,approved,1,플레이어 기본 수치,1차 프로토타입 기준값. 낫 10 피해는 주민 체력 60·80·120·200을 각각 6·8·12·20방으로 만들어 전투 프로필의 방급 표기와 맞춘다. 체력 100은 이장 공격 30에 3~4방을 버티는 설계와 맞춘다. 이동속도 260은 가장 빠른 영순 235보다 빨라 어느 주민에게서도 거리를 벌릴 수 있다. 낫 사거리·쿨다운·시작 소지금은 근거가 없는 임시값이라 밸런싱 때 다시 본다.,100,0,260,20,10,60,0.5

@@ -8,12 +8,72 @@
 import { WORLD_TO_PIXEL } from './camera.ts'
 import type { Camera, Vec2 } from './camera.ts'
 
+/**
+ * 경작지 한 칸의 그리기용 표현.
+ *
+ * 재배 시스템의 상태를 그대로 받지 않고 이 모양으로 옮겨 담는다.
+ * 렌더가 시스템을 직접 import 하면 나중에 둘을 따로 테스트할 수 없다.
+ */
+export interface PlotView {
+  x: number
+  y: number
+  stage: 'empty' | 'seed' | 'growing' | 'ready'
+  /**
+   * 성장 단계부터 공개하는 작물 이름.
+   * 씨앗 단계에서는 종류를 공개하지 않으므로 null 이다 (DEC-FARM-001).
+   */
+  cropLabel: string | null
+  /** 현재 단계 진행도 0~1. 실제 아트가 오면 프레임 선택에 쓴다 */
+  progress: number
+  /** `E` 로 지금 상호작용할 대상인가 (DEC-INPUT-003) */
+  highlighted: boolean
+  /**
+   * 수확 가능 전환 강조가 남은 정도 1~0.
+   *
+   * `DEC-UI-004` 는 전환 순간 한 번만 강조하고 반복하지 않는다고 정했다.
+   * 시스템이 전환을 한 번 알리고 렌더가 그 여운을 짧게 재생한다.
+   */
+  readyFlash: number
+}
+
+/** 수확 시 획득 수량을 그 자리에 짧게 띄운 것 (DEC-UI-018) */
+export interface HarvestPopupView {
+  x: number
+  y: number
+  text: string
+  /** 남은 표시 정도 1~0 */
+  life: number
+}
+
+/**
+ * 경작지 한 변의 절반(월드 단위).
+ *
+ * `farm_plots.csv` 에는 좌표만 있고 크기가 없다. 크기는 콘텐츠 값이 아니라
+ * 플레이스홀더 아트의 표현이므로 여기 둔다 (개발 로드맵 2절).
+ * 승인된 경작지 간격이 x 140 · y 120 이라 45면 칸 사이가 붙지 않는다.
+ * 실제 스프라이트가 오면 `DEC-ART-001` 규격을 따른다.
+ */
+const PLOT_HALF_SIZE = 45
+
 export interface FieldView {
   player: Vec2
   /** 마우스 커서 방향(라디안) */
   aimAngle: number
   /** 충돌·상호작용 반경. player_base_stats 에서 온다 */
   collisionRadius: number
+  /** 승인 데이터가 없으면 빈 배열이다 */
+  plots?: readonly PlotView[]
+  /** 상호작용 안내 문구. 대상이 없으면 null (DEC-INPUT-003) */
+  actionPrompt?: string | null
+  /**
+   * 재배 단계 남은 시간. HUD(`DEC-UI-017`)가 붙기 전까지 캔버스에 임시로 그린다.
+   * `hud.ts` 가 생기면 이 필드는 사라진다.
+   */
+  remainingSeconds?: number | null
+  /** 남은 시간이 임박한가 (DEC-UI-018) */
+  timeUrgent?: boolean
+  /** 수확 획득 표시 (DEC-UI-018) */
+  harvestPopups?: readonly HarvestPopupView[]
 }
 
 export interface FieldRenderer {
@@ -59,6 +119,19 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     camera.follow(view.player)
     drawWorldGrid(width, height)
 
+    // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
+    for (const plot of view.plots ?? []) drawPlot(plot)
+
+    // 수확 획득 표시 — 사라지면서 위로 떠오른다 (DEC-UI-018)
+    for (const popup of view.harvestPopups ?? []) {
+      const at = camera.worldToScreen(popup)
+      ctx.font = 'bold 16px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = `rgba(242, 227, 74, ${popup.life.toFixed(3)})`
+      ctx.fillText(popup.text, at.x, at.y - PLOT_HALF_SIZE * WORLD_TO_PIXEL - 24 - (1 - popup.life) * 20)
+      ctx.textAlign = 'start'
+    }
+
     const screen = camera.worldToScreen(view.player)
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
@@ -77,6 +150,88 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       screen.y + Math.sin(view.aimAngle) * aimLength,
     )
     ctx.stroke()
+
+    // 상호작용 안내 (DEC-INPUT-003). 실제 HUD 는 8/3 에 DOM 으로 올라온다.
+    if (view.actionPrompt) {
+      ctx.font = '14px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#f4ecd0'
+      ctx.fillText(view.actionPrompt, screen.x, screen.y - radius - 12)
+      ctx.textAlign = 'start'
+    }
+
+    // 남은 재배 시간 — hud.ts 가 생기면 여기서 지운다.
+    // 임박하면 강조한다 (DEC-UI-018).
+    if (view.remainingSeconds !== null && view.remainingSeconds !== undefined) {
+      const seconds = Math.ceil(view.remainingSeconds)
+      ctx.font = view.timeUrgent ? 'bold 28px sans-serif' : '22px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = view.timeUrgent ? '#e8613c' : '#f4ecd0'
+      ctx.fillText(`남은 시간 ${seconds}초`, width / 2, 36)
+      ctx.textAlign = 'start'
+    }
+  }
+
+  /**
+   * 경작지와 작물 — 전부 플레이스홀더다 (AGENTS.md 6절).
+   * 3단계를 색과 크기로만 구분한다. 실제 스프라이트는 논리 에셋 ID로 교체한다.
+   */
+  function drawPlot(plot: PlotView): void {
+    const center = camera.worldToScreen(plot)
+    const half = PLOT_HALF_SIZE * WORLD_TO_PIXEL
+
+    // 흙 바닥
+    ctx.fillStyle = plot.stage === 'empty' ? '#3b2f22' : '#4a3a26'
+    ctx.fillRect(center.x - half, center.y - half, half * 2, half * 2)
+    ctx.strokeStyle = plot.highlighted ? '#f4ecd0' : 'rgba(0, 0, 0, 0.45)'
+    ctx.lineWidth = plot.highlighted ? 2 : 1
+    ctx.strokeRect(center.x - half, center.y - half, half * 2, half * 2)
+
+    if (plot.stage === 'empty') return
+
+    // 작물 — 단계가 오를수록 커지고 밝아진다
+    const sizeByStage = { seed: 0.25, growing: 0.55, ready: 0.85 } as const
+    const colorByStage = { seed: '#6b6152', growing: '#5f8a3a', ready: '#c8d94a' } as const
+    const size = half * sizeByStage[plot.stage]
+
+    ctx.fillStyle = colorByStage[plot.stage]
+    ctx.fillRect(center.x - size, center.y - size, size * 2, size * 2)
+
+    // 수확 가능 상태가 유지되는 동안 표식을 계속 표시한다 (DEC-UI-004).
+    // 효과음이 없어도 이것만으로 수확 가능 여부를 판단할 수 있어야 한다.
+    if (plot.stage === 'ready') {
+      ctx.strokeStyle = '#f2e34a'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(center.x, center.y - half - 10, 5, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // 전환 순간의 1회 강조. 반복하지 않는다 (DEC-UI-004).
+      if (plot.readyFlash > 0) {
+        const spread = half * (1 + (1 - plot.readyFlash) * 0.6)
+        ctx.strokeStyle = `rgba(242, 227, 74, ${plot.readyFlash.toFixed(3)})`
+        ctx.lineWidth = 4
+        ctx.strokeRect(center.x - spread, center.y - spread, spread * 2, spread * 2)
+      }
+    }
+
+    // 성장 중인 단계만 진행도 막대를 둔다. 수확 가능은 제한시간이 없다.
+    if (plot.stage !== 'ready') {
+      const barWidth = half * 1.6
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+      ctx.fillRect(center.x - barWidth / 2, center.y + half - 6, barWidth, 4)
+      ctx.fillStyle = '#c8d94a'
+      ctx.fillRect(center.x - barWidth / 2, center.y + half - 6, barWidth * plot.progress, 4)
+    }
+
+    // 성장 단계부터 종류를 공개한다 (DEC-FARM-001)
+    if (plot.cropLabel !== null) {
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#f4ecd0'
+      ctx.fillText(plot.cropLabel, center.x, center.y - half - 4)
+      ctx.textAlign = 'start'
+    }
   }
 
   /** 월드 격자. 카메라가 실제로 따라오는지 눈으로 확인하기 위한 것이다 */

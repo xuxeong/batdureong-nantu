@@ -1,0 +1,5 @@
+id,kind,content_status,content_version,display_name,design_intent,player_description,combat_mechanic_key,ending_prompt_summary
+crop_attribute.fiery,crop_attribute,approved,1,화끈함,고추 전용. 짧고 강한 화상 계통으로 즉발 화력 빌드의 기준점. 4단계 고춧가루 주머니(direct)로 연결.,혀와 살갗을 태우는 화끈한 기운. 맞은 자리가 짧고 굵게 타들어간다.,damage_over_time,화끈함은 참지 않는 성미다. 정면으로 맞서 뜨겁게 몰아붙인 날들의 상징이다.
+crop_attribute.mushy,crop_attribute,approved,1,짓무름,토마토 전용. 약하고 긴 광역 화상 계통. 4단계 토마토 폭탄(area)으로 연결.,짓무른 과육이 넓게 튀어 스며든다. 약하지만 오래 남아 서서히 좀먹는다.,damage_over_time,짓무름은 서두르지 않는 침식이다. 넓게 뿌려두고 천천히 결과를 기다린 방식의 상징이다.
+crop_attribute.slippery,crop_attribute,approved,1,미끄러움,바나나 전용. 약한 감속을 길게 거는 단일 대상 계통. 4단계 바나나 껍질(direct)로 연결.,밟는 순간 발밑이 미끄러진다. 세게 붙잡진 않지만 오래도록 발을 헛디디게 한다.,movement_slow,미끄러움은 힘 대신 꾀로 버티는 방식이다. 상대를 다치게 하지 않고 골탕 먹인 런의 상징이다.
+crop_attribute.sticky,crop_attribute,approved,1,끈적함,찹쌀 전용. 짧은 시간 거의 멈출 만큼 강하게 붙잡는 광역 제압 계통. 4단계 찹쌀 끈끈이(area)로 연결. 완전 정지는 DEC-CONTENT-013상 불가라 최저 배율로 표현.,끈끈한 찹쌀풀이 발을 옭아맨다. 걸린 동안은 제자리에서 허우적대는 수준으로 느려진다.,movement_slow,끈적함은 놓아주지 않는 손이다. 해치는 대신 붙들어 세워 시간을 번 방식의 상징이다.
