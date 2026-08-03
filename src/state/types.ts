@@ -311,13 +311,20 @@ export interface PlotState {
   stageElapsedSeconds: number
 }
 
-/** 필드 위 개체의 공통 부분 */
+/**
+ * 필드 위 개체의 공통 부분.
+ *
+ * `effects` 가 여기 있는 이유: DEC-CONTENT-013 은 전투 효과를 **재배 단계의 적대
+ * 야생동물과 습격 단계의 적대 주민 양쪽에** 적용한다. 처음에 주민에만 달아 뒀는데,
+ * 그러면 야생동물에게 둔화 무기를 던졌을 때 조용히 아무 일도 안 일어난다.
+ */
 export interface FieldEntity {
   /** 런 안에서 고유한 실행 ID. 콘텐츠 ID 가 아니다 */
   instanceId: string
   x: number
   y: number
   health: number
+  effects: ActiveEffect[]
 }
 
 export interface WildlifeInstance extends FieldEntity {
@@ -330,7 +337,6 @@ export interface HostileResidentInstance extends FieldEntity {
   residentId: string
   /** 전투 전 대화 판정으로 확정된 보정 (DEC-CONTENT-009) */
   combatState: CombatState
-  effects: ActiveEffect[]
 }
 
 /**
