@@ -1,0 +1,9 @@
+wildlife_spawn_profile_id,wildlife_id,spawn_weight
+wildlife_spawn_profile.early_calm,wildlife.crow,70
+wildlife_spawn_profile.early_calm,wildlife.water_deer,30
+wildlife_spawn_profile.mid_pressure,wildlife.crow,50
+wildlife_spawn_profile.mid_pressure,wildlife.water_deer,40
+wildlife_spawn_profile.mid_pressure,wildlife.boar,10
+wildlife_spawn_profile.late_siege,wildlife.crow,30
+wildlife_spawn_profile.late_siege,wildlife.water_deer,40
+wildlife_spawn_profile.late_siege,wildlife.boar,30

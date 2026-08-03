@@ -1,0 +1,12 @@
+reward_bundle_id,resource_kind,resource_id,quantity
+reward_bundle.yeongsun_retreat,money,currency.money,15
+reward_bundle.yeongsun_kill,money,currency.money,25
+reward_bundle.yeongsun_kill,material,material.cloth_sack,2
+reward_bundle.manbok_retreat,money,currency.money,30
+reward_bundle.manbok_kill,money,currency.money,50
+reward_bundle.manbok_kill,material,material.honey,2
+reward_bundle.geumrye_retreat,money,currency.money,10
+reward_bundle.geumrye_kill,money,currency.money,15
+reward_bundle.village_head_retreat,money,currency.money,40
+reward_bundle.village_head_kill,money,currency.money,80
+reward_bundle.village_head_kill,material,material.honey,3

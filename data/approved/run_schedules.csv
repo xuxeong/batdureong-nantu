@@ -1,0 +1,2 @@
+id,kind,content_status,content_version,display_name,design_intent,map_id,total_days,farming_duration_seconds
+run_schedule.standard_5day,run_schedule,approved,1,기본 5일 런,흉년 마을 5일 런. 평화 1일 뒤 매일 밤 습격으로 영순→만복→금례→이장 순서의 난도·서사 상승. 7일 완급판은 QA A/B 후 별도 일정으로 추가.,map.prototype_field,5,60
