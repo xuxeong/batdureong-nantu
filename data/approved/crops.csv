@@ -1,5 +1,5 @@
 id,kind,content_status,content_version,display_name,design_intent,spawn_weight,seed_duration_seconds,growth_duration_seconds,base_yield,sell_price,is_raw_edible,raw_heal_amount,raw_use_duration_seconds,raw_move_speed_multiplier,crop_attribute_id
-crop.chili,crop,approved,1,고추,흔한 공격 작물. 짧고 강한 화상 무기의 재료. 생식 불가라 판매와 제작 사이 선택을 강제한다.,30,10,40,2,8,false,,,,crop_attribute.fiery
-crop.tomato,crop,approved,1,토마토,흔한 다수확 작물. 광역 화상 폭탄의 재료이자 초반 비상식량. 수확량이 많아 협상 지불에도 만만하다.,30,10,45,3,5,true,8,1.5,0.5,crop_attribute.mushy
-crop.banana,crop,approved,1,바나나,중간 희귀도의 감속 작물. 오래가는 미끄러짐 무기의 재료이며 회복량도 준수한 겸용 자원.,25,12,55,2,10,true,12,1.8,0.5,crop_attribute.slippery
-crop.glutinous_rice,crop,approved,1,찹쌀,희귀 고가 작물. 광역 제압 끈끈이의 재료. 성장이 느리고 1개씩만 나와 쓸 곳을 골라야 한다.,15,15,75,1,20,false,,,,crop_attribute.sticky
+crop.chili,crop,approved,2,고추,흔한 공격 작물. 짧고 강한 화상 무기의 재료. 생식 불가라 판매와 제작 사이 선택을 강제한다.,30,4,16,2,8,false,,,,crop_attribute.fiery
+crop.tomato,crop,approved,2,토마토,흔한 다수확 작물. 광역 화상 폭탄의 재료이자 초반 비상식량. 수확량이 많아 협상 지불에도 만만하다.,30,4,18,3,5,true,8,1.5,0.5,crop_attribute.mushy
+crop.banana,crop,approved,2,바나나,중간 희귀도의 감속 작물. 오래가는 미끄러짐 무기의 재료이며 회복량도 준수한 겸용 자원.,25,5,22,2,10,true,12,1.8,0.5,crop_attribute.slippery
+crop.glutinous_rice,crop,approved,2,찹쌀,희귀 고가 작물. 광역 제압 끈끈이의 재료. 성장이 느리고 1개씩만 나와 쓸 곳을 골라야 한다.,15,6,30,1,20,false,,,,crop_attribute.sticky
