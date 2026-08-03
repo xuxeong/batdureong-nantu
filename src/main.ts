@@ -15,7 +15,12 @@ import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
-import { runConfig, usePlaceholderStats } from './data/run-config.ts'
+import type { PlotView } from './render/field.ts'
+import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
+import { loadRuntimeData, requireTables } from './data/loader.ts'
+import { createFarming } from './systems/farming.ts'
+import type { FarmingSystem } from './systems/farming.ts'
+import type { Crop } from './data/types.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
 
@@ -26,23 +31,121 @@ const bus = createEventBus()
 const camera = createCamera()
 const renderer = createFieldRenderer(gameRoot, camera)
 
-// player_base_stats.csv 는 초안조차 없어 승인 행이 없다 (DEC-CONTENT-019).
-// 임시 값은 폴백이 아니라 **명시적 선언**이며 콘솔에 경고가 남는다.
-// 승인 행이 올라오면 이 호출만 지우면 된다 — 다른 곳에 흩어져 있지 않다.
-usePlaceholderStats({
-  moveSpeed: 4,
-  collisionRadius: 0.4,
-  worldWidth: 40,
-  worldHeight: 24,
-})
+// 재배는 승인 데이터가 들어와야 시작된다. 없으면 null 로 남고 밭이 그려지지 않는다.
+// 여기에 임시 경작지를 만들어 넣지 않는다 — 데이터가 없다는 사실이 화면에 보여야 한다.
+let farming: FarmingSystem | null = null
+let cropsById = new Map<string, Crop>()
 
-// 월드 크기도 maps.csv 승인 전까지는 임시 값이다.
-camera.setWorldSize(40, 24)
+const player = { x: 0, y: 0 }
 
-const player = { x: 20, y: 12 }
+/**
+ * 승인 데이터를 읽어 맵·작물·플레이어 수치를 붙인다.
+ *
+ * 실패하면 데이터 오류로 올리고(DEC-UI-024) 이동만 확인할 수 있는 임시 값으로 남는다.
+ * 임시 값은 폴백이 아니라 **명시적 선언**이며 콘솔에 경고가 남는다 (run-config.ts).
+ */
+async function bootData(): Promise<void> {
+  try {
+    const data = await loadRuntimeData()
+    requireTables(data, ['maps', 'crops', 'player_base_stats'])
+
+    setPlayerBaseStats(data.player_base_stats!)
+
+    // 1차 프로토타입은 승인된 맵 하나만 쓴다 (DEC-CONTENT-016)
+    const map = data.maps![0]
+    camera.setWorldSize(map.world_width, map.world_height)
+    player.x = map.world_width / 2
+    player.y = map.world_height / 2
+
+    const plots = map.farm_plots ?? []
+    if (plots.length === 0) {
+      throw new Error(`맵 ${map.id} 에 승인된 경작지가 없다`)
+    }
+
+    const crops = data.crops! as Crop[]
+    cropsById = new Map(crops.map((crop) => [crop.id, crop]))
+
+    farming = createFarming({
+      plots,
+      crops,
+      interactionRadius: map.farm_interaction_radius,
+    })
+
+    console.info(`[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종`)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    bus.emit('data.error', { summary: '승인 데이터를 읽지 못했다', detail })
+
+    // 승인 전에도 이동과 카메라는 확인할 수 있어야 한다. 밭은 뜨지 않는다.
+    usePlaceholderStats({
+      moveSpeed: 210,
+      collisionRadius: 20,
+      worldWidth: 1600,
+      worldHeight: 900,
+    })
+    camera.setWorldSize(1600, 900)
+    player.x = 800
+    player.y = 450
+  }
+}
+
+/** `E` — 심기·수확 문맥 상호작용 (DEC-INPUT-003) */
+function onInteract(): void {
+  if (farming === null) {
+    console.warn('[입력] 승인 데이터가 없어 재배 상호작용을 할 수 없다')
+    return
+  }
+  const event = farming.interact(player)
+  if (event === null) return
+
+  if (event.type === 'planted') {
+    // 씨앗 단계에서는 종류를 공개하지 않으므로 로그에도 남기지 않는다 (DEC-FARM-001)
+    console.info(`[재배] ${event.plot.plotId} 파종`)
+  } else {
+    const name = cropsById.get(event.cropId)?.display_name ?? event.cropId
+    const total = farming.harvested.get(event.cropId) ?? 0
+    console.info(`[재배] ${name} ${event.amount}개 수확 — 보관함 ${total}개`)
+  }
+}
+
+/** 재배 상태를 렌더가 쓰는 모양으로 옮긴다 */
+function plotViews(): readonly PlotView[] {
+  if (farming === null) return []
+  const target = farming.targetAt(player)
+
+  return farming.plots.map((plot) => {
+    const crop = plot.cropId === null ? null : (cropsById.get(plot.cropId) ?? null)
+
+    // 단계 전체 길이를 알아야 진행도를 낼 수 있다. 수확 가능은 제한시간이 없다.
+    let progress = 0
+    if (crop !== null && (plot.stage === 'seed' || plot.stage === 'growing')) {
+      const total =
+        plot.stage === 'seed' ? crop.seed_duration_seconds : crop.growth_duration_seconds
+      progress = total > 0 ? 1 - plot.remainingSeconds / total : 0
+    }
+
+    return {
+      x: plot.x,
+      y: plot.y,
+      stage: plot.stage,
+      // 씨앗 단계는 종류를 숨긴다 (DEC-FARM-001)
+      cropLabel: plot.stage === 'seed' || crop === null ? null : crop.display_name,
+      progress: Math.min(Math.max(progress, 0), 1),
+      highlighted: target?.plot.plotId === plot.plotId,
+    }
+  })
+}
+
+/** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
+function actionPrompt(): string | null {
+  if (farming === null) return null
+  const target = farming.targetAt(player)
+  if (target === null) return null
+  return target.kind === 'harvest' ? 'E — 수확' : 'E — 심기'
+}
 
 const input = createInput(renderer.canvas, {
-  onInteract: () => console.info('[입력] 상호작용 (E)'),
+  onInteract,
   onThrow: () => console.info('[입력] 투척'),
   onSickle: () => console.info('[입력] 낫'),
   onQuickslotSelect: (index) => console.info(`[입력] 퀵슬롯 ${index + 1}`),
@@ -56,17 +159,24 @@ const input = createInput(renderer.canvas, {
 const loop = createGameLoop(
   {
     update(dt) {
-      // 이동만 있는 최소 루프. 충돌·상호작용·전투는 8/2 이후에 붙는다.
       const move = input.move()
       const speed = runConfig.moveSpeed
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
+
+      // 작물은 재배 단계에서만 자란다 (DEC-FARM-003).
+      // 정비·대화·습격에서는 이 호출이 빠지므로 잔여 시간이 그대로 보존된다.
+      if (farming !== null && scenes.currentFieldMode() === 'farming') {
+        farming.update(dt)
+      }
     },
     render() {
       renderer.draw({
         player,
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
+        plots: plotViews(),
+        actionPrompt: actionPrompt(),
       })
     },
   },
@@ -116,4 +226,6 @@ if (isDevBuild) {
   scenes.enterFieldPreview('farming')
 }
 
-loop.start()
+// 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
+// 먼저 부르면 오류 이벤트가 아무 데도 도달하지 않고 화면만 비어 보인다.
+void bootData().then(() => loop.start())
