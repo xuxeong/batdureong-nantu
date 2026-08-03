@@ -1,0 +1,44 @@
+{
+  "file": "raid_notices.csv",
+  "step": 11,
+  "entry_type": "independent",
+  "kind": "raid_notice",
+  "id_prefix": "raid_notice.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-021",
+    "DEC-RUN-011",
+    "DEC-UI-017"
+  ],
+  "fields": [
+    {
+      "name": "raid_type",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "none",
+        "raid",
+        "final_raid"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "opening_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    },
+    {
+      "name": "hud_label",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "raid_notice.exactly_one_per_raid_type",
+      "severity": "차단"
+    }
+  ]
+}

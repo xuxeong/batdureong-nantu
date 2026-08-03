@@ -967,6 +967,39 @@ export const RULES = {
     }
   },
 
+  // ── 화면 고정 문구 ────────────────────────────────────────────────────
+  //
+  // 습격 예고는 습격이 없는 날에도 HUD에서 사라지지 않는다 (DEC-UI-017).
+  // 그래서 `none` 행이 빠지면 화면에 구멍이 나는데, 그 구멍은 습격 없는 날에만
+  // 보인다 — 습격일만 눌러 보고 넘어가면 못 찾는다. 그래서 차단으로 잡는다.
+  'raid_notice.exactly_one_per_raid_type'({ report, h }) {
+    const rows = h.approved('raid_notices.csv')
+
+    for (const type of ['none', 'raid', 'final_raid']) {
+      const n = rows.filter((r) => h.val(r, 'raid_type') === type).length
+      if (n !== 1) {
+        report.block({
+          file: 'raid_notices.csv',
+          problem: `raid_type \`${type}\` 의 승인 예고 문구가 ${n}개다. 정확히 하나여야 한다`,
+          basis: 'DEC-CONTENT-021 · 승인 행을 세 raid_type 값마다 정확히 하나씩 둔다',
+          fix: n === 0 ? `raid_type 이 \`${type}\` 인 행을 승인한다` : '하나만 남기고 나머지를 retired 로 바꾼다',
+        })
+      }
+    }
+  },
+
+  'night_result_text.at_least_one_approved'({ report, h }) {
+    const n = h.approved('night_result_texts.csv').length
+    if (n === 0) {
+      report.block({
+        file: 'night_result_texts.csv',
+        problem: '승인된 밤 결과 문구가 없다',
+        basis: 'DEC-CONTENT-021 · 승인된 밤 결과 문구는 하나 이상이어야 한다',
+        fix: '문구 행 하나 이상을 approved 로 승인한다',
+      })
+    }
+  },
+
   // ── 런 일정 ───────────────────────────────────────────────────────────
   'run_schedule.exactly_one_approved'({ report, h }) {
     const n = h.approved('run_schedules.csv').length

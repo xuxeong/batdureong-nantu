@@ -7,7 +7,7 @@
   },
 
   "kind": {
-    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017, DEC-CONTENT-019",
+    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017, DEC-CONTENT-019, DEC-CONTENT-021",
     "values": [
       "map",
       "crop_attribute",
@@ -30,7 +30,9 @@
       "run_schedule",
       "fear_band",
       "ending",
-      "player_base_stats"
+      "player_base_stats",
+      "raid_notice",
+      "night_result_text"
     ]
   },
 
@@ -174,8 +176,15 @@
     "values": ["eq", "gte", "lte"]
   },
 
+  "relationship_state": {
+    "source": "DEC-CONTENT-022",
+    "$comment": "주민 관계 상태 여섯 가지의 데이터 키. unformed 는 조우 해결 전의 초기 상태다. ending_conditions 의 specific_resident_relationship 이 target_value 로 여섯 개를 모두 쓴다.",
+    "values": ["unformed", "friendly", "trade", "companion", "coercive", "severed"]
+  },
+
   "relationship_count_subject": {
-    "source": "DEC-CONTENT-011",
+    "source": "DEC-CONTENT-011, DEC-CONTENT-022",
+    "$comment": "relationship_state 와 달리 unformed 를 포함하지 않는다. 해결되지 않은 주민의 수는 엔딩 조건으로 쓰지 않는다 (DEC-CONTENT-022).",
     "values": ["friendly", "trade", "companion", "coercive", "severed"]
   },
 
@@ -216,12 +225,5 @@
     "values": ["null", "NULL", "N/A", "없음", "-"]
   },
 
-  "open_questions": [
-    {
-      "id": "enums.relationship_state_key",
-      "type": "규칙 누락",
-      "summary": "DEC-RESIDENT-012는 관계 상태를 미형성·우호·거래·동료·강압·단절로 열거하고, DEC-CONTENT-011은 relationship_count의 대상으로 friendly·trade·companion·coercive·severed를 열거한다. specific_resident_relationship의 target_value에 사용할 관계 키 목록과 미형성 상태의 키는 결정로그에 없다.",
-      "status": "기획 책임자 확정 대기"
-    }
-  ]
+  "open_questions": []
 }

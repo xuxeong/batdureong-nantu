@@ -1,0 +1,26 @@
+{
+  "file": "night_result_texts.csv",
+  "step": 11,
+  "entry_type": "independent",
+  "kind": "night_result_text",
+  "id_prefix": "night_result_text.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-021",
+    "DEC-RUN-015"
+  ],
+  "fields": [
+    {
+      "name": "text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "night_result_text.at_least_one_approved",
+      "severity": "차단"
+    }
+  ]
+}
