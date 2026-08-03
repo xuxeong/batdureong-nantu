@@ -1,6 +1,6 @@
 run_schedule_id,day_number,wildlife_spawn_profile_id,raid_type,hostile_resident_id
 run_schedule.standard_5day,1,wildlife_spawn_profile.early_calm,none,
-run_schedule.standard_5day,2,wildlife_spawn_profile.early_calm,raid,resident.dusik
+run_schedule.standard_5day,2,wildlife_spawn_profile.early_calm,raid,resident.yeongsun
 run_schedule.standard_5day,3,wildlife_spawn_profile.mid_pressure,raid,resident.manbok
 run_schedule.standard_5day,4,wildlife_spawn_profile.late_siege,raid,resident.geumrye
 run_schedule.standard_5day,5,wildlife_spawn_profile.late_siege,final_raid,resident.village_head
