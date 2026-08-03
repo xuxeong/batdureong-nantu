@@ -716,8 +716,6 @@ const loop = createGameLoop(
         collisionRadius: runConfig.collisionRadius,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
-        remainingSeconds: inFarmingStage() ? (farmingTimer?.remainingSeconds ?? null) : null,
-        timeUrgent: farmingTimer?.urgent ?? false,
         harvestPopups: harvestPopups.map((p) => ({
           x: p.x,
           y: p.y,

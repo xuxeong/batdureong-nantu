@@ -72,13 +72,6 @@ export interface FieldView {
   plots?: readonly PlotView[]
   /** 상호작용 안내 문구. 대상이 없으면 null (DEC-INPUT-003) */
   actionPrompt?: string | null
-  /**
-   * 재배 단계 남은 시간. HUD(`DEC-UI-017`)가 붙기 전까지 캔버스에 임시로 그린다.
-   * `hud.ts` 가 생기면 이 필드는 사라진다.
-   */
-  remainingSeconds?: number | null
-  /** 남은 시간이 임박한가 (DEC-UI-018) */
-  timeUrgent?: boolean
   /** 수확 획득 표시 (DEC-UI-018) */
   harvestPopups?: readonly HarvestPopupView[]
   /** 필드 위 적대 개체 (야생동물·적대 주민) */
@@ -227,22 +220,8 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.textAlign = 'start'
     }
 
-    // 남은 재배 시간 — hud.ts 가 생기면 여기서 지운다.
-    // 임박하면 강조한다 (DEC-UI-018).
-    if (view.remainingSeconds !== null && view.remainingSeconds !== undefined) {
-      const seconds = Math.ceil(view.remainingSeconds)
-      ctx.font = view.timeUrgent ? 'bold 28px sans-serif' : '22px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = view.timeUrgent ? '#e8613c' : '#f4ecd0'
-      ctx.fillText(`남은 시간 ${seconds}초`, width / 2, 36)
-      ctx.textAlign = 'start'
-    }
   }
 
-  /**
-   * 경작지와 작물 — 전부 플레이스홀더다 (AGENTS.md 6절).
-   * 3단계를 색과 크기로만 구분한다. 실제 스프라이트는 논리 에셋 ID로 교체한다.
-   */
   /**
    * 적대 개체 — 플레이스홀더 원.
    *
@@ -291,6 +270,10 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.fill()
   }
 
+  /**
+   * 경작지와 작물 — 전부 플레이스홀더다 (AGENTS.md 6절).
+   * 3단계를 색과 크기로만 구분한다. 실제 스프라이트는 논리 에셋 ID로 교체한다.
+   */
   function drawPlot(plot: PlotView): void {
     const center = camera.worldToScreen(plot)
     const half = PLOT_HALF_SIZE * WORLD_TO_PIXEL
