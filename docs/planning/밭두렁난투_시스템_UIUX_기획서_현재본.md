@@ -409,7 +409,7 @@ QA 후 재검토한다. 남은 재배 시간이 임박하면 시간 표시를 �
 
 현재 이름이 확정된 CSV는 총 33개다. 실제 작성 순서와 단계별 AI 작업 방식은 `밭두렁난투_콘텐츠_데이터_준비도_점검.md`를 따른다.
 
-고정 버전 원본은 `schema_manifest.json`, 엔딩 시스템 프롬프트 원본은 `ending_prompt_system.md`, 플레이어 일지 시스템 프롬프트 원본은 `journal_prompt_system.md`다. 실제 폴더 구조와 검증·생성 명령은 이후 저장소 구조 결정에서 확정한다.
+고정 버전 원본은 `schema_manifest.json`, 엔딩 시스템 프롬프트 원본은 `ending_prompt_system.md`, 플레이어 일지 시스템 프롬프트 원본은 `journal_prompt_system.md`다. 실제 폴더 구조와 검증·생성 명령은 `DEC-PIPELINE-003`에서 확정했다.
 
 핵심 근거: `DEC-PIPELINE-002`, `DEC-PIPELINE-004`, `DEC-PIPELINE-007~014`, `DEC-CONTENT-001`, `DEC-CONTENT-019`, `DEC-JOURNAL-004`.
 
