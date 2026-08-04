@@ -277,17 +277,30 @@ CSV 10종은 한 번에 다 필요한 게 아니다. **필요한 순서**는 다
   - 폰트는 **웹 임베딩 허용 여부**를 먼저 확인하고 `docs/submission/CREDITS.md`에 같은 커밋으로 기록 (팀규칙 6절)
 
 **최수정 (22:00~)**
-- [ ] 판정 엔진 ↔ 대화 UI 연결. 조우 최종 결과 5키 확정 (`empathy_resolve`, `resource_negotiation_resolve`, `recruited`, `retreated`, `killed`) (`DEC-RESIDENT-052`)
-- [ ] 관계 5상태 + 공포도 누적 + 해결된 주민 재등장 방지 (`DEC-RESIDENT-012`, `046`, `043`)
-- [ ] 퇴각·처치 보상 묶음 지급을 원자적으로, 중복 지급 방지 (`DEC-RESIDENT-042`)
-- [ ] 엔딩 판정 — 마지막 습격의 모든 상태 변경 후 공포도 구간 + 조건 + 우선순위, 대표 작물 결정 순서(숙련도 → 제작 소비 → 총수확 → ID) (`DEC-CONTENT-011`)
-- [ ] `api/ending.ts`, `api/journal.ts` + `src/llm/` — 시스템이 사실을 먼저 확정하고 LLM은 서술만. 실패 시 1회 재시도 후 폴백. **LLM 실패가 게임 진행을 막지 않아야 한다** (`DEC-CONTENT-011`, `DEC-JOURNAL-001~003`)
-- [ ] `schema/ending_prompt_system.md`, `schema/journal_prompt_system.md` 신설 — 현재 저장소에 **두 파일 모두 없다.** 코드에 문장을 복사하지 않는다 (`DEC-PIPELINE-012`, `DEC-JOURNAL-004`)
-- [ ] `schema_manifest.json`에 `journal_prompt_version` 추가 (현재 엔딩 프롬프트 버전만 있음)
+- [~] 판정 엔진 ↔ 대화 UI 연결. 조우 최종 결과 5키 확정 (`DEC-RESIDENT-052`) — **5키·이벤트 계약까지 완료.** `encounter.finished`·`reward.granted` 를 버스에 쏜다. 실제 UI 배선은 김민주 대화·투항 모달 대기 (8/5 이월)
+- [x] 관계 5상태 + 공포도 누적 + 해결된 주민 재등장 방지 (`DEC-RESIDENT-012`, `046`, `043`) — `systems/resolution.ts`. **공포도는 자리까지. 증가량은 `fear_increments.csv` 승인 대기라 0으로 멈춰 있다**
+- [x] 퇴각·처치 보상 묶음 지급을 원자적으로, 중복 지급 방지 (`DEC-RESIDENT-042`) — 플레이 확인
+- [x] 엔딩 판정 — 공포도 구간 + 조건 + 우선순위 + 대표 작물 (`DEC-CONTENT-011`) — `systems/ending.ts`. 5일차 마지막 습격에서 플레이 확인
+- [x] `api/ending.ts`, `api/journal.ts` + `src/llm/` (`DEC-CONTENT-011`, `DEC-JOURNAL-001~003`) — 배포 확인. **LLM 실패가 진행을 막지 않는 것을 실제 배포에서 확인했다** (프리뷰에 키가 없어 폴백 경로가 그대로 검증됐다). `journal.ts` 는 아직 한 번도 안 불렸다
+- [x] `schema/ending_prompt_system.md`, `schema/journal_prompt_system.md` 신설 (`DEC-PIPELINE-012`, `DEC-JOURNAL-004`) — edge 에 파일 시스템이 없어 `tools/build-prompts.mjs` 가 빌드 시점에 모듈로 굽는다. 원본은 여전히 `.md` 하나다
+- [x] `schema_manifest.json`에 `journal_prompt_version` 추가
+
+> **8/4 최수정 결산 — 7항목 중 6 완료, 1 부분(대화 UI 배선 대기).**
+> 계획에 없었는데 한 것: 버그 5개(체력 0에도 전투 지속 / 낫 처치 시 조우 미종료 /
+> `canAppearAsHostile` 배선 누락 / 조우 종료 후 흐름 미전진 / 투항 개발 통로 가드),
+> `fear_increments` 스키마(`DEC-RESIDENT-048` 확정 반영), 배포 4회 수정.
+> **전부 11-2에 반영했다.**
 
 ### 8/5 (수) — 최수정 풀타임 / 김민주 ~21시
 
 **최수정**
+
+**8/4 이월분**
+- [ ] 판정 엔진 ↔ 대화 UI 배선 — 이벤트 계약은 끝났다. 김민주 `dialogue-modal.ts`·`surrender-modal.ts` 가 오면 배선하고 **개발 통로 6개를 지운다** (11-2)
+- [ ] `fear_increments.csv` 승인 3줄 반영 — 전성민 확인 대기. 들어오면 공포도가 실제로 누적되고 엔딩이 구간별로 갈린다. **그 전까지는 항상 온기 기본 엔딩이다**
+- [ ] `layout.css` 주석 3곳 — 김민주 전담이라 인계했다. 안 고쳐지면 확정된 DEC 가 계속 "보류"로 남는다
+
+**8/5 원래 분량**
 - [ ] 오전: 전 모듈 통합. **두 경로 모두** 완주 1회 성공
   - 습격일: 타이틀 → 이름 입력 → 일차 시작 → 재배 → 정비 → 전투 전 대화 → 습격 → 조우 결과 → (마지막이면) 엔딩
   - 비습격일: 일차 시작 → 재배 → 정비(`아침까지 잔다`) → 밤 결과 → 다음 일차
@@ -299,6 +312,20 @@ CSV 10종은 한 번에 다 필요한 게 아니다. **필요한 순서**는 다
   - 이 시점부터 main은 8/8 촬영용 안정판이다. 이후 수정은 develop에서 하고 검증 후 다시 병합한다
 
 **김민주**
+
+**8/4 이월분 — 8/4 커밋이 없어 아래가 통째로 넘어왔다.** 11-1에서 `없음`·`뼈대`로 남은
+줄이 아홉이고 그중 **조우 결과 화면·정비 모달이 P0** 다. 특히 조우 결과 화면이 없으면
+`확인`을 누를 수단이 없어 **엔딩 화면에 도달하지 못한다** — 판정과 기록문은 8/5 새벽에
+붙었다.
+
+- [ ] 정비 허브 (`DEC-UI-020`) · `shop-modal.ts` (`DEC-UI-005`) · `craft-modal.ts` (`DEC-UI-006`) · 편성 팝업 (`DEC-UI-021`)
+- [ ] `dialogue-modal.ts` (`DEC-UI-007/008`) · `surrender-modal.ts`
+- [ ] 결과 화면 4종 중 `encounter-result.ts`·`night-result.ts` — **`run-failed.ts`·`ending.ts` 는 최수정 8/5 항목과 겹치므로 착수 전에 나눈다**
+- [ ] `raid_notices.csv` 3행 · `night_result_texts.csv` **1행만** (`DEC-CONTENT-018` 보류라 여러 행이면 코드가 고를 근거가 없다)
+- [ ] `layout.css` 주석 3곳 (확정된 `DEC-UI-025`·`DEC-ART-001` 을 아직 "보류"로 적고 있다)
+- [ ] `DEC-UI-025` 기준 해상도 — `index.html`·`layout.css`·`field.ts` 가 걸려 **최수정과 같이 본다**
+
+**8/5 원래 분량**
 - [ ] 승인 CSV 전량 `npm run data:validate` → `npm run data:build` → 클라이언트 바인딩 검증
 - [ ] 플레이 테스트 라운드 (완주 시도, 막히는 지점·수치 이상 목록화)
 - [ ] 21시 이전에 발견 사항 push
