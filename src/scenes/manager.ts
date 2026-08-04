@@ -301,6 +301,17 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     },
 
     enterFieldPreview(mode) {
+      // 실패한 런을 되살리지 않는다. 체력 0으로 끝난 런 위에 필드를 다시 띄우면
+      // 죽은 플레이어가 계속 싸우게 된다 (DEC-RUN-008). 개발 통로여도 마찬가지다 —
+      // 흐름이 금지한 상태를 통로가 만들어 내면 그 상태로 관찰한 결과를 믿을 수 없다.
+      if (step.at === 'run_failed') {
+        console.warn(
+          '[개발 전용] 런이 실패한 상태라 필드를 띄우지 않는다. ' +
+            '새 런이 필요하다 (DEC-RUN-008).',
+        )
+        return
+      }
+
       console.warn(
         '[개발 전용] 흐름을 건너뛰고 필드를 띄운다. run_schedules 승인 행이 없어 ' +
           '정상 흐름으로는 재배 단계에 갈 수 없기 때문이다. ' +

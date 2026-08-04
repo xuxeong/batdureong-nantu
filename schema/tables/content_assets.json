@@ -1,0 +1,65 @@
+{
+  "$comment": "콘텐츠에 논리 에셋 ID를 붙이는 공통 연결 CSV. 파일 경로는 카탈로그 없이 asset.<구간>.<이름> → assets/final/<구간>/<이름>.<확장자> 로 해석한다 (DEC-ART-001). 부모가 한 테이블이 아니라 에셋을 쓰는 콘텐츠 전체라 parent.table 이 후보 목록이다. 어떤 콘텐츠가 어떤 역할을 가질 수 있는지는 결정로그가 정하지 않았으므로 역할×테이블을 제한하지 않는다.",
+  "file": "content_assets.csv",
+  "step": 12,
+  "entry_type": "link",
+  "common_columns": false,
+  "parent": {
+    "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv",
+    "field": "content_id"
+  },
+  "unique_key": [
+    "content_id",
+    "asset_role"
+  ],
+  "decisions": [
+    "DEC-ART-001",
+    "DEC-CONTENT-001"
+  ],
+  "fields": [
+    {
+      "name": "content_id",
+      "required": true,
+      "type": "reference",
+      "ref": {
+        "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv",
+        "require_status": "approved"
+      },
+      "owner": "designer"
+    },
+    {
+      "name": "asset_role",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "field_sprite",
+        "farm_plot",
+        "crop_seed",
+        "crop_growing",
+        "crop_ready",
+        "icon",
+        "portrait",
+        "projectile",
+        "effect",
+        "background",
+        "cutscene",
+        "sfx",
+        "bgm"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "asset_id",
+      "required": true,
+      "type": "string",
+      "pattern": "^asset\\.[a-z0-9_]+\\.[a-z0-9_]+$",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "content_asset.id_section_matches_role",
+      "severity": "차단"
+    }
+  ]
+}

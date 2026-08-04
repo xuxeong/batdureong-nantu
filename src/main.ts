@@ -30,8 +30,11 @@ import { createResidentCombat } from './systems/resident-combat.ts'
 import type { HostileRuntime, ResidentCombatSystem } from './systems/resident-combat.ts'
 import { createEncounter } from './systems/encounter.ts'
 import type { Encounter } from './systems/encounter.ts'
+import { createResolution } from './systems/resolution.ts'
+import type { Resolution } from './systems/resolution.ts'
 import type {
   Crop,
+  FinalOutcome,
   ThrowableWeapon,
   WildlifeSpawnEntry,
   WildlifeSpawnProfile,
@@ -69,6 +72,8 @@ let spawnProfileIdByDay = new Map<number, string | null>()
 
 let residentCombat: ResidentCombatSystem | null = null
 let encounter: Encounter | null = null
+/** 조우 해결 — 최종 결과·관계·공포도·보상 (DEC-RESIDENT-052, 042) */
+let resolution: Resolution | null = null
 /** 이번 습격의 적대 주민. 한 번에 한 명이다 (DEC-CONTENT-002) */
 let hostile: HostileRuntime | null = null
 /**
@@ -185,6 +190,19 @@ async function bootData(): Promise<void> {
       schedule,
       playerName: '',
       seed: 1,
+      residents: data.residents ?? [],
+    })
+
+    // 조우 해결. 런 상태가 만들어진 뒤라야 붙는다 — 주민 런 상태를 직접 고친다.
+    //
+    // `fearIncrements` 가 null 인 것은 `DEC-RESIDENT-048`(공포도 증가량)이 보류라
+    // 승인 CSV 에 수치가 없기 때문이다. 임시 기본값을 넣지 않는다 (DEC-PIPELINE-016).
+    // 그동안 공포도만 누적되지 않고 관계·보상·중요 행동은 정상 처리된다.
+    resolution = createResolution(run, {
+      rewardBundles: data.reward_bundles ?? [],
+      residents: data.residents ?? [],
+      combatProfiles: data.resident_combat_profiles ?? [],
+      fearIncrements: null,
     })
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.
@@ -271,6 +289,16 @@ function inRaidStage(): boolean {
 function updateRaid(dt: number): void {
   if (residentCombat === null || combat === null || hostile === null || run === null) return
 
+  // 체력 0이면 어떤 경로로 여기 들어왔든 전투가 돌지 않는다 (DEC-RUN-008).
+  //
+  // 화면 전환만으로 막으면 화면을 우회하는 경로가 생겼을 때 그대로 뚫린다 —
+  // 실제로 `enterFieldPreview()` 가 run_failed 위에 필드를 다시 띄워서, 체력 0인
+  // 플레이어가 주민을 투항 직전까지 때리는 상태가 나왔다. 실패 여부는 상태로 판단한다.
+  if (run.health <= 0) {
+    failRunIfDead()
+    return
+  }
+
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
@@ -282,15 +310,65 @@ function updateRaid(dt: number): void {
   for (const event of combat.update(dt)) {
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
-      console.info('[습격] 주민을 처치했다. 보상 지급·조우 결과는 8/4.')
-      hostile = null
-      hostileTarget = null
+      onTargetKilled(event.targetId ?? '')
       return
     }
   }
 
   // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
   failRunIfDead()
+}
+
+/**
+ * 조우를 끝낸다 — 최종 결과 확정, 관계·공포도, 보상 지급 (DEC-RESIDENT-052, 042).
+ *
+ * **여기가 조우를 끝내는 유일한 경로다.** 처치·투항·대화 해결이 각자 상태를 고치면
+ * "처치했는데 관계가 단절이 아닌" 조합이 만들어지고, 엔딩 판정이 그걸 그대로 읽는다.
+ *
+ * @returns 실제로 확정됐으면 true. 중복 입력이나 보상 데이터 오류면 false.
+ */
+function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
+  if (resolution === null) return false
+
+  const result = resolution.resolve(residentId, outcome)
+  if (!result.ok) {
+    // 조용히 넘어가지 않는다. 중복 확정은 막힌 것이 정상이고,
+    // 보상 데이터 오류는 승인 데이터를 고쳐야 하는 문제다.
+    if (result.reason === 'already_resolved') {
+      console.warn(`[조우] ${residentId} 는 이미 해결됐다 — 중복 확정을 막았다`)
+    } else {
+      bus.emit('data.error', {
+        summary: '조우를 끝낼 수 없다',
+        detail: `${residentId} · ${outcome} · ${result.reason}`,
+      })
+    }
+    return false
+  }
+
+  const { rewardBundleId, fearDelta, fearPending } = result.value
+  bus.emit('encounter.finished', { residentId, finalOutcome: outcome })
+  if (rewardBundleId !== null) {
+    bus.emit('reward.granted', { residentId, bundleId: rewardBundleId })
+  }
+
+  console.info(
+    `[조우] ${residentId} → ${outcome} · 관계 ${run?.residents[residentId]?.relationship} · ` +
+      `공포도 +${fearDelta} (누적 ${run?.record.fear})` +
+      (rewardBundleId === null ? '' : ` · 보상 ${rewardBundleId}`),
+  )
+  if (fearPending) warnFearPending()
+  return true
+}
+
+/** 공포도 증가량 미승인 안내. 개발 빌드에서만, 한 런에 한 번만 (DEC-RESIDENT-048) */
+let fearPendingWarned = false
+function warnFearPending(): void {
+  if (!isDevBuild || fearPendingWarned) return
+  fearPendingWarned = true
+  console.warn(
+    '[조우] 공포도가 오르지 않는다 — DEC-RESIDENT-048(공포도 증가량)이 보류라 ' +
+      '승인 CSV 에 수치가 없다. 임시값을 넣지 않는다. 확정되면 엔딩 판정이 정상 동작한다.',
+  )
 }
 
 /**
@@ -428,6 +506,17 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
   const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
   if (residentId === null || residentId === '') return null // 습격 없는 날
 
+  // 해결된 주민은 같은 런에서 다시 적대로 등장하지 않는다 (DEC-RESIDENT-043).
+  // 승인 일정이 같은 주민을 두 번 배치하지 않으므로 정상 흐름에서는 걸리지 않지만,
+  // 걸린다면 일정 데이터나 흐름이 잘못된 것이라 조용히 세우면 안 된다.
+  if (resolution !== null && !resolution.canAppearAsHostile(residentId)) {
+    bus.emit('data.error', {
+      summary: '습격을 시작할 수 없다',
+      detail: `${residentId} 는 이미 조우가 해결된 주민이다 (DEC-RESIDENT-043)`,
+    })
+    return null
+  }
+
   const profileId = raidData.combatProfileByResident.get(residentId)
   const profile = profileId === undefined ? undefined : raidData.profileById.get(profileId)
   const modifier = raidData.modifierByState.get(combatState)
@@ -536,6 +625,32 @@ function currentTargets(): CombatTarget[] {
   }))
 }
 
+/**
+ * 대상이 죽었을 때. **처치 처리는 이 함수 하나다.**
+ *
+ * 처치가 두 경로로 온다 — 투사체와 지속 피해는 `combat.update()` 안에서,
+ * 낫 직접 명중은 `swingSickle()` 이 그 자리에서 돌려준다. 두 곳에서 각각 처리했더니
+ * **낫으로 주민을 죽였을 때만 조우가 안 끝났다.** 야생동물만 지우고 주민은 아무 일도
+ * 일어나지 않아서, 화면에서는 "죽었는데 아무것도 안 뜬다" 로만 보인다.
+ * 8/3 에 대상 선택이 두 군데라서 낫이 아무도 못 때렸던 것과 같은 모양이다.
+ */
+function onTargetKilled(targetId: string): void {
+  if (scenes.currentFieldMode() === 'raid') {
+    if (hostile === null || targetId !== hostile.entity.instanceId) return
+
+    // 보상 지급과 상태 변경이 실패하면 주민을 지우지 않는다 (DEC-RESIDENT-042)
+    if (!finishEncounter(hostile.entity.residentId, 'killed')) return
+
+    hostile = null
+    hostileTarget = null
+    // 조우가 해결되면 남은 투사체와 공격을 제거한다 (DEC-UI-019)
+    residentCombat?.reset()
+    return
+  }
+
+  wildlife?.remove(targetId)
+}
+
 /** 우클릭 — 낫 (DEC-INPUT-004) */
 function onSickle(): void {
   if (combat === null) return
@@ -548,7 +663,7 @@ function onSickle(): void {
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
     wildlife?.notifyDamagedByPlayer(hit.targetId)
-    if (hit.outcome === 'killed') wildlife?.remove(hit.targetId)
+    if (hit.outcome === 'killed') onTargetKilled(hit.targetId)
     if (hit.outcome === 'surrender_offered') onSurrenderOffered()
   }
 }
@@ -822,6 +937,12 @@ if (isDevBuild) {
     console.warn(`[조우] 투항 발동 — ${residentId} 체력 ${remainingHealth}`),
   )
   bus.on('run.failed', () => console.warn('[런] 체력 0 — 런 실패 (DEC-RUN-008)'))
+  bus.on('encounter.finished', ({ residentId, finalOutcome }) =>
+    console.warn(`[조우] 종료 — ${residentId} · ${finalOutcome}. 조우 결과 화면은 김민주`),
+  )
+  bus.on('reward.granted', ({ residentId, bundleId }) =>
+    console.info(`[보상] ${residentId} · ${bundleId} 지급`),
+  )
 
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
   // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
@@ -836,12 +957,14 @@ if (isDevBuild) {
       fillThrowables: (count = 5) => devFillThrowables(count),
       goToDay: (dayNumber: number) => devGoToDay(dayNumber),
       startRaid: (choiceIndex = 0) => devStartRaid(choiceIndex),
+      surrender: (choiceIndex = 0) => devSurrender(choiceIndex),
     },
   })
 
   console.info(
     '[개발 전용] __dev.fillThrowables(5) 투척 무기 채우기 · ' +
-      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협). ' +
+      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협) · ' +
+      '__dev.surrender(0) 투항 선택 (0=영입 1=대가·퇴각 2=거부·전투 계속). ' +
       '승인 일정상 습격은 2일차부터다.',
   )
 
@@ -913,6 +1036,61 @@ function devFillThrowables(count: number): void {
  * **런 상태의 일차만 바꾼다.** 자원·주민 상태·공포도는 건드리지 않으므로 이 통로로
  * 넘긴 날은 실제 플레이와 다르다. 정비·결과 화면이 오면 지운다.
  */
+/**
+ * **개발 전용.** 투항 대화의 선택지 3개를 대신한다 (`DEC-UI-007`, `DEC-RESIDENT-016`).
+ *
+ * `surrender-modal.ts` 가 로드맵 8/4 김민주 몫이라 투항이 발동하면 오버레이만 열리고
+ * 거기서 멈춘다. 그런데 이 세 선택이 최종 결과 다섯 개 중 셋(`recruited`,
+ * `retreated`, 거부 후 `killed`)과 **보상 지급 경로 전체**로 가는 유일한 문이라,
+ * 통로가 없으면 `DEC-RESIDENT-042` 의 원자적 지급을 플레이로 확인할 방법이 없다.
+ *
+ * **판정을 우회하지 않는다.** 투항 선택에는 성격 판정이 없고 선택 기능이 곧 시스템
+ * 결과다 (`DEC-CONTENT-009`). 우회하는 것은 대사 표시와 클릭뿐이다.
+ * 모달이 오면 이 함수와 노출을 지운다 (로드맵 11-2).
+ */
+function devSurrender(choiceIndex: number): void {
+  if (hostile === null || resolution === null) {
+    console.warn('[개발 전용] 투항 중인 주민이 없다')
+    return
+  }
+  // 입력 소유가 아니라 **열려 있는지**를 본다. 콘솔로 전환하면 창이 포커스를 잃어
+  // 자동 일시정지가 걸리고(DEC-UI-022) 일시정지는 항상 최상위라(DEC-UI-026)
+  // inputOwner() 가 언제나 'pause' 다. 개발 통로는 콘솔에서만 불리므로 항상 막힌다.
+  if (!scenes.openOverlays().includes('surrender_dialogue')) {
+    console.warn('[개발 전용] 투항 대화가 열려 있지 않다')
+    return
+  }
+
+  const residentId = hostile.entity.residentId
+  const choices = ['recruit', 'retreat_reward', 'resume_combat'] as const
+  const choice = choices[choiceIndex]
+  if (choice === undefined) {
+    console.warn(`[개발 전용] 투항 선택지 ${choiceIndex} 가 없다. 0=영입 1=대가·퇴각 2=거부`)
+    return
+  }
+
+  // 무엇을 골랐는지는 최종 결과와 별개로 남는다 (DEC-RESIDENT-042)
+  resolution.recordSurrenderChoice(residentId, choice)
+  console.warn(`[개발 전용] 투항 대화 UI 를 우회해 선택을 확정한다 — ${choice}`)
+
+  if (choice === 'resume_combat') {
+    // 거부는 최종 결과가 아니다. 전투로 돌아가고 실제로 처치했을 때만
+    // killed 를 확정한다 (DEC-RESIDENT-052).
+    resolution.recordSurrenderResumed(residentId)
+    scenes.closeOverlay('surrender_dialogue')
+    console.info('[조우] 투항 거부 — 전투 재개. 처치하면 killed 로 확정된다')
+    return
+  }
+
+  // 영입·대가 요구는 조우를 끝낸다. 보상과 상태 변경이 하나의 처리다.
+  if (!finishEncounter(residentId, choice === 'recruit' ? 'recruited' : 'retreated')) return
+
+  scenes.closeOverlay('surrender_dialogue')
+  hostile = null
+  hostileTarget = null
+  residentCombat?.reset()
+}
+
 function devGoToDay(dayNumber: number): void {
   if (run === null) {
     console.warn('[개발 전용] 런 상태가 없다')
@@ -941,6 +1119,11 @@ function devStartRaid(choiceIndex = 0): void {
     return
   }
 
+  if (run.health <= 0) {
+    console.warn('[개발 전용] 체력이 0이라 습격을 시작할 수 없다. 런이 이미 실패했다 (DEC-RUN-008)')
+    return
+  }
+
   const dayNumber = run.dayNumber
   const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
   if (residentId === null || residentId === '') {
@@ -953,6 +1136,14 @@ function devStartRaid(choiceIndex = 0): void {
       `[개발 전용] ${dayNumber}일차는 습격이 없는 날이다. 습격일: ${raidDays.join(', ')}. ` +
         '__dev.goToDay(n) 으로 일차를 옮긴다.',
     )
+    return
+  }
+
+  // 해결된 주민과는 대화도 다시 열리지 않는다 (DEC-RESIDENT-043).
+  // 전투 진입 전에 막아야 한다 — spawnHostile 에서 막으면 판정이 이미 돌아
+  // 중요 행동과 공포도가 한 번 더 기록된다.
+  if (resolution !== null && !resolution.canAppearAsHostile(residentId)) {
+    console.warn(`[개발 전용] ${residentId} 는 이미 해결된 주민이라 다시 조우하지 않는다`)
     return
   }
 
@@ -983,6 +1174,14 @@ function devStartRaid(choiceIndex = 0): void {
   console.info(`[조우] 판정 → ${judgement.systemResultId}`)
   console.info(`[조우] 반응 대사: ${judgement.reactionText}`)
 
+  // 위협·대립 선택은 조우를 해결하지 않지만 중요 행동이고 공포도를 올린다
+  // (DEC-RESIDENT-046, DEC-RESIDENT-052).
+  if (judgement.choiceFunction === 'threat') {
+    const { fearDelta, fearPending } = resolution!.recordThreat(residentId)
+    console.info(`[조우] 위협 선택 — 공포도 +${fearDelta} (누적 ${run.record.fear})`)
+    if (fearPending) warnFearPending()
+  }
+
   if (judgement.resolved) {
     // 조우 해결 — 전투에 들어가지 않는다 (DEC-RESIDENT-049)
     if (picked.offerQuantity !== null) {
@@ -994,9 +1193,27 @@ function devStartRaid(choiceIndex = 0): void {
         run.seed,
       )
       console.info('[조우] 자원 협상', settled.ok ? settled.consumed : settled.reason)
+      if (!settled.ok) {
+        // 수확물을 못 냈으면 조우가 해결되지 않는다. 여기서 결과를 확정하면
+        // 대가를 치르지 않고 거래 관계가 된다.
+        console.warn('[조우] 협상이 성립하지 않아 최종 결과를 확정하지 않는다')
+        return
+      }
     }
+
+    // 어느 선택으로 해결됐는지가 최종 결과를 가른다 (DEC-RESIDENT-052)
+    finishEncounter(
+      residentId,
+      picked.choiceFunction === 'empathy' ? 'empathy_resolve' : 'resource_negotiation_resolve',
+    )
     console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다. 결과 화면은 8/4 김민주.')
     return
+  }
+
+  // 자원 협상이 성격 프로필에 막힌 것도 중요 행동이다 (DEC-CONTENT-011)
+  if (judgement.choiceFunction === 'resource_negotiation') {
+    resolution!.recordNegotiationRejected(residentId)
+    console.info('[조우] 자원 협상 거절 — 중요 행동으로 기록')
   }
 
   // 전투 결과 — 시스템 결과 ID 에서 전투 보정 키를 얻는다 (DEC-CONTENT-009)
