@@ -53,7 +53,13 @@ const BUNDLES = [
   },
 ]
 
-const FEAR = { threat: 1, retreat: 3, kill: 6 }
+// DEC-RESIDENT-048 의 승인 값. cause 키는 important_action_count_subject 와 같다 —
+// ending_conditions.csv 가 같은 행동을 그 키로 가리키므로 별칭을 만들지 않는다.
+const FEAR = {
+  threat_selected: 1,
+  surrender_retreat_reward: 3,
+  resident_killed: 6,
+}
 
 function newResident(id) {
   return {
@@ -235,8 +241,8 @@ test('위협·퇴각·처치만 공포도를 올린다', () => {
     ['empathy_resolve', 0],
     ['resource_negotiation_resolve', 0],
     ['recruited', 0],
-    ['retreated', FEAR.retreat],
-    ['killed', FEAR.kill],
+    ['retreated', FEAR.surrender_retreat_reward],
+    ['killed', FEAR.resident_killed],
   ]
 
   for (const [outcome, expected] of cases) {
@@ -250,8 +256,8 @@ test('위협 선택은 공포도만 올리고 조우를 해결하지 않는다',
   const { state, resolution } = setup()
   const { fearDelta } = resolution.recordThreat('resident.yeongsun')
 
-  assert.equal(fearDelta, FEAR.threat)
-  assert.equal(state.record.fear, FEAR.threat)
+  assert.equal(fearDelta, FEAR.threat_selected)
+  assert.equal(state.record.fear, FEAR.threat_selected)
   assert.equal(state.record.importantActions.threat_selected, 1)
   assert.equal(state.residents['resident.yeongsun'].resolved, false)
   assert.equal(state.residents['resident.yeongsun'].finalOutcome, null)
@@ -265,7 +271,7 @@ test('공포도는 누적되고 감소하지 않는다', () => {
   resolution.resolve('resident.yeongsun', 'killed')
   resolution.resolve('resident.ijang', 'retreated')
 
-  assert.equal(state.record.fear, FEAR.threat * 2 + FEAR.kill + FEAR.retreat)
+  assert.equal(state.record.fear, FEAR.threat_selected * 2 + FEAR.resident_killed + FEAR.surrender_retreat_reward)
 })
 
 test('증가량이 미승인이면 공포도만 멈추고 나머지는 진행한다', () => {

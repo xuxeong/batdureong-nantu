@@ -46,6 +46,7 @@ export type Kind =
   | 'fear_band'
   | 'ending'
   | 'player_base_stats'
+  | 'fear_increment'
 
 /** DEC-CONTENT-013 — 작물 속성이 전투에서 일으키는 효과 */
 export type CombatMechanicKey = 'damage_over_time' | 'movement_slow'
@@ -550,6 +551,18 @@ export interface JournalFallback extends LinkEntry {
   fallback_journal_text: string
 }
 
+/**
+ * 행동별 공포도 증가량 (DEC-RESIDENT-048).
+ *
+ * `cause` 는 `ImportantActionSubject` 중 공포도를 올리는 셋만 쓴다. 짧은 별칭을
+ * 만들지 않는다 — `ending_conditions.csv` 가 같은 행동을 그 키로 가리킨다.
+ */
+export interface FearIncrement extends CommonEntry {
+  kind: 'fear_increment'
+  cause: 'threat_selected' | 'surrender_retreat_reward' | 'resident_killed'
+  fear_amount: number
+}
+
 export interface FearBand extends CommonEntry {
   kind: 'fear_band'
   min_fear: number
@@ -667,6 +680,7 @@ export interface RuntimeData {
   fear_bands?: FearBand[]
   endings?: Ending[]
   player_base_stats?: PlayerBaseStats[]
+  fear_increments?: FearIncrement[]
 }
 
 /** RuntimeData 에서 테이블 이름만 뽑은 것. 로더가 적재 대상을 순회할 때 쓴다 */

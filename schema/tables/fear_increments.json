@@ -1,0 +1,41 @@
+{
+  "$comment": "행동별 공포도 증가량의 단일 원본 (DEC-RESIDENT-048). 공포도를 변화시키지 않는 선택은 행을 두지 않는다 — 0 행을 두면 '아직 안 정했다'와 '0으로 정했다'가 같은 모양이 된다. 엔딩 판정 구간은 이 테이블이 아니라 fear_bands.csv 가 정한다.",
+  "file": "fear_increments.csv",
+  "step": 12,
+  "entry_type": "independent",
+  "kind": "fear_increment",
+  "id_prefix": "fear_increment.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-RESIDENT-048",
+    "DEC-RESIDENT-046",
+    "DEC-CONTENT-011"
+  ],
+  "fields": [
+    {
+      "name": "cause",
+      "required": true,
+      "type": "enum",
+      "$comment": "important_action_count_subject 중 공포도를 올리는 셋만 쓴다. 새 키를 만들지 않는다.",
+      "values": [
+        "threat_selected",
+        "surrender_retreat_reward",
+        "resident_killed"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "fear_amount",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "fear_increment.exactly_one_per_cause",
+      "severity": "차단"
+    }
+  ]
+}

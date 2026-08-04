@@ -31,11 +31,12 @@ import type { HostileRuntime, ResidentCombatSystem } from './systems/resident-co
 import { createEncounter } from './systems/encounter.ts'
 import type { Encounter } from './systems/encounter.ts'
 import { createResolution } from './systems/resolution.ts'
-import type { Resolution } from './systems/resolution.ts'
+import type { FearIncrements, Resolution } from './systems/resolution.ts'
 import { createEndingJudge } from './systems/ending.ts'
 import type { EndingJudge } from './systems/ending.ts'
 import type {
   Crop,
+  FearIncrement,
   FinalOutcome,
   ThrowableWeapon,
   WildlifeSpawnEntry,
@@ -102,6 +103,28 @@ let raidData: {
 let endingJudge: EndingJudge | null = null
 
 const player = { x: 0, y: 0 }
+
+/**
+ * 승인 `fear_increments.csv` 를 행동별 증가량으로 바꾼다 (DEC-RESIDENT-048).
+ *
+ * **세 원인이 다 있을 때만 값을 돌려준다.** 일부만 있으면 없는 원인이 0으로
+ * 취급되어 "위협은 공포도를 안 올린다" 같은 규칙이 조용히 생긴다. 그럴 바에는
+ * 통째로 미승인으로 보고 공포도를 멈추는 편이 낫다 — 화면에 경고가 남는다.
+ */
+function readFearIncrements(rows: readonly FearIncrement[] | undefined): FearIncrements | null {
+  const byCause = new Map((rows ?? []).map((r) => [r.cause, r.fear_amount]))
+
+  const threat = byCause.get('threat_selected')
+  const retreat = byCause.get('surrender_retreat_reward')
+  const kill = byCause.get('resident_killed')
+  if (threat === undefined || retreat === undefined || kill === undefined) return null
+
+  return {
+    threat_selected: threat,
+    surrender_retreat_reward: retreat,
+    resident_killed: kill,
+  }
+}
 
 /**
  * 승인 데이터를 읽어 맵·작물·플레이어 수치를 붙인다.
@@ -208,15 +231,11 @@ async function bootData(): Promise<void> {
     })
 
     // 조우 해결. 런 상태가 만들어진 뒤라야 붙는다 — 주민 런 상태를 직접 고친다.
-    //
-    // `fearIncrements` 가 null 인 것은 `DEC-RESIDENT-048`(공포도 증가량)이 보류라
-    // 승인 CSV 에 수치가 없기 때문이다. 임시 기본값을 넣지 않는다 (DEC-PIPELINE-016).
-    // 그동안 공포도만 누적되지 않고 관계·보상·중요 행동은 정상 처리된다.
     resolution = createResolution(run, {
       rewardBundles: data.reward_bundles ?? [],
       residents: data.residents ?? [],
       combatProfiles: data.resident_combat_profiles ?? [],
-      fearIncrements: null,
+      fearIncrements: readFearIncrements(data.fear_increments),
     })
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.

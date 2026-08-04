@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 5,
+  "schema_version": 6,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
 
@@ -44,6 +44,14 @@
       "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
       "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 두 CSV를 drafts부터 새로 작성해야 한다. tutorial_steps 는 승인 행의 step_order 가 1부터 연속이어야 하고 farming·combat·maintenance 세 stage 마다 하나 이상이어야 한다. content_assets 는 (content_id, asset_role) 이 고유하고 asset_id 의 구간이 asset_role 과 같아야 하며, 아트가 없으면 행을 만들지 않아도 된다. 부모가 한 테이블이 아니라 에셋을 쓰는 콘텐츠 전체라 build-runtime 의 연결 결합이 후보 목록을 받도록 바뀌었다. 어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋 ID 는 이 테이블이 아니라 enums.json 의 고정 목록으로 관리하며 아직 만들지 않았다(enums.json 의 open_questions)",
       "decisions": ["DEC-CONTENT-023", "DEC-ART-001", "DEC-UI-015", "DEC-CONTENT-001"]
+    },
+    {
+      "schema_version": { "from": 5, "to": 6 },
+      "date": "2026-08-04",
+      "change": "fear_increments.csv(독립 콘텐츠, cause·fear_amount) 테이블 신설. DEC-RESIDENT-048 이 위협 1·퇴각 3·처치 6 을 확정하면서 이 값의 단일 원본을 승인 CSV 로 정했다. 그 전까지는 수치를 담을 열이 33종 어디에도 없어 엔딩 판정이 공포도 구간을 고를 수 없었다",
+      "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
+      "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 승인 행은 threat_selected·surrender_retreat_reward·resident_killed 세 cause 마다 정확히 하나여야 한다. 공포도를 변화시키지 않는 선택(공감·협상·영입)은 행을 두지 않는다. 승인 전에는 src/systems/resolution.ts 가 공포도만 누적하지 않고 관계·보상·중요 행동은 정상 처리하며 개발 빌드에 경고를 남긴다. 승인되면 엔딩 판정이 공포도 구간을 실제로 가른다",
+      "decisions": ["DEC-RESIDENT-048", "DEC-RESIDENT-046", "DEC-CONTENT-011"]
     }
   ]
 }
