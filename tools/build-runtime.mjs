@@ -12,7 +12,7 @@
 import { writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { loadSchema, loadDataset, allFields } from './lib/schema.mjs'
+import { loadSchema, loadDataset, allFields, refTargets } from './lib/schema.mjs'
 
 const SRC = 'data/approved'
 const OUT = 'generated/runtime'
@@ -42,6 +42,7 @@ const CHILD_KEY = {
   'dialogue_choice_responses.csv': 'responses',
   'run_schedule_days.csv': 'days',
   'ending_conditions.csv': 'conditions',
+  'content_assets.csv': 'assets',
 }
 
 /** 값 하나를 필드 자료형에 맞는 JSON 값으로 바꾼다 */
@@ -127,20 +128,27 @@ function main() {
   let orphaned = 0
   for (const [name, list] of links) {
     const def = schema.tables.get(name)
-    const parentFile = def.parent.table
-    const parents = independent.get(parentFile)
-    if (!parents) continue
+    // 부모가 한 테이블이 아닐 수 있다. content_assets.csv 는 에셋을 쓰는 콘텐츠
+    // 전체가 부모라 parent.table 이 `a.csv | b.csv` 후보 목록이다 (DEC-ART-001).
+    const parentTables = refTargets(def.parent).map((f) => independent.get(f)).filter(Boolean)
+    if (parentTables.length === 0) continue
 
     const key = CHILD_KEY[name] ?? name.replace('.csv', '')
     const single = name === 'crop_mastery_unlocks.csv' // 레시피당 최대 하나
+    // 에셋은 배열이 아니라 역할로 찾는다. (content_id, asset_role) 이 고유 키라
+    // 역할 하나에 ID 하나가 보장된다. 렌더러가 crop.assets.crop_ready 로 읽는다.
+    const byRole = name === 'content_assets.csv'
 
     for (const { parentId, object } of list) {
-      const parent = parents.get(parentId)
+      const parent = parentTables.map((t) => t.get(parentId)).find(Boolean)
       if (!parent) {
         orphaned++
         continue
       }
-      if (single) {
+      if (byRole) {
+        if (!parent[key]) parent[key] = {}
+        parent[key][object.asset_role] = object.asset_id
+      } else if (single) {
         parent[key] = object
       } else {
         if (!parent[key]) parent[key] = []
