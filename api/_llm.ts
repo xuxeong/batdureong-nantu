@@ -13,7 +13,17 @@
 // **실패는 정상 경로다.** 키가 없거나 응답이 규격을 벗어나면 실패로 돌려주고,
 // 부르는 쪽이 승인된 폴백 문구를 쓴다 (DEC-JOURNAL-003). 여기서 문장을 지어내지 않는다.
 
-import Anthropic from '@anthropic-ai/sdk'
+// ── SDK 를 쓰지 않는 이유 ──────────────────────────────────
+//
+// `@anthropic-ai/sdk` 가 edge 번들에 `node:fs`·`node:path` 를 끌고 들어와 배포가
+// 실패한다 ("referencing unsupported modules", 8/5). 런타임을 nodejs 로 바꾸면
+// 쓸 수 있지만 그쪽은 표준 Response 반환이 죽는다 (api/health.ts 주석).
+//
+// 우리가 쓰는 것은 메시지 한 번 보내고 텍스트 하나 받는 것뿐이라 표준 `fetch` 로
+// 충분하다. **팀규칙 7절이 api/ 에 요구하는 것도 표준 웹 Request/Response 다.**
+
+const ENDPOINT = 'https://api.anthropic.com/v1/messages'
+const API_VERSION = '2023-06-01'
 
 /**
  * 생성 모델은 환경변수로 교체할 수 있어야 한다.
@@ -78,45 +88,64 @@ export async function generateOnce(options: GenerateOptions): Promise<LlmResult>
   if (apiKey === undefined || apiKey === '') return { ok: false, reason: 'no_api_key' }
 
   const model = modelId()
-  const client = new Anthropic({ apiKey })
 
-  let response
+  let response: Response
   try {
-    response = await client.messages.create({
-      model,
-      max_tokens: options.maxTokens,
-      system: options.system,
-      // 출력을 필드 하나짜리 JSON 객체로 제한한다 (DEC-CONTENT-011).
-      // 프롬프트로만 부탁하지 않고 스키마로 강제한다.
-      output_config: {
-        format: {
-          type: 'json_schema',
-          schema: {
-            type: 'object',
-            properties: { [options.field]: { type: 'string' } },
-            required: [options.field],
-            additionalProperties: false,
+    response = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': API_VERSION,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: options.maxTokens,
+        system: options.system,
+        // 출력을 필드 하나짜리 JSON 객체로 제한한다 (DEC-CONTENT-011).
+        // 프롬프트로만 부탁하지 않고 스키마로 강제한다.
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: {
+              type: 'object',
+              properties: { [options.field]: { type: 'string' } },
+              required: [options.field],
+              additionalProperties: false,
+            },
           },
         },
-      },
-      messages: [
-        {
-          role: 'user',
-          // 확정된 사실만 넘긴다. 플레이어 이름을 포함해 전부 인용된 데이터이며
-          // 지시로 해석하지 않는 것은 시스템 지시문이 맡는다.
-          content: JSON.stringify(options.input),
-        },
-      ],
+        messages: [
+          {
+            role: 'user',
+            // 확정된 사실만 넘긴다. 플레이어 이름을 포함해 전부 인용된 데이터이며
+            // 지시로 해석하지 않는 것은 시스템 지시문이 맡는다.
+            content: JSON.stringify(options.input),
+          },
+        ],
+      }),
     })
   } catch {
     return { ok: false, reason: 'request_failed' }
   }
 
-  // 안전 분류기가 거절하면 content 가 비어 있다. 폴백으로 간다.
-  if (response.stop_reason === 'refusal') return { ok: false, reason: 'invalid_response' }
+  if (!response.ok) return { ok: false, reason: 'request_failed' }
 
-  const block = response.content.find((b) => b.type === 'text')
-  if (block === undefined || block.type !== 'text') {
+  let message: {
+    stop_reason?: string
+    content?: Array<{ type?: string; text?: string }>
+  }
+  try {
+    message = (await response.json()) as typeof message
+  } catch {
+    return { ok: false, reason: 'request_failed' }
+  }
+
+  // 안전 분류기가 거절하면 content 가 비어 있다. 폴백으로 간다.
+  if (message.stop_reason === 'refusal') return { ok: false, reason: 'invalid_response' }
+
+  const block = (message.content ?? []).find((b) => b.type === 'text')
+  if (block === undefined || typeof block.text !== 'string') {
     return { ok: false, reason: 'invalid_response' }
   }
 
