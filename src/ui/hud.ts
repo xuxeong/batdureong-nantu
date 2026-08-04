@@ -154,7 +154,8 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       if (anyUsable) noThrowable.remove()
       else if (!noThrowable.isConnected) bottom.insertBefore(noThrowable, recovery)
 
-      recovery.textContent = view.recoveryName ?? '회복 없음'
+      // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다
+      recovery.textContent = view.recoveryName ?? '회복 아이템 없음'
     },
 
     destroy() {

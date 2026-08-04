@@ -47,6 +47,11 @@ import { createRunState } from './state/run-state.ts'
 import type { RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
 import type { Hud } from './ui/hud.ts'
+import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
+import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
+import { createEconomy } from './systems/economy.ts'
+import type { Economy } from './systems/economy.ts'
+import type { ItemStore } from './state/types.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
 
@@ -64,6 +69,11 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 let throwablesById = new Map<string, ThrowableWeapon>()
 let run: RunState | null = null
+let economy: Economy | null = null
+/** 보관함 표시 이름을 찾기 위한 통합 사전. 분류가 달라도 조회는 한 곳에서 한다 */
+let displayNames = new Map<string, string>()
+/** 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020) */
+let openPopup: string | null = null
 
 // 전투와 야생동물도 승인 데이터가 있어야 만들어진다. 없으면 null 로 남고
 // 우클릭·좌클릭이 아무 일도 하지 않는다 — 임시 수치를 지어내지 않는다.
@@ -264,6 +274,26 @@ async function bootData(): Promise<void> {
       totalDays: schedule.total_days,
       raidTypeOf: (day) => raidByDay.get(day),
     })
+    raidTypeOfDay = (day) => raidByDay.get(day) ?? 'none'
+
+    // 보관함 표시 이름. 분류가 넷이라 조회를 한 곳으로 모은다.
+    displayNames = new Map(
+      [
+        ...crops,
+        ...(data.crafting_materials ?? []),
+        ...(data.throwable_weapons ?? []),
+        ...(data.recovery_items ?? []),
+      ].map((entry) => [entry.id, entry.display_name]),
+    )
+
+    economy = createEconomy(
+      { resources: run.resources, cropMastery: run.record.cropMastery, unlockedRecipeIds: run.record.unlockedRecipeIds },
+      {
+        crops,
+        materials: data.crafting_materials ?? [],
+        recipes: data.recipes ?? [],
+      },
+    )
 
     console.info(
       `[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종 · ` +
@@ -592,12 +622,15 @@ function onInteract(): void {
   if (event === null) return
 
   if (event.type === 'planted') {
-    // 씨앗 단계에서는 종류를 공개하지 않으므로 로그에도 남기지 않는다 (DEC-FARM-001)
-    console.info(`[재배] ${event.plot.plotId} 파종`)
+    // 씨앗 단계에서는 종류를 공개하지 않으므로 cropId 를 싣지 않는다 (DEC-FARM-001)
+    bus.emit('farm.planted', { plotId: event.plot.plotId })
   } else {
     const name = cropsById.get(event.cropId)?.display_name ?? event.cropId
-    const total = farming.harvested.get(event.cropId) ?? 0
-    console.info(`[재배] ${name} ${event.amount}개 수확 — 보관함 ${total}개`)
+    bus.emit('farm.harvested', {
+      plotId: event.plot.plotId,
+      cropId: event.cropId,
+      quantity: event.amount,
+    })
 
     // 수확물 보관함과 총수확 기록에 반영한다.
     // farming.harvested 는 재배 시스템 안의 집계이고, 판매·제작이 보는 원본은 런 상태다.
@@ -893,6 +926,89 @@ const hud: Hud = createHud(uiRoot, {
   onPause: () => scenes.handleEscape(),
 })
 
+const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
+  openPopup: (popup) => {
+    // 한 번에 하나만 연다. 이미 같은 팝업이 열려 있으면 아무 일도 하지 않는다 (DEC-UI-020)
+    if (openPopup === popup) return
+    openPopup = popup
+    hub.setPopup(buildPopup(popup))
+  },
+  finish: () => {
+    // 습격 여부에 따라 버튼이 하나만 나온다. 흐름이 둘을 대조해 어긋나면 오류로 잡는다.
+    const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
+    scenes.send({
+      type: 'maintenance_finished',
+      intent: raidType !== 'none' ? 'scout_field' : 'sleep_until_morning',
+    })
+  },
+})
+
+/** 승인된 일정에서 해당 일차의 습격 종류를 읽는다 */
+let raidTypeOfDay: (day: number) => string = () => 'none'
+
+const POPUP_TITLES: Record<string, string> = {
+  sell: '판매',
+  buy: '구매',
+  craft: '제작',
+  quickslots: '투척 퀵슬롯 편성',
+}
+
+/**
+ * 팝업 본문.
+ *
+ * 지금은 껍데기와 닫기 버튼만 만든다. 실제 목록·수량·미리보기는
+ * shop-modal.ts / craft-modal.ts 로 분리해 붙인다 (DEC-UI-005, DEC-UI-006).
+ * 판정은 이미 economy.ts 에 있으므로 여기서 자원을 직접 만지지 않는다.
+ */
+function buildPopup(popup: string): HTMLElement {
+  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup, () => {
+    openPopup = null
+    hub.setPopup(null)
+  })
+
+  const note = document.createElement('div')
+  note.className = 'hub__preview'
+  if (popup === 'craft' && economy !== null) {
+    // 해금 여부와 최대 제작 횟수는 economy 가 이미 판단한다.
+    // 목록 UI 가 붙기 전에도 그 판정이 살아 있는지 여기서 보인다.
+    const lines = economy
+      .baseRecipeIds()
+      .map((id) => `${id} — 최대 ${economy!.maxCraftTimes(id)}회`)
+    note.textContent = lines.length > 0 ? lines.join('\n') : '해금된 레시피가 없다'
+    note.style.whiteSpace = 'pre-line'
+  } else {
+    note.textContent = '이 팝업의 목록 UI는 아직 붙지 않았다.'
+  }
+  body.appendChild(note)
+
+  return root
+}
+
+/** 보관함 한 분류를 표시용 줄로 바꾼다. 수량 0인 키는 애초에 없다 */
+function rowsOf(store: ItemStore): InventoryRow[] {
+  return Object.entries(store)
+    .map(([id, count]) => ({ id, name: displayNames.get(id) ?? id, count }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+}
+
+function hubView() {
+  const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
+  return {
+    dayNumber: run?.dayNumber ?? 1,
+    money: run?.resources.money ?? 0,
+    inventory: {
+      crops: rowsOf(run?.resources.crops ?? {}),
+      materials: rowsOf(run?.resources.materials ?? {}),
+      throwables: rowsOf(run?.resources.throwables ?? {}),
+      recoveries: rowsOf(run?.resources.recoveries ?? {}),
+    },
+    // raid_notices.csv 가 승인되면 여기에 hud_label 이 들어간다 (DEC-RUN-011)
+    raidNoticeLabel: null,
+    // 문구는 DEC-RUN-006 이 정한 두 가지다
+    finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
+  }
+}
+
 /** 런 상태를 HUD 가 쓰는 모양으로 옮긴다 */
 function hudView() {
   const quickslots = (run?.quickslots.slots ?? []).map((id, index) => ({
@@ -982,15 +1098,18 @@ const loop = createGameLoop(
       // 재배 중 체력이 0이면 즉시 런 실패다 (DEC-RUN-008)
       failRunIfDead()
 
-      // 수확 가능으로 바뀐 순간을 한 번만 강조한다 (DEC-UI-004)
+      // 수확 가능으로 바뀐 순간을 한 번만 강조한다 (DEC-UI-004).
+      // 강조는 여기서 직접 그리지만 효과음은 버스로 나간다 — 오디오가 붙을 때
+      // 재배 시스템을 다시 건드리지 않게 계약을 지금부터 살려 둔다.
       for (const plotId of farming?.justBecameReady ?? []) {
         readyFlashes.set(plotId, READY_FLASH_SECONDS)
+        bus.emit('farm.plotReady', { plotId })
       }
 
       // 제한시간이 끝나면 재배 단계를 자동 종료한다 (DEC-RUN-004).
       // 조기 종료 조건을 만들지 않는다 — DEC-RUN-005 는 보류다.
       if (farmingTimer?.tick(dt)) {
-        console.info('[재배] 제한시간 종료 — 정비 단계로')
+        bus.emit('farm.timeExpired', {})
         scenes.send({ type: 'farming_time_expired' })
       }
     },
@@ -1019,6 +1138,17 @@ const loop = createGameLoop(
         })),
       })
       hud.render(hudView())
+
+      // 정비 허브는 오버레이가 열려 있는 동안만 보인다.
+      // 입력 소유는 scenes 가 판단한다 — 각자 "내가 열려 있나"를 보면
+      // 일시정지가 겹쳤을 때 둘 다 입력을 받는다 (DEC-UI-026).
+      if (scenes.inputOwner() === 'maintenance_hub') {
+        hub.render(hubView())
+        hub.show()
+      } else {
+        hub.hide()
+        openPopup = null
+      }
     },
   },
   {
