@@ -30,8 +30,11 @@ import { createResidentCombat } from './systems/resident-combat.ts'
 import type { HostileRuntime, ResidentCombatSystem } from './systems/resident-combat.ts'
 import { createEncounter } from './systems/encounter.ts'
 import type { Encounter } from './systems/encounter.ts'
+import { createResolution } from './systems/resolution.ts'
+import type { Resolution } from './systems/resolution.ts'
 import type {
   Crop,
+  FinalOutcome,
   ThrowableWeapon,
   WildlifeSpawnEntry,
   WildlifeSpawnProfile,
@@ -69,6 +72,8 @@ let spawnProfileIdByDay = new Map<number, string | null>()
 
 let residentCombat: ResidentCombatSystem | null = null
 let encounter: Encounter | null = null
+/** 조우 해결 — 최종 결과·관계·공포도·보상 (DEC-RESIDENT-052, 042) */
+let resolution: Resolution | null = null
 /** 이번 습격의 적대 주민. 한 번에 한 명이다 (DEC-CONTENT-002) */
 let hostile: HostileRuntime | null = null
 /**
@@ -185,6 +190,19 @@ async function bootData(): Promise<void> {
       schedule,
       playerName: '',
       seed: 1,
+      residents: data.residents ?? [],
+    })
+
+    // 조우 해결. 런 상태가 만들어진 뒤라야 붙는다 — 주민 런 상태를 직접 고친다.
+    //
+    // `fearIncrements` 가 null 인 것은 `DEC-RESIDENT-048`(공포도 증가량)이 보류라
+    // 승인 CSV 에 수치가 없기 때문이다. 임시 기본값을 넣지 않는다 (DEC-PIPELINE-016).
+    // 그동안 공포도만 누적되지 않고 관계·보상·중요 행동은 정상 처리된다.
+    resolution = createResolution(run, {
+      rewardBundles: data.reward_bundles ?? [],
+      residents: data.residents ?? [],
+      combatProfiles: data.resident_combat_profiles ?? [],
+      fearIncrements: null,
     })
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.
@@ -282,7 +300,9 @@ function updateRaid(dt: number): void {
   for (const event of combat.update(dt)) {
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
-      console.info('[습격] 주민을 처치했다. 보상 지급·조우 결과는 8/4.')
+      // 처치 보상 지급과 상태 변경은 하나의 처리다 (DEC-RESIDENT-042).
+      // 실패하면 주민을 지우지 않는다 — 지워 버리면 보상 없이 조우만 사라진다.
+      if (!finishEncounter(hostile.entity.residentId, 'killed')) return
       hostile = null
       hostileTarget = null
       return
@@ -291,6 +311,58 @@ function updateRaid(dt: number): void {
 
   // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
   failRunIfDead()
+}
+
+/**
+ * 조우를 끝낸다 — 최종 결과 확정, 관계·공포도, 보상 지급 (DEC-RESIDENT-052, 042).
+ *
+ * **여기가 조우를 끝내는 유일한 경로다.** 처치·투항·대화 해결이 각자 상태를 고치면
+ * "처치했는데 관계가 단절이 아닌" 조합이 만들어지고, 엔딩 판정이 그걸 그대로 읽는다.
+ *
+ * @returns 실제로 확정됐으면 true. 중복 입력이나 보상 데이터 오류면 false.
+ */
+function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
+  if (resolution === null) return false
+
+  const result = resolution.resolve(residentId, outcome)
+  if (!result.ok) {
+    // 조용히 넘어가지 않는다. 중복 확정은 막힌 것이 정상이고,
+    // 보상 데이터 오류는 승인 데이터를 고쳐야 하는 문제다.
+    if (result.reason === 'already_resolved') {
+      console.warn(`[조우] ${residentId} 는 이미 해결됐다 — 중복 확정을 막았다`)
+    } else {
+      bus.emit('data.error', {
+        summary: '조우를 끝낼 수 없다',
+        detail: `${residentId} · ${outcome} · ${result.reason}`,
+      })
+    }
+    return false
+  }
+
+  const { rewardBundleId, fearDelta, fearPending } = result.value
+  bus.emit('encounter.finished', { residentId, finalOutcome: outcome })
+  if (rewardBundleId !== null) {
+    bus.emit('reward.granted', { residentId, bundleId: rewardBundleId })
+  }
+
+  console.info(
+    `[조우] ${residentId} → ${outcome} · 관계 ${run?.residents[residentId]?.relationship} · ` +
+      `공포도 +${fearDelta} (누적 ${run?.record.fear})` +
+      (rewardBundleId === null ? '' : ` · 보상 ${rewardBundleId}`),
+  )
+  if (fearPending) warnFearPending()
+  return true
+}
+
+/** 공포도 증가량 미승인 안내. 개발 빌드에서만, 한 런에 한 번만 (DEC-RESIDENT-048) */
+let fearPendingWarned = false
+function warnFearPending(): void {
+  if (!isDevBuild || fearPendingWarned) return
+  fearPendingWarned = true
+  console.warn(
+    '[조우] 공포도가 오르지 않는다 — DEC-RESIDENT-048(공포도 증가량)이 보류라 ' +
+      '승인 CSV 에 수치가 없다. 임시값을 넣지 않는다. 확정되면 엔딩 판정이 정상 동작한다.',
+  )
 }
 
 /**
@@ -822,6 +894,12 @@ if (isDevBuild) {
     console.warn(`[조우] 투항 발동 — ${residentId} 체력 ${remainingHealth}`),
   )
   bus.on('run.failed', () => console.warn('[런] 체력 0 — 런 실패 (DEC-RUN-008)'))
+  bus.on('encounter.finished', ({ residentId, finalOutcome }) =>
+    console.warn(`[조우] 종료 — ${residentId} · ${finalOutcome}. 조우 결과 화면은 김민주`),
+  )
+  bus.on('reward.granted', ({ residentId, bundleId }) =>
+    console.info(`[보상] ${residentId} · ${bundleId} 지급`),
+  )
 
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
   // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
@@ -983,6 +1061,14 @@ function devStartRaid(choiceIndex = 0): void {
   console.info(`[조우] 판정 → ${judgement.systemResultId}`)
   console.info(`[조우] 반응 대사: ${judgement.reactionText}`)
 
+  // 위협·대립 선택은 조우를 해결하지 않지만 중요 행동이고 공포도를 올린다
+  // (DEC-RESIDENT-046, DEC-RESIDENT-052).
+  if (judgement.choiceFunction === 'threat') {
+    const { fearDelta, fearPending } = resolution!.recordThreat(residentId)
+    console.info(`[조우] 위협 선택 — 공포도 +${fearDelta} (누적 ${run.record.fear})`)
+    if (fearPending) warnFearPending()
+  }
+
   if (judgement.resolved) {
     // 조우 해결 — 전투에 들어가지 않는다 (DEC-RESIDENT-049)
     if (picked.offerQuantity !== null) {
@@ -994,9 +1080,27 @@ function devStartRaid(choiceIndex = 0): void {
         run.seed,
       )
       console.info('[조우] 자원 협상', settled.ok ? settled.consumed : settled.reason)
+      if (!settled.ok) {
+        // 수확물을 못 냈으면 조우가 해결되지 않는다. 여기서 결과를 확정하면
+        // 대가를 치르지 않고 거래 관계가 된다.
+        console.warn('[조우] 협상이 성립하지 않아 최종 결과를 확정하지 않는다')
+        return
+      }
     }
+
+    // 어느 선택으로 해결됐는지가 최종 결과를 가른다 (DEC-RESIDENT-052)
+    finishEncounter(
+      residentId,
+      picked.choiceFunction === 'empathy' ? 'empathy_resolve' : 'resource_negotiation_resolve',
+    )
     console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다. 결과 화면은 8/4 김민주.')
     return
+  }
+
+  // 자원 협상이 성격 프로필에 막힌 것도 중요 행동이다 (DEC-CONTENT-011)
+  if (judgement.choiceFunction === 'resource_negotiation') {
+    resolution!.recordNegotiationRejected(residentId)
+    console.info('[조우] 자원 협상 거절 — 중요 행동으로 기록')
   }
 
   // 전투 결과 — 시스템 결과 ID 에서 전투 보정 키를 얻는다 (DEC-CONTENT-009)

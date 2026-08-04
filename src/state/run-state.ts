@@ -6,8 +6,8 @@
 // 초기값은 전부 승인 데이터에서 온다. 체력·소지금은 `player_base_stats` 승인 행에서
 // 오며 여기에 숫자를 쓰지 않는다 (DEC-CONTENT-019, DEC-PIPELINE-016).
 
-import type { PlayerBaseStats, RunSchedule } from '../data/types.ts'
-import type { ItemStore, Resources, RunState } from './types.ts'
+import type { PlayerBaseStats, Resident, RunSchedule } from '../data/types.ts'
+import type { ItemStore, ResidentRunState, Resources, RunState } from './types.ts'
 import { THROWABLE_QUICKSLOT_COUNT } from './types.ts'
 
 export interface NewRunOptions {
@@ -16,6 +16,33 @@ export interface NewRunOptions {
   playerName: string
   /** 자원 협상 추첨을 재현하기 위한 시드 (DEC-RESIDENT-050) */
   seed: number
+  /** 승인 주민 전량. 런 상태를 미형성으로 깔아 둔다 (DEC-CONTENT-022) */
+  residents: readonly Resident[]
+}
+
+/**
+ * 조우 전 주민 한 명의 초기 상태.
+ *
+ * 관계는 `unformed` 로 시작한다 (DEC-CONTENT-022). 소속을 `hostile` 로 두는 이유는
+ * 조우가 해결되기 전까지는 적대 주민 후보라는 뜻이고, 해결 순간 결과가 정한 조합으로
+ * 한 번에 바뀐다 (DEC-RESIDENT-052).
+ */
+function newResidentState(resident: Resident): ResidentRunState {
+  return {
+    residentId: resident.id,
+    resolved: false,
+    finalOutcome: null,
+    lifeState: 'alive',
+    allegiance: 'hostile',
+    relationship: 'unformed',
+    // 사연 시나리오는 조우를 시작할 때 뽑는다 (DEC-CONTENT-002)
+    scenarioId: null,
+    revealedStoryInfoIds: [],
+    surrenderOffered: false,
+    surrenderChoice: null,
+    rewardGranted: false,
+    supportUsed: false,
+  }
 }
 
 function emptyStore(): ItemStore {
@@ -39,7 +66,7 @@ function newResources(stats: PlayerBaseStats): Resources {
 }
 
 export function createRunState(options: NewRunOptions): RunState {
-  const { stats, schedule, playerName, seed } = options
+  const { stats, schedule, playerName, seed, residents } = options
 
   return {
     playerName,
@@ -61,9 +88,9 @@ export function createRunState(options: NewRunOptions): RunState {
     pouch: { selectedId: null },
     recovering: null,
 
-    // 주민 런 상태는 조우 시스템(최수정, 8/3)이 붙을 때 승인 주민으로 채운다.
-    // 지금 임의로 채우면 그쪽 구현과 초기값이 두 곳에서 갈린다.
-    residents: {},
+    // 승인 주민 전량을 미형성으로 깔아 둔다. 조우가 시작될 때 만들지 않는 이유는
+    // 엔딩 조건이 "조우하지 않은 주민"까지 세어야 하기 때문이다 (DEC-CONTENT-011).
+    residents: Object.fromEntries(residents.map((r) => [r.id, newResidentState(r)])),
 
     record: {
       fear: 0,
