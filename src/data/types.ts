@@ -46,6 +46,8 @@ export type Kind =
   | 'fear_band'
   | 'ending'
   | 'player_base_stats'
+  | 'raid_notice'
+  | 'night_result_text'
   | 'fear_increment'
 
 /** DEC-CONTENT-013 — 작물 속성이 전투에서 일으키는 효과 */
@@ -632,6 +634,35 @@ export interface PlayerBaseStats extends CommonEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 화면 고정 문구 (DEC-CONTENT-021)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 습격 예고 문구 (DEC-RUN-011).
+ *
+ * 승인 행은 `raid_type` 세 값마다 정확히 하나씩이다. `opening_text` 는 일차 시작
+ * 연출용 문장, `hud_label` 은 재배 HUD·정비 허브용 짧은 표지이며 둘 다 필수다.
+ */
+export interface RaidNotice extends CommonEntry {
+  kind: 'raid_notice'
+  raid_type: RaidType
+  opening_text: string
+  hud_label: string
+}
+
+/**
+ * 밤 결과 고정 문구 (DEC-RUN-015, DEC-UI-023).
+ *
+ * 밤 결과 화면은 그날의 실제 기록을 담지 않고 이 문구만 표시한다.
+ * **여러 행 중 무엇을 고를지는 `DEC-CONTENT-018` 보류라 정해지지 않았다.**
+ * 그래서 승인 행이 하나일 때만 화면이 그것을 쓴다 (ui/night-result.ts).
+ */
+export interface NightResultText extends CommonEntry {
+  kind: 'night_result_text'
+  text: string
+}
+
+// ─────────────────────────────────────────────────────────────
 // 매니페스트와 전체 묶음
 // ─────────────────────────────────────────────────────────────
 
@@ -681,6 +712,8 @@ export interface RuntimeData {
   fear_bands?: FearBand[]
   endings?: Ending[]
   player_base_stats?: PlayerBaseStats[]
+  raid_notices?: RaidNotice[]
+  night_result_texts?: NightResultText[]
   fear_increments?: FearIncrement[]
 }
 
