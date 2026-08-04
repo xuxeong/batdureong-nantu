@@ -68,6 +68,9 @@
   --screen-backdrop: rgba(8, 10, 7, 0.96);
   --screen-panel-width: 620px;
   --screen-pad: 36px;
+
+  /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
+  --dialogue-width: 760px;
 }
 
 /* HUD 는 필드 위에 얹히지만 클릭을 가로채면 안 된다.
@@ -218,6 +221,28 @@
 .hud__no-throwable {
   font-size: var(--ui-font-sm);
   color: var(--ui-danger);
+}
+
+/*
+  소진 자동 전환으로 방금 선택된 칸 (DEC-UI-002, DEC-INPUT-007).
+
+  상시 선택 강조(.hud__slot--selected)와 **다른 표현을 쓴다.** 하나는 유지되는
+  상태이고 하나는 "방금 바뀌었다"는 알림이라, 같은 모양이면 자동 전환이 일어난 것을
+  플레이어가 알 수 없다. 여기는 배경으로, 선택 강조는 테두리로 나눈다.
+*/
+.hud__slot--switched {
+  background: var(--ui-accent);
+  color: #11170f;
+}
+
+.hud__slot--switched .hud__slot-count {
+  color: #11170f;
+}
+
+/* 무기 없이 좌클릭했을 때의 짧은 안내. `투척 무기 없음` 상태 표시와 자리를 나눈다 */
+.hud__empty-fire {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text);
 }
 
 /* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
@@ -510,6 +535,265 @@
   font-family: var(--ui-font);
   font-size: var(--ui-font-md);
   text-align: right;
+}
+
+/* ── 상점·제작 모달 (DEC-UI-005, DEC-UI-006) ───────
+   둘 다 정비 허브 팝업 안에서 목록 + 상세 + 바닥(수량·미리보기·실행) 구조를 쓴다. */
+
+/* 거래·제작 실행 버튼. 바닥 오른쪽 끝에 둔다 */
+.hub__action {
+  margin-left: auto;
+  padding: var(--ui-gap-sm) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hub__action:hover:not(:disabled) {
+  background: var(--ui-bg-slot);
+}
+
+/* 불가능한 거래·제작은 눌리지 않는다 (DEC-UI-005, DEC-UI-006) */
+.hub__action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 제작 목록의 결과 분류 구획 — 투척 무기 / 회복 아이템 (DEC-UI-006) */
+.hub__popup-group + .hub__popup-group {
+  margin-top: var(--ui-gap-md);
+}
+
+.hub__popup-group-title {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  margin: var(--ui-gap-sm) 0 var(--ui-gap-xs);
+}
+
+/* 고른 레시피의 상세. 잠긴 레시피면 이름과 해금 진행도만 들어온다 */
+.hub__detail {
+  border-top: 1px solid var(--ui-border);
+  padding-top: var(--ui-gap-md);
+  margin-top: var(--ui-gap-md);
+}
+
+.hub__detail:empty {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.hub__detail-title {
+  font-size: var(--ui-font-lg);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.hub__detail-text {
+  margin: 0 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.6;
+}
+
+.hub__detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 0;
+}
+
+/* 필요 수량이 보유를 넘는 입력. 부족한 것을 따로 안내하지 않고 표에서 보인다 */
+.hub__lack {
+  color: var(--ui-danger);
+}
+
+/* ── 투척 퀵슬롯 편성 (DEC-UI-021, DEC-RESOURCE-015) ─
+   다섯 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
+   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 다섯 칸을 가리키지만
+   한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 규칙이 갈린다. */
+
+.hub__slots {
+  display: flex;
+  gap: var(--hud-slot-gap);
+  margin-bottom: var(--ui-gap-md);
+}
+
+.hub__slot {
+  flex: 1;
+  min-height: calc(var(--hud-slot-size) + var(--ui-gap-md));
+  padding: var(--ui-gap-sm);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-sm);
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hub__slot:hover {
+  border-color: var(--ui-border-strong);
+}
+
+/* 지금 고른 칸. 편성은 이 칸에 적용된다 */
+.hub__slot--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+}
+
+/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-021) */
+.hub__slot--empty .hub__slot-name {
+  color: var(--ui-text-dim);
+}
+
+/* 수량 0. 편성은 유지하고 사용 불가로만 구분한다 (DEC-RESOURCE-015) */
+.hub__slot--unusable {
+  border-style: dashed;
+}
+
+.hub__slot--unusable .hub__slot-name {
+  color: var(--ui-danger);
+}
+
+/* `1~5` 입력과 같은 번호다 (DEC-INPUT-006) */
+.hub__slot-index {
+  color: var(--ui-text-dim);
+}
+
+.hub__slot-name {
+  margin-top: var(--ui-gap-xs);
+  font-size: var(--ui-font-md);
+}
+
+/* ─────────────────────────────────────────────────
+   전투 전 대화 · 투항 대화 (DEC-UI-007~010, DEC-UI-014)
+
+   필드 위 오버레이다. **배경을 완전히 덮지 않는다** — DEC-UI-010 이 "투항 대화가
+   열려 있는 동안 배경의 필드를 정지 상태로 구분해 표시한다"고 정했으므로 필드가
+   비치되 눈에 띄게 어두워야 한다. 불투명하게 덮으면 정지한 필드가 아예 안 보인다.
+
+   필수 화면이라 Esc 로 닫히지 않는다. 닫는 경로가 선택지뿐이라 닫기 버튼도 없다.
+   ───────────────────────────────────────────────── */
+
+.dialogue[hidden] {
+  display: none;
+}
+
+.dialogue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  /* 필드가 비치는 정지 표시 (DEC-UI-010) */
+  background: rgba(8, 10, 7, 0.55);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.dialogue__panel {
+  width: var(--dialogue-width);
+  max-width: 100%;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-md);
+}
+
+.dialogue__speaker {
+  font-size: var(--ui-font-lg);
+  color: var(--ui-accent);
+}
+
+/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 선택지가 사라진다 */
+.dialogue__text {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+  min-height: 3.4em;
+}
+
+.dialogue__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+/* 선택지는 마우스 클릭으로 고른다 (DEC-UI-008) */
+.dialogue__choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-left-width: 4px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.dialogue__choice:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+/*
+  세 선택지를 시각적으로 구분한다 (DEC-UI-007).
+
+  **자리 순서로만 구분한다.** 기능(공감·설득 / 자원 협상 / 위협·대립)은 뷰에 오지도
+  않으므로 이 색이 기능 이름을 드러내지 않는다. 색을 기능에 묶으면 그 순간
+  "빨간 게 위협"이라는 태그가 되어 확정문이 금지한 것과 같아진다.
+*/
+.dialogue__choice[data-slot='0'] { border-left-color: var(--ui-accent); }
+.dialogue__choice[data-slot='1'] { border-left-color: var(--ui-border-strong); }
+.dialogue__choice[data-slot='2'] { border-left-color: var(--ui-text-dim); }
+
+/* 총수량이 모자란 자원 협상. 흐리게만 하고 안내 문구를 덧붙이지 않는다 (DEC-UI-008) */
+.dialogue__choice:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 제안 수량·현재 총수량·무작위 소비 사실 한 줄 (DEC-UI-008) */
+.dialogue__choice-offer {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+}
+
+.dialogue__proceed {
+  align-self: flex-end;
+  padding: var(--ui-gap-sm) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  cursor: pointer;
+}
+
+.dialogue__proceed[hidden] {
+  display: none;
 }
 
 /* ─────────────────────────────────────────────────

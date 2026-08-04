@@ -32,6 +32,24 @@ export interface HudView {
   recoveryName: string | null
 
   /**
+   * 소진으로 자동 전환돼 새로 선택된 칸 (DEC-UI-002, DEC-INPUT-007).
+   *
+   * **상시 선택 강조(`selected`)와 다른 것이다.** 선택 강조는 유지되는 상태이고
+   * 이건 "방금 바뀌었다"는 전환 알림이라 짧게 나타났다 사라진다. 둘을 한 값으로
+   * 합치면 자동 전환과 손으로 고른 것이 화면에서 구분되지 않는다.
+   * 강조가 끝나면 null 이다.
+   */
+  autoSwitchedIndex: number | null
+
+  /**
+   * 투척 무기가 없는 상태로 좌클릭했을 때의 짧은 안내 (DEC-UI-002).
+   *
+   * 확정문은 "빈 발사음과 짧은 안내"를 요구한다. 소리는 오디오 서브시스템이 없어
+   * 아직 없다(6절 P2). 표시하지 않을 때는 null 이다.
+   */
+  emptyFireNotice: string | null
+
+  /**
    * 습격 예고 표지 (`raid_notices.hud_label`).
    *
    * `DEC-RUN-011` 이 문구를 승인 데이터에서 공급하라고 정했는데 `raid_notices.csv` 가
@@ -93,6 +111,9 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   const bottom = el('div', 'hud__corner hud__corner--bottom-center')
   const quickslots = el('div', 'hud__quickslots')
   const noThrowable = el('div', 'hud__no-throwable', '투척 무기 없음')
+  // 빈 발사 안내는 `투척 무기 없음` 표시와 별개다 (DEC-UI-002).
+  // 하나는 상태이고 하나는 방금 누른 것에 대한 반응이라 자리를 나눈다.
+  const emptyFire = el('div', 'hud__empty-fire')
   const recovery = el('div', 'hud__recovery')
   bottom.append(quickslots, recovery)
 
@@ -146,6 +167,9 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
         node.root.classList.toggle('hud__slot--selected', slot.selected)
         // 편성은 유지한 채 사용 불가로만 구분한다 (DEC-RESOURCE-015)
         node.root.classList.toggle('hud__slot--empty', slot.name !== null && slot.count === 0)
+        // 소진 자동 전환으로 방금 선택된 칸을 짧게 강조한다 (DEC-UI-002).
+        // 이름이 이미 칸 안에 있으므로 칸을 강조하는 것이 곧 이름 강조다.
+        node.root.classList.toggle('hud__slot--switched', i === view.autoSwitchedIndex)
         if (slot.name !== null && slot.count > 0) anyUsable = true
       })
 
@@ -153,6 +177,14 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       quickslots.classList.toggle('hud__quickslots--exhausted', !anyUsable)
       if (anyUsable) noThrowable.remove()
       else if (!noThrowable.isConnected) bottom.insertBefore(noThrowable, recovery)
+
+      // 무기 없이 좌클릭했을 때의 짧은 안내 (DEC-UI-002)
+      if (view.emptyFireNotice === null) {
+        emptyFire.remove()
+      } else {
+        emptyFire.textContent = view.emptyFireNotice
+        if (!emptyFire.isConnected) bottom.insertBefore(emptyFire, recovery)
+      }
 
       // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다
       recovery.textContent = view.recoveryName ?? '회복 아이템 없음'

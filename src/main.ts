@@ -36,10 +36,13 @@ import { createEndingJudge } from './systems/ending.ts'
 import type { EndingJudge } from './systems/ending.ts'
 import { buildEndingInput, requestEndingRecord } from './llm/ending.ts'
 import type {
+  CraftingMaterial,
   Crop,
   FearBand,
   FearIncrement,
   FinalOutcome,
+  Recipe,
+  RecoveryItem,
   RewardBundle,
   ThrowableWeapon,
   WildlifeSpawnEntry,
@@ -61,6 +64,18 @@ import type {
 } from './ui/encounter-result.ts'
 import { createEconomy } from './systems/economy.ts'
 import type { Economy } from './systems/economy.ts'
+import { createShopModal } from './ui/shop-modal.ts'
+import type { ShopItemView, ShopMode } from './ui/shop-modal.ts'
+import { createCraftModal } from './ui/craft-modal.ts'
+import type { CraftRecipeView, CraftStatView } from './ui/craft-modal.ts'
+import { createQuickslotModal } from './ui/quickslot-modal.ts'
+import type { QuickslotView } from './ui/quickslot-modal.ts'
+import { createDialogueModal } from './ui/dialogue-modal.ts'
+import type {
+  DialogueChoiceView,
+  DialogueModal,
+  DialoguePhase,
+} from './ui/dialogue-modal.ts'
 import type { ItemStore } from './state/types.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
@@ -84,6 +99,43 @@ let economy: Economy | null = null
 let displayNames = new Map<string, string>()
 /** 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020) */
 let openPopup: string | null = null
+/**
+ * 열려 있는 팝업을 갱신하는 함수. 닫혀 있으면 null.
+ *
+ * 거래·제작이 성공하면 소지금·보관함·제작 가능 상태를 **즉시** 갱신해야 한다
+ * (DEC-UI-005, DEC-UI-006). 정비 허브처럼 매 프레임 갱신해서 그 요구를 만족시킨다.
+ * 팝업 자체는 열 때 한 번만 만들고 여기서는 값만 다시 그린다 — 매 프레임 DOM 을
+ * 새로 만들면 수량 입력칸의 포커스와 입력 중이던 값이 날아간다.
+ */
+let renderOpenPopup: (() => void) | null = null
+
+/**
+ * 지금 열려 있는 대화 (DEC-UI-008, DEC-UI-010).
+ *
+ * 전투 전 대화와 투항 대화가 같은 상태를 쓴다. 하루에 둘이 동시에 열리지 않고
+ * (`DEC-UI-026` — 기능 오버레이는 하나뿐), 같은 화면 규칙을 쓰기 때문이다.
+ *
+ * `reaction` 이 채워지면 선택은 이미 확정됐고 되돌릴 수 없다 (DEC-UI-008).
+ * `pending` 은 `확인` 을 눌렀을 때 무엇을 할지다 — 선택 시점에 확정해 둔다.
+ */
+let dialogue: {
+  phase: DialoguePhase
+  residentId: string
+  residentName: string
+  openingText: string
+  choices: DialogueChoiceView[]
+  reaction: string | null
+  pending: (() => void) | null
+} | null = null
+
+/** 선택지 문장을 찾기 위한 사전. 판정은 encounter.ts 가 하고 문장은 여기서 읽는다 */
+let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoice>()
+
+/** 상점·제작 모달이 읽는 승인 데이터 */
+let shopMaterials: readonly CraftingMaterial[] = []
+let craftRecipes: readonly Recipe[] = []
+let recipesById = new Map<string, Recipe>()
+let recoveryItemsById = new Map<string, RecoveryItem>()
 
 // 전투와 야생동물도 승인 데이터가 있어야 만들어진다. 없으면 null 로 남고
 // 우클릭·좌클릭이 아무 일도 하지 않는다 — 임시 수치를 지어내지 않는다.
@@ -368,6 +420,15 @@ async function bootData(): Promise<void> {
       },
     )
 
+    // 상점·제작 모달이 읽는 것. economy 와 **같은 배열**을 본다 —
+    // 목록과 판정이 서로 다른 데이터를 보면 화면에는 있는데 못 만드는 레시피가 생긴다.
+    dialogueChoicesById = new Map((data.dialogue_choices ?? []).map((c) => [c.id, c]))
+
+    shopMaterials = data.crafting_materials ?? []
+    craftRecipes = data.recipes ?? []
+    recipesById = new Map(craftRecipes.map((r) => [r.id, r]))
+    recoveryItemsById = new Map((data.recovery_items ?? []).map((r) => [r.id, r]))
+
     console.info(
       `[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종 · ` +
         `${schedule.total_days}일 런 · 재배 ${schedule.farming_duration_seconds}초`,
@@ -397,6 +458,27 @@ async function bootData(): Promise<void> {
  */
 const READY_FLASH_SECONDS = 0.6
 const HARVEST_POPUP_SECONDS = 1.2
+/** 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002 — "짧게"만 정해져 있다) */
+const AUTO_SWITCH_FLASH_SECONDS = 1
+const EMPTY_FIRE_NOTICE_SECONDS = 1.2
+
+/**
+ * 투척 퀵슬롯 피드백 (DEC-UI-002).
+ *
+ * **재배·습격 양쪽에서 흐른다.** 아래 `advanceFeedback()` 은 재배 단계에서만
+ * 불리는데 투척은 습격에서도 쓴다. 그래서 이 둘만 따로 두고 단계와 무관하게 줄인다 —
+ * 습격에서 소진 전환이 일어나면 강조가 영영 안 사라지는 것을 막는다.
+ */
+let autoSwitchFlash: { index: number; remaining: number } | null = null
+let emptyFireRemaining = 0
+
+function advanceThrowFeedback(dt: number): void {
+  if (autoSwitchFlash !== null) {
+    autoSwitchFlash.remaining -= dt
+    if (autoSwitchFlash.remaining <= 0) autoSwitchFlash = null
+  }
+  if (emptyFireRemaining > 0) emptyFireRemaining = Math.max(0, emptyFireRemaining - dt)
+}
 
 /** 전환 강조가 남은 경작지. plot_id → 남은 초 */
 const readyFlashes = new Map<string, number>()
@@ -735,6 +817,299 @@ function recordRevealedStoryInfo(residentId: string, storyInfoId: string | null)
   pendingEncounter?.revealedFactIds.push(storyInfoId)
 }
 
+// ── 대화 (DEC-UI-007, 008, 009, 010, DEC-RESIDENT-015) ──────
+//
+// 전투 전 대화는 습격 모드 진입과 동시에 열리고(scenes/manager.ts), 투항 대화는
+// 주민이 투항 기준 이하로 처음 내려갈 때 열린다 (DEC-RESIDENT-016).
+// 둘 다 오버레이가 열리는 순간 여기서 내용을 준비한다.
+
+/** 그날의 적대 주민과 사연 시나리오 */
+function raidActorOf(dayNumber: number): { residentId: string; scenarioId: string } | null {
+  if (raidData === null) return null
+
+  const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
+  if (residentId === null || residentId === '') return null
+
+  const scenario = raidData.scenarioByResident.get(residentId)
+  if (scenario === undefined) return null
+  return { residentId, scenarioId: scenario.id }
+}
+
+/**
+ * 전투 전 대화를 연다 (DEC-UI-008).
+ *
+ * 한 조우에서 **전투 전에 한 번만** 진행한다 (DEC-RESIDENT-015).
+ */
+function openPrecombatDialogue(): void {
+  if (encounter === null || run === null || raidData === null) return
+
+  const actor = raidActorOf(run.dayNumber)
+  if (actor === null) {
+    bus.emit('data.error', {
+      summary: '전투 전 대화를 열 수 없다',
+      detail: `${run.dayNumber}일차의 적대 주민 또는 사연 시나리오가 승인 데이터에 없다`,
+    })
+    return
+  }
+
+  // 해결된 주민과는 대화도 다시 열리지 않는다 (DEC-RESIDENT-043)
+  if (resolution !== null && !resolution.canAppearAsHostile(actor.residentId)) {
+    bus.emit('data.error', {
+      summary: '전투 전 대화를 열 수 없다',
+      detail: `${actor.residentId} 는 이미 조우가 해결된 주민이다 (DEC-RESIDENT-043)`,
+    })
+    return
+  }
+
+  const scenario = raidData.scenarioByResident.get(actor.residentId)!
+
+  // 이번 런에서 실제로 쓰는 사연 시나리오를 런 상태에 남긴다.
+  // 엔딩 기록문 입력이 이 값을 읽는다 (llm/ending.ts).
+  const residentState = run.residents[actor.residentId]
+  if (residentState !== undefined) residentState.scenarioId = scenario.id
+
+  // 조우가 시작되는 지점이다. 결과 화면 재료를 여기서 연다 (DEC-UI-011).
+  pendingEncounter = { consumedCrops: {}, negotiationRejected: false, revealedFactIds: [] }
+
+  // 판정에 쓰는 사용 가능 여부는 encounter 가, 화면에 띄울 문장은 승인 선택지가 준다.
+  // 선택지 문장은 아무것도 결정하지 않는다 (DEC-RESIDENT-049).
+  const availability = encounter.availableChoices(scenario.id, run.resources.crops)
+
+  dialogue = {
+    phase: 'precombat',
+    residentId: actor.residentId,
+    residentName: residentNames.get(actor.residentId) ?? actor.residentId,
+    openingText: scenario.precombat_opening_text,
+    choices: availability.map((choice) => ({
+      id: choice.choiceId,
+      text: dialogueChoicesById.get(choice.choiceId)?.choice_text ?? '',
+      // 자원 협상에만 수량 정보를 붙인다 (DEC-UI-007, DEC-UI-008)
+      offer:
+        choice.offerQuantity === null
+          ? null
+          : { quantity: choice.offerQuantity, heldTotal: choice.heldTotal },
+      usable: choice.usable,
+    })),
+    reaction: null,
+    pending: null,
+  }
+
+  bus.emit('dialogue.opened', {
+    residentId: actor.residentId,
+    scenarioId: scenario.id,
+    phase: 'precombat',
+  })
+}
+
+/**
+ * 투항 대화를 연다 (DEC-UI-010, DEC-RESIDENT-019).
+ *
+ * 투항 선택지에는 수량 조건이 없으므로 **고를 수 없는 선택지를 두지 않는다.**
+ * 판정도 없다 — 선택 기능이 곧 시스템 결과다 (DEC-CONTENT-009).
+ */
+function openSurrenderDialogue(): void {
+  if (run === null || hostile === null || raidData === null) return
+
+  const residentId = hostile.entity.residentId
+  const scenario = raidData.scenarioByResident.get(residentId)
+  if (scenario === undefined) {
+    bus.emit('data.error', {
+      summary: '투항 대화를 열 수 없다',
+      detail: `${residentId} 의 사연 시나리오가 승인 데이터에 없다`,
+    })
+    return
+  }
+
+  const choices = [...dialogueChoicesById.values()].filter(
+    (choice) => choice.scenario_id === scenario.id && choice.dialogue_phase === 'surrender',
+  )
+
+  dialogue = {
+    phase: 'surrender',
+    residentId,
+    residentName: residentNames.get(residentId) ?? residentId,
+    openingText: scenario.surrender_opening_text,
+    choices: choices.map((choice) => ({
+      id: choice.id,
+      text: choice.choice_text,
+      offer: null,
+      usable: true,
+    })),
+    reaction: null,
+    pending: null,
+  }
+
+  bus.emit('dialogue.opened', { residentId, scenarioId: scenario.id, phase: 'surrender' })
+}
+
+/** 선택 확정. 확정 뒤에는 되돌아갈 수 없다 (DEC-UI-008) */
+function chooseDialogue(choiceId: string): void {
+  if (dialogue === null || dialogue.reaction !== null) return
+  if (dialogue.phase === 'precombat') choosePrecombat(choiceId)
+  else chooseSurrender(choiceId)
+}
+
+function choosePrecombat(choiceId: string): void {
+  if (dialogue === null || encounter === null || run === null || resolution === null) return
+
+  const choice = dialogue.choices.find((c) => c.id === choiceId)
+  if (choice === undefined || !choice.usable) return
+
+  const residentId = dialogue.residentId
+  const judgement = encounter.judge(residentId, choiceId, run.resources.crops)
+  recordRevealedStoryInfo(residentId, judgement.revealedStoryInfoId)
+
+  // 위협·대립은 조우를 해결하지 않지만 중요 행동이고 공포도를 올린다
+  // (DEC-RESIDENT-046, DEC-RESIDENT-052).
+  if (judgement.choiceFunction === 'threat') {
+    const { fearPending } = resolution.recordThreat(residentId)
+    if (fearPending) warnFearPending()
+  }
+
+  bus.emit('dialogue.resolved', {
+    choiceId,
+    choiceFunction: judgement.choiceFunction,
+    systemResultId: judgement.systemResultId,
+    reactionText: judgement.reactionText,
+    revealedStoryInfoId: judgement.revealedStoryInfoId,
+  })
+
+  // 판정 결과는 오직 반응 대사로 전달한다. 결과 이름이나 성공·실패를 따로
+  // 표시하지 않는다 (DEC-UI-009).
+  dialogue.reaction = judgement.reactionText
+  const offerQuantity = choice.offer?.quantity ?? null
+  dialogue.pending = () => finishPrecombat(residentId, judgement, offerQuantity)
+}
+
+/** 반응 대사를 읽은 뒤 — 조우 해결이거나 전투 진입이다 (DEC-RESIDENT-015) */
+function finishPrecombat(
+  residentId: string,
+  judgement: import('./systems/encounter.ts').PrecombatJudgement,
+  offerQuantity: number | null,
+): void {
+  if (run === null || encounter === null || resolution === null) return
+
+  if (judgement.resolved) {
+    if (offerQuantity !== null) {
+      // 수확물 차감과 관계 변경이 하나의 처리다 (DEC-RESIDENT-050).
+      // 어떤 작물이 나갈지는 실행 후에만 알 수 있다.
+      const settled = encounter.settleNegotiation(
+        run.resources.crops,
+        `encounter.day${run.dayNumber}`,
+        judgement.choiceId,
+        offerQuantity,
+        run.seed,
+      )
+      if (!settled.ok) {
+        // 대가를 치르지 않고 거래 관계가 되는 경로를 만들지 않는다
+        bus.emit('data.error', {
+          summary: '자원 협상을 성립시킬 수 없다',
+          detail: `${residentId} · ${settled.reason}`,
+        })
+        return
+      }
+      if (pendingEncounter !== null) pendingEncounter.consumedCrops = settled.consumed
+      bus.emit('negotiation.accepted', { residentId, consumed: settled.consumed })
+    }
+
+    // 조우 해결은 전투에 진입하지 않고 조우 결과 화면으로 넘어가는 것으로 전달한다
+    // (DEC-UI-009). 어느 선택으로 해결됐는지가 최종 결과를 가른다 (DEC-RESIDENT-052).
+    finishEncounter(
+      residentId,
+      judgement.choiceFunction === 'empathy' ? 'empathy_resolve' : 'resource_negotiation_resolve',
+    )
+    return
+  }
+
+  // 자원 협상이 성격 프로필에 막힌 것도 중요 행동이다 (DEC-CONTENT-011)
+  if (judgement.choiceFunction === 'resource_negotiation') {
+    resolution.recordNegotiationRejected(residentId)
+    // 수확물이 소비되지 않았다는 사실을 조우 결과에서 알린다 (DEC-UI-011)
+    if (pendingEncounter !== null) pendingEncounter.negotiationRejected = true
+  }
+
+  // 조우가 해결되지 않으면 **반드시** 전투에 진입한다 (DEC-RESIDENT-015).
+  // 전투 보정 키는 시스템 결과 ID 에서 온다 (DEC-CONTENT-009).
+  const combatState = judgement.systemResultId.replace('system_result.precombat.combat_', '')
+  scenes.closeOverlay('precombat_dialogue')
+  hostile = spawnHostile(run.dayNumber, combatState)
+}
+
+function chooseSurrender(choiceId: string): void {
+  if (dialogue === null || resolution === null) return
+
+  const choice = dialogueChoicesById.get(choiceId)
+  const resultId = choice?.direct_system_result_id ?? null
+  if (choice === undefined || resultId === null) {
+    bus.emit('data.error', {
+      summary: '투항 선택을 처리할 수 없다',
+      detail: `${choiceId} 에 direct_system_result_id 가 없다 (DEC-CONTENT-009)`,
+    })
+    return
+  }
+
+  const residentId = dialogue.residentId
+  const fn = choice.choice_function as import('./data/types.ts').SurrenderChoiceFunction
+
+  // 무엇을 골랐는지는 최종 결과와 별개로 남는다 (DEC-RESIDENT-042)
+  resolution.recordSurrenderChoice(residentId, fn)
+
+  const response = (choice.responses ?? []).find((r) => r.system_result_id === resultId)
+  recordRevealedStoryInfo(residentId, response?.revealed_story_info_id ?? null)
+
+  bus.emit('dialogue.resolved', {
+    choiceId,
+    choiceFunction: fn,
+    systemResultId: resultId,
+    reactionText: response?.reaction_text ?? '',
+    revealedStoryInfoId: response?.revealed_story_info_id ?? null,
+  })
+
+  dialogue.reaction = response?.reaction_text ?? ''
+  dialogue.pending = () => finishSurrender(residentId, fn)
+}
+
+function finishSurrender(
+  residentId: string,
+  fn: import('./data/types.ts').SurrenderChoiceFunction,
+): void {
+  if (fn === 'resume_combat') {
+    // 최종 결과가 아니다. 실제로 처치했을 때만 killed 를 확정한다 (DEC-RESIDENT-052).
+    // 별도의 재개 알림을 두지 않는다 (DEC-UI-010) — 오버레이가 닫히면 전투가 돈다.
+    resolution?.recordSurrenderResumed(residentId)
+    scenes.closeOverlay('surrender_dialogue')
+    return
+  }
+
+  // 영입·대가 요구는 조우를 끝낸다. 보상과 상태 변경이 하나의 처리다 (DEC-RESIDENT-042)
+  if (!finishEncounter(residentId, fn === 'recruit' ? 'recruited' : 'retreated')) return
+
+  scenes.closeOverlay('surrender_dialogue')
+  hostile = null
+  hostileTarget = null
+  // 조우가 해결되면 남은 투사체와 공격을 제거한다 (DEC-UI-019)
+  residentCombat?.reset()
+}
+
+/**
+ * 반응 대사를 읽고 넘어간다.
+ *
+ * `pending` 을 먼저 비워 같은 확정이 두 번 실행되는 것을 막는다. 흐름이 오버레이를
+ * 닫았으면 대화도 끝난 것이고, 안 닫혔으면(데이터 오류) 대화를 남겨 화면이 비지 않게 한다.
+ */
+function proceedDialogue(): void {
+  if (dialogue === null) return
+
+  const action = dialogue.pending
+  dialogue.pending = null
+  action?.()
+
+  const open = scenes.openOverlays()
+  if (!open.includes('precombat_dialogue') && !open.includes('surrender_dialogue')) {
+    dialogue = null
+  }
+}
+
 /** 공포도 증가량 미승인 안내. 개발 빌드에서만, 한 런에 한 번만 (DEC-RESIDENT-048) */
 let fearPendingWarned = false
 function warnFearPending(): void {
@@ -765,9 +1140,12 @@ function failRunIfDead(): void {
 /**
  * 투항 발동 (DEC-RESIDENT-016, DEC-RESIDENT-039).
  *
- * 전투를 정지하고 진행 중인 공격을 취소한 뒤 투항 대화를 연다.
- * 선택지 UI(`surrender-modal.ts`)는 로드맵 8/4 김민주 몫이라 지금은 오버레이만
- * 열린다 — 오버레이가 열리면 `inRaidStage()` 가 false 가 되어 전투가 멈춘다.
+ * 전투를 정지하고 진행 중인 공격을 취소한 뒤 투항 대화를 연다. 오버레이가 열리면
+ * `inRaidStage()` 가 false 가 되어 전투가 멈추고, 그 자리에서 대화 내용이 준비된다
+ * (`overlay.opened` 구독 → `openSurrenderDialogue()`).
+ *
+ * 별도의 예고 없이 전환하고 투항 기준값과 남은 체력의 비율을 표시하지 않는다
+ * (DEC-UI-010).
  */
 function onSurrenderOffered(): void {
   if (hostile === null) return
@@ -779,10 +1157,6 @@ function onSurrenderOffered(): void {
     residentId: hostile.entity.residentId,
     remainingHealth: hostile.entity.health,
   })
-  console.warn(
-    `[습격] 투항 발동 — 체력 ${hostile.entity.health} / 기준 ${hostile.surrenderThreshold}. ` +
-      '선택지 UI 는 8/4 김민주. Esc 로는 닫히지 않는다 (DEC-UI-022).',
-  )
 }
 
 /** `E` — 심기·수확 문맥 상호작용 (DEC-INPUT-003) */
@@ -1058,6 +1432,11 @@ function onThrow(): void {
         fromIndex: run.quickslots.selectedIndex,
         toIndex: result.slot.autoSwitchedTo,
       })
+      // 새로 선택된 무기의 이름을 짧게 강조한다 (DEC-UI-002)
+      autoSwitchFlash = {
+        index: result.slot.autoSwitchedTo,
+        remaining: AUTO_SWITCH_FLASH_SECONDS,
+      }
     }
     if (result.slot.allEmpty) bus.emit('quickslot.allEmpty', {})
     bus.emit('combat.throwableSpent', {
@@ -1067,9 +1446,15 @@ function onThrow(): void {
     return
   }
 
-  // 거절 사유는 콘솔로만 남긴다. `투척 무기 없음`·빈 발사 안내의 화면 표시는
-  // `DEC-UI-002` 의 HUD 몫이고 김민주 8/4 항목이다. 여기서 문구를 지어내면
-  // 나중에 두 곳이 다른 말을 한다.
+  // 투척할 무기가 없는데 좌클릭했으면 짧은 안내를 띄운다 (DEC-UI-002).
+  // 재사용 대기는 안내 대상이 아니다 — 무기는 있고 아직 못 던질 뿐이라,
+  // 매번 띄우면 연타할 때 안내가 계속 깜빡인다.
+  //
+  // 확정문이 함께 요구하는 **빈 발사음은 아직 없다.** 오디오가 별도 서브시스템이고
+  // 6절 P2 라 붙지 않았다. 소리 없이 안내만 나가는 상태다.
+  if (result.reason === 'no_slot_selected' || result.reason === 'out_of_ammo') {
+    emptyFireRemaining = EMPTY_FIRE_NOTICE_SECONDS
+  }
   if (isDevBuild && result.reason !== 'cooldown') {
     console.info(`[투척] 거절 — ${result.reason}`)
   }
@@ -1135,6 +1520,13 @@ const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoo
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
+// 전투 전 대화와 투항 대화는 같은 표시·입력 규칙을 쓴다 (DEC-UI-010).
+// 하나뿐인 이 모달이 둘 다 그린다 — 동시에 열리지 않는다 (DEC-UI-026).
+const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
+  choose: chooseDialogue,
+  proceed: proceedDialogue,
+})
+
 /**
  * 지금 떠 있어야 할 독립 화면을 맞춘다.
  *
@@ -1193,35 +1585,316 @@ const POPUP_TITLES: Record<string, string> = {
   quickslots: '투척 퀵슬롯 편성',
 }
 
+/** 팝업을 닫는다. 닫기 버튼이 유일한 경로다 (DEC-UI-020) */
+function closePopup(): void {
+  openPopup = null
+  renderOpenPopup = null
+  hub.setPopup(null)
+}
+
 /**
- * 팝업 본문.
+ * 거래·제작이 거절됐다.
  *
- * 지금은 껍데기와 닫기 버튼만 만든다. 실제 목록·수량·미리보기는
- * shop-modal.ts / craft-modal.ts 로 분리해 붙인다 (DEC-UI-005, DEC-UI-006).
- * 판정은 이미 economy.ts 에 있으므로 여기서 자원을 직접 만지지 않는다.
+ * **여기 오는 것은 정상이 아니다.** 모달이 보유·소지금·해금·수량을 미리 검사해
+ * 불가능한 실행 버튼을 꺼 두기 때문이다 (DEC-UI-005, DEC-UI-006). 그런데도
+ * 거절됐다면 화면이 보는 값과 시스템이 보는 값이 어긋난 것이라 `data_missing` 으로
+ * 올린다. 조용히 넘기면 "눌렀는데 아무 일도 안 일어난다"로만 보인다.
+ */
+function reportTradeRejected(request: 'shop.sell' | 'shop.buy' | 'craft.make', reason: string): void {
+  bus.emit('request.rejected', { request, reason: 'data_missing' })
+  console.warn(`[정비] ${request} 거절 — ${reason}. 버튼이 켜져 있었는데 실패했다`)
+}
+
+/** 상점 모달이 그릴 목록. 판매는 승인 작물, 구매는 승인 재료다 */
+function shopItems(mode: ShopMode): ShopItemView[] {
+  if (mode === 'sell') {
+    // 판매할 수 있는 자원은 수확물뿐이다 (DEC-RESOURCE-007).
+    // 보유 0인 작물도 목록에 두고 실행만 막는다 — 목록이 프레임마다 늘었다 줄면
+    // 고르던 행이 발밑에서 사라진다.
+    return [...cropsById.values()].map((crop) => ({
+      id: crop.id,
+      name: crop.display_name,
+      unitPrice: crop.sell_price,
+      held: run?.resources.crops[crop.id] ?? 0,
+    }))
+  }
+
+  // 구매할 수 있는 자원은 조합 재료뿐이고 재고는 무제한이다
+  // (DEC-RESOURCE-008, DEC-RESOURCE-009). 1차 프로토타입은 전부 해금 상태다.
+  return shopMaterials.map((material) => ({
+    id: material.id,
+    name: material.display_name,
+    unitPrice: material.buy_price,
+    held: run?.resources.materials[material.id] ?? 0,
+  }))
+}
+
+/**
+ * 제작 결과물의 실제 수치 (DEC-UI-006).
+ *
+ * **설명 문장에서 읽지 않고 승인 데이터에서 읽는다.** `player_description` 은
+ * 따로 표시하며 이 목록과 섞지 않는다.
+ */
+function resultStatsOf(recipe: Recipe): CraftStatView[] {
+  if (recipe.result_kind === 'throwable_weapon') {
+    const weapon = throwablesById.get(recipe.result_id)
+    if (weapon === undefined) return []
+
+    const stats: CraftStatView[] = [
+      { label: '피해', value: String(weapon.base_damage) },
+      { label: '사거리', value: String(weapon.max_range) },
+      { label: '재사용 대기', value: `${weapon.cooldown_seconds}초` },
+    ]
+    // 범위 무기만 반경이 있다 (DEC-CONTENT-005)
+    if (weapon.impact_mode === 'area' && weapon.area_radius !== null) {
+      stats.push({ label: '범위 반경', value: String(weapon.area_radius) })
+    }
+    // 전투 효과는 작물 속성이 정한다. 둘 중 하나만 채워진다 (DEC-CONTENT-013)
+    if (weapon.effect_damage_per_tick !== null) {
+      stats.push({
+        label: '지속 피해',
+        value: `${weapon.effect_damage_per_tick} · ${weapon.effect_duration_seconds}초`,
+      })
+    }
+    if (weapon.effect_move_speed_multiplier !== null) {
+      stats.push({
+        label: '이동 둔화',
+        value: `×${weapon.effect_move_speed_multiplier} · ${weapon.effect_duration_seconds}초`,
+      })
+    }
+    return stats
+  }
+
+  const item = recoveryItemsById.get(recipe.result_id)
+  if (item === undefined) return []
+  return [
+    { label: '회복량', value: String(item.heal_amount) },
+    { label: '사용 시간', value: `${item.use_duration_seconds}초` },
+    { label: '사용 중 이동속도', value: `×${item.move_speed_multiplier}` },
+  ]
+}
+
+/** 결과물의 표시 이름과 설명. 분류에 따라 다른 테이블에서 온다 (DEC-CRAFT-005) */
+function resultTextOf(recipe: Recipe): { name: string; description: string } {
+  const entry =
+    recipe.result_kind === 'throwable_weapon'
+      ? throwablesById.get(recipe.result_id)
+      : recoveryItemsById.get(recipe.result_id)
+
+  return {
+    name: entry?.display_name ?? recipe.result_id,
+    description: entry?.player_description ?? '',
+  }
+}
+
+/** 잠긴 레시피인데 해금 조건이 없다고 한 번만 알린다 */
+let unlockDataWarned = false
+
+/** 제작 모달이 그릴 목록. 정렬은 모달이 한다 (DEC-UI-006) */
+function craftRecipeViews(): CraftRecipeView[] {
+  if (economy === null) return []
+  const views: CraftRecipeView[] = []
+
+  for (const recipe of craftRecipes) {
+    const base = recipe.unlock_type === 'base'
+    const { name, description } = resultTextOf(recipe)
+
+    if (economy.isUnlocked(recipe.id)) {
+      views.push({
+        id: recipe.id,
+        locked: false,
+        resultKind: recipe.result_kind,
+        base,
+        resultName: name,
+        resultDescription: description,
+        resultStats: resultStatsOf(recipe),
+        inputs: (recipe.inputs ?? []).map((input) => ({
+          name: displayNames.get(input.input_id) ?? input.input_id,
+          perCraft: input.quantity,
+          held:
+            (input.input_kind === 'crop'
+              ? run?.resources.crops[input.input_id]
+              : run?.resources.materials[input.input_id]) ?? 0,
+        })),
+        resultQuantity: recipe.result_quantity,
+        maxTimes: economy.maxCraftTimes(recipe.id),
+      })
+      continue
+    }
+
+    // 잠긴 레시피는 존재와 해금 조건만 보인다 (DEC-CRAFT-006, DEC-UI-006).
+    // 조건이 없으면 그릴 수 없다 — 임의 조건을 지어내지 않고 빼고 알린다.
+    const unlock = recipe.mastery_unlock
+    if (unlock === undefined) {
+      if (!unlockDataWarned) {
+        unlockDataWarned = true
+        bus.emit('data.error', {
+          summary: '잠긴 레시피의 해금 조건이 없다',
+          detail: `${recipe.id} 의 unlock_type 이 base 가 아닌데 crop_mastery_unlocks 행이 없다`,
+        })
+      }
+      continue
+    }
+
+    views.push({
+      id: recipe.id,
+      locked: true,
+      resultKind: recipe.result_kind,
+      base,
+      resultName: name,
+      unlock: {
+        cropName: cropsById.get(unlock.crop_id)?.display_name ?? unlock.crop_id,
+        // content_assets.csv 가 아직 승인되지 않았다. 이름이 플레이스홀더다
+        cropAssetId: null,
+        currentMastery: run?.record.cropMastery[unlock.crop_id] ?? 0,
+        requiredMastery: unlock.required_mastery,
+      },
+    })
+  }
+
+  return views
+}
+
+/**
+ * 팝업 본문을 만든다.
+ *
+ * 판정과 자원 변경은 전부 `economy.ts` 가 한다. 여기서는 그것을 부르고 결과
+ * 이벤트를 발행할 뿐이며 보관함·소지금을 직접 만지지 않는다 (core/events.ts).
  */
 function buildPopup(popup: string): HTMLElement {
-  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup, () => {
-    openPopup = null
-    hub.setPopup(null)
-  })
+  if ((popup === 'sell' || popup === 'buy') && economy !== null) {
+    const mode: ShopMode = popup
+    const modal = createShopModal(mode, {
+      close: closePopup,
+      submit(itemId, quantity) {
+        const result =
+          mode === 'sell' ? economy!.sell(itemId, quantity) : economy!.buy(itemId, quantity)
 
+        if (!result.ok) {
+          reportTradeRejected(mode === 'sell' ? 'shop.sell' : 'shop.buy', result.reason)
+          return { ok: false, reason: result.reason }
+        }
+
+        // 확정된 뒤에만 결과 이벤트를 쏜다. 이 시점에 자원 변경이 이미 끝났다
+        if (mode === 'sell') {
+          bus.emit('shop.sold', { cropId: itemId, quantity, gainedMoney: result.value })
+        } else {
+          bus.emit('shop.bought', { materialId: itemId, quantity, spentMoney: result.value })
+        }
+        return { ok: true, reason: null }
+      },
+    })
+
+    renderOpenPopup = () => modal.render({ money: run?.resources.money ?? 0, items: shopItems(mode) })
+    return modal.root
+  }
+
+  if (popup === 'craft' && economy !== null) {
+    const modal = createCraftModal({
+      close: closePopup,
+      submit(recipeId, times) {
+        const result = economy!.craft(recipeId, times)
+        if (!result.ok) {
+          reportTradeRejected('craft.make', result.reason)
+          return { ok: false, unlockedNames: [], reason: result.reason }
+        }
+
+        const recipe = recipesById.get(recipeId)
+        if (recipe !== undefined) {
+          bus.emit('craft.made', {
+            recipeId,
+            times,
+            resultId: recipe.result_id,
+            resultQuantity: recipe.result_quantity * times,
+          })
+        }
+
+        // 해금은 제작 결과로만 발생한다 (DEC-CRAFT-007)
+        const unlockedNames: string[] = []
+        for (const id of result.value.unlockedRecipeIds) {
+          const unlockedRecipe = recipesById.get(id)
+          unlockedNames.push(resultTextOf(unlockedRecipe ?? recipe!).name)
+          bus.emit('craft.recipeUnlocked', {
+            recipeId: id,
+            cropId: unlockedRecipe?.mastery_unlock?.crop_id ?? '',
+          })
+        }
+        return { ok: true, unlockedNames, reason: null }
+      },
+    })
+
+    renderOpenPopup = () => modal.render({ recipes: craftRecipeViews() })
+    return modal.root
+  }
+
+  if (popup === 'quickslots') {
+    const modal = createQuickslotModal({
+      close: closePopup,
+      assign: assignQuickslot,
+    })
+    renderOpenPopup = () => modal.render(quickslotView())
+    return modal.root
+  }
+
+  // 여기 오면 팝업 종류가 늘었는데 화면을 안 붙인 것이다. 빈 껍데기로 넘기지 않는다.
+  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup, closePopup)
   const note = document.createElement('div')
   note.className = 'hub__preview'
-  if (popup === 'craft' && economy !== null) {
-    // 해금 여부와 최대 제작 횟수는 economy 가 이미 판단한다.
-    // 목록 UI 가 붙기 전에도 그 판정이 살아 있는지 여기서 보인다.
-    const lines = economy
-      .baseRecipeIds()
-      .map((id) => `${id} — 최대 ${economy!.maxCraftTimes(id)}회`)
-    note.textContent = lines.length > 0 ? lines.join('\n') : '해금된 레시피가 없다'
-    note.style.whiteSpace = 'pre-line'
-  } else {
-    note.textContent = '이 팝업의 목록 UI는 아직 붙지 않았다.'
-  }
+  note.textContent = '이 팝업의 목록 UI는 아직 붙지 않았다.'
   body.appendChild(note)
+  renderOpenPopup = null
 
   return root
+}
+
+/** 편성 팝업이 그릴 내용 (DEC-UI-021) */
+function quickslotView(): QuickslotView {
+  const slots = run?.quickslots.slots ?? []
+  const held = run?.resources.throwables ?? {}
+
+  return {
+    slots: slots.map((weaponId, index) => ({
+      index,
+      weaponId,
+      weaponName: weaponId === null ? null : (throwablesById.get(weaponId)?.display_name ?? weaponId),
+      // 수량은 퀵슬롯이 아니라 **무기 보관함**에서 읽는다 (DEC-RESOURCE-002).
+      // 편성된 채 수량이 0이 되면 키가 지워지므로 0으로 떨어진다 (DEC-RESOURCE-015).
+      count: weaponId === null ? 0 : (held[weaponId] ?? 0),
+    })),
+
+    // 편성 목록은 무기 보관함에 실제로 있는 것뿐이다. 없는 무기를 지어내지 않는다.
+    weapons: Object.entries(held).map(([id, count]) => ({
+      id,
+      name: throwablesById.get(id)?.display_name ?? id,
+      count,
+      assignedElsewhere: slots.includes(id),
+    })),
+  }
+}
+
+/**
+ * 퀵슬롯 편성 (DEC-RESOURCE-014, DEC-INPUT-006).
+ *
+ * **수량을 옮기지 않는다.** 칸은 무기 종류만 보관함에 연결하므로 여기서 바뀌는 것은
+ * `slots` 배열 하나뿐이고 보관함은 그대로다.
+ *
+ * 같은 종류를 여러 칸에 중복 편성할 수 없다. 모달이 이미 그런 무기를 고를 수 없게
+ * 막지만 여기서도 확인한다 — 규칙을 화면 한 곳에만 두면 다음 호출자가 그냥 통과한다.
+ */
+function assignQuickslot(slotIndex: number, weaponId: string | null): void {
+  if (run === null) return
+  const slots = run.quickslots.slots
+  if (slotIndex < 0 || slotIndex >= slots.length) return
+
+  if (weaponId !== null && slots.some((id, i) => id === weaponId && i !== slotIndex)) {
+    console.warn(
+      `[정비] ${weaponId} 는 이미 다른 칸에 편성돼 있다. ` +
+        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-014).',
+    )
+    return
+  }
+
+  slots[slotIndex] = weaponId
 }
 
 /** 보관함 한 분류를 표시용 줄로 바꾼다. 수량 0인 키는 애초에 없다 */
@@ -1265,6 +1938,9 @@ function hudView() {
     timeUrgent: farmingTimer?.urgent ?? false,
     quickslots,
     recoveryName: run?.pouch.selectedId ?? null,
+    // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
+    autoSwitchedIndex: autoSwitchFlash?.index ?? null,
+    emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
     // raid_notices.csv 가 없어 비워 둔다 (DEC-RUN-011, DEC-CONTENT-021)
     raidNoticeLabel: null,
   }
@@ -1277,6 +1953,9 @@ const loop = createGameLoop(
       const speed = runConfig.moveSpeed
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
+
+      // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
+      advanceThrowFeedback(dt)
 
       // 습격 모드 — 주민만 돈다. 작물은 자라지 않고 재배 타이머도 없다.
       if (inRaidStage()) {
@@ -1384,10 +2063,31 @@ const loop = createGameLoop(
       // 일시정지가 겹쳤을 때 둘 다 입력을 받는다 (DEC-UI-026).
       if (scenes.inputOwner() === 'maintenance_hub') {
         hub.render(hubView())
+        // 거래·제작이 성공하면 소지금·보관함·제작 가능 상태를 즉시 갱신한다
+        // (DEC-UI-005, DEC-UI-006). 열려 있는 팝업도 같은 프레임에 다시 그린다.
+        renderOpenPopup?.()
         hub.show()
       } else {
         hub.hide()
         openPopup = null
+        renderOpenPopup = null
+      }
+
+      // 대화 오버레이. 입력을 소유할 때만 그린다 — 일시정지가 겹치면 표시만 남고
+      // 입력은 일시정지가 가져간다 (DEC-UI-026).
+      const owner = scenes.inputOwner()
+      const talking = owner === 'precombat_dialogue' || owner === 'surrender_dialogue'
+      if (talking && dialogue !== null) {
+        dialogueModal.render({
+          phase: dialogue.phase,
+          residentName: dialogue.residentName,
+          openingText: dialogue.openingText,
+          choices: dialogue.choices,
+          reaction: dialogue.reaction,
+        })
+        dialogueModal.show()
+      } else {
+        dialogueModal.hide()
       }
     },
   },
@@ -1483,6 +2183,18 @@ bus.on('field.exited', () => wildlife?.endFarming())
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)
 syncInputLock()
+
+// 대화 내용은 오버레이가 열리는 순간 준비한다.
+// 전투 전 대화는 습격 모드 진입과 함께 화면 매니저가 열고(scenes/manager.ts),
+// 투항 대화는 주민이 투항 기준 이하로 처음 내려갈 때 열린다 (DEC-RESIDENT-016).
+bus.on('overlay.opened', ({ overlay }) => {
+  if (overlay === 'precombat_dialogue') openPrecombatDialogue()
+  if (overlay === 'surrender_dialogue') openSurrenderDialogue()
+})
+
+bus.on('overlay.closed', ({ overlay }) => {
+  if (overlay === 'precombat_dialogue' || overlay === 'surrender_dialogue') dialogue = null
+})
 
 // 개발 빌드에서만 화면 전환을 콘솔에 찍는다.
 // 제출 빌드에서는 개발용 표시를 모두 숨긴다 (DEC-UI-024, DEC-RESIDENT-047).
