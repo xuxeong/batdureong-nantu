@@ -394,6 +394,24 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   // 마지막 습격의 조우 결과와 모든 상태 변경을 끝낸 뒤에 엔딩을 판정한다
   // (DEC-CONTENT-011). 여기보다 앞이면 방금 바뀐 관계·공포도가 반영되지 않는다.
   if (raidData?.raidTypeByDay.get(run?.dayNumber ?? 0) === 'final_raid') decideEnding()
+
+  // **버스 이벤트만 쏘면 화면이 안 넘어간다.** `encounter.finished` 는 UI 에게
+  // 알리는 결과 이벤트이고, 흐름을 옮기는 것은 `encounter_finished` 입력이다.
+  // 둘을 헷갈려서 체력 0에도 계속 움직였던 것과 같은 구조다 (failRunIfDead).
+  //
+  // 조우 결과 화면에서 `확인` 을 눌러야 다음 일차 또는 엔딩으로 간다 (DEC-RUN-015).
+  // 그 화면은 로드맵 8/4 김민주 몫이라 아직 확인을 누를 수단이 없다.
+  if (scenes.step().at === 'raid') {
+    scenes.send({ type: 'encounter_finished' })
+  } else {
+    // 개발 통로(`enterFieldPreview`)로 들어오면 흐름은 습격 단계가 아니다.
+    // 그대로 보내면 흐름 오류로 데이터 오류 화면이 떠서 테스트가 끊긴다.
+    // **정상 흐름에서는 여기 오지 않는다.** 조용히 넘기지 않고 남긴다.
+    console.warn(
+      `[개발 전용] 흐름이 습격 단계가 아니라(${scenes.step().at}) 조우 결과로 넘기지 않는다. ` +
+        '개발 통로로 필드에 들어왔기 때문이다 (로드맵 11-2).',
+    )
+  }
   return true
 }
 
