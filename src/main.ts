@@ -935,12 +935,14 @@ if (isDevBuild) {
       fillThrowables: (count = 5) => devFillThrowables(count),
       goToDay: (dayNumber: number) => devGoToDay(dayNumber),
       startRaid: (choiceIndex = 0) => devStartRaid(choiceIndex),
+      surrender: (choiceIndex = 0) => devSurrender(choiceIndex),
     },
   })
 
   console.info(
     '[개발 전용] __dev.fillThrowables(5) 투척 무기 채우기 · ' +
-      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협). ' +
+      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협) · ' +
+      '__dev.surrender(0) 투항 선택 (0=영입 1=대가·퇴각 2=거부·전투 계속). ' +
       '승인 일정상 습격은 2일차부터다.',
   )
 
@@ -1012,6 +1014,58 @@ function devFillThrowables(count: number): void {
  * **런 상태의 일차만 바꾼다.** 자원·주민 상태·공포도는 건드리지 않으므로 이 통로로
  * 넘긴 날은 실제 플레이와 다르다. 정비·결과 화면이 오면 지운다.
  */
+/**
+ * **개발 전용.** 투항 대화의 선택지 3개를 대신한다 (`DEC-UI-007`, `DEC-RESIDENT-016`).
+ *
+ * `surrender-modal.ts` 가 로드맵 8/4 김민주 몫이라 투항이 발동하면 오버레이만 열리고
+ * 거기서 멈춘다. 그런데 이 세 선택이 최종 결과 다섯 개 중 셋(`recruited`,
+ * `retreated`, 거부 후 `killed`)과 **보상 지급 경로 전체**로 가는 유일한 문이라,
+ * 통로가 없으면 `DEC-RESIDENT-042` 의 원자적 지급을 플레이로 확인할 방법이 없다.
+ *
+ * **판정을 우회하지 않는다.** 투항 선택에는 성격 판정이 없고 선택 기능이 곧 시스템
+ * 결과다 (`DEC-CONTENT-009`). 우회하는 것은 대사 표시와 클릭뿐이다.
+ * 모달이 오면 이 함수와 노출을 지운다 (로드맵 11-2).
+ */
+function devSurrender(choiceIndex: number): void {
+  if (hostile === null || resolution === null) {
+    console.warn('[개발 전용] 투항 중인 주민이 없다')
+    return
+  }
+  if (scenes.inputOwner() !== 'surrender_dialogue') {
+    console.warn('[개발 전용] 투항 대화가 열려 있지 않다')
+    return
+  }
+
+  const residentId = hostile.entity.residentId
+  const choices = ['recruit', 'retreat_reward', 'resume_combat'] as const
+  const choice = choices[choiceIndex]
+  if (choice === undefined) {
+    console.warn(`[개발 전용] 투항 선택지 ${choiceIndex} 가 없다. 0=영입 1=대가·퇴각 2=거부`)
+    return
+  }
+
+  // 무엇을 골랐는지는 최종 결과와 별개로 남는다 (DEC-RESIDENT-042)
+  resolution.recordSurrenderChoice(residentId, choice)
+  console.warn(`[개발 전용] 투항 대화 UI 를 우회해 선택을 확정한다 — ${choice}`)
+
+  if (choice === 'resume_combat') {
+    // 거부는 최종 결과가 아니다. 전투로 돌아가고 실제로 처치했을 때만
+    // killed 를 확정한다 (DEC-RESIDENT-052).
+    resolution.recordSurrenderResumed(residentId)
+    scenes.closeOverlay('surrender_dialogue')
+    console.info('[조우] 투항 거부 — 전투 재개. 처치하면 killed 로 확정된다')
+    return
+  }
+
+  // 영입·대가 요구는 조우를 끝낸다. 보상과 상태 변경이 하나의 처리다.
+  if (!finishEncounter(residentId, choice === 'recruit' ? 'recruited' : 'retreated')) return
+
+  scenes.closeOverlay('surrender_dialogue')
+  hostile = null
+  hostileTarget = null
+  residentCombat?.reset()
+}
+
 function devGoToDay(dayNumber: number): void {
   if (run === null) {
     console.warn('[개발 전용] 런 상태가 없다')

@@ -29,6 +29,7 @@ import type {
   Resident,
   ResidentCombatProfile,
   RewardBundle,
+  SurrenderChoiceFunction,
 } from '../data/types.ts'
 import type {
   ResidentAllegiance,
@@ -107,6 +108,14 @@ export interface Resolution {
 
   /** 자원 협상이 성격 프로필에 막힌 것. 공포도는 오르지 않는다 */
   recordNegotiationRejected(residentId: string): void
+
+  /**
+   * 투항 대화에서 무엇을 골랐는지 남긴다 (DEC-RESIDENT-042).
+   *
+   * 최종 결과와 별개로 기록한다 — `resume_combat` 은 최종 결과가 아니고,
+   * 거부 후 처치한 경우 "투항을 거부당한 뒤 죽었다" 가 엔딩 기록의 사실이 된다.
+   */
+  recordSurrenderChoice(residentId: string, choice: SurrenderChoiceFunction): void
 
   /** 투항 거부·전투 재개. 중요 행동이며 공포도는 오르지 않는다 (DEC-RESIDENT-046) */
   recordSurrenderResumed(residentId: string): void
@@ -316,6 +325,12 @@ export function createResolution(
     recordNegotiationRejected(residentId) {
       state.record.importantActions.resource_negotiation_rejected += 1
       void residentId
+    },
+
+    recordSurrenderChoice(residentId, choice) {
+      const resident = state.residents[residentId]
+      if (resident === undefined) return
+      resident.surrenderChoice = choice
     },
 
     recordSurrenderResumed(residentId) {
