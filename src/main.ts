@@ -32,6 +32,8 @@ import { createEncounter } from './systems/encounter.ts'
 import type { Encounter } from './systems/encounter.ts'
 import { createResolution } from './systems/resolution.ts'
 import type { Resolution } from './systems/resolution.ts'
+import { createEndingJudge } from './systems/ending.ts'
+import type { EndingJudge } from './systems/ending.ts'
 import type {
   Crop,
   FinalOutcome,
@@ -93,7 +95,11 @@ let raidData: {
   profileById: Map<string, import('./data/types.ts').ResidentCombatProfile>
   modifierByState: Map<string, import('./data/types.ts').ResidentCombatModifier>
   scenarioByResident: Map<string, import('./data/types.ts').StoryScenario>
+  /** 일차 → raid_type. 마지막 습격 뒤에 엔딩 판정으로 간다 (DEC-RUN-014) */
+  raidTypeByDay: Map<number, string>
 } | null = null
+/** 엔딩 판정 (DEC-CONTENT-011) */
+let endingJudge: EndingJudge | null = null
 
 const player = { x: 0, y: 0 }
 
@@ -181,7 +187,15 @@ async function bootData(): Promise<void> {
       scenarioByResident: new Map(
         (data.story_scenarios ?? []).map((s) => [s.resident_id, s]),
       ),
+      raidTypeByDay: new Map((schedule.days ?? []).map((d) => [d.day_number, d.raid_type])),
     }
+
+    endingJudge = createEndingJudge({
+      fearBands: data.fear_bands ?? [],
+      endings: data.endings ?? [],
+      crops,
+      cropAttributes: data.crop_attributes ?? [],
+    })
 
     // 런 상태를 새로 만든다. 부분 초기화하지 않는다 (로드맵 9-5).
     // 이름 입력 화면이 아직 없어 playerName 은 비어 있다.
@@ -357,7 +371,63 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
       (rewardBundleId === null ? '' : ` · 보상 ${rewardBundleId}`),
   )
   if (fearPending) warnFearPending()
+
+  // 마지막 습격의 조우 결과와 모든 상태 변경을 끝낸 뒤에 엔딩을 판정한다
+  // (DEC-CONTENT-011). 여기보다 앞이면 방금 바뀐 관계·공포도가 반영되지 않는다.
+  if (raidData?.raidTypeByDay.get(run?.dayNumber ?? 0) === 'final_raid') decideEnding()
   return true
+}
+
+/**
+ * 엔딩 판정 (DEC-CONTENT-011).
+ *
+ * 시스템이 엔딩을 먼저 확정하고 그 값을 런 결과에 저장한 **뒤에만** LLM 기록문을
+ * 요청한다. 기록문 생성은 아직 붙지 않았고, 붙어도 실패가 엔딩 진행을 막지 않는다.
+ */
+function decideEnding(): void {
+  if (endingJudge === null || run === null) return
+
+  const judgement = endingJudge.judge({ record: run.record, residents: run.residents })
+
+  if (judgement.ending === null) {
+    // 전역 폴백조차 없다. 승인 데이터가 잘못된 것이라 화면에 그대로 올린다.
+    bus.emit('data.error', {
+      summary: '엔딩을 확정할 수 없다',
+      detail: `공포도 ${judgement.fearScore} · ${judgement.fallbackReason}`,
+    })
+    return
+  }
+
+  run.ending = {
+    endingId: judgement.ending.id,
+    endingContentVersion: judgement.ending.content_version,
+    fear: judgement.fearScore,
+    fearBandId: judgement.fearBand?.id ?? null,
+    dominantCropId: judgement.dominantCrop?.cropId ?? null,
+    // 기록문은 LLM 또는 fallback_record_text 로 채운다 (DEC-JOURNAL-003, 8/4 이후).
+    // 지금은 승인된 폴백 문장을 그대로 쓴다 — 여기서 문장을 지어내지 않는다.
+    recordText: judgement.ending.fallback_record_text,
+    usedFallback: true,
+  }
+
+  bus.emit('ending.decided', {
+    endingId: judgement.ending.id,
+    endingTitle: judgement.ending.ending_title,
+  })
+
+  // 폴백은 판정 실패의 결과지 기본값이 아니다. 왜 그렇게 됐는지를 남긴다.
+  if (judgement.fallbackReason !== null) {
+    console.warn(
+      `[엔딩] 전역 폴백으로 떨어졌다 — ${judgement.fallbackReason}. ` +
+        `공포도 ${judgement.fearScore} · 구간 ${judgement.fearBand?.id ?? '없음'}`,
+    )
+  }
+
+  console.info(
+    `[엔딩] ${judgement.ending.ending_title} (${judgement.ending.id}) · ` +
+      `공포도 ${judgement.fearScore} · 구간 ${judgement.fearBand?.display_name ?? '없음'} · ` +
+      `대표 작물 ${judgement.dominantCrop?.displayName ?? '없음'}`,
+  )
 }
 
 /** 공포도 증가량 미승인 안내. 개발 빌드에서만, 한 런에 한 번만 (DEC-RESIDENT-048) */
@@ -942,6 +1012,9 @@ if (isDevBuild) {
   )
   bus.on('reward.granted', ({ residentId, bundleId }) =>
     console.info(`[보상] ${residentId} · ${bundleId} 지급`),
+  )
+  bus.on('ending.decided', ({ endingId, endingTitle }) =>
+    console.warn(`[엔딩] 확정 — ${endingTitle} (${endingId}). 엔딩 화면은 8/4~5 최수정`),
   )
 
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
