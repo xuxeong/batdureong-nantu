@@ -11,8 +11,8 @@
 //
 // 런타임과 프롬프트 로딩 방식은 ending.ts 와 같다.
 
-import { generateOnce, json } from './_llm.ts'
-import { JOURNAL_SYSTEM_PROMPT } from './_prompts.ts'
+import { generateOnce, json } from './_llm'
+import { JOURNAL_SYSTEM_PROMPT } from './_prompts'
 
 export const config = { runtime: 'edge' }
 

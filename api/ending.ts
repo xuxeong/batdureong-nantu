@@ -16,8 +16,11 @@
 // 모듈**을 가져온다. 원본은 여전히 schema/ending_prompt_system.md 하나이고 이 코드에
 // 문장을 복사하지 않는다 (DEC-PIPELINE-012). tools/build-prompts.mjs 참고.
 
-import { generateOnce, json } from './_llm.ts'
-import { ENDING_SYSTEM_PROMPT } from './_prompts.ts'
+// **`api/` 안의 import 에는 `.ts` 확장자를 붙이지 않는다.** src/ 는 Vite 가 처리해서
+// 확장자를 써도 되지만 Vercel 의 edge 번들러는 못 읽고 배포가 통째로 실패한다
+// ("referencing unsupported modules"). 8/5에 겪었다.
+import { generateOnce, json } from './_llm'
+import { ENDING_SYSTEM_PROMPT } from './_prompts'
 
 export const config = { runtime: 'edge' }
 
