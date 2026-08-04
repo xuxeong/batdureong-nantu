@@ -9,22 +9,12 @@
 // 실패해도 일차 진행을 막지 않는다. 재시도 1회 후 journal_fallbacks.csv 의 승인 문구를
 // 쓴다 — 그 선택은 클라이언트가 공포도 구간 × 변화 방향으로 한다 (DEC-JOURNAL-003).
 //
-// 런타임을 nodejs 로 두는 이유는 ending.ts 와 같다.
+// 런타임과 프롬프트 로딩 방식은 ending.ts 와 같다.
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { generateOnce, json, promptBody } from './_llm.ts'
+import { generateOnce, json } from './_llm.ts'
+import { JOURNAL_SYSTEM_PROMPT } from './_prompts.ts'
 
-export const config = { runtime: 'nodejs' }
-
-let cachedPrompt: string | null = null
-function systemPrompt(): string {
-  if (cachedPrompt === null) {
-    const path = join(process.cwd(), 'schema', 'journal_prompt_system.md')
-    cachedPrompt = promptBody(readFileSync(path, 'utf8'))
-  }
-  return cachedPrompt
-}
+export const config = { runtime: 'edge' }
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
@@ -36,15 +26,14 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'invalid_json' }, 400)
   }
 
-  let system: string
-  try {
-    system = systemPrompt()
-  } catch {
-    return json({ ok: false, reason: 'prompt_missing' }, 500)
-  }
-
   // 출력은 한국어 1~3문장, 200자 이하다 (DEC-JOURNAL-002)
-  const call = { system, input, field: 'journal_text', maxChars: 200, maxTokens: 600 }
+  const call = {
+    system: JOURNAL_SYSTEM_PROMPT,
+    input,
+    field: 'journal_text',
+    maxChars: 200,
+    maxTokens: 600,
+  }
 
   let result = await generateOnce(call)
   let retried = false

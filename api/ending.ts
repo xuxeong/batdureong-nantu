@@ -8,26 +8,18 @@
 //
 // ── 런타임 선언 ────────────────────────────────────────────
 //
-// health.ts 와 달리 `nodejs` 다. 고정 시스템 지시문을 `schema/ending_prompt_system.md`
-// 에서 읽어야 하는데(DEC-PIPELINE-012 — 코드에 문장을 복사하지 않는다) edge 런타임에는
-// 파일 시스템이 없다. 핸들러 자체는 표준 Request/Response 만 쓰므로 팀규칙 7절을
-// 지킨다. **배포에서 실제로 동작하는지 확인이 필요하다** (로드맵 11-2).
+// health.ts 와 같은 `edge` 다. Node 런타임은 기본 export 를 (req, res) 로 취급해
+// 표준 Response 반환이 죽는다 — health.ts 주석이 적어 둔 그대로이고 8/5에 재현했다
+// (FUNCTION_INVOCATION_FAILED).
+//
+// edge 에는 파일 시스템이 없으므로 프롬프트 원본을 읽지 않고 **빌드 시점에 구운
+// 모듈**을 가져온다. 원본은 여전히 schema/ending_prompt_system.md 하나이고 이 코드에
+// 문장을 복사하지 않는다 (DEC-PIPELINE-012). tools/build-prompts.mjs 참고.
 
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { generateOnce, json, promptBody } from './_llm.ts'
+import { generateOnce, json } from './_llm.ts'
+import { ENDING_SYSTEM_PROMPT } from './_prompts.ts'
 
-export const config = { runtime: 'nodejs' }
-
-/** 프롬프트 원본은 한 곳에서만 읽는다 (DEC-PIPELINE-012) */
-let cachedPrompt: string | null = null
-function systemPrompt(): string {
-  if (cachedPrompt === null) {
-    const path = join(process.cwd(), 'schema', 'ending_prompt_system.md')
-    cachedPrompt = promptBody(readFileSync(path, 'utf8'))
-  }
-  return cachedPrompt
-}
+export const config = { runtime: 'edge' }
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405)
@@ -39,13 +31,7 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'invalid_json' }, 400)
   }
 
-  let system: string
-  try {
-    system = systemPrompt()
-  } catch {
-    // 프롬프트 원본이 배포에 포함되지 않았다. 문장을 지어내지 않고 실패로 돌려준다.
-    return json({ ok: false, reason: 'prompt_missing' }, 500)
-  }
+  const system = ENDING_SYSTEM_PROMPT
 
   // 같은 확정 입력으로 1회 재시도한다 (DEC-CONTENT-011).
   // 입력을 다시 만들지 않는 것이 요점이다 — 재시도 사이에 사실이 달라지면 안 된다.

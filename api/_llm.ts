@@ -4,7 +4,8 @@
 //
 // **프롬프트 문장을 여기 적지 않는다.** 고정 시스템 지시문의 단일 원본은
 // `schema/ending_prompt_system.md` 와 `schema/journal_prompt_system.md` 다
-// (DEC-PIPELINE-012, DEC-JOURNAL-004). 이 파일은 그 파일을 읽어 전달할 뿐이다.
+// (DEC-PIPELINE-012, DEC-JOURNAL-004). 빌드 시점에 구운 `_prompts.ts` 를 통해
+// 전달받을 뿐이다.
 //
 // **시스템이 사실을 먼저 확정하고 LLM 은 서술만 한다.** 여기서 게임 상태를 바꾸거나
 // 엔딩을 고르지 않는다. 입력은 게임이 이미 확정한 JSON 그대로 전달한다.
@@ -64,16 +65,6 @@ function looksPlain(text: string): boolean {
   if (/^\s*#/m.test(text)) return false // 제목
   if (/\*\*|__|`/.test(text)) return false // 강조·코드
   return true
-}
-
-/**
- * 프롬프트 원본에서 편집용 주석 블록을 걷어낸다.
- *
- * 파일 머리말의 HTML 주석은 사람에게 주는 설명이지 모델에게 주는 지시가 아니다.
- * 그대로 넘기면 "버전을 올려라" 같은 문장이 지시로 읽힐 수 있다.
- */
-export function promptBody(raw: string): string {
-  return raw.replace(/<!--[\s\S]*?-->/g, '').trim()
 }
 
 /**
