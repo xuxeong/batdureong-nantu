@@ -28,6 +28,13 @@ export interface PlotView {
   /** `E` 로 지금 상호작용할 대상인가 (DEC-INPUT-003) */
   highlighted: boolean
   /**
+   * 야생동물이 이 칸의 작물을 먹는 진행도 0~1. 먹는 중이 아니면 null.
+   *
+   * `DEC-UI-018` 이 "먹는 동안 진행 상태를 해당 경작지에 표시한다" 고 확정했다.
+   * 이게 없으면 플레이어는 작물이 사라진 뒤에야 알고, 그때는 막을 수 없다.
+   */
+  eatingProgress: number | null
+  /**
    * 수확 가능 전환 강조가 남은 정도 1~0.
    *
    * `DEC-UI-004` 는 전환 순간 한 번만 강조하고 반복하지 않는다고 정했다.
@@ -65,15 +72,49 @@ export interface FieldView {
   plots?: readonly PlotView[]
   /** 상호작용 안내 문구. 대상이 없으면 null (DEC-INPUT-003) */
   actionPrompt?: string | null
-  /**
-   * 재배 단계 남은 시간. HUD(`DEC-UI-017`)가 붙기 전까지 캔버스에 임시로 그린다.
-   * `hud.ts` 가 생기면 이 필드는 사라진다.
-   */
-  remainingSeconds?: number | null
-  /** 남은 시간이 임박한가 (DEC-UI-018) */
-  timeUrgent?: boolean
   /** 수확 획득 표시 (DEC-UI-018) */
   harvestPopups?: readonly HarvestPopupView[]
+  /** 필드 위 적대 개체 (야생동물·적대 주민) */
+  hostiles?: readonly HostileView[]
+  /** 날아가는 투사체 */
+  projectiles?: readonly ProjectileView[]
+  /**
+   * 낫 재사용 대기 남은 정도 1~0. **개발 빌드에서만 넘긴다.**
+   *
+   * 확정 DEC 어디에도 낫 대기 표시가 없다 — `DEC-UI-017`·`018`·`019` 셋 다
+   * 목록에 없고 투척과 달리 퀵슬롯 칸도 없다. 없는 UI 규칙을 지어내는 대신
+   * `DEC-UI-024` 가 세운 "개발 빌드에만 보이는 표시" 로 둔다.
+   * 표시가 필요하다고 판단되면 그때 결정 로그에 올린다.
+   */
+  devSickleCooldown?: number | null
+}
+
+/**
+ * 적대 개체 하나의 그리기용 표현.
+ *
+ * 야생동물과 적대 주민을 한 타입으로 받는다. 렌더 입장에서 다른 것은
+ * 색과 예고 표시뿐이고, 규칙 차이는 시스템 쪽에 있다.
+ */
+export interface HostileView {
+  x: number
+  y: number
+  radius: number
+  /** 0~1. 체력 막대 길이 */
+  healthRatio: number
+  /** 공격 예고 중인 정도 1~0. 야생동물만 쓴다 (DEC-CONTENT-007) */
+  windup: number | null
+  /** 둔화가 걸려 있는가 (DEC-CONTENT-013) */
+  slowed: boolean
+  /** 지속 피해가 걸려 있는가 */
+  burning: boolean
+}
+
+export interface ProjectileView {
+  x: number
+  y: number
+  radius: number
+  /** 플레이어 것인지 적 것인지 — 색을 가른다 */
+  hostile: boolean
 }
 
 export interface FieldRenderer {
@@ -132,12 +173,31 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.textAlign = 'start'
     }
 
+    for (const hostile of view.hostiles ?? []) drawHostile(hostile)
+    for (const projectile of view.projectiles ?? []) drawProjectile(projectile)
+
     const screen = camera.worldToScreen(view.player)
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
     // 플레이어 — 플레이스홀더 사각형
     ctx.fillStyle = '#e8d9a0'
     ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
+
+    // 낫 재사용 대기 — 개발 빌드에서만 온다. 플레이어 발밑에 호를 그린다.
+    // 확정 UI 규칙이 없어 HUD 에 자리를 만들지 않는다 (FieldView 주석 참고).
+    if (view.devSickleCooldown !== null && view.devSickleCooldown !== undefined) {
+      ctx.strokeStyle = '#8a8f7a'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(
+        screen.x,
+        screen.y,
+        radius + 8,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * view.devSickleCooldown,
+      )
+      ctx.stroke()
+    }
 
     // 조준선 — 마우스 커서 방향 (DEC-INPUT-002)
     const aimLength = radius * 2.5
@@ -160,16 +220,54 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.textAlign = 'start'
     }
 
-    // 남은 재배 시간 — hud.ts 가 생기면 여기서 지운다.
-    // 임박하면 강조한다 (DEC-UI-018).
-    if (view.remainingSeconds !== null && view.remainingSeconds !== undefined) {
-      const seconds = Math.ceil(view.remainingSeconds)
-      ctx.font = view.timeUrgent ? 'bold 28px sans-serif' : '22px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = view.timeUrgent ? '#e8613c' : '#f4ecd0'
-      ctx.fillText(`남은 시간 ${seconds}초`, width / 2, 36)
-      ctx.textAlign = 'start'
+  }
+
+  /**
+   * 적대 개체 — 플레이스홀더 원.
+   *
+   * 공격 예고를 그린다. 야생동물만 예고가 있고(`DEC-CONTENT-007`) 적대 주민은
+   * 예고를 쓰지 않으므로(`DEC-CONTENT-008`) `windup` 이 항상 null 로 온다.
+   * **여기서 주민에게 예고를 그리면 확정 규칙 위반이 화면에서 시작된다.**
+   */
+  function drawHostile(hostile: HostileView): void {
+    const at = camera.worldToScreen(hostile)
+    const radius = hostile.radius * WORLD_TO_PIXEL
+
+    // 상태 효과는 테두리 색으로 구분한다. 실제 아트가 오면 교체한다.
+    ctx.fillStyle = hostile.slowed ? '#6a7f9c' : '#9c5b4a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    if (hostile.burning) {
+      ctx.strokeStyle = '#e07b39'
+      ctx.lineWidth = 3
+      ctx.stroke()
     }
+
+    // 공격 예고 — 남은 정도가 줄면서 원이 좁아진다
+    if (hostile.windup !== null) {
+      ctx.strokeStyle = '#f2e34a'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius + 6 + hostile.windup * 14, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+
+    // 체력 막대
+    const barWidth = radius * 2
+    ctx.fillStyle = '#2a1c16'
+    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth, 4)
+    ctx.fillStyle = '#c94b3f'
+    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth * hostile.healthRatio, 4)
+  }
+
+  function drawProjectile(projectile: ProjectileView): void {
+    const at = camera.worldToScreen(projectile)
+    ctx.fillStyle = projectile.hostile ? '#d4622f' : '#cfe07a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, Math.max(3, projectile.radius * WORLD_TO_PIXEL), 0, Math.PI * 2)
+    ctx.fill()
   }
 
   /**
@@ -186,6 +284,18 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.strokeStyle = plot.highlighted ? '#f4ecd0' : 'rgba(0, 0, 0, 0.45)'
     ctx.lineWidth = plot.highlighted ? 2 : 1
     ctx.strokeRect(center.x - half, center.y - half, half * 2, half * 2)
+
+    // 야생동물이 먹는 중이면 진행 상태를 이 칸에 그린다 (DEC-UI-018).
+    // 목표를 가리키는 선이나 화살표는 그리지 않는다 — 같은 DEC 가 금지한다.
+    if (plot.eatingProgress !== null) {
+      ctx.fillStyle = 'rgba(212, 98, 47, 0.35)'
+      ctx.fillRect(center.x - half, center.y - half, half * 2, half * 2)
+
+      ctx.fillStyle = '#2a1c16'
+      ctx.fillRect(center.x - half, center.y + half - 8, half * 2, 6)
+      ctx.fillStyle = '#d4622f'
+      ctx.fillRect(center.x - half, center.y + half - 8, half * 2 * plot.eatingProgress, 6)
+    }
 
     if (plot.stage === 'empty') return
 

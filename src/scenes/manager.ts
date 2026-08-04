@@ -11,8 +11,13 @@
 // 정비는 별도 화면 전환이 아니라 셔터가 필드를 덮고 그 위에 올라오는 오버레이다.
 // 전투 전 대화와 투항 대화도 필드(습격 모드) 위 오버레이다.
 //
-// 중첩 UI의 표시 우선순위(`DEC-UI-026`)는 보류다. 잠금 스택을 임의로 설계하지 않고
-// **"오버레이가 열려 있으면 필드 정지"** 규칙만 구현한다 (개발 로드맵 9-2).
+// 중첩 UI의 우선순위와 입력 소유권은 `DEC-UI-026`이 확정했다.
+//
+//   - 동시에 열리는 오버레이는 **기능 오버레이 하나 + 일시정지 하나**뿐이다
+//   - 일시정지는 **항상 가장 위**에 온다
+//   - 가장 위 오버레이가 입력을 독점하고 그 아래는 표시만 한다
+//   - `Esc` 한 번은 **한 층만** 처리한다
+//   - 포커스 이탈로 일시정지가 열릴 때 회복 퀵메뉴가 열려 있으면 퀵메뉴를 닫는다
 
 import type { EventBus, FieldMode, OverlayId, ScreenId } from '../core/events.ts'
 import type { GameLoop } from '../core/loop.ts'
@@ -101,6 +106,18 @@ export interface SceneManager {
    * `step`은 건드리지 않는다. 이건 런의 상태가 아니라 화면 미리보기다.
    */
   enterFieldPreview(mode: FieldMode): void
+
+  /**
+   * 지금 입력을 소유한 오버레이. 없으면 null 이고 그때는 필드가 입력을 갖는다.
+   *
+   * 가장 위 오버레이가 입력을 독점하고 그 아래 층위는 표시만 한다 (DEC-UI-026).
+   * UI 는 이 값으로 자기 차례인지 판단한다 — 각자 "내가 열려 있나" 를 보면
+   * 겹쳤을 때 둘 다 입력을 받는다.
+   */
+  inputOwner(): OverlayId | null
+
+  /** 브라우저 포커스를 잃었을 때 (DEC-UI-022, DEC-UI-026) */
+  handleFocusLost(): void
 }
 
 /**
@@ -176,8 +193,38 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     syncSimulation()
   }
 
+  /**
+   * 오버레이를 연다.
+   *
+   * **일시정지는 항상 마지막(가장 위)에 둔다** (DEC-UI-026). 단순 append 로 두면
+   * 일시정지가 떠 있는 동안 대화가 열릴 때 대화가 위로 올라가고, 그러면
+   * `handleEscape()` 와 입력 소유권이 둘 다 어긋난다. 지금 흐름에서는 그 순서가
+   * 안 나오지만 8/4에 대화 모달이 붙으면 나올 수 있는 순서다.
+   */
   function pushOverlay(overlay: OverlayId): void {
     if (overlays.includes(overlay)) return
+
+    // 기능 오버레이 둘이 동시에 열리는 경우를 만들지 않는다 (DEC-UI-026).
+    // 조용히 바꿔치기하면 아래 오버레이의 상태가 사라지고, 그 사라짐은 화면에서
+    // "왜 갑자기 정비가 닫혔지" 로만 보인다. 열지 않고 알린다.
+    if (overlay !== 'pause') {
+      const open = overlays.find((o) => o !== 'pause')
+      if (open !== undefined) {
+        console.warn(
+          `[화면] ${open} 이(가) 열려 있어 ${overlay} 를 열지 않았다. ` +
+            '기능 오버레이는 동시에 하나뿐이다 (DEC-UI-026).',
+        )
+        return
+      }
+      // 일시정지 아래로 넣는다
+      const pauseIndex = overlays.indexOf('pause')
+      if (pauseIndex !== -1) {
+        overlays.splice(pauseIndex, 0, overlay)
+        bus.emit('overlay.opened', { overlay })
+        return
+      }
+    }
+
     overlays.push(overlay)
     bus.emit('overlay.opened', { overlay })
   }
@@ -189,8 +236,8 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     bus.emit('data.error', { summary: '런 흐름을 진행할 수 없다', detail: message })
   }
 
-  // 포커스를 잃으면 일시정지 오버레이를 연다 (DEC-INPUT-009).
-  // 자동 재개는 하지 않는다 — 재개 확인 절차는 DEC-UI-022 가 보류다.
+  // 포커스를 잃으면 일시정지 오버레이를 연다 (DEC-INPUT-009, DEC-UI-022).
+  // 포커스가 돌아와도 자동 재개하지 않는다. 플레이어가 직접 재개한다.
   bus.on('simulation.paused', () => {})
 
   const manager: SceneManager = {
@@ -198,6 +245,7 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     currentScreen: () => screen,
     currentFieldMode: () => fieldMode,
     openOverlays: () => [...overlays],
+    inputOwner: () => overlays[overlays.length - 1] ?? null,
 
     send(input) {
       const result = advance(step, input, ctx)
@@ -222,19 +270,29 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
     },
 
     handleEscape() {
-      const top = overlays[overlays.length - 1]
-
-      // 일시정지가 이미 떠 있으면 닫는다.
-      if (top === 'pause') {
-        manager.closeOverlay('pause')
-        return
+      // `Esc` 한 번은 한 층만 처리한다 (DEC-UI-026).
+      // 확정문 순서를 그대로 옮긴다 — "회복 퀵메뉴가 열려 있으면 그것만 닫고,
+      // 열려 있지 않으면 일시정지를 열거나 닫는다".
+      for (const closable of ESC_CLOSABLE_OVERLAYS) {
+        if (overlays.includes(closable)) {
+          manager.closeOverlay(closable)
+          return
+        }
       }
       // 정비 허브·전투 전 대화·투항 대화는 Esc 로 닫지 않는다.
       // 그대로 둔 채 일시정지만 겹친다 (DEC-UI-022).
-      if (top !== undefined && ESC_CLOSABLE_OVERLAYS.has(top)) {
-        manager.closeOverlay(top)
+      if (overlays.includes('pause')) {
+        manager.closeOverlay('pause')
         return
       }
+      manager.openOverlay('pause')
+    },
+
+    handleFocusLost() {
+      // 포커스를 잃어 일시정지가 자동으로 열릴 때 회복 퀵메뉴가 열려 있으면
+      // 퀵메뉴를 닫는다 (DEC-UI-026). 선택된 회복 아이템은 런 상태에 있으므로
+      // 여기서 건드리지 않아도 유지된다 (DEC-RESOURCE-017).
+      manager.closeOverlay('recovery_quickmenu')
       manager.openOverlay('pause')
     },
 

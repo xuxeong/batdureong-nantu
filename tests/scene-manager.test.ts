@@ -130,3 +130,68 @@ test('화면이 바뀌면 이전 오버레이가 남지 않는다', () => {
   assert.equal(scenes.currentScreen(), 'run_failed')
   assert.deepEqual(scenes.openOverlays(), [])
 })
+
+// ── 중첩 UI 우선순위와 입력 소유권 (DEC-UI-026) ──────────────
+
+test('일시정지는 나중에 열려도 항상 가장 위에 온다', () => {
+  const { scenes } = setup()
+  scenes.enterFieldPreview('farming')
+
+  scenes.openOverlay('pause')
+  scenes.openOverlay('maintenance_hub')
+
+  assert.deepEqual(scenes.openOverlays(), ['maintenance_hub', 'pause'])
+  assert.equal(scenes.inputOwner(), 'pause', '가장 위 오버레이가 입력을 독점한다')
+})
+
+test('기능 오버레이 둘이 동시에 열리지 않는다', () => {
+  const { scenes } = setup()
+  scenes.enterFieldPreview('raid')
+
+  scenes.openOverlay('precombat_dialogue')
+  scenes.openOverlay('maintenance_hub')
+
+  assert.deepEqual(
+    scenes.openOverlays(),
+    ['precombat_dialogue'],
+    '나중 것을 열지 않는다. 조용히 바꿔치기하면 아래 오버레이 상태가 사라진다',
+  )
+})
+
+test('오버레이가 없으면 필드가 입력을 갖는다', () => {
+  const { scenes } = setup()
+  scenes.enterFieldPreview('farming')
+
+  assert.equal(scenes.inputOwner(), null)
+})
+
+test('포커스를 잃으면 회복 퀵메뉴를 닫고 일시정지를 연다', () => {
+  const { scenes } = setup()
+  scenes.enterFieldPreview('farming')
+  scenes.openOverlay('recovery_quickmenu')
+
+  scenes.handleFocusLost()
+
+  assert.deepEqual(scenes.openOverlays(), ['pause'])
+})
+
+test('Esc 는 한 번에 한 층만 처리한다', () => {
+  // 정비 허브와 회복 퀵메뉴를 함께 열어 검사하려다 위 규칙에 막혔다.
+  // 실제로도 불가능한 조합이다 — 정비 중에는 필드 입력이 잠겨 `Q`를 누를 수 없다
+  // (DEC-INPUT-008, DEC-INPUT-009). 규칙이 잘못된 테스트를 먼저 잡았다.
+  const { scenes } = setup()
+  scenes.enterFieldPreview('farming')
+  scenes.openOverlay('recovery_quickmenu')
+
+  // 회복 퀵메뉴가 열려 있으면 그것만 닫는다
+  scenes.handleEscape()
+  assert.deepEqual(scenes.openOverlays(), [])
+
+  // 열려 있지 않으면 일시정지를 연다
+  scenes.handleEscape()
+  assert.deepEqual(scenes.openOverlays(), ['pause'])
+
+  // 다시 누르면 일시정지를 닫는다
+  scenes.handleEscape()
+  assert.deepEqual(scenes.openOverlays(), [])
+})

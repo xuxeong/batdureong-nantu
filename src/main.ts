@@ -15,14 +15,27 @@ import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
-import type { PlotView } from './render/field.ts'
+import type { HostileView, PlotView } from './render/field.ts'
 import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
 import { createFarming } from './systems/farming.ts'
 import type { FarmingSystem } from './systems/farming.ts'
 import { createStageTimer } from './systems/stage-timer.ts'
 import type { StageTimer } from './systems/stage-timer.ts'
-import type { Crop, ThrowableWeapon } from './data/types.ts'
+import { createCombat } from './systems/combat.ts'
+import type { CombatSystem, CombatTarget } from './systems/combat.ts'
+import { createWildlife } from './systems/wildlife.ts'
+import type { WildlifeSystem } from './systems/wildlife.ts'
+import { createResidentCombat } from './systems/resident-combat.ts'
+import type { HostileRuntime, ResidentCombatSystem } from './systems/resident-combat.ts'
+import { createEncounter } from './systems/encounter.ts'
+import type { Encounter } from './systems/encounter.ts'
+import type {
+  Crop,
+  ThrowableWeapon,
+  WildlifeSpawnEntry,
+  WildlifeSpawnProfile,
+} from './data/types.ts'
 import { createRunState } from './state/run-state.ts'
 import type { RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
@@ -44,6 +57,38 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 let throwablesById = new Map<string, ThrowableWeapon>()
 let run: RunState | null = null
+
+// 전투와 야생동물도 승인 데이터가 있어야 만들어진다. 없으면 null 로 남고
+// 우클릭·좌클릭이 아무 일도 하지 않는다 — 임시 수치를 지어내지 않는다.
+let combat: CombatSystem | null = null
+let wildlife: WildlifeSystem | null = null
+let spawnEntries: WildlifeSpawnEntry[] = []
+let spawnProfilesById = new Map<string, WildlifeSpawnProfile>()
+/** 일차 → 그날의 출현 프로필 ID. 없는 일차는 야생동물이 없다 (DEC-CONTENT-007) */
+let spawnProfileIdByDay = new Map<number, string | null>()
+
+let residentCombat: ResidentCombatSystem | null = null
+let encounter: Encounter | null = null
+/** 이번 습격의 적대 주민. 한 번에 한 명이다 (DEC-CONTENT-002) */
+let hostile: HostileRuntime | null = null
+/**
+ * 전투 시스템이 보는 적대 주민 대상.
+ *
+ * **매 프레임 새로 만들지 않는다.** `combat.ts` 는 투항이 발동하면 이 객체의
+ * `surrenderOffered` 를 true 로 바꾸는데, 새로 만들면 그 표시가 매 프레임 지워져
+ * "투항 대화는 주민 한 명당 최대 한 번" (DEC-RESIDENT-016) 이 깨진다.
+ */
+let hostileTarget: CombatTarget | null = null
+/** 맵의 resident_spawn 지점 (DEC-CONTENT-016) */
+let raidSpawnPoint: { x: number; y: number } | null = null
+/** 습격 조우를 시작하는 데 필요한 승인 데이터 묶음 */
+let raidData: {
+  hostileResidentByDay: Map<number, string | null>
+  combatProfileByResident: Map<string, string>
+  profileById: Map<string, import('./data/types.ts').ResidentCombatProfile>
+  modifierByState: Map<string, import('./data/types.ts').ResidentCombatModifier>
+  scenarioByResident: Map<string, import('./data/types.ts').StoryScenario>
+} | null = null
 
 const player = { x: 0, y: 0 }
 
@@ -86,6 +131,53 @@ async function bootData(): Promise<void> {
 
     throwablesById = new Map((data.throwable_weapons ?? []).map((w) => [w.id, w]))
 
+    const weapons = data.throwable_weapons ?? []
+    combat = createCombat({
+      stats: data.player_base_stats![0],
+      weapons,
+      attributes: data.crop_attributes ?? [],
+    })
+    wildlife = createWildlife({
+      map,
+      species: data.wildlife ?? [],
+      weapons,
+    })
+
+    // 1일차 재배의 출현 프로필. 일차가 넘어갈 때 다시 부른다.
+    // 프로필 참조가 비어 있는 일차는 야생동물이 없다 (DEC-CONTENT-007).
+    spawnEntries = (data.wildlife_spawn_profiles ?? []).flatMap((p) => p.entries ?? [])
+    spawnProfilesById = new Map((data.wildlife_spawn_profiles ?? []).map((p) => [p.id, p]))
+
+    const residentSpawn = (map.points ?? []).find((p) => p.point_role === 'resident_spawn')
+    raidSpawnPoint = residentSpawn === undefined ? null : { x: residentSpawn.x, y: residentSpawn.y }
+
+    residentCombat = createResidentCombat({ weapons })
+    encounter = createEncounter({
+      residents: data.residents ?? [],
+      personalityProfiles: data.resident_personality_profiles ?? [],
+      choiceOutcomes: (data.resident_personality_profiles ?? []).flatMap(
+        (p) => p.choice_outcomes ?? [],
+      ),
+      choices: data.dialogue_choices ?? [],
+      responses: (data.dialogue_choices ?? []).flatMap((c) => c.responses ?? []),
+    })
+
+    raidData = {
+      hostileResidentByDay: new Map(
+        (schedule.days ?? []).map((d) => [d.day_number, d.hostile_resident_id]),
+      ),
+      combatProfileByResident: new Map(
+        (data.residents ?? []).map((r) => [r.id, r.combat_profile_id]),
+      ),
+      profileById: new Map((data.resident_combat_profiles ?? []).map((p) => [p.id, p])),
+      modifierByState: new Map(
+        (data.resident_combat_modifiers ?? []).map((m) => [m.combat_state, m]),
+      ),
+      scenarioByResident: new Map(
+        (data.story_scenarios ?? []).map((s) => [s.resident_id, s]),
+      ),
+    }
+
     // 런 상태를 새로 만든다. 부분 초기화하지 않는다 (로드맵 9-5).
     // 이름 입력 화면이 아직 없어 playerName 은 비어 있다.
     run = createRunState({
@@ -97,6 +189,10 @@ async function bootData(): Promise<void> {
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.
     // 여기서 일정을 지어내지 않는다 — 없으면 흐름이 데이터 오류로 보고한다.
+    spawnProfileIdByDay = new Map(
+      (schedule.days ?? []).map((d) => [d.day_number, d.wildlife_spawn_profile_id]),
+    )
+
     const raidByDay = new Map((schedule.days ?? []).map((d) => [d.day_number, d.raid_type]))
     scenes.setContext({
       totalDays: schedule.total_days,
@@ -161,6 +257,81 @@ function inFarmingStage(): boolean {
   return scenes.currentFieldMode() === 'farming' && scenes.openOverlays().length === 0
 }
 
+function inRaidStage(): boolean {
+  return scenes.currentFieldMode() === 'raid' && scenes.openOverlays().length === 0
+}
+
+/**
+ * 습격 한 프레임.
+ *
+ * 투항 대화가 열려 있으면 `inRaidStage()` 가 false 라 여기 오지 않는다.
+ * 그것이 `DEC-RESIDENT-039` 가 정한 "전투 타이머 정지" 다 — 정지 플래그를
+ * 따로 두지 않는다.
+ */
+function updateRaid(dt: number): void {
+  if (residentCombat === null || combat === null || hostile === null || run === null) return
+
+  for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
+    if (event.type !== 'playerDamaged') continue
+    run.health = Math.max(0, run.health - event.amount)
+    bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
+  }
+
+  // 플레이어 → 주민. 야생동물과 같은 시스템을 쓰되 대상만 바뀐다.
+  combat.setTargets(currentTargets())
+  for (const event of combat.update(dt)) {
+    if (event.type === 'surrenderOffered') onSurrenderOffered()
+    if (event.type === 'killed') {
+      console.info('[습격] 주민을 처치했다. 보상 지급·조우 결과는 8/4.')
+      hostile = null
+      hostileTarget = null
+      return
+    }
+  }
+
+  // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
+  failRunIfDead()
+}
+
+/**
+ * 체력 0이면 런 전체를 실패로 끝낸다 (DEC-RUN-008).
+ *
+ * **이벤트만 쏘면 안 된다.** `run.failed` 는 UI 에게 알리는 결과 이벤트이고,
+ * 흐름을 옮기는 것은 `player_died` 입력이다. 이벤트만 쐈더니 체력이 0인 채로
+ * 계속 움직이고 야생동물도 계속 때렸다 — 화면에서는 "체력 바가 비었는데 안 죽네"
+ * 로만 보인다. 엔딩으로 가지 않고 런 실패 화면으로 간다 (DEC-UI-014).
+ */
+function failRunIfDead(): void {
+  if (run === null || run.health > 0) return
+  if (scenes.step().at === 'run_failed') return
+
+  bus.emit('run.failed', {})
+  scenes.send({ type: 'player_died' })
+}
+
+/**
+ * 투항 발동 (DEC-RESIDENT-016, DEC-RESIDENT-039).
+ *
+ * 전투를 정지하고 진행 중인 공격을 취소한 뒤 투항 대화를 연다.
+ * 선택지 UI(`surrender-modal.ts`)는 로드맵 8/4 김민주 몫이라 지금은 오버레이만
+ * 열린다 — 오버레이가 열리면 `inRaidStage()` 가 false 가 되어 전투가 멈춘다.
+ */
+function onSurrenderOffered(): void {
+  if (hostile === null) return
+
+  residentCombat?.suspendForSurrender()
+  scenes.openOverlay('surrender_dialogue')
+
+  bus.emit('surrender.offered', {
+    residentId: hostile.entity.residentId,
+    remainingHealth: hostile.entity.health,
+  })
+  console.warn(
+    `[습격] 투항 발동 — 체력 ${hostile.entity.health} / 기준 ${hostile.surrenderThreshold}. ` +
+      '선택지 UI 는 8/4 김민주. Esc 로는 닫히지 않는다 (DEC-UI-022).',
+  )
+}
+
 /** `E` — 심기·수확 문맥 상호작용 (DEC-INPUT-003) */
 function onInteract(): void {
   if (farming === null) {
@@ -223,8 +394,113 @@ function plotViews(): readonly PlotView[] {
       progress: Math.min(Math.max(progress, 0), 1),
       highlighted: target?.plot.plotId === plot.plotId,
       readyFlash: (readyFlashes.get(plot.plotId) ?? 0) / READY_FLASH_SECONDS,
+      eatingProgress: eatingProgressOf(plot.plotId),
     }
   })
+}
+
+/**
+ * 이 칸을 먹고 있는 야생동물의 진행도 0~1. 없으면 null (DEC-UI-018).
+ *
+ * 야생동물 쪽 남은 시간을 역산한다. 진행도를 따로 저장하면 두 곳이 어긋난다.
+ */
+function eatingProgressOf(plotId: string): number | null {
+  for (const runtime of wildlife?.instances ?? []) {
+    if (runtime.entity.targetPlotId !== plotId) continue
+    if (runtime.eatingSeconds === null) continue
+
+    const total = runtime.species.crop_eat_duration_seconds
+    return Math.min(Math.max(1 - runtime.eatingSeconds / total, 0), 1)
+  }
+  return null
+}
+
+/**
+ * 그날의 적대 주민을 필드에 세운다 (DEC-CONTENT-008).
+ *
+ * `combatState` 는 전투 전 대화 판정이 확정한다. 여기서 기본값을 고르지 않는다 —
+ * 판정 없이 습격을 시작하는 경로를 만들면 `DEC-RESIDENT-049` 가 정한
+ * "대화 결과가 지정한 전투 보정" 이 우회된다.
+ */
+function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | null {
+  if (residentCombat === null || raidData === null) return null
+
+  const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
+  if (residentId === null || residentId === '') return null // 습격 없는 날
+
+  const profileId = raidData.combatProfileByResident.get(residentId)
+  const profile = profileId === undefined ? undefined : raidData.profileById.get(profileId)
+  const modifier = raidData.modifierByState.get(combatState)
+
+  if (profile === undefined || modifier === undefined) {
+    bus.emit('data.error', {
+      summary: '습격을 시작할 수 없다',
+      detail: `${residentId} 의 전투 프로필(${profileId}) 또는 보정(${combatState}) 이 없다`,
+    })
+    return null
+  }
+
+  // 시작 위치는 맵의 resident_spawn 지점에서 온다 (DEC-CONTENT-016).
+  const spawn = raidSpawnPoint ?? { x: player.x + 400, y: player.y }
+
+  const runtime = residentCombat.spawn({
+    instanceId: `hostile.${dayNumber}`,
+    residentId,
+    profile,
+    modifier,
+    x: spawn.x,
+    y: spawn.y,
+  })
+
+  hostileTarget = {
+    entity: runtime.entity,
+    collisionRadius: runtime.collisionRadius,
+    surrenderThreshold: runtime.surrenderThreshold,
+    surrenderOffered: false,
+  }
+  return runtime
+}
+
+/** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
+function devSickleRatio(): number | null {
+  if (!isDevBuild || combat === null || !runConfig.loaded) return null
+
+  const remaining = combat.sickleCooldownRemaining
+  if (remaining <= 0) return null
+  return Math.min(remaining / runConfig.sickleCooldownSeconds, 1)
+}
+
+/** 야생동물과 적대 주민을 렌더가 쓰는 모양으로 옮긴다 */
+function hostileViews(): HostileView[] {
+  // 적대 주민은 예고를 쓰지 않는다 (DEC-CONTENT-008). windup 이 항상 null 이다.
+  const resident: HostileView[] =
+    hostile === null
+      ? []
+      : [
+          {
+            x: hostile.entity.x,
+            y: hostile.entity.y,
+            radius: hostile.collisionRadius,
+            healthRatio: hostile.entity.health / hostile.maxHealth,
+            windup: null,
+            slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
+            burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+          },
+        ]
+
+  return resident.concat((wildlife?.instances ?? []).map((runtime) => ({
+    x: runtime.entity.x,
+    y: runtime.entity.y,
+    radius: runtime.species.collision_radius,
+    healthRatio: runtime.entity.health / runtime.species.max_health,
+    // 공격 예고는 야생동물만 있다. 적대 주민은 예고를 쓰지 않는다 (DEC-CONTENT-008)
+    windup:
+      runtime.windupSeconds === null
+        ? null
+        : runtime.windupSeconds / runtime.species.attack_windup_seconds,
+    slowed: runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
+    burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+  })))
 }
 
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
@@ -235,12 +511,90 @@ function actionPrompt(): string | null {
   return target.kind === 'harvest' ? 'E — 수확' : 'E — 심기'
 }
 
+/**
+ * 지금 때릴 수 있는 대상.
+ *
+ * **모드로 갈린다.** 재배에서는 야생동물, 습격에서는 적대 주민이다.
+ * 이걸 한 곳에 모으지 않았더니 `onSickle` 이 습격 중에도 야생동물 목록(0마리)을
+ * 넘겨서 낫이 아무도 못 때렸고, 그 호출이 `updateRaid` 가 세워 둔 대상까지 덮었다.
+ * **대상 선택이 두 군데 있으면 반드시 한쪽이 틀린다.**
+ */
+function currentTargets(): CombatTarget[] {
+  if (scenes.currentFieldMode() === 'raid') {
+    return hostileTarget === null ? [] : [hostileTarget]
+  }
+  if (wildlife === null) return []
+
+  // 야생동물이 죽거나 새로 나오면 목록이 바뀌므로 매 프레임 만든다.
+  // `entity` 를 참조로 들고 있어 체력을 깎으면 원본이 바뀐다.
+  return wildlife.instances.map((runtime) => ({
+    entity: runtime.entity,
+    collisionRadius: runtime.species.collision_radius,
+    // 야생동물에게는 투항이 없다 (DEC-RESIDENT-016 은 주민 규칙이다)
+    surrenderThreshold: null,
+    surrenderOffered: false,
+  }))
+}
+
+/** 우클릭 — 낫 (DEC-INPUT-004) */
+function onSickle(): void {
+  if (combat === null) return
+
+  combat.setTargets(currentTargets())
+  const result = combat.swingSickle(player, input.aimAngle())
+  if (!result.swung) return // 재사용 대기 중
+
+  for (const hit of result.hits) {
+    // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
+    // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
+    wildlife?.notifyDamagedByPlayer(hit.targetId)
+    if (hit.outcome === 'killed') wildlife?.remove(hit.targetId)
+    if (hit.outcome === 'surrender_offered') onSurrenderOffered()
+  }
+}
+
+/** 좌클릭 — 투척 (DEC-INPUT-004, 005) */
+function onThrow(): void {
+  if (combat === null || run === null) return
+
+  const result = combat.throwWeapon(player, input.aimAngle(), run)
+  if (result.ok) {
+    // 소진 자동 전환과 `투척 무기 없음` 을 UI 에 알린다 (DEC-INPUT-007, DEC-UI-002)
+    if (result.slot.autoSwitchedTo !== null) {
+      bus.emit('quickslot.autoSwitched', {
+        fromIndex: run.quickslots.selectedIndex,
+        toIndex: result.slot.autoSwitchedTo,
+      })
+    }
+    if (result.slot.allEmpty) bus.emit('quickslot.allEmpty', {})
+    bus.emit('combat.throwableSpent', {
+      throwableId: result.weaponId,
+      remaining: run.resources.throwables[result.weaponId] ?? 0,
+    })
+    return
+  }
+
+  // 거절 사유는 콘솔로만 남긴다. `투척 무기 없음`·빈 발사 안내의 화면 표시는
+  // `DEC-UI-002` 의 HUD 몫이고 김민주 8/4 항목이다. 여기서 문구를 지어내면
+  // 나중에 두 곳이 다른 말을 한다.
+  if (isDevBuild && result.reason !== 'cooldown') {
+    console.info(`[투척] 거절 — ${result.reason}`)
+  }
+}
+
 const input = createInput(renderer.canvas, {
   onInteract,
-  onThrow: () => console.info('[입력] 투척'),
-  onSickle: () => console.info('[입력] 낫'),
-  onQuickslotSelect: (index) => console.info(`[입력] 퀵슬롯 ${index + 1}`),
-  onQuickslotCycle: (dir) => console.info(`[입력] 퀵슬롯 순환 ${dir > 0 ? '다음' : '이전'}`),
+  onThrow,
+  onSickle,
+  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-006).
+  onQuickslotSelect: (index) => {
+    if (combat === null || run === null) return
+    combat.selectSlot(run, index)
+  },
+  onQuickslotCycle: (dir) => {
+    if (combat === null || run === null) return
+    combat.cycleSlot(run, dir > 0 ? 1 : -1)
+  },
   onRecoverShortPress: () => console.info('[입력] 회복 짧게 누름 — 시작 또는 취소'),
   onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
   onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
@@ -283,6 +637,12 @@ const loop = createGameLoop(
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
 
+      // 습격 모드 — 주민만 돈다. 작물은 자라지 않고 재배 타이머도 없다.
+      if (inRaidStage()) {
+        updateRaid(dt)
+        return
+      }
+
       // 작물 성장과 재배 타이머는 같은 조건에서만 흐른다 (DEC-FARM-003, DEC-RUN-004).
       // 정비·대화·습격에서는 이 블록이 통째로 빠지므로 잔여 시간이 그대로 보존되고,
       // 다음 날 재배 단계에서 이어서 자란다. 일시정지는 루프가 update 자체를 멈춘다.
@@ -290,6 +650,52 @@ const loop = createGameLoop(
 
       farming?.update(dt)
       advanceFeedback(dt)
+
+      // 야생동물 → 전투 순서로 돈다.
+      // 야생동물이 먼저 움직여야 투사체가 이번 프레임의 실제 위치를 맞힌다.
+      const events = wildlife?.update(dt, player, farming?.plots ?? []) ?? []
+      for (const event of events) {
+        if (event.type === 'playerDamaged' && run !== null) {
+          run.health = Math.max(0, run.health - event.amount)
+          bus.emit('combat.playerDamaged', {
+            amount: event.amount,
+            remainingHealth: run.health,
+          })
+        }
+        if (event.type === 'cropEaten') {
+          // 먹힌 작물은 보관함에 넣지 않는다 (DEC-FARM-006).
+          // 여기서 수확 처리를 부르면 잃은 작물이 오히려 쌓인다.
+          //
+          // 사라진 사실을 그 자리에 짧게 표시한다 (DEC-UI-018). 이게 없으면
+          // 플레이어는 자기가 수확한 것과 먹힌 것을 구분할 수 없다.
+          const eaten = farming?.plots.find((p) => p.plotId === event.plotId)
+          if (eaten !== undefined) {
+            harvestPopups.push({
+              x: eaten.x,
+              y: eaten.y,
+              text: '먹혔다',
+              remaining: HARVEST_POPUP_SECONDS,
+            })
+          }
+        }
+      }
+
+      if (combat !== null) {
+        combat.setTargets(currentTargets())
+        for (const event of combat.update(dt)) {
+          if (event.type === 'killed' && event.targetId !== undefined) {
+            wildlife?.remove(event.targetId)
+          }
+          // 지속 피해도 적대 전환의 계기다 (DEC-CONTENT-007 — 플레이어 공격으로
+          // 피해를 받으면). 투척 무기의 지속 피해는 플레이어 공격이다.
+          if (event.type === 'damaged' && event.overTime === true && event.targetId !== undefined) {
+            wildlife?.notifyDamagedByPlayer(event.targetId)
+          }
+        }
+      }
+
+      // 재배 중 체력이 0이면 즉시 런 실패다 (DEC-RUN-008)
+      failRunIfDead()
 
       // 수확 가능으로 바뀐 순간을 한 번만 강조한다 (DEC-UI-004)
       for (const plotId of farming?.justBecameReady ?? []) {
@@ -310,22 +716,30 @@ const loop = createGameLoop(
         collisionRadius: runConfig.collisionRadius,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
-        remainingSeconds: inFarmingStage() ? (farmingTimer?.remainingSeconds ?? null) : null,
-        timeUrgent: farmingTimer?.urgent ?? false,
         harvestPopups: harvestPopups.map((p) => ({
           x: p.x,
           y: p.y,
           text: p.text,
           life: p.remaining / HARVEST_POPUP_SECONDS,
         })),
+        hostiles: hostileViews(),
+        // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
+        // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
+        devSickleCooldown: devSickleRatio(),
+        projectiles: (combat?.projectiles ?? []).map((p) => ({
+          x: p.x,
+          y: p.y,
+          radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
+          hostile: p.source === 'resident',
+        })),
       })
       hud.render(hudView())
     },
   },
   {
-    // 포커스를 잃으면 일시정지 화면을 연다 (DEC-INPUT-009, DEC-UI-014).
-    // 자동 재개는 하지 않는다 — 재개 확인 절차는 DEC-UI-022 가 보류다.
-    onFocusLost: () => scenes.openOverlay('pause'),
+    // 포커스를 잃으면 일시정지 화면을 연다 (DEC-INPUT-009, DEC-UI-022).
+    // 자동 재개는 하지 않는다. 회복 퀵메뉴가 열려 있으면 그것도 닫는다 (DEC-UI-026).
+    onFocusLost: () => scenes.handleFocusLost(),
   },
 )
 
@@ -341,6 +755,37 @@ function syncInputLock(): void {
 bus.on('screen.changed', syncInputLock)
 bus.on('field.entered', syncInputLock)
 bus.on('field.exited', syncInputLock)
+
+/**
+ * 재배에 들어갈 때 야생동물 출현을 시작하고 나갈 때 전부 제거한다.
+ *
+ * 출현 프로필은 그 일차의 데이터에서 온다. 프로필 참조가 비어 있는 일차는
+ * 야생동물이 없다 (DEC-CONTENT-007). 여기서 기본 프로필을 지어내지 않는다.
+ *
+ * 전역 투척 재사용 대기도 단계 진입마다 초기화한다 (DEC-CONTENT-005).
+ */
+bus.on('field.entered', ({ mode }) => {
+  combat?.reset()
+  if (mode !== 'farming') {
+    wildlife?.endFarming()
+    return
+  }
+
+  const day = run?.dayNumber ?? 1
+  const profileId = spawnProfileIdByDay.get(day) ?? null
+  const profile = profileId === null ? null : (spawnProfilesById.get(profileId) ?? null)
+
+  if (profileId !== null && profile === undefined) {
+    bus.emit('data.error', {
+      summary: '출현 프로필을 찾지 못했다',
+      detail: `${day}일차가 참조하는 ${profileId} 가 승인 데이터에 없다`,
+    })
+    return
+  }
+  wildlife?.beginFarming(profile, spawnEntries)
+})
+
+bus.on('field.exited', () => wildlife?.endFarming())
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)
 syncInputLock()
@@ -357,9 +802,48 @@ if (isDevBuild) {
     console.error(`[데이터 오류] ${summary}: ${detail}`),
   )
 
+  // 전투 결과 이벤트. UI 가 붙기 전까지 이걸로만 확인된다.
+  //
+  // 없는 동안 `quickslot.allEmpty` 가 나가는지 아무도 알 수 없었다 — 버스로 쏘고
+  // 듣는 쪽이 없으면 "구현했다" 와 "구현 안 했다" 가 화면에서 똑같이 보인다.
+  bus.on('combat.playerDamaged', ({ amount, remainingHealth }) =>
+    console.info(`[전투] 피격 ${amount} → 체력 ${remainingHealth}`),
+  )
+  bus.on('combat.throwableSpent', ({ throwableId, remaining }) =>
+    console.info(`[투척] ${throwableId} 소비 — 남은 ${remaining}`),
+  )
+  bus.on('quickslot.autoSwitched', ({ fromIndex, toIndex }) =>
+    console.info(`[퀵슬롯] 소진 자동 전환 ${fromIndex + 1} → ${(toIndex ?? 0) + 1}`),
+  )
+  bus.on('quickslot.allEmpty', () =>
+    console.warn('[퀵슬롯] 투척 무기 없음 — 전체 비활성. 낫은 계속 쓸 수 있다'),
+  )
+  bus.on('surrender.offered', ({ residentId, remainingHealth }) =>
+    console.warn(`[조우] 투항 발동 — ${residentId} 체력 ${remainingHealth}`),
+  )
+  bus.on('run.failed', () => console.warn('[런] 체력 0 — 런 실패 (DEC-RUN-008)'))
+
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.
   // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
-  Object.assign(window, { __scenes: scenes, __bus: bus, __loop: loop })
+  //
+  // `__dev` 안의 둘은 **김민주의 8/4 UI 를 임시로 대신한다.** 제작 모달·편성 팝업·
+  // 대화 모달이 오면 이 두 함수와 여기 노출을 지운다 (로드맵 11-2).
+  Object.assign(window, {
+    __scenes: scenes,
+    __bus: bus,
+    __loop: loop,
+    __dev: {
+      fillThrowables: (count = 5) => devFillThrowables(count),
+      goToDay: (dayNumber: number) => devGoToDay(dayNumber),
+      startRaid: (choiceIndex = 0) => devStartRaid(choiceIndex),
+    },
+  })
+
+  console.info(
+    '[개발 전용] __dev.fillThrowables(5) 투척 무기 채우기 · ' +
+      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협). ' +
+      '승인 일정상 습격은 2일차부터다.',
+  )
 
 }
 
@@ -382,6 +866,150 @@ function devSkipToFarming(): void {
     scenes.send({ type: 'confirm' })
   }
   console.warn('[개발 전용] 타이틀~일차 시작 화면을 건너뛰고 재배 단계로 들어왔다.')
+}
+
+/**
+ * **개발 전용.** 무기 보관함과 퀵슬롯을 채운다.
+ *
+ * 무기를 얻으려면 제작 모달(`DEC-UI-006`), 슬롯에 넣으려면 편성 팝업(`DEC-UI-021`)이
+ * 필요한데 둘 다 아직 없다(로드맵 8/4, 김민주). 그래서 좌클릭이 항상
+ * `투척 무기 없음` 으로 떨어지고 투척·`direct`/`area`·전투 효과·소진 자동 전환을
+ * 하나도 확인할 수 없다.
+ *
+ * **경제를 우회한다.** 제작 비용도 숙련도 해금도 거치지 않는다. 그래서 이건
+ * 밸런스 확인에 쓸 수 없고 오직 "동작하는가" 만 본다.
+ * 두 UI 가 오면 이 함수와 호출을 지운다 (로드맵 11-2).
+ */
+function devFillThrowables(count: number): void {
+  if (run === null) {
+    console.warn('[개발 전용] 런 상태가 없어 무기를 채울 수 없다')
+    return
+  }
+
+  const ids = [...throwablesById.keys()].sort()
+  if (ids.length === 0) {
+    console.warn('[개발 전용] 승인된 투척 무기가 없다')
+    return
+  }
+
+  // 퀵슬롯은 5칸 고정이다 (DEC-INPUT-006). 승인 무기를 앞에서부터 채운다.
+  run.quickslots.slots = run.quickslots.slots.map((_, index) => ids[index] ?? null)
+  run.quickslots.selectedIndex = 0
+  for (const id of ids) run.resources.throwables[id] = count
+
+  console.warn(
+    `[개발 전용] 제작·편성 UI 를 우회해 투척 무기 ${ids.length}종을 ${count}개씩 넣었다. ` +
+      '제작 비용과 숙련도 해금을 거치지 않았으므로 밸런스 확인에 쓸 수 없다.',
+  )
+}
+
+/**
+ * **개발 전용.** 일차를 옮긴다.
+ *
+ * 정상 흐름은 재배 → 정비 → (습격) → 결과 → 다음 일차인데, 정비 허브와 결과 화면이
+ * 아직 없어서(로드맵 8/4) 하루를 넘길 수단이 없다. 습격은 2일차부터라 1일차에
+ * 갇히면 습격을 한 번도 볼 수 없다.
+ *
+ * **런 상태의 일차만 바꾼다.** 자원·주민 상태·공포도는 건드리지 않으므로 이 통로로
+ * 넘긴 날은 실제 플레이와 다르다. 정비·결과 화면이 오면 지운다.
+ */
+function devGoToDay(dayNumber: number): void {
+  if (run === null) {
+    console.warn('[개발 전용] 런 상태가 없다')
+    return
+  }
+  run.dayNumber = dayNumber
+  console.warn(
+    `[개발 전용] 정비·결과 화면을 건너뛰고 ${dayNumber}일차로 옮겼다. ` +
+      '자원과 주민 상태는 그대로라 실제 플레이와 다르다.',
+  )
+}
+
+/**
+ * **개발 전용.** 습격 모드로 들어가 적대 주민을 세운다.
+ *
+ * 전투 전 대화 UI(`DEC-UI-007/008`, 로드맵 8/4 김민주)가 없어서 선택지를 마우스로
+ * 고를 수단이 없다. **판정 자체는 우회하지 않는다** — 실제 `encounter.judge()` 를
+ * 부르고 그 결과가 지정한 전투 보정으로 주민을 세운다 (`DEC-RESIDENT-049`).
+ * 사람이 화면에서 고르던 것을 인자로 받을 뿐이다.
+ *
+ * 대화 모달이 오면 이 함수를 지우고 모달의 선택 이벤트에 같은 경로를 연결한다.
+ */
+function devStartRaid(choiceIndex = 0): void {
+  if (encounter === null || raidData === null || run === null) {
+    console.warn('[개발 전용] 승인 데이터가 없어 습격을 시작할 수 없다')
+    return
+  }
+
+  const dayNumber = run.dayNumber
+  const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
+  if (residentId === null || residentId === '') {
+    // 어느 날에 습격이 있는지 같이 알려준다. 이 말이 없으면 "안 되는 건가" 로 읽힌다.
+    const raidDays = [...raidData.hostileResidentByDay]
+      .filter(([, id]) => id !== null && id !== '')
+      .map(([day, id]) => `${day}일차(${id})`)
+
+    console.warn(
+      `[개발 전용] ${dayNumber}일차는 습격이 없는 날이다. 습격일: ${raidDays.join(', ')}. ` +
+        '__dev.goToDay(n) 으로 일차를 옮긴다.',
+    )
+    return
+  }
+
+  const scenario = raidData.scenarioByResident.get(residentId)
+  if (scenario === undefined) {
+    console.warn(`[개발 전용] ${residentId} 의 사연 시나리오가 없다`)
+    return
+  }
+
+  const choices = encounter.availableChoices(scenario.id, run.resources.crops)
+  const picked = choices[choiceIndex]
+  if (picked === undefined) {
+    console.warn(`[개발 전용] 선택지 ${choiceIndex} 가 없다. 0~${choices.length - 1}`)
+    return
+  }
+  if (!picked.usable) {
+    console.warn(
+      `[개발 전용] ${picked.choiceFunction} 은 지금 쓸 수 없다 ` +
+        `(수확물 ${picked.heldTotal} / 필요 ${picked.offerQuantity})`,
+    )
+    return
+  }
+
+  console.warn(`[개발 전용] 대화 UI 를 우회해 선택지를 확정한다 — ${picked.choiceFunction}`)
+  console.info('[조우] 선택 가능:', choices.map((c) => `${c.choiceFunction}${c.usable ? '' : '(불가)'}`).join(' / '))
+
+  const judgement = encounter.judge(residentId, picked.choiceId, run.resources.crops)
+  console.info(`[조우] 판정 → ${judgement.systemResultId}`)
+  console.info(`[조우] 반응 대사: ${judgement.reactionText}`)
+
+  if (judgement.resolved) {
+    // 조우 해결 — 전투에 들어가지 않는다 (DEC-RESIDENT-049)
+    if (picked.offerQuantity !== null) {
+      const settled = encounter.settleNegotiation(
+        run.resources.crops,
+        `encounter.day${dayNumber}`,
+        picked.choiceId,
+        picked.offerQuantity,
+        run.seed,
+      )
+      console.info('[조우] 자원 협상', settled.ok ? settled.consumed : settled.reason)
+    }
+    console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다. 결과 화면은 8/4 김민주.')
+    return
+  }
+
+  // 전투 결과 — 시스템 결과 ID 에서 전투 보정 키를 얻는다 (DEC-CONTENT-009)
+  const combatState = judgement.systemResultId.replace('system_result.precombat.combat_', '')
+
+  scenes.enterFieldPreview('raid')
+  hostile = spawnHostile(dayNumber, combatState)
+  if (hostile !== null) {
+    console.info(
+      `[습격] ${residentId} — ${combatState} · 체력 ${hostile.maxHealth} · ` +
+        `투항 기준 ${hostile.surrenderThreshold}`,
+    )
+  }
 }
 
 // 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
