@@ -289,6 +289,16 @@ function inRaidStage(): boolean {
 function updateRaid(dt: number): void {
   if (residentCombat === null || combat === null || hostile === null || run === null) return
 
+  // 체력 0이면 어떤 경로로 여기 들어왔든 전투가 돌지 않는다 (DEC-RUN-008).
+  //
+  // 화면 전환만으로 막으면 화면을 우회하는 경로가 생겼을 때 그대로 뚫린다 —
+  // 실제로 `enterFieldPreview()` 가 run_failed 위에 필드를 다시 띄워서, 체력 0인
+  // 플레이어가 주민을 투항 직전까지 때리는 상태가 나왔다. 실패 여부는 상태로 판단한다.
+  if (run.health <= 0) {
+    failRunIfDead()
+    return
+  }
+
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
@@ -499,6 +509,17 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
 
   const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
   if (residentId === null || residentId === '') return null // 습격 없는 날
+
+  // 해결된 주민은 같은 런에서 다시 적대로 등장하지 않는다 (DEC-RESIDENT-043).
+  // 승인 일정이 같은 주민을 두 번 배치하지 않으므로 정상 흐름에서는 걸리지 않지만,
+  // 걸린다면 일정 데이터나 흐름이 잘못된 것이라 조용히 세우면 안 된다.
+  if (resolution !== null && !resolution.canAppearAsHostile(residentId)) {
+    bus.emit('data.error', {
+      summary: '습격을 시작할 수 없다',
+      detail: `${residentId} 는 이미 조우가 해결된 주민이다 (DEC-RESIDENT-043)`,
+    })
+    return null
+  }
 
   const profileId = raidData.combatProfileByResident.get(residentId)
   const profile = profileId === undefined ? undefined : raidData.profileById.get(profileId)
@@ -1019,6 +1040,11 @@ function devStartRaid(choiceIndex = 0): void {
     return
   }
 
+  if (run.health <= 0) {
+    console.warn('[개발 전용] 체력이 0이라 습격을 시작할 수 없다. 런이 이미 실패했다 (DEC-RUN-008)')
+    return
+  }
+
   const dayNumber = run.dayNumber
   const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
   if (residentId === null || residentId === '') {
@@ -1031,6 +1057,14 @@ function devStartRaid(choiceIndex = 0): void {
       `[개발 전용] ${dayNumber}일차는 습격이 없는 날이다. 습격일: ${raidDays.join(', ')}. ` +
         '__dev.goToDay(n) 으로 일차를 옮긴다.',
     )
+    return
+  }
+
+  // 해결된 주민과는 대화도 다시 열리지 않는다 (DEC-RESIDENT-043).
+  // 전투 진입 전에 막아야 한다 — spawnHostile 에서 막으면 판정이 이미 돌아
+  // 중요 행동과 공포도가 한 번 더 기록된다.
+  if (resolution !== null && !resolution.canAppearAsHostile(residentId)) {
+    console.warn(`[개발 전용] ${residentId} 는 이미 해결된 주민이라 다시 조우하지 않는다`)
     return
   }
 
