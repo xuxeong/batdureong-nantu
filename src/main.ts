@@ -37,8 +37,10 @@ import type { EndingJudge } from './systems/ending.ts'
 import { buildEndingInput, requestEndingRecord } from './llm/ending.ts'
 import type {
   Crop,
+  FearBand,
   FearIncrement,
   FinalOutcome,
+  RewardBundle,
   ThrowableWeapon,
   WildlifeSpawnEntry,
   WildlifeSpawnProfile,
@@ -49,6 +51,14 @@ import { createHud } from './ui/hud.ts'
 import type { Hud } from './ui/hud.ts'
 import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
 import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
+import { createNightResult, selectNightResultText } from './ui/night-result.ts'
+import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
+import { createEncounterResult } from './ui/encounter-result.ts'
+import type {
+  EncounterResourceLine,
+  EncounterResultScreen,
+  EncounterResultView,
+} from './ui/encounter-result.ts'
 import { createEconomy } from './systems/economy.ts'
 import type { Economy } from './systems/economy.ts'
 import type { ItemStore } from './state/types.ts'
@@ -110,6 +120,53 @@ let raidData: {
   /** 일차 → raid_type. 마지막 습격 뒤에 엔딩 판정으로 간다 (DEC-RUN-014) */
   raidTypeByDay: Map<number, string>
 } | null = null
+/** 주민 표시 이름. 조우 결과 화면이 ID 대신 이걸 쓴다 (DEC-UI-011) */
+let residentNames = new Map<string, string>()
+/** 보상 묶음. 조우 결과가 "실제 지급된 자원의 종류와 수량"을 여기서 읽는다 (DEC-UI-011) */
+let rewardBundlesById = new Map<string, RewardBundle>()
+/**
+ * 사연 정보 ID → `ending_fact_text` (DEC-UI-011).
+ *
+ * `source_fact_text` 는 숨겨진 설정 원본이라 런타임 JSON 에 아예 없다
+ * (DEC-CONTENT-017). 그래서 화면에 새어 나갈 경로가 구조적으로 없다.
+ */
+let storyFactById = new Map<string, string>()
+/** 공포도 구간. 개발 빌드의 조우 결과 표시에만 쓴다 (DEC-UI-013) */
+let fearBands: readonly FearBand[] = []
+
+/**
+ * 승인된 밤 결과 문구 (DEC-RUN-015).
+ *
+ * 부팅 때 한 번 고른다. 여러 행 중 무엇을 고를지가 `DEC-CONTENT-018` 보류라
+ * 정확히 한 행일 때만 성공한다 (ui/night-result.ts).
+ */
+let nightResult: NightResultSelection = {
+  ok: false,
+  reason: '승인 데이터를 아직 읽지 않았다',
+}
+
+/**
+ * 이번 조우에서 결과 화면에 전달할 것 (DEC-UI-011).
+ *
+ * 조우가 끝나는 순간에는 이미 알 수 없는 것들이라 **일어나는 시점에 모아 둔다** —
+ * 협상으로 실제 빠져나간 작물은 `settleNegotiation()` 만 알고, 새로 확인한 사연은
+ * 판정 순간에만 "새로"인지 알 수 있다. 나중에 런 상태에서 역산하려 하면
+ * "이번 조우에서 새로 확인한 것"과 "예전에 확인한 것"을 구분할 수 없다.
+ */
+interface PendingEncounter {
+  /** 자원 협상으로 실제 빠져나간 작물. 실행 후에만 알 수 있다 (DEC-RESIDENT-050) */
+  consumedCrops: Record<string, number>
+  /** 협상이 성격 프로필에 막혀 아무것도 소비되지 않았다 */
+  negotiationRejected: boolean
+  /** 이번 조우에서 **새로** 확인한 사연 정보 */
+  revealedFactIds: string[]
+}
+
+let pendingEncounter: PendingEncounter | null = null
+
+/** 조우 결과 화면이 그릴 내용. 조우가 끝나는 순간 확정한다 */
+let encounterResultView: EncounterResultView | null = null
+
 /** 엔딩 판정 (DEC-CONTENT-011) */
 let endingJudge: EndingJudge | null = null
 /** 엔딩 기록문 입력을 만드는 데 필요한 승인 데이터 (DEC-CONTENT-011) */
@@ -236,6 +293,22 @@ async function bootData(): Promise<void> {
       crops,
       cropAttributes: data.crop_attributes ?? [],
     })
+
+    // ── 결과 화면이 읽는 승인 데이터 ────────────────
+    residentNames = new Map((data.residents ?? []).map((r) => [r.id, r.display_name]))
+    rewardBundlesById = new Map((data.reward_bundles ?? []).map((b) => [b.id, b]))
+    storyFactById = new Map(
+      (data.story_infos ?? []).map((info) => [info.id, info.ending_fact_text]),
+    )
+    fearBands = data.fear_bands ?? []
+
+    // 밤 결과 문구는 승인 행이 정확히 하나일 때만 쓴다 (DEC-CONTENT-018 보류).
+    // 실패해도 부팅을 막지 않는다 — 문구 하나가 없다고 런 전체가 안 돌 이유는 없고,
+    // 실제로 그 화면에 닿는 순간 데이터 오류로 올린다.
+    nightResult = selectNightResultText(data.night_result_texts)
+    if (!nightResult.ok) {
+      console.warn(`[데이터] 밤 결과 문구를 고르지 못했다 — ${nightResult.reason}`)
+    }
 
     endingData = {
       manifest: data.manifest,
@@ -398,6 +471,83 @@ function updateRaid(dt: number): void {
 }
 
 /**
+ * 공포도 구간 이름. **개발 빌드의 조우 결과 표시에만 쓴다** (DEC-UI-013).
+ *
+ * 제출 빌드는 구간 이름도 표시하지 않으므로 이 값이 화면까지 가지 않는다.
+ */
+function fearBandNameOf(fear: number): string | null {
+  const band = fearBands.find(
+    (b) => fear >= b.min_fear && (b.max_fear === null || fear <= b.max_fear),
+  )
+  return band?.display_name ?? null
+}
+
+/**
+ * 자원 한 항목을 결과 화면의 한 줄로.
+ *
+ * 소지금은 콘텐츠 테이블이 아니라 통화라 보관함 표시 사전에 없다. 여기서만
+ * 이름을 붙이고 정비 허브와 같은 말(`소지금`)을 쓴다 — 같은 것을 두 화면이
+ * 다르게 부르면 플레이어가 다른 자원으로 읽는다.
+ */
+function resourceLine(kind: string, id: string, quantity: number): EncounterResourceLine {
+  return {
+    name: kind === 'money' ? '소지금' : (displayNames.get(id) ?? id),
+    quantity,
+  }
+}
+
+/**
+ * 조우 결과 화면이 그릴 내용을 확정한다 (DEC-UI-011, DEC-UI-013).
+ *
+ * **결과가 확정되는 그 시점에 만든다.** 화면이 열릴 때 런 상태에서 역산하면
+ * "이번 조우에서 실제로 지급·소비된 것"이 아니라 "지금 보관함에 있는 것"이 되고,
+ * 그 둘은 다음 처리가 하나만 끼어도 갈린다.
+ */
+function buildEncounterResultView(
+  residentId: string,
+  outcome: FinalOutcome,
+  rewardBundleId: string | null,
+  fearDelta: number,
+): EncounterResultView | null {
+  const resident = run?.residents[residentId]
+  if (resident === undefined) return null
+
+  const bundle = rewardBundleId === null ? undefined : rewardBundlesById.get(rewardBundleId)
+  const collected = pendingEncounter
+  const fear = run?.record.fear ?? 0
+
+  return {
+    residentName: residentNames.get(residentId) ?? residentId,
+    outcome,
+    lifeState: resident.lifeState,
+    allegiance: resident.allegiance,
+    relationship: resident.relationship,
+
+    // 보상 묶음은 전부 지급되거나 전혀 지급되지 않는다 (DEC-RESIDENT-042).
+    // 그래서 승인 묶음의 항목이 곧 실제 지급 내역이다. 보상이 없는 결과면
+    // 빈 배열이고 화면이 영역 자체를 그리지 않는다 (DEC-UI-011).
+    rewards: (bundle?.entries ?? []).map((entry) =>
+      resourceLine(entry.resource_kind, entry.resource_id, entry.quantity),
+    ),
+    consumedCrops: Object.entries(collected?.consumedCrops ?? {}).map(([cropId, quantity]) =>
+      resourceLine('crop', cropId, quantity),
+    ),
+    negotiationRejected: collected?.negotiationRejected ?? false,
+
+    // 이번 조우에서 **새로** 확인한 것만 모여 있다. 걸러 넣는 것은 판정 시점이다
+    revealedFacts: (collected?.revealedFactIds ?? [])
+      .map((id) => storyFactById.get(id))
+      .filter((text): text is string => typeof text === 'string' && text.length > 0),
+    supportUsed: resident.supportUsed,
+
+    // 제출 빌드에서는 점수·구간·변화량을 어떤 형태로도 두지 않는다 (DEC-UI-013)
+    fear: isDevBuild
+      ? { total: fear, delta: fearDelta, bandName: fearBandNameOf(fear) }
+      : null,
+  }
+}
+
+/**
  * 조우를 끝낸다 — 최종 결과 확정, 관계·공포도, 보상 지급 (DEC-RESIDENT-052, 042).
  *
  * **여기가 조우를 끝내는 유일한 경로다.** 처치·투항·대화 해결이 각자 상태를 고치면
@@ -424,6 +574,11 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   }
 
   const { rewardBundleId, fearDelta, fearPending } = result.value
+
+  // 결과 화면 내용을 여기서 확정한다. 화면 전환보다 앞이라야 한다 —
+  // 아래 `scenes.send()` 가 곧바로 조우 결과 화면을 열고 그때 이 값을 읽는다.
+  encounterResultView = buildEncounterResultView(residentId, outcome, rewardBundleId, fearDelta)
+
   bus.emit('encounter.finished', { residentId, finalOutcome: outcome })
   if (rewardBundleId !== null) {
     bus.emit('reward.granted', { residentId, bundleId: rewardBundleId })
@@ -445,7 +600,6 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   // 둘을 헷갈려서 체력 0에도 계속 움직였던 것과 같은 구조다 (failRunIfDead).
   //
   // 조우 결과 화면에서 `확인` 을 눌러야 다음 일차 또는 엔딩으로 간다 (DEC-RUN-015).
-  // 그 화면은 로드맵 8/4 김민주 몫이라 아직 확인을 누를 수단이 없다.
   if (scenes.step().at === 'raid') {
     scenes.send({ type: 'encounter_finished' })
   } else {
@@ -558,6 +712,27 @@ async function fillEndingRecord(
       ? '[엔딩] 승인된 폴백 기록문을 쓴다 (LLM 미사용 또는 실패 — 정상 경로)'
       : `[엔딩] 기록문 생성됨 · 모델 ${result.generatorModelId} · 재시도 ${result.retryCount}회`,
   )
+}
+
+/**
+ * 판정으로 공개된 사연 정보를 기록한다 (DEC-UI-011, DEC-CONTENT-017).
+ *
+ * **"이번 조우에서 새로 확인했는가"는 이 순간에만 알 수 있다.** 런 상태에 넣고 나면
+ * 예전에 확인한 것과 구분이 안 되고, 그러면 조우 결과가 이미 본 사연을 다시 띄운다.
+ * 그래서 넣기 전에 한 번 거르고 이번 조우 목록에도 같이 남긴다.
+ *
+ * 런 상태의 `revealedStoryInfoIds` 는 엔딩 기록문 입력도 읽는다 — 확인한 사연만
+ * LLM 에 넘긴다 (llm/ending.ts).
+ */
+function recordRevealedStoryInfo(residentId: string, storyInfoId: string | null): void {
+  if (storyInfoId === null || run === null) return
+
+  const resident = run.residents[residentId]
+  if (resident === undefined) return
+  if (resident.revealedStoryInfoIds.includes(storyInfoId)) return
+
+  resident.revealedStoryInfoIds.push(storyInfoId)
+  pendingEncounter?.revealedFactIds.push(storyInfoId)
 }
 
 /** 공포도 증가량 미승인 안내. 개발 빌드에서만, 한 런에 한 번만 (DEC-RESIDENT-048) */
@@ -943,6 +1118,71 @@ const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
   },
 })
 
+// ── 결과 화면 2종 (DEC-RUN-015, DEC-UI-023) ──────────────────
+//
+// 하루에 하나만 뜬다. 둘 다 없으면 하루가 끝나지 않고, 둘 다 뜨면 결과 화면이
+// 두 번 나온다 — 폐기된 DEC-RUN-012 에서 문제가 됐던 지점이다.
+// 어느 쪽이 뜰지는 흐름(scenes/flow.ts)이 습격 여부로 이미 갈라 놨다.
+//
+// 진행 입력은 각 화면에 하나뿐이고 둘 다 `confirm` 을 보낸다 (DEC-UI-023).
+// 조우 결과는 마지막 습격이면 엔딩으로, 아니면 다음 일차로 간다 (DEC-RUN-015).
+
+const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
+  onContinue: () => scenes.send({ type: 'confirm' }),
+})
+
+const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoot, {
+  onContinue: () => scenes.send({ type: 'confirm' }),
+})
+
+/**
+ * 지금 떠 있어야 할 독립 화면을 맞춘다.
+ *
+ * **각 화면이 "내가 열려 있나"를 스스로 보지 않는다.** 화면 매니저 하나가 답을
+ * 갖고 있고 여기서 한 번에 반영한다 — 정비 허브가 `openOverlays().includes()` 로
+ * 판단했다가 일시정지와 겹쳤을 때 입력을 계속 받던 것과 같은 종류의 실수를 막는다.
+ *
+ * 프레임마다 부르지 않고 화면이 바뀔 때만 부른다. 결과 화면의 내용은 조우가
+ * 끝나는 순간 확정된 스냅샷이라 매 프레임 다시 그릴 이유가 없다.
+ */
+function syncScreens(): void {
+  const screen = scenes.currentScreen()
+
+  if (screen === 'night_result') {
+    if (nightResult.ok) {
+      nightResultScreen.render({ text: nightResult.text })
+    } else {
+      // 승인 문구가 없거나 여럿이다. 임시 문장을 지어내지 않고 비운 채 올린다 —
+      // 진행 버튼은 남으므로 하루가 막히지는 않는다 (DEC-UI-024).
+      nightResultScreen.render({ text: '' })
+      bus.emit('data.error', {
+        summary: '밤 결과 문구를 표시할 수 없다',
+        detail: nightResult.reason,
+      })
+    }
+    nightResultScreen.show()
+  } else {
+    nightResultScreen.hide()
+  }
+
+  if (screen === 'encounter_result') {
+    if (encounterResultView !== null) {
+      encounterResultScreen.render(encounterResultView)
+      encounterResultScreen.show()
+    } else {
+      // 조우가 끝나면 반드시 채워진다. 비어 있다면 흐름과 조우 확정이 어긋난
+      // 것이므로 빈 화면을 올려 넘기지 않고 드러낸다.
+      encounterResultScreen.hide()
+      bus.emit('data.error', {
+        summary: '조우 결과를 표시할 수 없다',
+        detail: '조우가 확정되지 않은 채 조우 결과 화면으로 넘어왔다',
+      })
+    }
+  } else {
+    encounterResultScreen.hide()
+  }
+}
+
 /** 승인된 일정에서 해당 일차의 습격 종류를 읽는다 */
 let raidTypeOfDay: (day: number) => string = () => 'none'
 
@@ -1160,6 +1400,28 @@ const loop = createGameLoop(
 
 const scenes: SceneManager = createSceneManager(bus, loop)
 
+/**
+ * 런 상태의 일차를 흐름에 맞춘다.
+ *
+ * **일차의 단일 원본은 흐름이다** (`scenes/flow.ts`). 런 상태는 그 값을 따라간다.
+ * 지금까지 아무도 이 둘을 잇지 않아서 `run.dayNumber` 가 1에 멈춰 있었고, 그래서
+ * 2일차 정비를 끝내면 흐름은 습격(`raid`)으로 가려는데 정비 허브는 1일차 기준으로
+ * `아침까지 잔다` 를 보내 **흐름이 데이터 오류로 떨어졌다.** 화면에는 "정비를 끝냈는데
+ * 오류가 났다" 로만 보이고 원인이 일차 불일치라는 것은 드러나지 않는다.
+ *
+ * HUD 의 일차 표시, 정비 종료 버튼 문구, 그날의 야생동물 출현 프로필, 적대 주민
+ * 배치, 엔딩 기록문의 `finalDay` 가 전부 이 값을 읽는다.
+ *
+ * **야생동물 출현 프로필을 고르는 `field.entered` 구독보다 먼저 등록해야 한다.**
+ * 뒤에 두면 그 구독이 한 일차 전의 프로필로 재배를 시작한다.
+ */
+function syncRunDay(): void {
+  const step = scenes.step()
+  if (run !== null && 'day' in step) run.dayNumber = step.day
+}
+bus.on('screen.changed', syncRunDay)
+bus.on('field.entered', syncRunDay)
+
 // 필드 입력 잠금을 화면 층위에 맞춘다 (DEC-INPUT-009).
 // 재배·습격 단계에서만 이동과 전투 입력을 받는다.
 function syncInputLock(): void {
@@ -1170,6 +1432,12 @@ function syncInputLock(): void {
 bus.on('screen.changed', syncInputLock)
 bus.on('field.entered', syncInputLock)
 bus.on('field.exited', syncInputLock)
+
+// 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
+// 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
+bus.on('screen.changed', syncScreens)
+bus.on('field.entered', syncScreens)
+syncScreens()
 
 /**
  * 재배에 들어갈 때 야생동물 출현을 시작하고 나갈 때 전부 제거한다.
@@ -1238,7 +1506,7 @@ if (isDevBuild) {
   )
   bus.on('run.failed', () => console.warn('[런] 체력 0 — 런 실패 (DEC-RUN-008)'))
   bus.on('encounter.finished', ({ residentId, finalOutcome }) =>
-    console.warn(`[조우] 종료 — ${residentId} · ${finalOutcome}. 조우 결과 화면은 김민주`),
+    console.warn(`[조우] 종료 — ${residentId} · ${finalOutcome}`),
   )
   bus.on('reward.granted', ({ residentId, bundleId }) =>
     console.info(`[보상] ${residentId} · ${bundleId} 지급`),
@@ -1473,9 +1741,21 @@ function devStartRaid(choiceIndex = 0): void {
   console.warn(`[개발 전용] 대화 UI 를 우회해 선택지를 확정한다 — ${picked.choiceFunction}`)
   console.info('[조우] 선택 가능:', choices.map((c) => `${c.choiceFunction}${c.usable ? '' : '(불가)'}`).join(' / '))
 
+  // 이번 조우의 결과 화면 재료를 여기서 연다. 조우가 시작되는 유일한 지점이라
+  // 이전 조우의 협상 내역·사연이 남아 넘어가지 않는다 (DEC-UI-011).
+  const collected: PendingEncounter = {
+    consumedCrops: {},
+    negotiationRejected: false,
+    revealedFactIds: [],
+  }
+  pendingEncounter = collected
+
   const judgement = encounter.judge(residentId, picked.choiceId, run.resources.crops)
   console.info(`[조우] 판정 → ${judgement.systemResultId}`)
   console.info(`[조우] 반응 대사: ${judgement.reactionText}`)
+
+  // 반응 대사와 함께 사연이 공개될 수 있다 (DEC-CONTENT-009)
+  recordRevealedStoryInfo(residentId, judgement.revealedStoryInfoId)
 
   // 위협·대립 선택은 조우를 해결하지 않지만 중요 행동이고 공포도를 올린다
   // (DEC-RESIDENT-046, DEC-RESIDENT-052).
@@ -1502,6 +1782,9 @@ function devStartRaid(choiceIndex = 0): void {
         console.warn('[조우] 협상이 성립하지 않아 최종 결과를 확정하지 않는다')
         return
       }
+      // 실제로 무엇이 빠져나갔는지는 실행 후에만 알 수 있다 (DEC-RESIDENT-050).
+      // 조우 결과가 이 내역을 그대로 표시한다 (DEC-UI-011).
+      collected.consumedCrops = settled.consumed
     }
 
     // 어느 선택으로 해결됐는지가 최종 결과를 가른다 (DEC-RESIDENT-052)
@@ -1509,20 +1792,35 @@ function devStartRaid(choiceIndex = 0): void {
       residentId,
       picked.choiceFunction === 'empathy' ? 'empathy_resolve' : 'resource_negotiation_resolve',
     )
-    console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다. 결과 화면은 8/4 김민주.')
+    console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다.')
     return
   }
 
   // 자원 협상이 성격 프로필에 막힌 것도 중요 행동이다 (DEC-CONTENT-011)
   if (judgement.choiceFunction === 'resource_negotiation') {
     resolution!.recordNegotiationRejected(residentId)
+    // 수확물이 소비되지 않았다는 사실을 조우 결과에서 알린다 (DEC-UI-011)
+    collected.negotiationRejected = true
     console.info('[조우] 자원 협상 거절 — 중요 행동으로 기록')
   }
 
   // 전투 결과 — 시스템 결과 ID 에서 전투 보정 키를 얻는다 (DEC-CONTENT-009)
   const combatState = judgement.systemResultId.replace('system_result.precombat.combat_', '')
 
-  scenes.enterFieldPreview('raid')
+  // **정상 흐름으로 이미 습격 단계면 개발 통로로 다시 들어가지 않는다.**
+  //
+  // `enterFieldPreview()` 는 화면만 바꾸고 흐름(`scenes.step()`)은 건드리지 않는다.
+  // 한 번 거치면 조우가 끝나도 `encounter_finished` 를 보낼 수 없어 조우 결과 화면에
+  // 닿지 못한다 (로드맵 11-2 — "개발 통로가 흐름과 런 상태를 갈라놓는다").
+  // 정비 종료로 들어온 습격은 흐름이 이미 `raid` 라 그 경로를 탈 이유가 없다.
+  if (scenes.step().at === 'raid') {
+    // 전투 전 대화가 오버레이로 열려 있다. 대화 모달이 선택 확정 뒤에 할 일을
+    // 대신 한다 — 열려 있는 동안은 `inRaidStage()` 가 false 라 전투가 돌지 않는다.
+    scenes.closeOverlay('precombat_dialogue')
+  } else {
+    scenes.enterFieldPreview('raid')
+  }
+
   hostile = spawnHostile(dayNumber, combatState)
   if (hostile !== null) {
     console.info(

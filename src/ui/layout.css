@@ -59,6 +59,15 @@
   --hub-inventory-width: 340px;
   --hub-popup-width: 560px;
   --hub-popup-height: 420px;
+
+  /* ── 결과 화면 (DEC-UI-023) ───────────────────────
+     독립 화면이 필드를 덮을 때 쓰는 값. 화면마다 자기 규칙에서 참조한다.
+     DEC-UI-023 이 금지한 것은 네 화면을 하나의 템플릿으로 묶는 것이지
+     같은 변수를 참조하는 것이 아니다 — 변수를 모으는 게 layout.css 의 목적이다
+     (개발 로드맵 2절). */
+  --screen-backdrop: rgba(8, 10, 7, 0.96);
+  --screen-panel-width: 620px;
+  --screen-pad: 36px;
 }
 
 /* HUD 는 필드 위에 얹히지만 클릭을 가로채면 안 된다.
@@ -501,4 +510,196 @@
   font-family: var(--ui-font);
   font-size: var(--ui-font-md);
   text-align: right;
+}
+
+/* ─────────────────────────────────────────────────
+   밤 결과 (DEC-RUN-015, DEC-UI-023)
+
+   승인된 고정 문구 하나와 진행 입력 하나뿐이다.
+   그날의 수확량·자원 변화·조우 결과를 담지 않는다.
+
+   조우 결과와 **클래스를 공유하지 않는다.** DEC-UI-023 이 네 화면을 공유 템플릿으로
+   묶지 말라고 확정했고, 규칙을 한 벌로 합치면 한쪽을 고칠 때 다른 쪽이 같이 움직인다.
+   두 화면의 규칙이 닮아 보이는 것은 지금 둘 다 단순해서일 뿐이다.
+   ───────────────────────────────────────────────── */
+
+/* `display` 를 선언한 요소에는 `hidden` 속성이 안 먹는다 (위 .hub 주석 참고) */
+.night-result[hidden] {
+  display: none;
+}
+
+.night-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.night-result__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.night-result__text {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  line-height: 1.6;
+}
+
+.night-result__continue {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.night-result__continue:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   조우 결과 (DEC-RUN-015, DEC-UI-011, DEC-UI-013, DEC-UI-023)
+
+   주민 이름·해결 방식·최종 상태 셋이 항상 있고, 보상·소비·사연·이후 습격 구획은
+   결과에 따라 있고 없고가 갈린다. 없는 구획은 비워 두는 게 아니라 만들지 않는다.
+   ───────────────────────────────────────────────── */
+
+.encounter-result[hidden] {
+  display: none;
+}
+
+.encounter-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.encounter-result__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  max-height: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+  overflow-y: auto;
+}
+
+.encounter-result__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-md);
+  border-bottom: 1px solid var(--ui-border);
+  padding-bottom: var(--ui-gap-md);
+}
+
+.encounter-result__resident {
+  font-size: var(--ui-font-xl);
+}
+
+/* 해결 방식. final_outcome 키가 아니라 사람이 읽는 말이다 (DEC-UI-011) */
+.encounter-result__outcome {
+  font-size: var(--ui-font-lg);
+  color: var(--ui-accent);
+}
+
+/* 최종 생존·소속·관계 (DEC-UI-011, DEC-UI-013) */
+.encounter-result__states {
+  display: flex;
+  gap: var(--ui-gap-md);
+  flex-wrap: wrap;
+}
+
+.encounter-result__chip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  font-size: var(--ui-font-md);
+}
+
+.encounter-result__chip-label {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+}
+
+.encounter-result__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+}
+
+.encounter-result__section-title {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.encounter-result__resource {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  padding: 2px 0;
+}
+
+.encounter-result__count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 사연 정보는 ending_fact_text 만 표시한다. source_fact_text 는 넘어오지 않는다 */
+.encounter-result__fact {
+  margin: 0 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  line-height: 1.6;
+}
+
+.encounter-result__note {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.6;
+}
+
+/* 진행 입력은 하나뿐이다 (DEC-UI-023) */
+.encounter-result__continue {
+  align-self: flex-end;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.encounter-result__continue:hover {
+  background: var(--ui-bg-slot);
 }
