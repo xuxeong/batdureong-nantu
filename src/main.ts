@@ -34,6 +34,7 @@ import { createResolution } from './systems/resolution.ts'
 import type { FearIncrements, Resolution } from './systems/resolution.ts'
 import { createEndingJudge } from './systems/ending.ts'
 import type { EndingJudge } from './systems/ending.ts'
+import { buildEndingInput, requestEndingRecord } from './llm/ending.ts'
 import type {
   Crop,
   FearIncrement,
@@ -101,6 +102,12 @@ let raidData: {
 } | null = null
 /** 엔딩 판정 (DEC-CONTENT-011) */
 let endingJudge: EndingJudge | null = null
+/** 엔딩 기록문 입력을 만드는 데 필요한 승인 데이터 (DEC-CONTENT-011) */
+let endingData: {
+  manifest: import('./data/types.ts').RuntimeManifest
+  residents: readonly import('./data/types.ts').Resident[]
+  storyInfos: readonly import('./data/types.ts').StoryInfo[]
+} | null = null
 
 const player = { x: 0, y: 0 }
 
@@ -219,6 +226,14 @@ async function bootData(): Promise<void> {
       crops,
       cropAttributes: data.crop_attributes ?? [],
     })
+
+    endingData = {
+      manifest: data.manifest,
+      residents: data.residents ?? [],
+      // 사연 정보는 독립 콘텐츠다. 확인한 것만 골라 쓰는 것은 입력을 만드는
+      // 쪽이 한다 (DEC-CONTENT-017 — 확인하지 않은 정보는 LLM 에 넘기지 않는다).
+      storyInfos: data.story_infos ?? [],
+    }
 
     // 런 상태를 새로 만든다. 부분 초기화하지 않는다 (로드맵 9-5).
     // 이름 입력 화면이 아직 없어 playerName 은 비어 있다.
@@ -435,14 +450,15 @@ function decideEnding(): void {
     return
   }
 
+  // **확정한 엔딩을 런 결과에 저장한 뒤에만** 기록문 생성을 요청한다
+  // (DEC-CONTENT-011). 먼저 승인된 폴백 문장으로 채워 두므로, LLM 이 실패하거나
+  // 응답이 늦어도 화면에 보여 줄 문장이 항상 있다.
   run.ending = {
     endingId: judgement.ending.id,
     endingContentVersion: judgement.ending.content_version,
     fear: judgement.fearScore,
     fearBandId: judgement.fearBand?.id ?? null,
     dominantCropId: judgement.dominantCrop?.cropId ?? null,
-    // 기록문은 LLM 또는 fallback_record_text 로 채운다 (DEC-JOURNAL-003, 8/4 이후).
-    // 지금은 승인된 폴백 문장을 그대로 쓴다 — 여기서 문장을 지어내지 않는다.
     recordText: judgement.ending.fallback_record_text,
     usedFallback: true,
   }
@@ -464,6 +480,53 @@ function decideEnding(): void {
     `[엔딩] ${judgement.ending.ending_title} (${judgement.ending.id}) · ` +
       `공포도 ${judgement.fearScore} · 구간 ${judgement.fearBand?.display_name ?? '없음'} · ` +
       `대표 작물 ${judgement.dominantCrop?.displayName ?? '없음'}`,
+  )
+
+  // 기록문은 비동기로 채운다. **기다리지 않는다** — LLM 요청이 엔딩 진행을 막지
+  // 않아야 한다 (DEC-CONTENT-011). 응답이 오면 폴백 문장을 대체한다.
+  void fillEndingRecord(judgement.ending, judgement)
+}
+
+/**
+ * 엔딩 기록문을 LLM 으로 채운다 (DEC-CONTENT-011).
+ *
+ * 실패하면 아무것도 하지 않는다 — `run.ending.recordText` 에 이미 승인된
+ * `fallback_record_text` 가 들어 있고, 그것이 규칙상 정상 경로다.
+ */
+async function fillEndingRecord(
+  ending: import('./data/types.ts').Ending,
+  judgement: import('./systems/ending.ts').EndingJudgement,
+): Promise<void> {
+  if (run === null || endingData === null) return
+
+  const input = buildEndingInput({
+    manifest: endingData.manifest,
+    playerName: run.playerName,
+    finalDay: run.dayNumber,
+    ending,
+    fearBand: judgement.fearBand,
+    dominantCrop: judgement.dominantCrop,
+    record: run.record,
+    residents: run.residents,
+    residentData: endingData.residents,
+    storyInfos: endingData.storyInfos,
+  })
+
+  const result = await requestEndingRecord(input, ending.fallback_record_text)
+  if (run === null || run.ending === null) return // 그 사이 런이 초기화됐다
+
+  run.ending.recordText = result.recordText
+  run.ending.usedFallback = result.usedFallback
+
+  bus.emit('ending.recordReady', {
+    recordText: result.recordText,
+    usedFallback: result.usedFallback,
+  })
+
+  console.info(
+    result.usedFallback
+      ? '[엔딩] 승인된 폴백 기록문을 쓴다 (LLM 미사용 또는 실패 — 정상 경로)'
+      : `[엔딩] 기록문 생성됨 · 모델 ${result.generatorModelId} · 재시도 ${result.retryCount}회`,
   )
 }
 

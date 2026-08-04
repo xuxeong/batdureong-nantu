@@ -644,6 +644,7 @@ export interface RuntimeManifest {
   schema_version: number
   ending_input_schema_version: number
   ending_prompt_version: number
+  journal_prompt_version: number
   /** 실제로 생성된 테이블 JSON 파일 이름. 승인 행이 0개면 파일이 없다 */
   files: string[]
 }

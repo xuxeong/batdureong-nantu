@@ -214,6 +214,7 @@ function main() {
     schema_version: schema.manifest.schema_version,
     ending_input_schema_version: schema.manifest.ending_input_schema_version,
     ending_prompt_version: schema.manifest.ending_prompt_version,
+    journal_prompt_version: schema.manifest.journal_prompt_version,
     files: written.map((w) => w.file).sort(),
   }
   writeFileSync(join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8')

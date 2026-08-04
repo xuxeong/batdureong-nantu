@@ -4,12 +4,14 @@
   "schema_version": 6,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
+  "journal_prompt_version": 1,
 
   "version_change_reasons": {
     "$comment": "각 버전을 언제 올리는지. DEC-PIPELINE-012.",
     "schema_version": "콘텐츠 필드의 추가·삭제, 자료형·의미·참조 방식 변경",
     "ending_input_schema_version": "엔딩 입력 객체의 필드 추가·삭제, 자료형·의미 변경",
-    "ending_prompt_version": "고정 시스템 지시문과 출력 제약의 의미 변경"
+    "ending_prompt_version": "고정 엔딩 시스템 지시문과 출력 제약의 의미 변경",
+    "journal_prompt_version": "고정 일지 시스템 지시문과 출력 제약의 의미 변경. DEC-JOURNAL-004 가 일지를 엔딩과 분리된 시스템으로 정했으므로 엔딩 프롬프트와 버전을 공유하지 않는다"
   },
 
   "history": [
