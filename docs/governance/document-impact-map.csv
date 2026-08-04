@@ -15,3 +15,4 @@ exact,DEC-PIPELINE-018,1|17,1|2|3|11|12|13|16,connected,AI 권한 또는 결정 
 exact,DEC-PIPELINE-016,16,3|13|17,local,데이터와 시스템 로직의 경계가 바뀔 때,게임 데이터 하드코딩 금지
 exact,DEC-PIPELINE-017,1|17,1|2|3|12|13|14|15|16|17,structural,항상,영향 기반 부분 동기화 정책
 prefix,DEC-JOURNAL-*,2|3|12|14|16,5.12|6|17,connected,일지 노출 시점·입력 화이트리스트 또는 폴백 구조가 바뀔 때,플레이어 일지 LLM 시스템
+exact,DEC-RESIDENT-048,12|14|15,5.12|6|11|17,connected,공포도 증가량 또는 원인 키 구성이 바뀔 때,공포도 증가량 — fear_increments.csv 신설로 CSV 목록·스키마에 걸린다
