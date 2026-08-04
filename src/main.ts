@@ -1031,7 +1031,10 @@ function devSurrender(choiceIndex: number): void {
     console.warn('[개발 전용] 투항 중인 주민이 없다')
     return
   }
-  if (scenes.inputOwner() !== 'surrender_dialogue') {
+  // 입력 소유가 아니라 **열려 있는지**를 본다. 콘솔로 전환하면 창이 포커스를 잃어
+  // 자동 일시정지가 걸리고(DEC-UI-022) 일시정지는 항상 최상위라(DEC-UI-026)
+  // inputOwner() 가 언제나 'pause' 다. 개발 통로는 콘솔에서만 불리므로 항상 막힌다.
+  if (!scenes.openOverlays().includes('surrender_dialogue')) {
     console.warn('[개발 전용] 투항 대화가 열려 있지 않다')
     return
   }
