@@ -1446,6 +1446,15 @@ syncScreens()
  * 야생동물이 없다 (DEC-CONTENT-007). 여기서 기본 프로필을 지어내지 않는다.
  *
  * 전역 투척 재사용 대기도 단계 진입마다 초기화한다 (DEC-CONTENT-005).
+ *
+ * **재배 제한시간도 여기서 다시 시작한다** (DEC-RUN-004). 경작지와 반대다 —
+ * 작물 상태와 남은 성장 시간은 다음 날로 그대로 넘어가지만(DEC-FARM-003)
+ * 제한시간은 "그 일차의 재배 단계" 길이라 일차마다 처음부터다.
+ *
+ * `stage-timer.ts` 는 8/3에 `reset()` 을 만들어 두고 **부르는 곳이 없었다.**
+ * 그래서 2일차 재배는 남은 시간 0 · 만료 통지 소진 상태로 시작했고, `tick()` 이
+ * 영영 true 를 안 돌려줘 재배가 끝나지 않았다. 단위 테스트 6개는 통과 중이었다 —
+ * 타이머 자체는 맞고 부르는 곳만 없었다.
  */
 bus.on('field.entered', ({ mode }) => {
   combat?.reset()
@@ -1453,6 +1462,8 @@ bus.on('field.entered', ({ mode }) => {
     wildlife?.endFarming()
     return
   }
+
+  farmingTimer?.reset()
 
   const day = run?.dayNumber ?? 1
   const profileId = spawnProfileIdByDay.get(day) ?? null
