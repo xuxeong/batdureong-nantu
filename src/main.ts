@@ -310,11 +310,7 @@ function updateRaid(dt: number): void {
   for (const event of combat.update(dt)) {
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
-      // 처치 보상 지급과 상태 변경은 하나의 처리다 (DEC-RESIDENT-042).
-      // 실패하면 주민을 지우지 않는다 — 지워 버리면 보상 없이 조우만 사라진다.
-      if (!finishEncounter(hostile.entity.residentId, 'killed')) return
-      hostile = null
-      hostileTarget = null
+      onTargetKilled(event.targetId ?? '')
       return
     }
   }
@@ -629,6 +625,32 @@ function currentTargets(): CombatTarget[] {
   }))
 }
 
+/**
+ * 대상이 죽었을 때. **처치 처리는 이 함수 하나다.**
+ *
+ * 처치가 두 경로로 온다 — 투사체와 지속 피해는 `combat.update()` 안에서,
+ * 낫 직접 명중은 `swingSickle()` 이 그 자리에서 돌려준다. 두 곳에서 각각 처리했더니
+ * **낫으로 주민을 죽였을 때만 조우가 안 끝났다.** 야생동물만 지우고 주민은 아무 일도
+ * 일어나지 않아서, 화면에서는 "죽었는데 아무것도 안 뜬다" 로만 보인다.
+ * 8/3 에 대상 선택이 두 군데라서 낫이 아무도 못 때렸던 것과 같은 모양이다.
+ */
+function onTargetKilled(targetId: string): void {
+  if (scenes.currentFieldMode() === 'raid') {
+    if (hostile === null || targetId !== hostile.entity.instanceId) return
+
+    // 보상 지급과 상태 변경이 실패하면 주민을 지우지 않는다 (DEC-RESIDENT-042)
+    if (!finishEncounter(hostile.entity.residentId, 'killed')) return
+
+    hostile = null
+    hostileTarget = null
+    // 조우가 해결되면 남은 투사체와 공격을 제거한다 (DEC-UI-019)
+    residentCombat?.reset()
+    return
+  }
+
+  wildlife?.remove(targetId)
+}
+
 /** 우클릭 — 낫 (DEC-INPUT-004) */
 function onSickle(): void {
   if (combat === null) return
@@ -641,7 +663,7 @@ function onSickle(): void {
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
     wildlife?.notifyDamagedByPlayer(hit.targetId)
-    if (hit.outcome === 'killed') wildlife?.remove(hit.targetId)
+    if (hit.outcome === 'killed') onTargetKilled(hit.targetId)
     if (hit.outcome === 'surrender_offered') onSurrenderOffered()
   }
 }
