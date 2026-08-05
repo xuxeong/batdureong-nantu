@@ -33,7 +33,8 @@
       "player_base_stats",
       "raid_notice",
       "night_result_text",
-      "tutorial_step"
+      "tutorial_step",
+      "fear_increment"
     ]
   },
 

@@ -1000,6 +1000,27 @@ export const RULES = {
     }
   },
 
+  // ── 공포도 증가량 ─────────────────────────────────────────────────────
+  'fear_increment.exactly_one_per_cause'({ report, schema, h }) {
+    const rows = h.approved('fear_increments.csv')
+    // 허용값은 테이블 정의가 갖고 있다. enums.json 에 따로 두면
+    // important_action_count_subject 와 같은 행동을 가리키는 목록이 두 벌이 된다.
+    const causes =
+      schema.tables.get('fear_increments.csv')?.fields.find((f) => f.name === 'cause')?.values ?? []
+
+    for (const cause of causes) {
+      const n = rows.filter((r) => h.val(r, 'cause') === cause).length
+      if (n !== 1) {
+        report.block({
+          file: 'fear_increments.csv',
+          problem: `\`${cause}\` 의 승인 증가량이 ${n}개다. 정확히 하나여야 한다`,
+          basis: 'DEC-RESIDENT-048 · 승인 행은 위협·퇴각·처치 세 개다',
+          fix: n === 0 ? `cause 가 \`${cause}\` 인 행을 승인한다` : '하나만 남기고 나머지를 retired 로 바꾼다',
+        })
+      }
+    }
+  },
+
   // ── 튜토리얼 ──────────────────────────────────────────────────────────
   'tutorial_step.step_order_sequential'({ report, h }) {
     const rows = h.approved('tutorial_steps.csv')

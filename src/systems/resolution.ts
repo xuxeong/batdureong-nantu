@@ -14,15 +14,14 @@
 // 뒤에 적용하며, 검증에 실패하면 자원도 주민 상태도 건드리지 않는다. 절반만 반영되면
 // "보상은 받았는데 조우는 안 끝난" 상태가 된다.
 //
-// ── 공포도 증가량이 아직 없다 (DEC-RESIDENT-048 보류) ──────
+// ── 공포도 증가량 (DEC-RESIDENT-048) ───────────────────────
 //
-// `DEC-RESIDENT-046` 이 위협은 적게, 퇴각은 중간, 처치는 높게 올린다고 확정했지만
-// **실제 수치는 어느 승인 CSV 에도 없다.** 048 이 그 값을 정하는 보류 결정이다.
+// 증가량의 단일 원본은 승인 `fear_increments.csv` 다. 코드에 숫자를 쓰지 않는다.
 //
-// 임시 기본값을 넣지 않는다 (AGENTS.md 6절). 대신 `fearIncrements` 가 null 이면
-// 공포도만 누적하지 않고 결과에 `fearPending` 을 켜서 호출자가 표시하게 한다.
-// 나머지 처리(관계·소속·보상·중요 행동)는 값과 무관하므로 그대로 진행한다 —
-// 여기서 통째로 막으면 8/5 완주가 048 하나에 걸린다.
+// 승인 행이 아직 없을 수 있다. 그때는 `fearIncrements` 가 null 이고, 공포도만
+// 누적하지 않은 채 결과에 `fearPending` 을 켜서 호출자가 표시하게 한다. 임시
+// 기본값을 넣지 않는 이유는 그러면 아무도 미승인 상태를 다시 보지 않기 때문이다
+// (AGENTS.md 6절). 나머지 처리(관계·소속·보상·중요 행동)는 값과 무관하므로 진행한다.
 
 import type {
   FinalOutcome,
@@ -40,11 +39,16 @@ import type {
   RunRecord,
 } from '../state/types.ts'
 
-/** 공포도를 올리는 행동 (DEC-RESIDENT-046) */
-export type FearCause = 'threat' | 'retreat' | 'kill'
+/**
+ * 공포도를 올리는 행동 (DEC-RESIDENT-046, DEC-RESIDENT-048).
+ *
+ * 중요 행동 키를 그대로 쓴다. 048 이 `important_action_count_subject` 중 셋만
+ * 사용하도록 확정했고, 별도의 축약 키를 두면 CSV 값과 코드 값이 두 벌이 된다.
+ */
+export type FearCause = 'threat_selected' | 'surrender_retreat_reward' | 'resident_killed'
 
 /**
- * 행동별 공포도 증가량. `DEC-RESIDENT-048` 이 확정되면 승인 CSV 에서 온다.
+ * 행동별 공포도 증가량. 승인 `fear_increments.csv` 에서 온다 (DEC-RESIDENT-048).
  * 코드에 숫자를 쓰지 않는다 (DEC-PIPELINE-016).
  */
 export type FearIncrements = Readonly<Record<FearCause, number>>
@@ -181,7 +185,7 @@ const OUTCOME_STATE: Readonly<
     allegiance: 'neutral',
     relationship: 'coercive',
     action: 'surrender_retreat_reward',
-    fearCause: 'retreat',
+    fearCause: 'surrender_retreat_reward',
     rewardField: 'retreat_reward_bundle_id',
   },
   killed: {
@@ -189,7 +193,7 @@ const OUTCOME_STATE: Readonly<
     allegiance: 'hostile',
     relationship: 'severed',
     action: 'resident_killed',
-    fearCause: 'kill',
+    fearCause: 'resident_killed',
     rewardField: 'kill_reward_bundle_id',
   },
 }
@@ -319,7 +323,7 @@ export function createResolution(
       // 위협은 조우를 해결하지 않으므로 주민 상태를 바꾸지 않는다 (DEC-RESIDENT-052).
       // 존재하지 않는 주민이어도 전역 기록은 남긴다 — 기록을 빠뜨리는 쪽이 더 나쁘다.
       void residentId
-      return applyFear('threat')
+      return applyFear('threat_selected')
     },
 
     recordNegotiationRejected(residentId) {

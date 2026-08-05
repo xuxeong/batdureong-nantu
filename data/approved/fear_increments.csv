@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,cause,fear_amount
+fear_increment.threat_selected,fear_increment,approved,1,위협 선택,대화에서 위협을 고른 대가. 가장 가벼운 상승이라 한 번으로는 구간이 바뀌지 않는다.,threat_selected,1
+fear_increment.surrender_retreat_reward,fear_increment,approved,1,퇴각 대가 요구,투항한 주민을 살려 보내되 대가를 받은 대가. 위협 세 번과 같은 무게다.,surrender_retreat_reward,3
+fear_increment.resident_killed,fear_increment,approved,1,주민 처치,가장 무거운 상승. 두 번이면 경계를 지나 공포 구간에 닿는다.,resident_killed,6

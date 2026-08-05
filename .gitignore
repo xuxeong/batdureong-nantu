@@ -30,3 +30,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# 프롬프트 원본(.md)에서 빌드 시점에 굽는다. tools/build-prompts.mjs
+api/_prompts.ts
