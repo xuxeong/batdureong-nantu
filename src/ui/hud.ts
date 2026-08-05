@@ -2,11 +2,33 @@
 //
 // 재배 모드와 습격 모드 모두에서 표시하는 공통 레이어다.
 // 위치·크기·색은 전부 layout.css 의 변수에서 온다. 여기에 픽셀 값을 쓰지 않는다
-// (개발 로드맵 2절 — 기획자 사진을 받으면 CSS 값만 고친다).
+// (개발 로드맵 2절).
 //
 // 이 파일은 **상태를 읽어 그리기만 한다.** 자원을 직접 바꾸지 않는다.
 // 소지금은 필드 HUD 에 표시하지 않는다. 정비 단계 화면에서만 보인다 (DEC-UI-017).
+//
+// ── A1 확정 배치 (아트 디렉션 12.2) ────────────────────────
+//
+//   상단 왼쪽 끝    나무 표지판 하나 — 위칸 현재 일차 / 아래칸 습격 예고
+//   상단 가운데     가로로 긴 게이지 하나 — 남은 재배 시간. **숫자를 넣지 않는다**
+//   상단 오른쪽 끝  톱니바퀴 버튼 하나. 이것뿐이다
+//   하단 왼쪽 끝    가로로 긴 카드 — 초상화 자리 / 이름 / 체력 바 + 바 우측 수치
+//   하단 오른쪽     투척 퀵슬롯 5칸, 그 오른쪽에 회복 칸이 화면 끝에 닿는다
+//
+// **일차와 습격 예고를 한 틀에 합쳤다.** 8/5까지 둘이 `topLeft`·`topCenter` 로
+// 갈려 있었는데 `asset.ui.signboard` 가 두 칸짜리 한 장이다.
+//
+// **남은 시간에서 숫자를 뺐다.** `DEC-UI-017` 은 "재배 모드 전용 요소: 남은 재배
+// 시간" 이라고만 정하고 형태를 정하지 않았고, `DEC-UI-018` 이 *"배치 좌표, 색과
+// 아이콘은 `DEC-ART-001`에서 정한다"* 로 위임했다. 그 위임을 받은 A1 이 게이지로
+// 정했다. 반면 **체력 수치는 뺄 수 없다** — `DEC-UI-017` 이 "게이지 바와 수치를
+// 함께 표시, 바 우측에 수치" 로 못박았다.
+//
+// **플레이어 이름은 아트 장식이다.** `DEC-UI-017` 의 공통 요소 여덟 개에 이름이
+// 없지만 `DEC-UI-030` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
+// 근거는 아트 디렉션 14.2 이며 `DEC-UI-017` 을 폐기·대체하지 않는다.
 
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import './layout.css'
 
 /** 퀵슬롯 한 칸의 표시 상태 */
@@ -19,12 +41,21 @@ export interface QuickslotView {
 }
 
 export interface HudView {
+  /** 이름 입력에서 온 값 (DEC-UI-030). 카드 장식이다 — 아트 디렉션 14.2 */
+  playerName: string
   health: number
   maxHealth: number
   dayNumber: number
 
-  /** 재배 모드에서만 값이 있다. 습격 모드에는 시간제한이 없다 (DEC-UI-017) */
-  remainingSeconds: number | null
+  /**
+   * 남은 재배 시간의 **비율** 1~0. 습격 모드에는 시간제한이 없어 null 이다
+   * (DEC-UI-017).
+   *
+   * 초가 아니라 비율인 이유는 화면이 숫자를 쓰지 않기 때문이다. 초를 넘기면
+   * 받는 쪽이 전체 길이를 따로 알아야 게이지를 그릴 수 있고, 그 길이는
+   * `run_schedules.farming_duration_seconds` 라 HUD 가 알 일이 아니다.
+   */
+  timeRatio: number | null
   timeUrgent: boolean
 
   quickslots: readonly QuickslotView[]
@@ -50,11 +81,21 @@ export interface HudView {
   emptyFireNotice: string | null
 
   /**
+   * 습격 진입 시 어느 주민이 지원하는지 알리는 짧은 안내 (DEC-UI-012).
+   *
+   * `DEC-UI-017` 의 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+   * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
+   * 잠깐 떴다 사라지므로 자리를 상시로 잡지 않는다. 없으면 null 이다.
+   */
+  allySupportNotice: string | null
+
+  /**
    * 습격 예고 표지 (`raid_notices.hud_label`).
    *
-   * `DEC-RUN-011` 이 문구를 승인 데이터에서 공급하라고 정했는데 `raid_notices.csv` 가
-   * 아직 없다. 그동안 null 로 두고 자리만 비운다 — 임시 문구를 코드에 넣으면
-   * 그 자체가 위반이고, 나중에 데이터가 와도 아무도 지우지 않는다.
+   * `DEC-RUN-011` 이 문구를 승인 데이터에서 공급하라고 정했다. 데이터가 없으면
+   * null 이고 표지판 아래칸이 빈다 — 임시 문구를 코드에 넣지 않는다.
+   *
+   * 재배 모드 내내 상시 노출하며 습격이 없는 날에도 사라지지 않는다 (DEC-UI-017).
    */
   raidNoticeLabel: string | null
 }
@@ -86,6 +127,27 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node
 }
 
+/**
+ * 논리 에셋 ID 를 CSS 변수로 넘긴다.
+ *
+ * 파일이 없으면 아무것도 설정하지 않는다 — `layout.css` 의 대체 표현(테두리와
+ * 배경색)이 그대로 남아 플레이스홀더가 된다. 여기서 경로를 지어내지 않는다.
+ */
+function bindAsset(node: HTMLElement, property: string, assetId: string): void {
+  const url = assetCssUrl(assetId)
+  if (url === null) return
+  node.style.setProperty(property, url)
+  node.classList.add('hud--has-art')
+}
+
+/**
+ * 일차 표시 문구.
+ *
+ * 화면이 숫자에 붙이는 단위이지 `DEC-UI-029` 가 말하는 안내 문구가 아니다.
+ * 바꿔도 플레이어의 선택이 달라지지 않으므로 데이터로 빼지 않는다.
+ */
+const DAY_SUFFIX = '일차'
+
 export interface HudHandlers {
   /** 일시정지·설정 아이콘. Esc 와 같은 화면을 연다 (DEC-UI-017) */
   onPause(): void
@@ -94,41 +156,70 @@ export interface HudHandlers {
 export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   const root = el('div', 'hud')
 
-  // ── 좌상단: 체력 + 일차 ──────────────────────────
-  const topLeft = el('div', 'hud__corner hud__corner--top-left')
-  const health = el('div', 'hud__health')
+  // ── 상단 왼쪽 끝: 표지판 (일차 / 습격 예고) ──────
+  //
+  // 두 칸이 한 장이다. 8/5까지 갈려 있던 두 요소를 여기서 합친다.
+  const signboard = el('div', 'hud__signboard')
+  const day = el('div', 'hud__signboard-day')
+  const raidNotice = el('div', 'hud__signboard-raid')
+  signboard.append(day, raidNotice)
+  bindAsset(signboard, '--hud-signboard-image', UI_ASSET.signboard)
+
+  // ── 상단 가운데: 남은 재배 시간 게이지 ───────────
+  //
+  // 숫자를 넣지 않는다 (A1). 습격 모드에는 시간제한이 없어 통째로 숨는다.
+  const timer = el('div', 'hud__timer')
+  const timerFill = el('div', 'hud__timer-fill')
+  timer.appendChild(timerFill)
+  bindAsset(timer, '--hud-timer-image', UI_ASSET.farmingTimer)
+
+  // ── 상단 오른쪽 끝: 일시정지·설정 (버튼 하나) ────
+  //
+  // 아트 디렉션 14.3 이 "일시정지와 설정은 버튼 하나" 로 정했다.
+  const pauseButton = el('button', 'hud__settings')
+  pauseButton.type = 'button'
+  // 그림이 없을 때만 글자가 보이게 둔다. 아이콘이 붙으면 CSS 가 가린다.
+  pauseButton.textContent = '일시정지'
+  pauseButton.setAttribute('aria-label', '일시정지')
+  pauseButton.addEventListener('click', () => handlers.onPause())
+  bindAsset(pauseButton, '--hud-settings-image', UI_ASSET.settingsButton)
+
+  // ── 하단 왼쪽 끝: 플레이어 상태 카드 ─────────────
+  //
+  // 초상화 자리 · 이름 · 체력 바 · 바 우측 수치 (DEC-UI-017).
+  // 초상화 그림은 F단계라 아직 없다. 자리만 만들어 둔다.
+  const card = el('div', 'hud__card')
+  const portrait = el('div', 'hud__portrait')
+  const cardBody = el('div', 'hud__card-body')
+  const name = el('div', 'hud__name')
+  const healthRow = el('div', 'hud__health')
   const healthBar = el('div', 'hud__health-bar')
   const healthFill = el('div', 'hud__health-fill')
   const healthText = el('div', 'hud__health-text')
   healthBar.appendChild(healthFill)
-  health.append(healthBar, healthText)
-  const day = el('div', 'hud__day')
-  topLeft.append(health, day)
+  healthRow.append(healthBar, healthText)
+  cardBody.append(name, healthRow)
+  card.append(portrait, cardBody)
+  bindAsset(card, '--hud-card-image', UI_ASSET.playerStatusCard)
 
-  // ── 상단 중앙: 남은 시간 + 습격 예고 ─────────────
-  const topCenter = el('div', 'hud__corner hud__corner--top-center')
-  const time = el('div', 'hud__time')
-  const raidNotice = el('div', 'hud__raid-notice')
-  topCenter.append(time, raidNotice)
-
-  // ── 우상단: 일시정지·설정 ────────────────────────
-  const topRight = el('div', 'hud__corner hud__corner--top-right')
-  const pauseButton = el('button', 'hud__icon-button', '일시정지')
-  pauseButton.type = 'button'
-  pauseButton.addEventListener('click', () => handlers.onPause())
-  topRight.appendChild(pauseButton)
-
-  // ── 하단 중앙: 퀵슬롯 + 회복 아이템 ──────────────
-  const bottom = el('div', 'hud__corner hud__corner--bottom-center')
+  // ── 하단 오른쪽: 퀵슬롯 5칸 + 회복 칸 ────────────
+  //
+  // 회복 칸이 화면 오른쪽 끝에 닿는다 (A1).
+  const bottomRight = el('div', 'hud__bottom-right')
   const quickslots = el('div', 'hud__quickslots')
-  const noThrowable = el('div', 'hud__no-throwable', '투척 무기 없음')
-  // 빈 발사 안내는 `투척 무기 없음` 표시와 별개다 (DEC-UI-002).
-  // 하나는 상태이고 하나는 방금 누른 것에 대한 반응이라 자리를 나눈다.
-  const emptyFire = el('div', 'hud__empty-fire')
   const recovery = el('div', 'hud__recovery')
-  bottom.append(quickslots, recovery)
+  bindAsset(recovery, '--hud-recovery-image', UI_ASSET.recoverySlot)
+  bottomRight.append(quickslots, recovery)
 
-  root.append(topLeft, topCenter, topRight, bottom)
+  // 퀵슬롯 상태 문구 둘. 자리를 나눠 둔다 (DEC-UI-002).
+  // 하나는 "지금 쓸 것이 없다" 는 상태이고 하나는 방금 누른 것에 대한 반응이다.
+  const noThrowable = el('div', 'hud__no-throwable', '투척 무기 없음')
+  const emptyFire = el('div', 'hud__empty-fire')
+  // 지원 안내는 같은 자리를 쓰되 클래스를 나눈다 — 경고가 아니라 알림이라 색이 다르다
+  const allyNotice = el('div', 'hud__ally-notice')
+  const notices = el('div', 'hud__notices')
+
+  root.append(signboard, timer, pauseButton, card, notices, bottomRight)
   container.appendChild(root)
 
   /** 퀵슬롯 칸은 개수가 고정이라 매번 만들지 않고 재사용한다 */
@@ -137,11 +228,14 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   function ensureSlots(n: number): void {
     while (slotNodes.length < n) {
       const slot = el('div', 'hud__slot')
-      const name = el('div')
+      // 선택 강조는 다른 그림 한 장이다. 배경을 두 개 겹치지 않고 클래스로 가른다.
+      bindAsset(slot, '--hud-slot-image', UI_ASSET.quickslot)
+      bindAsset(slot, '--hud-slot-selected-image', UI_ASSET.quickslotSelected)
+      const slotName = el('div', 'hud__slot-name')
       const count = el('div', 'hud__slot-count')
-      slot.append(name, count)
+      slot.append(slotName, count)
       quickslots.appendChild(slot)
-      slotNodes.push({ root: slot, name, count })
+      slotNodes.push({ root: slot, name: slotName, count })
     }
     while (slotNodes.length > n) {
       const removed = slotNodes.pop()
@@ -151,20 +245,29 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
 
   return {
     render(view) {
-      // 체력 — 게이지 바와 수치를 함께, 수치는 바 우측 (DEC-UI-017)
+      // 이름은 카드 장식이다 (아트 디렉션 14.2). 비어 있으면 자리를 비워 둔다 —
+      // 이름 입력을 지나면 항상 값이 있고, 없다는 것은 그 화면을 건너뛴 것이다.
+      name.textContent = view.playerName
+
+      // 체력 — 게이지 바와 수치를 함께, 수치는 바 우측 (DEC-UI-017).
+      // 수치는 **현재 체력 하나**다. 확정문이 요구하는 것이 `현재 체력`의 수치이고
+      // 카드 그림의 그 자리가 55px 이라 `100 / 100` 은 들어가지 않는다.
       const ratio = view.maxHealth > 0 ? view.health / view.maxHealth : 0
       healthFill.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`
-      healthText.textContent = `${view.health} / ${view.maxHealth}`
+      healthText.textContent = String(view.health)
 
-      day.textContent = `${view.dayNumber}일차`
+      day.textContent = `${view.dayNumber}${DAY_SUFFIX}`
 
-      // 습격 모드에는 시간제한이 없으므로 표시하지 않는다 (DEC-UI-017)
-      if (view.remainingSeconds === null) {
-        time.textContent = ''
-      } else {
-        time.textContent = `${Math.ceil(view.remainingSeconds)}초`
+      // 습격 모드에는 시간제한이 없으므로 게이지를 통째로 숨긴다 (DEC-UI-017)
+      timer.hidden = view.timeRatio === null
+      if (view.timeRatio !== null) {
+        // **퍼센트가 아니라 0~1 비율을 넘긴다.** 게이지 홈은 그림(911px) 전체가
+        // 아니라 왼쪽 613px 뿐이라, 퍼센트로 주면 기준이 그림 전체가 되어
+        // 게이지가 그림에 박힌 글자 위로 넘어간다. 기준 폭은 layout.css 가 갖는다.
+        const clamped = Math.max(0, Math.min(1, view.timeRatio))
+        timer.style.setProperty('--hud-timer-ratio', clamped.toFixed(4))
       }
-      time.classList.toggle('hud__time--urgent', view.timeUrgent)
+      timer.classList.toggle('hud__timer--urgent', view.timeUrgent)
 
       // 문구가 없으면 빈 자리로 둔다. 임시 문구를 채우지 않는다 (DEC-RUN-011)
       raidNotice.textContent = view.raidNoticeLabel ?? ''
@@ -179,7 +282,6 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
         // 편성은 유지한 채 사용 불가로만 구분한다 (DEC-RESOURCE-015)
         node.root.classList.toggle('hud__slot--empty', slot.name !== null && slot.count === 0)
         // 소진 자동 전환으로 방금 선택된 칸을 짧게 강조한다 (DEC-UI-002).
-        // 이름이 이미 칸 안에 있으므로 칸을 강조하는 것이 곧 이름 강조다.
         node.root.classList.toggle('hud__slot--switched', i === view.autoSwitchedIndex)
         if (slot.name !== null && slot.count > 0) anyUsable = true
       })
@@ -187,14 +289,22 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       // 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화하고 안내를 띄운다 (DEC-UI-002)
       quickslots.classList.toggle('hud__quickslots--exhausted', !anyUsable)
       if (anyUsable) noThrowable.remove()
-      else if (!noThrowable.isConnected) bottom.insertBefore(noThrowable, recovery)
+      else if (!noThrowable.isConnected) notices.appendChild(noThrowable)
 
       // 무기 없이 좌클릭했을 때의 짧은 안내 (DEC-UI-002)
       if (view.emptyFireNotice === null) {
         emptyFire.remove()
       } else {
         emptyFire.textContent = view.emptyFireNotice
-        if (!emptyFire.isConnected) bottom.insertBefore(emptyFire, recovery)
+        if (!emptyFire.isConnected) notices.appendChild(emptyFire)
+      }
+
+      // 습격 진입 시 지원 주민 안내 (DEC-UI-012)
+      if (view.allySupportNotice === null) {
+        allyNotice.remove()
+      } else {
+        allyNotice.textContent = view.allySupportNotice
+        if (!allyNotice.isConnected) notices.appendChild(allyNotice)
       }
 
       // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다

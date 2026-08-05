@@ -32,6 +32,17 @@ export type FlowInput =
   | { type: 'encounter_finished' }
   /** 체력 0. 어느 단계에서든 즉시 런 실패다 (DEC-RUN-008) */
   | { type: 'player_died' }
+  /**
+   * 일시정지에서 타이틀로 돌아간다 (DEC-UI-027).
+   *
+   * 확정문이 *"타이틀로 돌아가면 현재 런이 사라지므로 확인 절차를 둔다"* 로
+   * 정했다. 일시정지는 어느 단계에서든 열리므로 이것도 단계를 가리지 않는다.
+   * `player_died` 와 같은 자리에서 처리한다.
+   *
+   * **런을 처음부터 다시 시작하는 입력은 만들지 않는다.** 같은 확정문이 명시로
+   * 금지했다 — 타이틀로 돌아간 뒤 새 런을 시작하는 것이 유일한 경로다.
+   */
+  | { type: 'abandon_run' }
 
 /**
  * 흐름 판단에 필요한 승인 데이터.
@@ -64,6 +75,12 @@ export function advance(step: FlowStep, input: FlowInput, ctx: FlowContext): Flo
   // (DEC-RUN-008, DEC-UI-014)
   if (input.type === 'player_died') {
     return { at: 'run_failed' }
+  }
+
+  // 타이틀 복귀도 단계를 가리지 않는다 (DEC-UI-027). 확인 절차는 화면이 이미
+  // 거쳤으므로 여기서 다시 묻지 않는다 — 흐름은 무엇을 확인했는지 모른다.
+  if (input.type === 'abandon_run') {
+    return { at: 'title' }
   }
 
   switch (step.at) {

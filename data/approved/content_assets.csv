@@ -1,0 +1,10 @@
+content_id,asset_role,asset_id
+map.prototype_field,background,asset.background.prototype_field
+map.prototype_field,farm_plot,asset.farm_plot.empty
+map.prototype_field,crop_seed,asset.crop_seed.common
+crop.chili,crop_growing,asset.crop_growing.chili
+crop.chili,crop_ready,asset.crop_ready.chili
+crop.tomato,crop_growing,asset.crop_growing.tomato
+crop.tomato,crop_ready,asset.crop_ready.tomato
+crop.glutinous_rice,crop_growing,asset.crop_growing.glutinous_rice
+crop.glutinous_rice,crop_ready,asset.crop_ready.glutinous_rice

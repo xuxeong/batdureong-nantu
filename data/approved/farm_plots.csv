@@ -1,7 +1,7 @@
 map_id,plot_id,x,y
-map.prototype_field,plot_01,660,480
-map.prototype_field,plot_02,800,480
-map.prototype_field,plot_03,940,480
-map.prototype_field,plot_04,660,600
-map.prototype_field,plot_05,800,600
-map.prototype_field,plot_06,940,600
+map.prototype_field,plot_01,600,435
+map.prototype_field,plot_02,800,435
+map.prototype_field,plot_03,1000,435
+map.prototype_field,plot_04,600,615
+map.prototype_field,plot_05,800,615
+map.prototype_field,plot_06,1000,615

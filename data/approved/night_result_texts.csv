@@ -1,2 +1,2 @@
 id,kind,content_status,content_version,display_name,design_intent,text
-night_result_text.quiet_night,night_result_text,approved,1,조용한 밤 결과,습격이 없던 날의 고정 문구. 여럿 중 무엇을 고를지가 DEC-CONTENT-018 보류라 코드가 고를 근거가 없어 한 행만 둔다. 그날의 기록을 넣지 않으므로 어느 날에 나와도 어색하지 않아야 한다.,아무 일도 없는 밤이었다. 밭은 그대로였고 아침이 왔다.
+night_result_text.quiet_night,night_result_text,approved,1,조용한 밤 결과,습격이 없던 날의 고정 문구. DEC-CONTENT-018 이 승인 문구 중 무작위 선택으로 확정돼 행을 늘릴 수 있고 한 행이면 그 행이 항상 뽑힌다. 그날의 기록을 넣지 않으므로 어느 날에 나와도 어색하지 않아야 한다.,아무 일도 없는 밤이었다. 밭은 그대로였고 아침이 왔다.

@@ -1,10 +1,26 @@
-// 필드 렌더 (플레이스홀더).
+// 필드 렌더 (A1 에셋 + 플레이스홀더 혼재).
 //
-// 실제 아트가 없으므로 사각형과 선으로만 그린다 (AGENTS.md 6절).
-// 스프라이트가 붙을 때는 여기서 논리 에셋 ID로 조회하며, 실제 파일 경로를 코드에 두지 않는다.
+// 스프라이트는 논리 에셋 ID 로 조회한다. **실제 파일 경로가 여기 없다** —
+// 경로를 아는 곳은 `render/assets.ts` 하나다 (AGENTS.md 6절).
+// 아직 그림이 없는 것(플레이어·야생동물·주민·투사체)은 계속 도형으로 그린다.
+//
+// ── 그리는 순서 세 층 (아트 디렉션 12.2 A1) ────────────────
+//
+//   1. 배경 한 장            밭 바닥 + 밭 바깥 숲(뒤 겹)이 한 장이다
+//   2. 필드 내용물           경작지·작물·플레이어·야생동물·주민·투사체
+//   3. field_frame_front     밭 안쪽 가장자리에 걸치는 잎사귀(앞 겹)
+//
+// 3층이 야생동물보다 **위**인 것이 핵심이다. 동물이 그 밑에서 걸어 나오는 것처럼
+// 보이게 하는 것이 목적이라, 아래로 내리면 앞 겹을 만든 이유가 없어진다.
+//
+// **배경과 앞 겹은 월드 좌표가 아니라 화면 중앙 기준이다.** 둘 다 1920×1080 인데
+// 월드는 1600×900 이라 크기가 다르다 — 배경이 밭 바깥까지 포함하기 때문이다.
+// 카메라가 월드보다 큰 뷰포트에서 월드를 가운데 두므로 화면 중앙 = 월드 중앙이고,
+// 그래서 두 장을 무대 정중앙에 놓으면 밭이 정확히 맞는다.
 //
 // 좌표 변환은 전부 camera.ts 를 거친다. 여기서 직접 곱하지 않는다.
 
+import { UI_ASSET, type AssetImages } from './assets.ts'
 import { WORLD_TO_PIXEL } from './camera.ts'
 import type { Camera, Vec2 } from './camera.ts'
 
@@ -41,6 +57,29 @@ export interface PlotView {
    * 시스템이 전환을 한 번 알리고 렌더가 그 여운을 짧게 재생한다.
    */
   readyFlash: number
+
+  /**
+   * 이 칸 위에 그릴 작물의 논리 에셋 ID. 빈 칸이거나 그림이 없으면 null.
+   *
+   * **단계에 맞는 역할을 고르는 것은 부르는 쪽이다.** 씨앗은 맵의 `crop_seed`
+   * 한 장이고(작물별로 두지 않는다 — `DEC-ART-001`) 성장·수확 가능은 작물 행의
+   * `crop_growing`·`crop_ready` 다. 렌더가 그 규칙을 알면 데이터 구조가 두 곳에 생긴다.
+   */
+  cropAssetId?: string | null
+}
+
+/**
+ * 필드가 쓰는 논리 에셋 ID 묶음.
+ *
+ * 콘텐츠 쪽(`maps`·`crops` 의 `assets`)에서 오는 것만 여기 있다. UI·시스템 에셋은
+ * 어떤 콘텐츠에도 속하지 않아 `schema/enums.json` 고정 목록에서 오고 `assets.ts` 의
+ * `UI_ASSET` 이 그 자리다 (`DEC-ART-001`).
+ */
+export interface FieldAssetIds {
+  /** 밭 바닥 + 밭 바깥 숲이 한 장 (map 의 background) */
+  background?: string | null
+  /** 빈 경작지 (map 의 farm_plot) */
+  farmPlot?: string | null
 }
 
 /** 수확 시 획득 수량을 그 자리에 짧게 띄운 것 (DEC-UI-018) */
@@ -53,12 +92,12 @@ export interface HarvestPopupView {
 }
 
 /**
- * 경작지 한 변의 절반(월드 단위).
+ * 경작지 한 변의 절반(월드 단위) — **스프라이트가 없을 때만 쓴다.**
  *
- * `farm_plots.csv` 에는 좌표만 있고 크기가 없다. 크기는 콘텐츠 값이 아니라
- * 플레이스홀더 아트의 표현이므로 여기 둔다 (개발 로드맵 2절).
- * 승인된 경작지 간격이 x 140 · y 120 이라 45면 칸 사이가 붙지 않는다.
- * 실제 스프라이트가 오면 `DEC-ART-001` 규격을 따른다.
+ * `farm_plots.csv` 에는 좌표만 있고 크기가 없다. 크기는 콘텐츠 값이 아니라 표현이라
+ * 여기 둔다 (개발 로드맵 2절). 실제 스프라이트가 있으면 그림의 자연 크기를 쓴다 —
+ * `DEC-ART-001` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다.**
+ * 여기서 다시 배율을 곱하면 아트가 정한 크기를 코드가 뒤집는 것이 된다.
  */
 const PLOT_HALF_SIZE = 45
 
@@ -76,6 +115,8 @@ export interface FieldView {
   harvestPopups?: readonly HarvestPopupView[]
   /** 필드 위 적대 개체 (야생동물·적대 주민) */
   hostiles?: readonly HostileView[]
+  /** 지원하는 영입 주민. 습격 전투에 한 명뿐이고 없으면 null (DEC-RESIDENT-021) */
+  ally?: AllyView | null
   /** 날아가는 투사체 */
   projectiles?: readonly ProjectileView[]
   /**
@@ -96,6 +137,9 @@ export interface FieldView {
    * 남았나" 다. 진행 중이 아니면 null 이고 아무것도 그리지 않는다.
    */
   recovery?: { progress: number } | null
+
+  /** 승인 데이터에서 온 논리 에셋 ID. 없으면 전부 플레이스홀더로 그린다 */
+  assets?: FieldAssetIds
 }
 
 /**
@@ -126,6 +170,24 @@ export interface ProjectileView {
   hostile: boolean
 }
 
+/**
+ * 지원하는 영입 주민 (DEC-UI-012).
+ *
+ * **체력을 두지 않는다.** 확정문이 "지원 주민에게 체력 표시를 두지 않는다"로
+ * 정했고 애초에 체력이라는 상태가 없다 (DEC-RESIDENT-021). `HostileView` 와
+ * 한 타입으로 합치지 않는 이유가 이것이다 — 합치면 체력 필드를 0이나 1로
+ * 채워야 하고, 그 값이 언젠가 화면에 나온다.
+ *
+ * **다음 공격까지 남은 시간도 없다.** 같은 확정문이 금지했다. `attackFlash` 는
+ * 이미 일어난 공격의 여운이지 예고가 아니다.
+ */
+export interface AllyView {
+  x: number
+  y: number
+  /** 공격이 방금 일어났다는 표시가 남은 정도 1~0 */
+  attackFlash: number
+}
+
 export interface FieldRenderer {
   /** 캔버스를 컨테이너 크기에 맞춘다. devicePixelRatio 를 반영한다 */
   resize(): void
@@ -147,7 +209,11 @@ export interface FieldRenderer {
 /** 필드 바탕색. `draw()` 와 `clear()` 가 같은 값을 써야 전환할 때 색이 튀지 않는다 */
 const BACKDROP = '#1d2b1a'
 
-export function createFieldRenderer(container: HTMLElement, camera: Camera): FieldRenderer {
+export function createFieldRenderer(
+  container: HTMLElement,
+  camera: Camera,
+  images: AssetImages,
+): FieldRenderer {
   const canvas = document.createElement('canvas')
   canvas.style.display = 'block'
   canvas.style.width = '100%'
@@ -212,29 +278,58 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.fillRect(0, 0, width, height)
   }
 
+  /**
+   * 무대 정중앙에 원래 크기로 그린다. 배경과 앞 겹 두 장이 쓴다.
+   *
+   * 카메라를 거치지 않는다 — 둘은 월드에 놓인 물건이 아니라 화면을 덮는 판이고,
+   * 크기도 월드(1600×900)가 아니라 화면(1920×1080)에 맞춰 그려져 있다.
+   */
+  function drawScreenLayer(assetId: string | null | undefined): boolean {
+    const image = images.get(assetId)
+    if (image === null) return false
+
+    ctx.drawImage(
+      image,
+      (stageWidth - image.naturalWidth) / 2,
+      (stageHeight - image.naturalHeight) / 2,
+    )
+    return true
+  }
+
+  /** 월드 좌표를 중심으로 원래 크기로 그린다. 경작지·작물·강조 틀이 쓴다 */
+  function drawWorldSprite(assetId: string | null | undefined, at: Vec2): boolean {
+    const image = images.get(assetId)
+    if (image === null) return false
+
+    const center = camera.worldToScreen(at)
+    ctx.drawImage(
+      image,
+      center.x - image.naturalWidth / 2,
+      center.y - image.naturalHeight / 2,
+    )
+    return true
+  }
+
   function draw(view: FieldView): void {
     const width = stageWidth
     const height = stageHeight
 
     ctx.clearRect(0, 0, width, height)
-    ctx.fillStyle = BACKDROP
-    ctx.fillRect(0, 0, width, height)
 
     camera.follow(view.player)
 
-    // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
-    for (const plot of view.plots ?? []) drawPlot(plot)
-
-    // 수확 획득 표시 — 사라지면서 위로 떠오른다 (DEC-UI-018)
-    for (const popup of view.harvestPopups ?? []) {
-      const at = camera.worldToScreen(popup)
-      ctx.font = 'bold 16px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = `rgba(242, 227, 74, ${popup.life.toFixed(3)})`
-      ctx.fillText(popup.text, at.x, at.y - PLOT_HALF_SIZE * WORLD_TO_PIXEL - 24 - (1 - popup.life) * 20)
-      ctx.textAlign = 'start'
+    // ── 1층: 배경 (밭 바닥 + 밭 바깥 숲이 한 장) ────
+    // 그림이 아직 없으면 바탕색으로 대신한다. 안 칠하면 이전 프레임이 잔상으로 남는다.
+    if (!drawScreenLayer(view.assets?.background)) {
+      ctx.fillStyle = BACKDROP
+      ctx.fillRect(0, 0, width, height)
     }
 
+    // ── 2층: 필드 내용물 ─────────────────────────────
+    // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
+    for (const plot of view.plots ?? []) drawPlot(plot, view.assets)
+
+    if (view.ally !== null && view.ally !== undefined) drawAlly(view.ally)
     for (const hostile of view.hostiles ?? []) drawHostile(hostile)
     for (const projectile of view.projectiles ?? []) drawProjectile(projectile)
 
@@ -259,6 +354,36 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
         -Math.PI / 2 + Math.PI * 2 * view.devSickleCooldown,
       )
       ctx.stroke()
+    }
+
+    // ── 3층: 수풀 앞 겹 ──────────────────────────────
+    //
+    // **야생동물·주민·플레이어보다 위다.** 동물이 그 밑에서 걸어 나오는 것처럼
+    // 보이게 하는 것이 이 겹의 목적이라(아트 디렉션 12.2 A1) 순서를 내리면
+    // 앞 겹을 따로 만든 이유가 사라진다.
+    //
+    // 승인된 출현점 여덟 개가 전부 밭 가장자리에서 80px 안쪽이라 잎사귀 선에
+    // 놓인다 — 출현 연출을 따로 만들지 않아도 생긴다. 그림이 성글어서 플레이어
+    // 실루엣이 비치는 것도 의도다 (아트 디렉션 3절 판독 우선).
+    drawScreenLayer(UI_ASSET.fieldFrameFront)
+
+    // ── 앞 겹 위: 지금 무엇을 할 수 있는지 알리는 표시 ──
+    //
+    // 잎사귀에 가리면 안 되는 것들이다. 밭 가장자리에 선 플레이어의 회복 게이지가
+    // 잎 뒤로 들어가면 취소되기 전까지 아무것도 못 읽는다.
+
+    // 수확 획득 표시 — 사라지면서 위로 떠오른다 (DEC-UI-018)
+    for (const popup of view.harvestPopups ?? []) {
+      const at = camera.worldToScreen(popup)
+      ctx.font = 'bold 16px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = `rgba(242, 227, 74, ${popup.life.toFixed(3)})`
+      ctx.fillText(
+        popup.text,
+        at.x,
+        at.y - PLOT_HALF_SIZE * WORLD_TO_PIXEL - 24 - (1 - popup.life) * 20,
+      )
+      ctx.textAlign = 'start'
     }
 
     // 회복 사용 게이지와 취소 힌트 (DEC-UI-017).
@@ -348,6 +473,55 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth * hostile.healthRatio, 4)
   }
 
+  /**
+   * 지원하는 영입 주민 — 플레이스holder (`field_sprite` 가 아직 없다).
+   *
+   * **적대 주민과 시각적으로 구분한다** (DEC-UI-012). 적대는 붉은 계열 원이므로
+   * 여기는 밝은 테두리를 쓴다 — 아트 디렉션 4.3 이 *"지원 주민은 밝은 테두리로
+   * 구분한다"* 로 정했고, 4.2 가 적대 표시에 붉은색을 쓰지 못하게 해서 색만으로는
+   * 갈리지 않는다.
+   *
+   * 체력 막대도, 다음 공격까지 남은 시간도 그리지 않는다 (DEC-UI-012).
+   */
+  function drawAlly(ally: AllyView): void {
+    const at = camera.worldToScreen(ally)
+    const radius = 16 * WORLD_TO_PIXEL
+
+    // 공격이 발생하는 순간을 알 수 있게 표시한다 (DEC-UI-012).
+    //
+    // **두 가지로 표시한다.** 링 하나만 두었더니 페이드아웃 때문에 선명한 구간이
+    // 0.1초 남짓이라 보고 있어도 놓쳤다 (8/6). 몸통이 같이 밝아지면 링을 놓쳐도
+    // "방금 무슨 일이 있었다" 가 남는다.
+    //
+    // 예고가 아니라 이미 일어난 것의 여운이다 — 다음 공격까지 남은 시간을
+    // 표시하는 것은 같은 확정문이 금지했다.
+    const flash = ally.attackFlash
+
+    ctx.fillStyle = flash > 0 ? '#9fc0cf' : '#5f7a8a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    // 지원 주민은 밝은 테두리로 구분한다 (아트 디렉션 4.3). 적대 표시에 붉은색을
+    // 쓸 수 없어(4.2) 색만으로는 갈리지 않으므로 테두리가 구분의 본체다.
+    ctx.strokeStyle = '#f4ecd0'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.stroke()
+
+    if (flash > 0) {
+      // 알파를 선형으로 떨어뜨리지 않는다. 후반이 눈에 안 들어와서 표시 시간을
+      // 늘려도 체감이 거의 안 늘었다. 제곱근을 쓰면 오래 밝게 남다가 끝에서 진다.
+      const alpha = Math.sqrt(flash)
+      ctx.strokeStyle = `rgba(244, 236, 208, ${alpha.toFixed(3)})`
+      ctx.lineWidth = 5
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius + 8 + (1 - flash) * 14, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+  }
+
   function drawProjectile(projectile: ProjectileView): void {
     const at = camera.worldToScreen(projectile)
     ctx.fillStyle = projectile.hostile ? '#d4622f' : '#cfe07a'
@@ -357,41 +531,74 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
   }
 
   /**
-   * 경작지와 작물 — 전부 플레이스홀더다 (AGENTS.md 6절).
-   * 3단계를 색과 크기로만 구분한다. 실제 스프라이트는 논리 에셋 ID로 교체한다.
+   * 경작지와 작물.
+   *
+   * 스프라이트가 있으면 그것을 원래 크기로 그리고, 없으면 도형으로 대신한다.
+   * `DEC-ART-001` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다** —
+   * 여기서 배율을 다시 곱하면 아트가 정한 크기를 코드가 뒤집는 것이 된다.
+   *
+   * 겹치는지는 승인 좌표가 정한다. 8/5 승인분이 간격 200×180 이고 스프라이트가
+   * 175×160 이라 칸 사이에 틈이 남는다. 좌표가 바뀌면 여기 손대지 않아도 따라간다.
    */
-  function drawPlot(plot: PlotView): void {
+  function drawPlot(plot: PlotView, assets: FieldAssetIds | undefined): void {
     const center = camera.worldToScreen(plot)
-    const half = PLOT_HALF_SIZE * WORLD_TO_PIXEL
 
-    // 흙 바닥
-    ctx.fillStyle = plot.stage === 'empty' ? '#3b2f22' : '#4a3a26'
-    ctx.fillRect(center.x - half, center.y - half, half * 2, half * 2)
-    ctx.strokeStyle = plot.highlighted ? '#f4ecd0' : 'rgba(0, 0, 0, 0.45)'
-    ctx.lineWidth = plot.highlighted ? 2 : 1
-    ctx.strokeRect(center.x - half, center.y - half, half * 2, half * 2)
+    // 흙 바닥 — 스프라이트가 있으면 그것이 네 상태 공통 바닥이다.
+    //
+    // 가로·세로를 따로 잡는다. 스프라이트가 175×160 이라 한쪽만 쓰면 짧은 축에서
+    // 8px 씩 밖으로 나가고, 그 8px 가 표식·라벨을 윗칸 위로 밀어 올린다.
+    const ground = images.get(assets?.farmPlot)
+    const halfW = ground === null ? PLOT_HALF_SIZE * WORLD_TO_PIXEL : ground.naturalWidth / 2
+    const halfH = ground === null ? PLOT_HALF_SIZE * WORLD_TO_PIXEL : ground.naturalHeight / 2
 
-    // 야생동물이 먹는 중이면 진행 상태를 이 칸에 그린다 (DEC-UI-018).
-    // 목표를 가리키는 선이나 화살표는 그리지 않는다 — 같은 DEC 가 금지한다.
-    if (plot.eatingProgress !== null) {
-      ctx.fillStyle = 'rgba(212, 98, 47, 0.35)'
-      ctx.fillRect(center.x - half, center.y - half, half * 2, half * 2)
+    if (ground === null) {
+      ctx.fillStyle = plot.stage === 'empty' ? '#3b2f22' : '#4a3a26'
+      ctx.fillRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)'
+      ctx.lineWidth = 1
+      ctx.strokeRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
+    } else {
+      drawWorldSprite(assets?.farmPlot, plot)
+    }
 
-      ctx.fillStyle = '#2a1c16'
-      ctx.fillRect(center.x - half, center.y + half - 8, half * 2, 6)
-      ctx.fillStyle = '#d4622f'
-      ctx.fillRect(center.x - half, center.y + half - 8, half * 2 * plot.eatingProgress, 6)
+    // `E` 대상 강조 (DEC-UI-018). 강조 틀 그림이 없으면 테두리로 대신한다.
+    if (plot.highlighted && !drawWorldSprite(UI_ASSET.plotHighlight, plot)) {
+      ctx.strokeStyle = '#f4ecd0'
+      ctx.lineWidth = 2
+      ctx.strokeRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
     }
 
     if (plot.stage === 'empty') return
 
-    // 작물 — 단계가 오를수록 커지고 밝아진다
-    const sizeByStage = { seed: 0.25, growing: 0.55, ready: 0.85 } as const
-    const colorByStage = { seed: '#6b6152', growing: '#5f8a3a', ready: '#c8d94a' } as const
-    const size = half * sizeByStage[plot.stage]
+    // 작물 — 스프라이트가 있으면 단계별 그림, 없으면 커지고 밝아지는 사각형.
+    //
+    // 어느 그림을 쓸지는 부르는 쪽이 이미 골라 넘겼다 (PlotView.cropAssetId).
+    // 씨앗은 작물별로 두지 않고 맵에 한 장이라(DEC-ART-001) 여기서 작물 ID 로
+    // 되찾을 수 없다 — 그 규칙이 렌더에 있으면 데이터 구조가 두 곳에 생긴다.
+    if (!drawWorldSprite(plot.cropAssetId, plot)) {
+      const sizeByStage = { seed: 0.25, growing: 0.55, ready: 0.85 } as const
+      const colorByStage = { seed: '#6b6152', growing: '#5f8a3a', ready: '#c8d94a' } as const
+      const size = Math.min(halfW, halfH) * sizeByStage[plot.stage]
 
-    ctx.fillStyle = colorByStage[plot.stage]
-    ctx.fillRect(center.x - size, center.y - size, size * 2, size * 2)
+      ctx.fillStyle = colorByStage[plot.stage]
+      ctx.fillRect(center.x - size, center.y - size, size * 2, size * 2)
+    }
+
+    // 야생동물이 먹는 중이면 진행 상태를 이 칸에 그린다 (DEC-UI-018).
+    // 목표를 가리키는 선이나 화살표는 그리지 않는다 — 같은 DEC 가 금지한다.
+    //
+    // **작물보다 뒤에 그린다.** 스프라이트가 칸을 거의 다 덮어서 작물 밑에 두면
+    // 가장자리만 물들고 무슨 일이 일어나는지 안 보인다. 도형 플레이스홀더일 때는
+    // 작물이 작아서 티가 안 났다.
+    if (plot.eatingProgress !== null) {
+      ctx.fillStyle = 'rgba(212, 98, 47, 0.35)'
+      ctx.fillRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
+
+      ctx.fillStyle = '#2a1c16'
+      ctx.fillRect(center.x - halfW, center.y + halfH - 8, halfW * 2, 6)
+      ctx.fillStyle = '#d4622f'
+      ctx.fillRect(center.x - halfW, center.y + halfH - 8, halfW * 2 * plot.eatingProgress, 6)
+    }
 
     // 수확 가능 상태가 유지되는 동안 표식을 계속 표시한다 (DEC-UI-004).
     // 효과음이 없어도 이것만으로 수확 가능 여부를 판단할 수 있어야 한다.
@@ -399,33 +606,44 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
       ctx.strokeStyle = '#f2e34a'
       ctx.lineWidth = 3
       ctx.beginPath()
-      ctx.arc(center.x, center.y - half - 10, 5, 0, Math.PI * 2)
+      ctx.arc(center.x, center.y - halfH + 12, 5, 0, Math.PI * 2)
       ctx.stroke()
 
       // 전환 순간의 1회 강조. 반복하지 않는다 (DEC-UI-004).
       if (plot.readyFlash > 0) {
-        const spread = half * (1 + (1 - plot.readyFlash) * 0.6)
+        const grow = 1 + (1 - plot.readyFlash) * 0.6
         ctx.strokeStyle = `rgba(242, 227, 74, ${plot.readyFlash.toFixed(3)})`
         ctx.lineWidth = 4
-        ctx.strokeRect(center.x - spread, center.y - spread, spread * 2, spread * 2)
+        ctx.strokeRect(
+          center.x - halfW * grow,
+          center.y - halfH * grow,
+          halfW * grow * 2,
+          halfH * grow * 2,
+        )
       }
     }
 
     // 성장 중인 단계만 진행도 막대를 둔다. 수확 가능은 제한시간이 없다.
     if (plot.stage !== 'ready') {
-      const barWidth = half * 1.6
+      const barWidth = halfW * 1.4
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-      ctx.fillRect(center.x - barWidth / 2, center.y + half - 6, barWidth, 4)
+      ctx.fillRect(center.x - barWidth / 2, center.y + halfH - 14, barWidth, 4)
       ctx.fillStyle = '#c8d94a'
-      ctx.fillRect(center.x - barWidth / 2, center.y + half - 6, barWidth * plot.progress, 4)
+      ctx.fillRect(center.x - barWidth / 2, center.y + halfH - 14, barWidth * plot.progress, 4)
     }
 
-    // 성장 단계부터 종류를 공개한다 (DEC-FARM-001)
+    // 성장 단계부터 종류를 공개한다 (DEC-FARM-001).
+    //
+    // **칸 안쪽 위에 그린다.** 칸 밖에 두면 승인 좌표의 세로 간격(180)과 스프라이트
+    // 높이(160)의 차이가 20px 뿐이라, 아랫줄의 라벨이 윗줄 칸에 닿는다.
+    // 흙 위에 밝은 글씨라 배경이 밝은 작물에서 묻히므로 그림자를 깐다.
     if (plot.cropLabel !== null) {
-      ctx.font = '12px sans-serif'
+      ctx.font = 'bold 13px sans-serif'
       ctx.textAlign = 'center'
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
+      ctx.fillText(plot.cropLabel, center.x + 1, center.y - halfH + 27)
       ctx.fillStyle = '#f4ecd0'
-      ctx.fillText(plot.cropLabel, center.x, center.y - half - 4)
+      ctx.fillText(plot.cropLabel, center.x, center.y - halfH + 26)
       ctx.textAlign = 'start'
     }
   }

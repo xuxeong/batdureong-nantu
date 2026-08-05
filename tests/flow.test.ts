@@ -146,3 +146,41 @@ test('승인 데이터가 없으면 일차로 진입하는 순간 오류로 보�
   const result = advance({ at: 'tutorial' }, confirm, empty)
   assert.ok(isFlowError(result))
 })
+
+// ── 일시정지에서 타이틀로 (DEC-UI-027) ───────────────────────
+//
+// "타이틀로 돌아가면 현재 런이 사라지므로 확인 절차를 둔다" 는 화면 몫이고,
+// 흐름이 지켜야 하는 것은 **어느 단계에서든 타이틀로 간다** 는 것뿐이다.
+// 단계별로 분기하면 새 단계가 생길 때마다 한 곳을 빠뜨린다.
+
+test('타이틀 복귀는 어느 단계에서든 받는다', () => {
+  const ctx = contextOf(['none', 'raid', 'final_raid'])
+  const abandon: FlowInput = { type: 'abandon_run' }
+
+  const steps: FlowStep[] = [
+    { at: 'tutorial' },
+    { at: 'day_start', day: 2 },
+    { at: 'farming', day: 2 },
+    { at: 'maintenance', day: 2 },
+    { at: 'raid', day: 2 },
+    { at: 'encounter_result', day: 2 },
+    { at: 'night_result', day: 1 },
+    { at: 'ending' },
+    { at: 'run_failed' },
+  ]
+
+  for (const step of steps) {
+    const result = advance(step, abandon, ctx)
+    assert.ok(!isFlowError(result), `${step.at} 에서 타이틀 복귀가 막혔다`)
+    assert.equal(result.at, 'title')
+  }
+})
+
+test('런 실패가 타이틀 복귀보다 앞선다', () => {
+  // 체력 0과 타이틀 복귀가 같은 프레임에 오는 경우는 없지만, 순서를 바꾸면
+  // 죽은 런이 타이틀로 조용히 사라져 런 실패 화면을 건너뛴다 (DEC-RUN-008).
+  const ctx = contextOf(['none'])
+  const died = advance({ at: 'farming', day: 1 }, { type: 'player_died' }, ctx)
+  assert.ok(!isFlowError(died))
+  assert.equal(died.at, 'run_failed')
+})

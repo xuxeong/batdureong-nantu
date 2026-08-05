@@ -29,6 +29,7 @@ import type { ActiveEffect, WildlifeInstance } from '../state/types.ts'
 import type { PlotState } from './farming.ts'
 import { DataMissingError } from '../data/run-config.ts'
 import { effectiveMoveSpeed } from './combat.ts'
+import { clampToWorld } from './world-bounds.ts'
 
 /** 개체 하나의 런 상태. 콘텐츠 CSV 에 저장하지 않는다 (DEC-CONTENT-007) */
 export interface WildlifeRuntime {
@@ -149,6 +150,8 @@ export function createWildlife(options: WildlifeOptions): WildlifeSystem {
     const step = Math.min(speedOf(runtime) * deltaSeconds, distance)
     runtime.entity.x += (dx / distance) * step
     runtime.entity.y += (dy / distance) * step
+    // 이동 위치는 맵 경계 안으로 제한한다 (DEC-CONTENT-016)
+    clampToWorld(runtime.entity, { width: map.world_width, height: map.world_height })
     return distance - step
   }
 

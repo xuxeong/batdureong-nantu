@@ -94,6 +94,21 @@ export interface CombatSystem {
 
   setTargets(targets: readonly CombatTarget[]): void
 
+  /**
+   * 영입 주민의 지원 공격 피해 (DEC-RESIDENT-021).
+   *
+   * 플레이어 무기가 아닌데 이 시스템을 거치는 이유는 **투항 발동이 여기 있기
+   * 때문**이다. 확정문이 *"지원 공격으로 적대 주민이 투항 체력 기준에 도달하면
+   * 정상적으로 투항 대화를 시작한다"* 로 정했는데, 별도 경로로 체력을 깎으면
+   * 지원 공격만 투항을 발동시키지 못한다.
+   *
+   * **처치할 수 없다.** 같은 확정문이 *"지원 공격은 적대 주민의 체력을 0으로
+   * 만들 수 없다"* 로 정했다. 남은 체력이 피해보다 적으면 1을 남긴다.
+   *
+   * 대상이 없거나 이미 체력이 1이면 아무 일도 없고 빈 배열이다.
+   */
+  applySupportDamage(targetId: string, amount: number): CombatEvent[]
+
   /** 우클릭 (DEC-INPUT-004) */
   swingSickle(origin: Vec2, aimAngle: number): SickleResult
 
@@ -319,6 +334,26 @@ export function createCombat(options: CombatOptions): CombatSystem {
 
     setTargets(next) {
       targets = [...next]
+    },
+
+    applySupportDamage(targetId, amount) {
+      const target = targets.find((t) => t.entity.instanceId === targetId)
+      if (target === undefined) return []
+
+      // 체력을 0으로 만들 수 없다 (DEC-RESIDENT-021). 피해를 남은 체력보다
+      // 작게 깎아 `applyDamage()` 가 `killed` 를 돌려줄 수 없게 한다 —
+      // 여기서 결과를 보고 되돌리면 이미 효과가 지워진 뒤다.
+      const allowed = Math.min(amount, target.entity.health - 1)
+      if (allowed <= 0) return []
+
+      const outcome = applyDamage(target, allowed)
+      const events: CombatEvent[] = [
+        { type: 'damaged', targetId: target.entity.instanceId },
+      ]
+      if (outcome === 'surrender_offered') {
+        events.push({ type: 'surrenderOffered', targetId: target.entity.instanceId })
+      }
+      return events
     },
 
     swingSickle(origin, aimAngle) {

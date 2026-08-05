@@ -50,7 +50,7 @@ export type Kind =
   | 'night_result_text'
   | 'fear_increment'
   // `schema/enums.json` 의 고정 목록에는 8/4부터 있었는데 여기만 빠져 있었다
-  // (김민주 발견, 8/5). 튜토리얼 구현이 이 값을 읽는다 (DEC-CONTENT-023).
+  // (김민주 발견, 8/5). 튜토리얼 구현이 이 값을 읽는다 (DEC-CONTENT-025).
   | 'tutorial_step'
 
 /** DEC-CONTENT-013 — 작물 속성이 전투에서 일으키는 효과 */
@@ -170,6 +170,55 @@ export type ImportantActionSubject =
 /** DEC-JOURNAL-003 — 일지 폴백을 고르는 공포도 변화 방향 */
 export type JournalChangeDirection = 'up' | 'same' | 'down'
 
+/** DEC-CONTENT-025 — 튜토리얼 안내가 붙는 단계 */
+export type TutorialStage = 'farming' | 'combat' | 'maintenance'
+
+/**
+ * DEC-CONTENT-025 — 튜토리얼 안내를 넘기는 조작. **고정 일곱 개다.**
+ *
+ * 새 키가 필요하면 데이터 행 추가가 아니라 스키마·구현 변경으로 올린다.
+ * 코드가 이 키를 판정하므로 여기 없는 값이 CSV 에 오면 아무도 그 안내를 넘길 수 없다.
+ */
+export type TutorialCompletionKey =
+  | 'plant_crop'
+  | 'harvest_crop'
+  | 'use_sickle'
+  | 'use_throwable'
+  | 'sell_crop'
+  | 'buy_material'
+  | 'craft_item'
+
+/**
+ * DEC-ART-001 — 콘텐츠에 붙는 논리 에셋의 역할.
+ *
+ * `content_assets.csv` 의 `asset_role` 이자 논리 에셋 ID `asset.<구간>.<이름>` 의
+ * 구간이다. 둘은 같은 값을 쓴다. UI·시스템 에셋은 어떤 콘텐츠에도 속하지 않아
+ * 이 목록이 아니라 `schema/enums.json` 의 `ui_system_asset_id` 고정 목록으로 간다.
+ */
+export type AssetRole =
+  | 'field_sprite'
+  | 'farm_plot'
+  | 'crop_seed'
+  | 'crop_growing'
+  | 'crop_ready'
+  | 'icon'
+  | 'portrait'
+  | 'projectile'
+  | 'effect'
+  | 'background'
+  | 'cutscene'
+  | 'sfx'
+  | 'bgm'
+
+/**
+ * 콘텐츠 행에 중첩되는 논리 에셋 ID 묶음.
+ *
+ * **`content_assets.json` 은 만들어지지 않는다.** 연결 CSV 라 부모 행 안에
+ * `assets` 객체로 들어간다 (`maps.json`·`crops.json` 등). 붙은 역할만 키로 있으므로
+ * 전부 옵셔널이며, 없는 역할을 코드가 기본 경로로 메우지 않는다.
+ */
+export type ContentAssets = Partial<Record<AssetRole, string>>
+
 // ─────────────────────────────────────────────────────────────
 // 공통 콘텐츠 열 (schema/common_entry.json, DEC-CONTENT-001)
 // ─────────────────────────────────────────────────────────────
@@ -224,6 +273,15 @@ export interface WorldMap extends CommonEntry {
 
   points?: MapPoint[]
   farm_plots?: FarmPlot[]
+
+  /**
+   * 맵에 붙은 논리 에셋 (`background`·`farm_plot`·`crop_seed`).
+   *
+   * **씨앗은 작물이 아니라 맵에 하나만 있다.** `DEC-ART-001` 이 "씨앗은 종류를
+   * 공개하지 않으므로 작물별로 두지 않는다"로 확정해서, 네 작물이 전부 이 한 장을
+   * 가리킨다. `crops[].assets` 에는 `crop_growing`·`crop_ready` 둘뿐이다.
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -251,6 +309,13 @@ export interface Crop extends CommonEntry {
   raw_use_duration_seconds: number | null
   raw_move_speed_multiplier: number | null
   crop_attribute_id: string
+
+  /**
+   * 작물에 붙은 논리 에셋 (`crop_growing`·`crop_ready`).
+   *
+   * 씨앗 단계는 여기 없다 — 맵 쪽 `crop_seed` 한 장을 공용으로 쓴다 (DEC-ART-001).
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -666,6 +731,26 @@ export interface NightResultText extends CommonEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 튜토리얼 (DEC-CONTENT-025, DEC-UI-030, DEC-RUN-003)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 튜토리얼 안내 한 단계.
+ *
+ * `guide_text` 는 승인 데이터에서만 온다 — `DEC-UI-030` 가 안내 문구를 코드에
+ * 두는 것을 금지했다. `completion_key` 는 고정 일곱 개이며 코드가 판정한다.
+ * `step_order` 는 1부터 빈틈 없이 이어지고 세 단계가 모두 한 번은 나온다
+ * (스키마 규칙 `step_order_sequential`·`covers_all_stages`).
+ */
+export interface TutorialStep extends CommonEntry {
+  kind: 'tutorial_step'
+  step_order: number
+  stage: TutorialStage
+  completion_key: TutorialCompletionKey
+  guide_text: string
+}
+
+// ─────────────────────────────────────────────────────────────
 // 매니페스트와 전체 묶음
 // ─────────────────────────────────────────────────────────────
 
@@ -718,6 +803,7 @@ export interface RuntimeData {
   raid_notices?: RaidNotice[]
   night_result_texts?: NightResultText[]
   fear_increments?: FearIncrement[]
+  tutorial_steps?: TutorialStep[]
 }
 
 /** RuntimeData 에서 테이블 이름만 뽑은 것. 로더가 적재 대상을 순회할 때 쓴다 */

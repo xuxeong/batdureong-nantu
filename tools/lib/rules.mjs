@@ -1035,7 +1035,7 @@ export const RULES = {
           line: r.lineNumber,
           field: 'step_order',
           problem: `step_order ${order} 가 중복된다`,
-          basis: 'DEC-CONTENT-023 · 승인 행에서 1부터 연속되고 중복되지 않는다',
+          basis: 'DEC-CONTENT-025 · 승인 행에서 1부터 연속되고 중복되지 않는다',
           fix: '중복된 행의 step_order 를 다시 매긴다',
         })
       }
@@ -1048,7 +1048,7 @@ export const RULES = {
           file: 'tutorial_steps.csv',
           field: 'step_order',
           problem: `step_order ${want} 이 없다. 승인 행이 ${rows.length}개면 1부터 ${rows.length}까지 빠짐없이 있어야 한다`,
-          basis: 'DEC-CONTENT-023 · 승인 행에서 1부터 연속되고 중복되지 않는다',
+          basis: 'DEC-CONTENT-025 · 승인 행에서 1부터 연속되고 중복되지 않는다',
           fix: `step_order 가 ${want} 인 행을 승인하거나 뒤 번호를 당긴다`,
         })
       }
@@ -1064,9 +1064,51 @@ export const RULES = {
         report.block({
           file: 'tutorial_steps.csv',
           problem: `stage \`${stage}\` 의 승인 안내가 없다`,
-          basis: 'DEC-CONTENT-023 · 세 stage 마다 승인 행이 하나 이상 있어야 한다',
+          basis: 'DEC-CONTENT-025 · 세 stage 마다 승인 행이 하나 이상 있어야 한다',
           fix: `stage 가 \`${stage}\` 인 행을 하나 이상 승인한다`,
         })
+      }
+    }
+  },
+
+  /**
+   * 같은 stage 의 안내는 step_order 상 연속한다 (DEC-CONTENT-025).
+   *
+   * `covers_all_stages` 는 세 단계가 **있는지**만 본다. 순서가 흩어지는 것은 못 잡는데,
+   * 그러면 튜토리얼이 재배 → 정비 → 재배처럼 화면 사이를 오간다.
+   *
+   * 순서 자체(어느 stage 가 먼저인가)는 검사하지 않는다. `DEC-CONTENT-025` 가
+   * **stage 자체의 순서는 고정하지 않는다**로 정했다 — 순서를 정하는 것은 의존
+   * 관계이고 그건 레시피·가격이 바뀌면 같이 바뀐다. 그 조건(앞선 안내로만 얻어지는
+   * 것을 요구하지 않는다)은 자동 검사가 어려워 사람이 확인한다.
+   */
+  'tutorial_step.stages_contiguous'({ report, h }) {
+    const rows = h.approved('tutorial_steps.csv')
+    if (rows.length === 0) return
+
+    const ordered = [...rows].sort((a, b) => h.num(a, 'step_order') - h.num(b, 'step_order'))
+
+    /** 이미 끝난 stage. 다시 나오면 끊긴 것이다 */
+    const closed = new Set()
+    let previous = null
+
+    for (const r of ordered) {
+      const stage = h.val(r, 'stage')
+      if (!stage) continue
+
+      if (stage !== previous) {
+        if (closed.has(stage)) {
+          report.block({
+            file: 'tutorial_steps.csv',
+            line: r.lineNumber,
+            field: 'stage',
+            problem: `stage \`${stage}\` 가 끊겼다가 step_order ${h.num(r, 'step_order')} 에서 다시 나온다`,
+            basis: 'DEC-CONTENT-025 · 같은 stage 의 안내는 step_order 상 연속한다',
+            fix: `같은 stage 의 안내를 한 덩어리로 모으도록 step_order 를 다시 매긴다`,
+          })
+        }
+        if (previous !== null) closed.add(previous)
+        previous = stage
       }
     }
   },

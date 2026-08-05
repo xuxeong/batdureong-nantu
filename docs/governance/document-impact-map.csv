@@ -18,3 +18,5 @@ prefix,DEC-JOURNAL-*,2|3|12|14|16,5.12|6|17,connected,일지 노출 시점·입�
 exact,DEC-RESIDENT-048,12|14|15,5.12|6|11|17,connected,공포도 증가량 또는 원인 키 구성이 바뀔 때,공포도 증가량 — fear_increments.csv 신설로 CSV 목록·스키마에 걸린다
 exact,DEC-CONTENT-024,9|10|12|14,5.10|5.12|6|17,connected,전투 전 시작 대사의 사연 확인 처리가 바뀔 때,시작 대사의 basic 사연 정보 기록 — DEC-CONTENT-017 의 빈 구간을 채운다
 exact,DEC-UI-029,13|14|16,4|5|6|11|17,connected,화면 문구를 데이터와 코드 중 어디에 둘지의 기준이 바뀔 때,화면 문구의 데이터·코드 경계
+exact,DEC-UI-030,13|15,11,local,타이틀·이름 입력·튜토리얼 UI 규칙이 바뀔 때,DEC-UI-015 대체 — 튜토리얼 안내 순서를 데이터로 넘겼다
+exact,DEC-CONTENT-025,14|15,4|5|6|17,connected,튜토리얼 안내 구조 또는 순서 규칙이 바뀔 때,DEC-CONTENT-023 대체 — step_order 가 순서의 단일 원본

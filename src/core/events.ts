@@ -176,6 +176,14 @@ export interface SystemEvents {
   // 전투 ─────────────────────────────────────────────────────
   'combat.playerDamaged': { amount: number; remainingHealth: number }
   'combat.throwableSpent': { throwableId: string; remaining: number }
+  /**
+   * 낫을 실제로 휘둘렀다 (재사용 대기를 통과했다).
+   *
+   * **명중과 무관하다.** `DEC-RUN-003` 이 튜토리얼 진행 조건을 "기본 조작을 실제로
+   * 성공하면" 으로 정했고 낫은 대상이 없어도 휘두르는 것 자체가 성공이다.
+   * 대기 중이라 거절된 입력은 여기 오지 않는다.
+   */
+  'combat.sickleSwung': { hitCount: number }
   /** 소진 후 자동 전환. 같은 입력으로 추가 발사하지 않는다 (DEC-INPUT-007) */
   'quickslot.autoSwitched': { fromIndex: number; toIndex: number | null }
   /** 모든 투척 무기가 소진됐다. 낫은 계속 쓸 수 있다 */

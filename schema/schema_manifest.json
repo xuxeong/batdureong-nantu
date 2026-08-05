@@ -45,7 +45,7 @@
       "change": "tutorial_steps.csv(독립 콘텐츠, step_order·stage·completion_key·guide_text)와 content_assets.csv(연결 CSV, content_id·asset_role·asset_id) 테이블 신설. DEC-CONTENT-023 이 튜토리얼 안내 문구의 구조를, DEC-ART-001 이 논리 에셋 ID 와 asset_role 13개를 확정했는데 두 테이블 모두 정의가 없었다. 두 신설을 한 번에 올린다",
       "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
       "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 콘텐츠 담당자는 두 CSV를 drafts부터 새로 작성해야 한다. tutorial_steps 는 승인 행의 step_order 가 1부터 연속이어야 하고 farming·combat·maintenance 세 stage 마다 하나 이상이어야 한다. content_assets 는 (content_id, asset_role) 이 고유하고 asset_id 의 구간이 asset_role 과 같아야 하며, 아트가 없으면 행을 만들지 않아도 된다. 부모가 한 테이블이 아니라 에셋을 쓰는 콘텐츠 전체라 build-runtime 의 연결 결합이 후보 목록을 받도록 바뀌었다. 어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋 ID 는 이 테이블이 아니라 enums.json 의 고정 목록으로 관리하며 아직 만들지 않았다(enums.json 의 open_questions)",
-      "decisions": ["DEC-CONTENT-023", "DEC-ART-001", "DEC-UI-015", "DEC-CONTENT-001"]
+      "decisions": ["DEC-CONTENT-025", "DEC-ART-001", "DEC-UI-030", "DEC-CONTENT-001"]
     },
     {
       "schema_version": { "from": 5, "to": 6 },

@@ -60,8 +60,14 @@ const STICKY = {
   effect_move_speed_multiplier: 0.5,
 }
 
-function system() {
-  return createResidentCombat({ weapons: [STICKY] })
+/**
+ * 맵 경계는 좌표 기대값에 걸리지 않게 넉넉히 둔다 (DEC-CONTENT-016).
+ * 경계 자체를 보는 것은 아래 별도 테스트다.
+ */
+const WIDE = { width: 100000, height: 100000 }
+
+function system(bounds = WIDE) {
+  return createResidentCombat({ weapons: [STICKY], bounds })
 }
 
 function player(x, y = 0) {
@@ -281,4 +287,29 @@ test('update 를 부르지 않으면 전투 타이머가 그대로 멈춘다', (
 
   s.update(0.5, player(40))
   assert.ok(h.cooldownRemaining < frozen, '재개하면 남은 시간부터 다시 흐른다')
+})
+
+// ── 맵 경계 (DEC-CONTENT-016) ─────────────────────────────────
+//
+// "플레이어, 야생동물, 적대 주민의 이동 위치는 맵 경계 안으로 제한한다."
+// 8/6까지 셋 다 빠져 있었고 플레이 테스트에서 플레이어가 화면 밖으로 걸어 나갔다.
+
+test('적대 주민은 맵 경계 밖으로 나가지 않는다', () => {
+  const s = system({ width: 300, height: 300 })
+  const h = s.spawn({ instanceId: 'h1', residentId: 'r', profile: MELEE, modifier: NORMAL, x: 280, y: 0 })
+
+  // 경계 밖(x 900)에 있는 플레이어를 향해 오래 달려도 300 을 넘지 않는다
+  s.update(5, player(900))
+
+  assert.equal(h.entity.x, 300)
+})
+
+test('음수 방향으로도 잘린다', () => {
+  const s = system({ width: 300, height: 300 })
+  const h = s.spawn({ instanceId: 'h1', residentId: 'r', profile: MELEE, modifier: NORMAL, x: 20, y: 20 })
+
+  s.update(5, player(-900, -900))
+
+  assert.equal(h.entity.x, 0)
+  assert.equal(h.entity.y, 0)
 })
