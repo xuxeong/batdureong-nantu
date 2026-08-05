@@ -56,6 +56,8 @@ import type {
   RecoveryItem,
   RewardBundle,
   ThrowableWeapon,
+  TutorialCompletionKey,
+  TutorialStep,
   WildlifeSpawnEntry,
   WildlifeSpawnProfile,
 } from './data/types.ts'
@@ -79,6 +81,8 @@ import { createDataError } from './ui/data-error.ts'
 import type { DataErrorScreen } from './ui/data-error.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
+import { createTutorialProgress } from './systems/tutorial.ts'
+import type { TutorialProgress } from './systems/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
 import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
@@ -798,6 +802,10 @@ async function bootData(): Promise<boolean> {
     // 실제로 그 화면에 닿는 순간 데이터 오류로 올린다.
     // 고르는 것은 화면을 열 때다 (DEC-CONTENT-018). 여기서는 목록만 들고 있는다.
     nightResultTexts = data.night_result_texts ?? []
+
+    // 튜토리얼 안내. 순서는 `step_order` 가 단일 원본이라 여기서 정렬하지 않는다
+    // (DEC-CONTENT-025). 정렬은 진행 모듈이 한 번만 한다.
+    tutorialSteps = data.tutorial_steps ?? []
 
     // 습격 예고와 폴백 일지는 고르지 않고 통째로 들고 있는다. 예고는 그날의
     // raid_type 이, 폴백은 그때의 공포도 구간과 변화 방향이 정해져야 고를 수 있다.
@@ -2037,6 +2045,10 @@ function onSickle(): void {
   const result = combat.swingSickle(player, input.aimAngle())
   if (!result.swung) return // 재사용 대기 중
 
+  // 휘두른 것 자체가 조작 성공이다 — 명중과 무관하다 (DEC-RUN-003).
+  // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
+  bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
+
   for (const hit of result.hits) {
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
@@ -2191,8 +2203,76 @@ const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
 })
 
 const tutorialScreen: TutorialScreen = createTutorial(uiRoot, {
-  onSkip: () => scenes.send({ type: 'confirm' }),
+  onSkip: () => finishTutorial(),
+  onContinue: () => finishTutorial(),
 })
+
+/**
+ * 튜토리얼 진행 (DEC-UI-030, DEC-RUN-003, DEC-CONTENT-025).
+ *
+ * 튜토리얼 밖에서는 null 이다. 흐름이 `tutorial` 에 들어올 때 만들고 나갈 때 버린다.
+ */
+let tutorial: TutorialProgress | null = null
+/** 승인 안내. 순서는 `step_order` 가 단일 원본이다 (DEC-CONTENT-025) */
+let tutorialSteps: readonly TutorialStep[] = []
+
+/** 지금 튜토리얼 중인가. 재배 타이머·야생동물을 가르는 조건이다 */
+function inTutorial(): boolean {
+  return scenes.step().at === 'tutorial'
+}
+
+/**
+ * 튜토리얼을 끝내고 1일차로 간다 (DEC-RUN-003).
+ *
+ * **런을 통째로 새로 만든다.** 확정문이 *"튜토리얼에서 소비하거나 획득한 체력·작물·
+ * 자원은 본 런에 반영하지 않는다"* 로 정했다. 항목을 골라 되돌리지 않는 이유는
+ * 되돌릴 목록을 유지해야 하고 하나를 빠뜨리면 조용히 새기 때문이다 — 버리는 쪽이
+ * 규칙과 같은 모양이다 (로드맵 9-5 의 런 리셋과 같은 통로).
+ */
+function finishTutorial(): void {
+  tutorial = null
+  tutorialScreen.hide()
+  scenes.closeOverlay('maintenance_hub')
+  startNewRun(run?.playerName ?? '')
+  scenes.send({ type: 'confirm' })
+}
+
+/**
+ * 현재 안내를 화면에 맞춘다.
+ *
+ * `stage` 가 `maintenance` 면 정비 허브를 연다 — 팔고 사고 만드는 것은 거기서만
+ * 할 수 있다 (`DEC-INPUT-006` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
+ */
+function syncTutorial(): void {
+  if (tutorial === null) return
+
+  if (tutorial.finished) {
+    scenes.closeOverlay('maintenance_hub')
+    tutorialScreen.showFinished()
+    return
+  }
+
+  const step = tutorial.current!
+  if (step.stage === 'maintenance') scenes.openOverlay('maintenance_hub')
+  else scenes.closeOverlay('maintenance_hub')
+
+  tutorialScreen.render({
+    guideText: step.guide_text,
+    position: tutorial.position,
+    total: tutorial.total,
+  })
+}
+
+/**
+ * 조작 성공을 튜토리얼에 알린다.
+ *
+ * 튜토리얼 밖에서는 아무 일도 하지 않는다 — 본 런에서 심었다고 진행도가 움직이면
+ * 안 된다. `completion_key` 는 고정 일곱 개이고 코드가 판정한다 (DEC-CONTENT-025).
+ */
+function completeTutorialStep(key: TutorialCompletionKey): void {
+  if (tutorial === null || !inTutorial()) return
+  if (tutorial.complete(key)) syncTutorial()
+}
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
@@ -2281,8 +2361,8 @@ function syncScreens(): void {
   if (screen === 'name_input') nameInputScreen.show()
   else nameInputScreen.hide()
 
-  if (screen === 'tutorial') tutorialScreen.show()
-  else tutorialScreen.hide()
+  // 튜토리얼은 화면이 아니라 필드다 (DEC-UI-030). 여기서 다루지 않는다 —
+  // `field.entered` 가 시작하고 `finishTutorial()` 이 끝낸다.
 
   if (screen === 'day_start') {
     const step = scenes.step()
@@ -2787,7 +2867,9 @@ function hudView() {
 
   // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
   // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
-  const timer = inFarmingStage() ? farmingTimer : null
+  // 튜토리얼에는 시간제한이 없으므로 게이지를 아예 숨긴다 (DEC-RUN-003).
+  // 안 가리면 60초짜리 게이지가 멈춘 채 떠 있어 "고장났나" 로 읽힌다.
+  const timer = inFarmingStage() && !inTutorial() ? farmingTimer : null
 
   return {
     playerName: run?.playerName ?? '',
@@ -2908,6 +2990,10 @@ const loop = createGameLoop(
 
       // 제한시간이 끝나면 재배 단계를 자동 종료한다 (DEC-RUN-004).
       // 조기 종료 조건을 만들지 않는다 — DEC-RUN-005 는 보류다.
+      //
+      // **튜토리얼에서는 흘리지 않는다** (DEC-RUN-003 — 시간제한을 두지 않는다).
+      // HUD 쪽은 `hudView()` 가 `inFarmingStage()` 로 이미 가리고 있다.
+      if (inTutorial()) return
       if (farmingTimer?.tick(dt)) {
         bus.emit('farm.timeExpired', {})
         scenes.send({ type: 'farming_time_expired' })
@@ -3269,6 +3355,27 @@ bus.on('field.entered', ({ mode }) => {
     return
   }
 
+  // 튜토리얼은 재배 필드를 쓰지만 **1일차가 아니다** (DEC-RUN-003 — 1일차 타이머와
+  // 분리하고 시간제한을 두지 않는다). 그래서 타이머를 돌리지 않고 야생동물도
+  // 세우지 않는다. 조작을 배우는 자리에 제한시간과 적을 같이 두면 배울 수 없다.
+  if (inTutorial()) {
+    wildlife?.endFarming()
+    tutorial = createTutorialProgress(tutorialSteps)
+
+    if (tutorial.total === 0) {
+      // 안내가 없으면 튜토리얼이 성립하지 않는다. 임시 문구를 지어내지 않고
+      // 데이터 오류로 올린 뒤 넘어간다 (DEC-UI-030 — 문구는 승인 데이터에서만).
+      bus.emit('data.error', {
+        summary: '튜토리얼 안내가 없다',
+        detail: 'tutorial_steps 에 승인 행이 없다 (DEC-CONTENT-025)',
+      })
+      finishTutorial()
+      return
+    }
+    syncTutorial()
+    return
+  }
+
   farmingTimer?.reset()
 
   const day = run?.dayNumber ?? 1
@@ -3286,6 +3393,24 @@ bus.on('field.entered', ({ mode }) => {
 })
 
 bus.on('field.exited', () => wildlife?.endFarming())
+
+/**
+ * 튜토리얼 완료 판정 (DEC-CONTENT-025, DEC-RUN-003).
+ *
+ * **일곱 개가 전부 이미 있는 이벤트에 붙는다.** 튜토리얼용 판정을 시스템 안에
+ * 따로 만들지 않았다 — 그러면 "진짜 조작" 과 "튜토리얼이 인정하는 조작" 이 갈리고,
+ * 갈리는 순간 안내를 따라 했는데 안 넘어가는 상태가 생긴다.
+ *
+ * 반대로 `use_sickle` 만 이벤트가 없어서 새로 만들었다(`combat.sickleSwung`).
+ * 낫은 명중과 무관하게 휘두른 것이 성공이다.
+ */
+bus.on('farm.planted', () => completeTutorialStep('plant_crop'))
+bus.on('farm.harvested', () => completeTutorialStep('harvest_crop'))
+bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
+bus.on('shop.bought', () => completeTutorialStep('buy_material'))
+bus.on('craft.made', () => completeTutorialStep('craft_item'))
+bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
+bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
 /**
  * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
  *

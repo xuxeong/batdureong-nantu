@@ -1802,8 +1802,7 @@
 }
 
 .title,
-.name-input,
-.tutorial {
+.name-input {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1816,8 +1815,7 @@
 }
 
 .title__panel,
-.name-input__panel,
-.tutorial__panel {
+.name-input__panel {
   width: var(--screen-panel-width);
   max-width: 100%;
   padding: var(--screen-pad);
@@ -1867,14 +1865,76 @@
   outline-offset: 2px;
 }
 
-/* ── 튜토리얼 ──────────────────────────────────── */
+/* ── 튜토리얼 (DEC-UI-030, DEC-RUN-003) ──────────
+   필드 위에 얹히는 안내다. **화면을 덮지 않는다** — 심고 팔고 던져야 넘어가므로
+   밭과 정비 허브가 보이고 눌려야 한다. */
 
-/* 안내 문구가 승인 데이터 대기라는 사실. 임시 안내를 지어 넣지 않는다 */
-.tutorial__pending {
+.tutorial {
+  position: absolute;
+  inset: 0;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  /* 안내가 밭 클릭을 먹으면 조작을 성공할 수 없다. 버튼만 되살린다 */
+  pointer-events: none;
+  /* 정비 허브(셔터) 위에 온다. 정비 안내 차례에 허브가 열리기 때문이다 */
+  z-index: 50;
+}
+
+/* 안내는 화면 위쪽 가운데. 재배 게이지는 튜토리얼에서 숨으므로 그 자리를 쓴다 */
+.tutorial__guide {
+  position: absolute;
+  top: var(--hud-edge);
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  text-align: center;
+}
+
+.tutorial__guide[hidden],
+.tutorial__finished[hidden] {
+  display: none;
+}
+
+/* 진행도는 몇 번째인지까지만 (DEC-UI-030). 막대를 그리지 않는다 */
+.tutorial__progress {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.tutorial__text {
   margin: 0;
   font-size: var(--ui-font-lg);
-  color: var(--ui-text-dim);
-  font-style: italic;
+  line-height: 1.6;
+}
+
+/* 종료 알림만 화면을 덮는다. 여기서는 더 조작할 것이 없다 */
+.tutorial__finished {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-gap-lg);
+  background: var(--screen-backdrop);
+  pointer-events: auto;
+  text-align: center;
+}
+
+.tutorial__finished-title {
+  margin: 0;
+  font-size: var(--ui-font-xl);
 }
 
 .tutorial__notice {
@@ -1888,7 +1948,8 @@
 
 .title__start,
 .name-input__confirm,
-.tutorial__skip {
+.tutorial__skip,
+.tutorial__continue {
   padding: var(--ui-gap-md) var(--ui-gap-lg);
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius);
@@ -1901,8 +1962,27 @@
 
 .title__start:hover,
 .name-input__confirm:hover,
-.tutorial__skip:hover {
+.tutorial__skip:hover,
+.tutorial__continue:hover {
   background: var(--ui-bg-slot);
+}
+
+/*
+  건너뛰기는 **안내판 밖, 화면 오른쪽 위**에 둔다.
+
+  처음에 안내판 안에 넣었더니 화면 가운데 위쪽을 차지했고, 그 자리가 곧 밭을
+  향해 좌클릭하는 자리다. 8/6 확인에서 **투척을 시도한 클릭이 건너뛰기를 눌러
+  튜토리얼이 통째로 끝났다.** 판은 입력을 통과시키는데 버튼만 안 통과시키므로
+  버튼 자체를 조작 자리에서 치워야 한다.
+
+  설정 버튼 아래에 붙인다 — 거기는 밭 바깥 띠이고 이미 UI 자리다.
+*/
+.tutorial__skip {
+  position: absolute;
+  top: calc(var(--hud-edge) + var(--hud-settings-size-h) + var(--ui-gap-md));
+  right: var(--hud-edge);
+  pointer-events: auto;
+  font-size: var(--ui-font-sm);
 }
 
 /* 이름이 비어 있으면 진행할 수 없다 (DEC-UI-030) */
