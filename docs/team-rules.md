@@ -70,18 +70,43 @@ cp .env.example .env
 
 ## 3. 브랜치
 
-폴더가 담당자별로 나뉘어 있어 대부분 `main` 직접 작업으로 충분하다.
-다만 다음 경우에는 브랜치를 판다.
+**8/2부터 모든 개발 작업은 `develop`에서 한다.**
 
-- 여러 파일에 걸치고 중간 상태가 깨지는 작업
-- 다른 사람이 쓰는 파일을 건드려야 하는 작업
-- 되돌릴 가능성이 있는 실험
+```
+develop  → 개발은 전부 여기서. Vercel 프리뷰 URL이 붙는다
+main     → "언제 열어도 시연 가능한 상태". Vercel 프로덕션 URL
+```
+
+브랜치가 충돌을 줄여주지는 않는다. 두 사람이 `develop` 하나에 커밋하면 충돌 양상은
+`main` 하나 쓸 때와 같다. 충돌을 막는 건 4절의 파일 소유 규칙이다.
+도입 이유는 **`main`을 안정판으로 고정**하는 것이다 — 8/8 촬영 중에 누가 `develop`에
+push해도 촬영용 URL이 안 깨진다.
+
+```bash
+git switch develop      # 작업 시작 전에 확인
+git pull
+```
+
+- 병합은 `develop → main` 방향만. **`--no-ff`를 쓰고 squash·force push는 금지**한다
+- 병합 시점에 태그를 단다 (`v0.1-build1` 등). 되돌릴 지점이 명확해진다
+- 급한 수정도 `main`에 직접 커밋하지 않는다. `develop`을 거치지 않으면 다음 병합에서 갈라진다
+- 다음 경우에만 `develop`에서 짧은 feature 브랜치를 판다. 하루 안에 되돌린다
+  - 여러 파일에 걸치고 중간 상태가 깨지는 작업
+  - 다른 사람이 쓰는 파일을 건드려야 하는 작업
+  - 되돌릴 가능성이 있는 실험
 
 ```
 feat/farming-growth
 fix/quickslot-switch
 data/crops-step2
 ```
+
+### CI 동작 범위
+
+`ci.yml`은 `main`과 `develop` 양쪽 push에서 `data:validate` / `docs:check` / `test`를 돌린다.
+다만 `PROGRESS.md`를 갱신하는 `progress` job은 **`main` 전용**이다.
+개발 중에 봇 커밋이 끼면 매번 pull 충돌이 나기 때문이고, 작업 기록은 병합 시점에 한 번에 갱신된다.
+그래서 `develop`에서는 8절이 말하는 봇 커밋이 생기지 않는다.
 
 ---
 
@@ -143,11 +168,12 @@ data/drafts/ → data/candidates/ → data/approved/ → generated/runtime/
 ### 자동 (손댈 것 없음)
 
 `docs/progress/PROGRESS.md`는 Git 커밋 이력에서 자동 생성한다. **직접 편집하지 않는다.**
-push하면 CI가 갱신해서 `[Docs] PROGRESS.md 갱신 [skip ci]` 커밋을 원격에 올린다.
+`main`에 push하면 CI가 갱신해서 `[Docs] PROGRESS.md 갱신 [skip ci]` 커밋을 원격에 올린다.
+`develop`에서는 이 job이 돌지 않으므로 봇 커밋이 생기지 않는다 (3절).
 
-**그래서 작업을 시작할 때 항상 `git pull` 부터 한다.**
-안 하면 내 로컬에는 없는 봇 커밋 위에 작업하게 되고, 다음 push가 막히거나
-같은 파일을 두 번 생성해 충돌한다.
+**그래도 작업을 시작할 때 항상 `git pull` 부터 한다.**
+안 하면 상대가 올린 커밋 위에서 시작하지 못하고, 다음 push가 막히거나
+같은 파일을 두 번 생성해 충돌한다. `main` 병합 전후에는 봇 커밋까지 끼므로 특히 주의한다.
 
 ```bash
 git pull            # 작업 시작할 때마다

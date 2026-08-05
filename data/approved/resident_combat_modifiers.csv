@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,combat_state,max_health_multiplier,move_speed_multiplier,attack_damage_multiplier,attack_cooldown_multiplier
+resident_combat_modifier.weakened,resident_combat_modifier,approved,2,위축됨,대화로 기세를 꺾은 보상. 전 능력 하향과 느린 공격으로 가장 쉬운 전투. display_name 은 습격 HUD에 그대로 노출되므로(DEC-UI-009) 보정이라는 시스템 용어를 쓰지 않는다.,weakened,0.8,0.9,0.8,1.2
+resident_combat_modifier.normal,resident_combat_modifier,approved,2,평정,기본 전투. 보정 없음. 일반 상태는 HUD에 표시하지 않지만 다른 둘과 같은 결의 이름을 둔다.,normal,1.0,1.0,1.0,1.0
+resident_combat_modifier.enraged,resident_combat_modifier,approved,2,격앙됨,말로 상대를 자극한 대가. 피해 1.3배와 빨라진 공격이 핵심 위협. display_name 은 습격 HUD에 그대로 노출된다(DEC-UI-009).,enraged,1.1,1.15,1.3,0.85

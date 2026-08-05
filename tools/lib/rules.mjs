@@ -967,6 +967,133 @@ export const RULES = {
     }
   },
 
+  // ── 화면 고정 문구 ────────────────────────────────────────────────────
+  //
+  // 습격 예고는 습격이 없는 날에도 HUD에서 사라지지 않는다 (DEC-UI-017).
+  // 그래서 `none` 행이 빠지면 화면에 구멍이 나는데, 그 구멍은 습격 없는 날에만
+  // 보인다 — 습격일만 눌러 보고 넘어가면 못 찾는다. 그래서 차단으로 잡는다.
+  'raid_notice.exactly_one_per_raid_type'({ report, h }) {
+    const rows = h.approved('raid_notices.csv')
+
+    for (const type of ['none', 'raid', 'final_raid']) {
+      const n = rows.filter((r) => h.val(r, 'raid_type') === type).length
+      if (n !== 1) {
+        report.block({
+          file: 'raid_notices.csv',
+          problem: `raid_type \`${type}\` 의 승인 예고 문구가 ${n}개다. 정확히 하나여야 한다`,
+          basis: 'DEC-CONTENT-021 · 승인 행을 세 raid_type 값마다 정확히 하나씩 둔다',
+          fix: n === 0 ? `raid_type 이 \`${type}\` 인 행을 승인한다` : '하나만 남기고 나머지를 retired 로 바꾼다',
+        })
+      }
+    }
+  },
+
+  'night_result_text.at_least_one_approved'({ report, h }) {
+    const n = h.approved('night_result_texts.csv').length
+    if (n === 0) {
+      report.block({
+        file: 'night_result_texts.csv',
+        problem: '승인된 밤 결과 문구가 없다',
+        basis: 'DEC-CONTENT-021 · 승인된 밤 결과 문구는 하나 이상이어야 한다',
+        fix: '문구 행 하나 이상을 approved 로 승인한다',
+      })
+    }
+  },
+
+  // ── 공포도 증가량 ─────────────────────────────────────────────────────
+  'fear_increment.exactly_one_per_cause'({ report, schema, h }) {
+    const rows = h.approved('fear_increments.csv')
+    // 허용값은 테이블 정의가 갖고 있다. enums.json 에 따로 두면
+    // important_action_count_subject 와 같은 행동을 가리키는 목록이 두 벌이 된다.
+    const causes =
+      schema.tables.get('fear_increments.csv')?.fields.find((f) => f.name === 'cause')?.values ?? []
+
+    for (const cause of causes) {
+      const n = rows.filter((r) => h.val(r, 'cause') === cause).length
+      if (n !== 1) {
+        report.block({
+          file: 'fear_increments.csv',
+          problem: `\`${cause}\` 의 승인 증가량이 ${n}개다. 정확히 하나여야 한다`,
+          basis: 'DEC-RESIDENT-048 · 승인 행은 위협·퇴각·처치 세 개다',
+          fix: n === 0 ? `cause 가 \`${cause}\` 인 행을 승인한다` : '하나만 남기고 나머지를 retired 로 바꾼다',
+        })
+      }
+    }
+  },
+
+  // ── 튜토리얼 ──────────────────────────────────────────────────────────
+  'tutorial_step.step_order_sequential'({ report, h }) {
+    const rows = h.approved('tutorial_steps.csv')
+    if (rows.length === 0) return
+
+    const seen = new Map()
+    for (const r of rows) {
+      const order = h.num(r, 'step_order')
+      if (seen.has(order)) {
+        report.block({
+          file: 'tutorial_steps.csv',
+          line: r.lineNumber,
+          field: 'step_order',
+          problem: `step_order ${order} 가 중복된다`,
+          basis: 'DEC-CONTENT-023 · 승인 행에서 1부터 연속되고 중복되지 않는다',
+          fix: '중복된 행의 step_order 를 다시 매긴다',
+        })
+      }
+      seen.set(order, r)
+    }
+
+    for (let want = 1; want <= rows.length; want++) {
+      if (!seen.has(want)) {
+        report.block({
+          file: 'tutorial_steps.csv',
+          field: 'step_order',
+          problem: `step_order ${want} 이 없다. 승인 행이 ${rows.length}개면 1부터 ${rows.length}까지 빠짐없이 있어야 한다`,
+          basis: 'DEC-CONTENT-023 · 승인 행에서 1부터 연속되고 중복되지 않는다',
+          fix: `step_order 가 ${want} 인 행을 승인하거나 뒤 번호를 당긴다`,
+        })
+      }
+    }
+  },
+
+  'tutorial_step.covers_all_stages'({ report, schema, h }) {
+    const rows = h.approved('tutorial_steps.csv')
+    if (rows.length === 0) return
+
+    for (const stage of schema.enums.stage?.values ?? []) {
+      if (!rows.some((r) => h.val(r, 'stage') === stage)) {
+        report.block({
+          file: 'tutorial_steps.csv',
+          problem: `stage \`${stage}\` 의 승인 안내가 없다`,
+          basis: 'DEC-CONTENT-023 · 세 stage 마다 승인 행이 하나 이상 있어야 한다',
+          fix: `stage 가 \`${stage}\` 인 행을 하나 이상 승인한다`,
+        })
+      }
+    }
+  },
+
+  // ── 에셋 연결 ─────────────────────────────────────────────────────────
+  'content_asset.id_section_matches_role'({ report, h }) {
+    // asset.<구간>.<이름> 의 구간과 asset_role 은 같은 값이다.
+    // DEC-ART-001 이 "asset_role 로 사용할 수 있는 구간은" 이라고 써서 둘을 같은 것으로 둔다.
+    for (const r of h.rows('content_assets.csv')) {
+      const role = h.val(r, 'asset_role')
+      const id = h.val(r, 'asset_id')
+      if (!role || !id) continue
+
+      const section = id.split('.')[1]
+      if (section !== role) {
+        report.block({
+          file: 'content_assets.csv',
+          line: r.lineNumber,
+          field: 'asset_id',
+          problem: `구간이 asset_role 과 다르다. asset_role 은 \`${role}\` 인데 ID 는 \`${section}\` 구간이다`,
+          basis: 'DEC-ART-001 · 논리 에셋 ID 의 구간과 asset_role 은 같은 값을 쓴다',
+          fix: `\`asset.${role}.<이름>\` 으로 고치거나 asset_role 을 \`${section}\` 으로 고친다`,
+        })
+      }
+    }
+  },
+
   // ── 런 일정 ───────────────────────────────────────────────────────────
   'run_schedule.exactly_one_approved'({ report, h }) {
     const n = h.approved('run_schedules.csv').length

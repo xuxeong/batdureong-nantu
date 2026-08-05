@@ -1,0 +1,10 @@
+fear_band_id,change_direction,fallback_journal_text
+fear_band.warmth,up,오늘 내 손이 조금 거칠어졌다. 그래도 아직은 사람 얼굴을 보고 말할 수 있다.
+fear_band.warmth,same,어제와 다르지 않은 하루였다. 밭은 조용했고 나도 조용했다.
+fear_band.warmth,down,누군가 웃으며 돌아갔다. 오랜만에 어깨에 힘을 빼고 잠든다.
+fear_band.wariness,up,말이 통하지 않으면 손이 먼저 나간다. 그게 몇 번째인지 세지 않기로 했다.
+fear_band.wariness,same,밭을 지켰고 그뿐이다. 사람들이 나를 어떻게 부르는지는 굳이 듣지 않았다.
+fear_band.wariness,down,오늘은 아무도 다치지 않았다. 이런 날이 며칠 더 있으면 좋겠다.
+fear_band.terror,up,오늘도 밭에 붉은 것이 남았다. 씻어내면 그만이라고 여기는 내가 낯설다.
+fear_band.terror,same,이제 아무도 밭 가까이 오지 않는다. 조용한 것이 편한지 무서운지 모르겠다.
+fear_band.terror,down,오늘은 손에 아무것도 묻히지 않았다. 그래도 사람들은 나를 피해 돌아갔다.

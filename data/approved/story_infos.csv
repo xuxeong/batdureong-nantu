@@ -1,0 +1,10 @@
+id,kind,content_status,content_version,display_name,design_intent,scenario_id,info_type,source_fact_text,ending_fact_text
+story_info.yeongsun_basic,story_info,approved,1,영순 기본 — 동생들,습격 동기 공개.,story_scenario.yeongsun_family,basic,영순은 굶는 동생들 때문에 처음으로 낫을 들고 남의 밭에 왔다.,영순은 굶는 동생들을 위해 처음으로 남의 밭에 들어왔다.
+story_info.yeongsun_core,story_info,approved,1,영순 핵심 — 열여섯 가장,공감·투항 루트의 속사정.,story_scenario.yeongsun_family,core,영순의 부모는 흉년에 몸져누워 일을 못 하게 되었고 영순은 열여섯에 가장이 되었다.,영순의 부모는 흉년에 몸져누웠고 영순이 열여섯 나이로 집안을 책임지고 있었다.
+story_info.manbok_basic,story_info,approved,1,만복 기본 — 선금,습격 동기 공개. 화폐 무력화 전제 포함.,story_scenario.manbok_promise,basic,만복은 봄에 곡식을 대주겠다며 선금을 받았으나 흉년으로 구할 곡식이 없어 약속을 지키지 못하게 된 장사꾼이다.,만복은 봄에 곡식을 대주기로 선금을 받았지만 흉년으로 살 곡식이 없어 약속을 지킬 수 없게 되었다.
+story_info.manbok_core,story_info,approved,1,만복 핵심 — 명단,공감·투항 루트의 속사정.,story_scenario.manbok_promise,core,만복이 지닌 엽전의 절반은 마을 사람들의 선금이며 그는 선금을 준 사람들의 명단을 아직 품에 넣고 다닌다.,만복이 가진 엽전의 절반은 마을 사람들의 선금이었고 그는 그 명단을 여전히 품에 지니고 다녔다.
+story_info.geumrye_basic,story_info,approved,1,금례 기본 — 손주,표면의 방문 이유.,story_scenario.geumrye_memory,basic,금례는 손주에게 먹일 것이 없다며 밭에 왔다.,금례는 손주에게 먹일 것이 없다며 밭을 찾아왔다.
+story_info.geumrye_core_grandson,story_info,approved,1,금례 핵심 — 떠난 손주,투항 루트 공개. 죽음의 사실만.,story_scenario.geumrye_memory,core,금례의 손주는 지난겨울에 세상을 떠났다.,금례의 손주는 지난겨울 세상을 떠났다.
+story_info.geumrye_core_secret,story_info,approved,1,금례 핵심 — 흉년의 진실,공감 해결 루트 공개. 게임 최대 반전. B안 통과 시 영입 반응에도 배정.,story_scenario.geumrye_memory,core,이장은 겨울을 버틴다는 명목으로 집집의 곡식과 씨앗까지 곳간에 거둬 잠그고 배급으로 마을을 길들였다. 금례의 손주는 마지막 씨앗을 빼돌려 이 밭에 묻었다가 이장에게 들켜 변을 당했고 그 씨앗이 자란 것이 지금의 밭이다.,이장은 집집의 곡식과 씨앗을 곳간에 거둬 잠그고 배급으로 마을을 통제했다. 금례의 손주는 마지막 씨앗을 이 밭에 묻었다가 이장에게 발각되어 변을 당했고 그 씨앗이 자라 지금의 밭이 되었다.
+story_info.head_basic,story_info,approved,1,이장 기본 — 최후통첩,습격 동기 공개.,story_scenario.head_conviction,basic,이장은 밭의 소유권을 주장하며 최후통첩을 하러 왔다.,이장은 밭의 소유권을 주장하며 최후통첩을 하러 왔다.
+story_info.head_core,story_info,approved,1,이장 핵심 — 정당화,공감·투항 루트 공개. 자백이 아닌 자기 정당화.,story_scenario.head_conviction,core,이장은 배급 통제가 마을을 겨울에서 살렸다고 스스로를 정당화한다.,이장은 배급 통제가 마을을 살렸다고 믿으며 자신의 행동을 정당화했다.

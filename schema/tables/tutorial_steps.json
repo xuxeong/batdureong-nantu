@@ -1,0 +1,64 @@
+{
+  "file": "tutorial_steps.csv",
+  "step": 11,
+  "entry_type": "independent",
+  "kind": "tutorial_step",
+  "id_prefix": "tutorial_step.",
+  "common_columns": true,
+  "decisions": [
+    "DEC-CONTENT-023",
+    "DEC-UI-015",
+    "DEC-RUN-003"
+  ],
+  "fields": [
+    {
+      "name": "step_order",
+      "required": true,
+      "type": "integer",
+      "min": 1,
+      "owner": "designer"
+    },
+    {
+      "name": "stage",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "farming",
+        "combat",
+        "maintenance"
+      ],
+      "owner": "designer"
+    },
+    {
+      "name": "completion_key",
+      "required": true,
+      "type": "enum",
+      "values": [
+        "plant_crop",
+        "harvest_crop",
+        "use_sickle",
+        "use_throwable",
+        "sell_crop",
+        "buy_material",
+        "craft_item"
+      ],
+      "owner": "ai"
+    },
+    {
+      "name": "guide_text",
+      "required": true,
+      "type": "string",
+      "owner": "designer"
+    }
+  ],
+  "rules": [
+    {
+      "id": "tutorial_step.step_order_sequential",
+      "severity": "차단"
+    },
+    {
+      "id": "tutorial_step.covers_all_stages",
+      "severity": "차단"
+    }
+  ]
+}

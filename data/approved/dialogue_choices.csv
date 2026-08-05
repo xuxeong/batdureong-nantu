@@ -1,0 +1,25 @@
+id,kind,content_status,content_version,display_name,design_intent,scenario_id,dialogue_phase,choice_function,choice_text,judgement_rule_id,direct_system_result_id,resource_offer_quantity
+dialogue_choice.yeongsun_empathy,dialogue_choice,approved,1,영순 공감,동생들 이야기로 마음을 두드리는 선택.,story_scenario.yeongsun_family,precombat,empathy,동생들 이야기를 묻는다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.yeongsun_negotiation,dialogue_choice,approved,1,영순 협상,수확물 제안. 자존심으로 거절됨.,story_scenario.yeongsun_family,precombat,resource_negotiation,수확물 10개를 내민다,dialogue_judgement_rule.personality_resource_offer,,10
+dialogue_choice.yeongsun_threat,dialogue_choice,approved,1,영순 위협,겁주기. 폭주 유발.,story_scenario.yeongsun_family,precombat,threat,낫을 들어 보인다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.yeongsun_recruit,dialogue_choice,approved,1,영순 영입,투항 수용.,story_scenario.yeongsun_family,surrender,recruit,도와주겠다고 한다,,system_result.surrender.recruit,
+dialogue_choice.yeongsun_retreat,dialogue_choice,approved,1,영순 대가 퇴각,대가 요구 후 퇴각.,story_scenario.yeongsun_family,surrender,retreat_reward,가진 것을 내놓으라 한다,,system_result.surrender.retreat_reward,
+dialogue_choice.yeongsun_resume,dialogue_choice,approved,1,영순 전투 계속,투항 거부.,story_scenario.yeongsun_family,surrender,resume_combat,낫을 고쳐 쥔다,,system_result.surrender.resume_combat,
+dialogue_choice.manbok_empathy,dialogue_choice,approved,1,만복 공감,사정 듣기. 동정 사절.,story_scenario.manbok_promise,precombat,empathy,사정을 듣는다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.manbok_negotiation,dialogue_choice,approved,1,만복 협상,유일한 해결 루트.,story_scenario.manbok_promise,precombat,resource_negotiation,수확물 10개로 셈을 친다,dialogue_judgement_rule.personality_resource_offer,,10
+dialogue_choice.manbok_threat,dialogue_choice,approved,1,만복 위협,몸 사리게 하기.,story_scenario.manbok_promise,precombat,threat,빈손으로 돌아가라 한다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.manbok_recruit,dialogue_choice,approved,1,만복 영입,투항 수용.,story_scenario.manbok_promise,surrender,recruit,작물을 줄 테니 일하자고 한다,,system_result.surrender.recruit,
+dialogue_choice.manbok_retreat,dialogue_choice,approved,1,만복 대가 퇴각,손해배상.,story_scenario.manbok_promise,surrender,retreat_reward,손해배상을 요구한다,,system_result.surrender.retreat_reward,
+dialogue_choice.manbok_resume,dialogue_choice,approved,1,만복 전투 계속,셈 계속.,story_scenario.manbok_promise,surrender,resume_combat,셈은 끝까지 치른다,,system_result.surrender.resume_combat,
+dialogue_choice.geumrye_empathy,dialogue_choice,approved,1,금례 공감,유일한 해결 루트. 비밀 공개.,story_scenario.geumrye_memory,precombat,empathy,손주 이야기를 청한다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.geumrye_negotiation,dialogue_choice,approved,1,금례 협상,모욕으로 받아들여 격앙.,story_scenario.geumrye_memory,precombat,resource_negotiation,수확물 10개를 건넨다,dialogue_judgement_rule.personality_resource_offer,,10
+dialogue_choice.geumrye_threat,dialogue_choice,approved,1,금례 위협,물러서지 않음.,story_scenario.geumrye_memory,precombat,threat,돌아가라고 소리친다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.geumrye_recruit,dialogue_choice,approved,1,금례 영입,한솥밥.,story_scenario.geumrye_memory,surrender,recruit,한솥밥을 먹자고 손을 잡는다,,system_result.surrender.recruit,
+dialogue_choice.geumrye_retreat,dialogue_choice,approved,1,금례 대가 퇴각,대가 요구.,story_scenario.geumrye_memory,surrender,retreat_reward,빈손으론 못 보낸다 한다,,system_result.surrender.retreat_reward,
+dialogue_choice.geumrye_resume,dialogue_choice,approved,1,금례 전투 계속,끝을 본다.,story_scenario.geumrye_memory,surrender,resume_combat,끝을 보자 한다,,system_result.surrender.resume_combat,
+dialogue_choice.head_empathy,dialogue_choice,approved,1,이장 공감,마음을 흔들지만 멈추지 못함.,story_scenario.head_conviction,precombat,empathy,마을을 위한 길이 맞는지 묻는다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.head_negotiation,dialogue_choice,approved,1,이장 협상,매수로 간주.,story_scenario.head_conviction,precombat,resource_negotiation,수확물 10개로 무마를 시도한다,dialogue_judgement_rule.personality_resource_offer,,10
+dialogue_choice.head_threat,dialogue_choice,approved,1,이장 위협,폭주 유발.,story_scenario.head_conviction,precombat,threat,물러서지 않겠다고 맞선다,dialogue_judgement_rule.personality_choice,,
+dialogue_choice.head_recruit,dialogue_choice,approved,1,이장 영입,최고 난도 위업.,story_scenario.head_conviction,surrender,recruit,마을을 같이 살리자고 손을 내민다,,system_result.surrender.recruit,
+dialogue_choice.head_retreat,dialogue_choice,approved,1,이장 대가 퇴각,이중 독해 문구.,story_scenario.head_conviction,surrender,retreat_reward,밤이슬 값을 치르라 한다,,system_result.surrender.retreat_reward,
+dialogue_choice.head_resume,dialogue_choice,approved,1,이장 전투 계속,결투 지속.,story_scenario.head_conviction,surrender,resume_combat,밭의 주인이 누군지 보여준다,,system_result.surrender.resume_combat,

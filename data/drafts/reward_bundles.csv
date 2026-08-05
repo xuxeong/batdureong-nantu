@@ -1,6 +1,6 @@
 id,kind,content_status,content_version,display_name,design_intent
-reward_bundle.dusik_retreat,reward_bundle,draft,1,두식 퇴각 보상,두식에게 대가를 요구하고 퇴각시킨 보상. 최소 가치 축 — 겁 많은 청년의 주머니는 가볍다.
-reward_bundle.dusik_kill,reward_bundle,draft,1,두식 처치 보상,두식 처치 보상. 퇴각보다 조금 나은 정도로 살해 유인을 약하게 유지한다.
+reward_bundle.yeongsun_retreat,reward_bundle,draft,1,영순 퇴각 보상,영순에게 대가를 요구하고 퇴각시킨 보상. 최소 가치 축 — 겁 많은 청년의 주머니는 가볍다.
+reward_bundle.yeongsun_kill,reward_bundle,draft,1,영순 처치 보상,영순 처치 보상. 퇴각보다 조금 나은 정도로 살해 유인을 약하게 유지한다.
 reward_bundle.manbok_retreat,reward_bundle,draft,1,만복 퇴각 보상,만복 퇴각 보상. 장사꾼답게 두둑한 편.
 reward_bundle.manbok_kill,reward_bundle,draft,1,만복 처치 보상,만복 처치 보상. 런 최대급 현금+꿀 2로 의도적인 살해 유혹 담당.
 reward_bundle.geumrye_retreat,reward_bundle,draft,1,금례 퇴각 보상,금례 퇴각 보상. 의도적으로 빈약 — 노인을 몰아낸 대가는 초라하다.

@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,min_fear,max_fear,ending_prompt_summary
+fear_band.warmth,fear_band,approved,1,온기,평화적 해결 중심 구간. 0~4 — 위협 몇 번까지는 용서되는 폭.,0,4,플레이어는 절박한 주민들을 대화와 나눔으로 대했고 마을은 그 손을 기억한다.
+fear_band.wariness,fear_band,approved,1,경계,강요와 폭력이 섞인 구간. 5~11 — 퇴각 강요 두 번이면 진입.,5,11,플레이어는 필요하면 힘을 썼고 주민들은 거래는 하되 등을 보이지 않게 되었다.
+fear_band.terror,fear_band,approved,1,공포,살상이 쌓인 구간. 12 이상 상한 없음.,12,,플레이어는 밭을 지키기 위해 사람을 해쳤고 마을은 그 밭을 두려움으로 바라본다.

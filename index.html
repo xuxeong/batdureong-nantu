@@ -4,13 +4,87 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>밭두렁난투</title>
+
+    <!--
+      골격 스타일만 둔다. 캔버스에 크기가 없으면 아무것도 안 보이기 때문이다.
+      HUD·패널의 위치·크기·여백·색은 여기가 아니라 src/ui/layout.css 의
+      CSS 커스텀 프로퍼티에 모은다 (개발 로드맵 2절).
+      기획자 UI 사진을 받으면 그 파일 값만 고친다.
+
+      기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3).
+      #stage 하나가 그 크기를 갖고, 창이 다르면 그 상자만 비율을 유지한 채
+      확대·축소한다. 남는 영역은 여백이고 body 배경색이 그대로 보인다.
+      배율 계산은 src/render/stage.ts 에 있다 — 숫자를 두 곳에 두지 않는다.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #11170f;
+        overflow: hidden;
+      }
+
+      /*
+        기준 해상도 무대 (DEC-UI-025).
+
+        크기는 여기서 고정하지 않는다 — stage.ts 가 BASE_WIDTH/HEIGHT 를 갖고
+        있고, 숫자를 CSS 에도 적으면 두 곳이 갈라진다. 여기는 배치만 정한다.
+
+        **필드와 UI 를 서로 다른 비율로 늘리지 않는다**는 것이 확정 내용이라
+        둘 다 이 상자 안에 들어가고 상자 하나만 scale 된다.
+      */
+      #stage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center center;
+      }
+
+      /* 필드. Canvas 2D 한 장이 여기 들어간다 */
+      #game {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* DOM 오버레이. 필드 위에 얹힌다 */
+      #ui {
+        position: absolute;
+        inset: 0;
+        /*
+          비어 있는 영역이 캔버스 클릭을 가로채면 안 된다.
+          마우스가 HUD·버튼 위에 있을 때만 필드 클릭 공격이 막혀야 하므로
+          (DEC-INPUT-009) 실제 UI 요소에서만 pointer-events 를 되살린다.
+        */
+        pointer-events: none;
+      }
+
+      /*
+        여기서 자식 전체를 되살리지 않는다.
+
+        `#ui > *` 로 두면 명시도가 (1,0,0) 이라 `layout.css` 의 `.hud`(0,1,0) 를
+        이긴다. `.hud` 는 `inset: 0` 이라 화면 전체를 덮으므로 캔버스가 클릭을
+        받지 못했다 — 8/3에 실제로 좌·우클릭이 죽었다.
+
+        `:not(.hud)` 로 예외를 파는 방법도 있지만 그건 금지 목록이라, 화면을 덮는
+        컨테이너(정비 허브 셔터, 모달 배경)가 생길 때마다 이름을 추가해야 하고
+        빠뜨리면 다시 클릭이 죽는다. 증상이 "게임이 안 눌린다" 라서 원인을 CSS 에서
+        찾기까지 오래 걸린다.
+
+        그래서 **되살리는 쪽을 각 요소가 선언한다.** 버튼·패널은 `layout.css` 에서
+        자기 규칙에 `pointer-events: auto` 를 적는다 (`.hud__icon-button` 이 이미 그렇다).
+      */
+    </style>
   </head>
   <body>
-    <!-- 필드 렌더링 영역 (src/render/) -->
-    <div id="game"></div>
+    <!-- 기준 해상도 무대. 필드와 UI 가 함께 확대·축소된다 (DEC-UI-025) -->
+    <div id="stage">
+      <!-- 필드 렌더링 영역 (src/render/) -->
+      <div id="game"></div>
 
-    <!-- HUD·상점·제작·대화 등 DOM 오버레이 (src/ui/) -->
-    <div id="ui"></div>
+      <!-- HUD·상점·제작·대화 등 DOM 오버레이 (src/ui/) -->
+      <div id="ui"></div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -17,7 +17,11 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* api/ 의 서버리스 함수는 process.env 를 읽는다.
+       브라우저 코드(src/)에서는 process.env 를 쓰지 않는다 — Vite 는 import.meta.env 다. */
+    "types": ["node"]
   },
-  "include": ["src/**/*", "tools/**/*"]
+  "include": ["src/**/*", "tools/**/*", "api/**/*"]
 }

@@ -93,7 +93,7 @@ batdureong-nantu/
 │   ├── enums.json               고정 허용 목록
 │   ├── ending_prompt_system.md  엔딩 LLM 고정 시스템 프롬프트
 │   ├── ending_input.schema.json 엔딩 LLM 입력 객체 구조
-│   └── tables/                  콘텐츠 CSV 33종의 필드·범위·참조 정의
+│   └── tables/                  콘텐츠 CSV의 필드·범위·참조 정의
 │
 ├── data/
 │   ├── drafts/                작업용 초안 (UTF-8 BOM 허용)

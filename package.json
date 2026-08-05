@@ -8,7 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
+    "predev": "npm run data:build && node tools/build-prompts.mjs",
     "dev": "vite",
+    "prebuild": "npm run data:validate && npm run data:build && node tools/build-prompts.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "data:normalize": "node tools/normalize.mjs",
@@ -19,7 +21,8 @@
     "test": "node --test"
   },
   "devDependencies": {
-    "typescript": "^7.0.2",
+    "@types/node": "^26.1.2",
+    "typescript": "~5.9.3",
     "vite": "^5.4.0"
   }
 }

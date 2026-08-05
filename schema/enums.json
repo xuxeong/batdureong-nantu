@@ -7,7 +7,7 @@
   },
 
   "kind": {
-    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017",
+    "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017, DEC-CONTENT-019, DEC-CONTENT-021",
     "values": [
       "map",
       "crop_attribute",
@@ -29,7 +29,71 @@
       "dialogue_choice",
       "run_schedule",
       "fear_band",
-      "ending"
+      "ending",
+      "player_base_stats",
+      "raid_notice",
+      "night_result_text",
+      "tutorial_step",
+      "fear_increment"
+    ]
+  },
+
+  "stage": {
+    "source": "DEC-CONTENT-023",
+    "$comment": "튜토리얼 단계가 속한 구간. DEC-RUN-003 이 정한 재배 → 전투 → 정비 순서를 따른다.",
+    "values": ["farming", "combat", "maintenance"]
+  },
+
+  "completion_key": {
+    "source": "DEC-CONTENT-023",
+    "$comment": "튜토리얼 단계의 완료를 코드가 판정하는 고정 시스템 키. 콘텐츠 담당자가 새로 만들 수 없고 추가는 스키마와 구현 변경으로 처리한다.",
+    "values": [
+      "plant_crop",
+      "harvest_crop",
+      "use_sickle",
+      "use_throwable",
+      "sell_crop",
+      "buy_material",
+      "craft_item"
+    ]
+  },
+
+  "asset_role": {
+    "source": "DEC-ART-001",
+    "$comment": "콘텐츠 에셋 연결 CSV 의 역할이자 논리 에셋 ID `asset.<구간>.<이름>` 의 구간이다. 둘은 같은 값을 쓴다. UI·시스템 에셋은 어떤 콘텐츠에도 속하지 않으므로 이 목록이 아니라 별도 고정 목록으로 관리하며 그 목록은 아직 만들지 않았다 (아래 open_questions).",
+    "values": [
+      "field_sprite",
+      "farm_plot",
+      "crop_seed",
+      "crop_growing",
+      "crop_ready",
+      "icon",
+      "portrait",
+      "projectile",
+      "effect",
+      "background",
+      "cutscene",
+      "sfx",
+      "bgm"
+    ]
+  },
+
+  "ui_system_asset_id": {
+    "source": "DEC-ART-001",
+    "$comment": "어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋의 논리 에셋 ID 고정 목록. 콘텐츠 연결 CSV(content_assets.csv)의 asset_role 로는 관리할 수 없다 — ui 구간이 asset_role 목록에 없기 때문이다. 반대로 asset.background.prototype_field 는 background 가 asset_role 에 있고 maps.csv 가 부모라서 이 목록이 아니라 content_assets.csv 행으로 간다. 새 ID 추가는 데이터 행 추가가 아니라 스키마 변경으로 처리한다. close_button 과 resident_hp_gauge 는 B단계라 assets/final/ui/ 에 파일이 아직 없다 — 목록은 허용되는 ID 를 정하는 것이지 파일 존재를 뜻하지 않는다.",
+    "values": [
+      "asset.ui.field_frame_front",
+      "asset.ui.player_status_card",
+      "asset.ui.signboard",
+      "asset.ui.farming_timer",
+      "asset.ui.quickslot",
+      "asset.ui.quickslot_selected",
+      "asset.ui.recovery_slot",
+      "asset.ui.heal_gauge",
+      "asset.ui.plot_highlight",
+      "asset.ui.settings_button",
+      "asset.ui.close_button",
+      "asset.ui.resident_hp_gauge"
     ]
   },
 
@@ -173,8 +237,15 @@
     "values": ["eq", "gte", "lte"]
   },
 
+  "relationship_state": {
+    "source": "DEC-CONTENT-022",
+    "$comment": "주민 관계 상태 여섯 가지의 데이터 키. unformed 는 조우 해결 전의 초기 상태다. ending_conditions 의 specific_resident_relationship 이 target_value 로 여섯 개를 모두 쓴다.",
+    "values": ["unformed", "friendly", "trade", "companion", "coercive", "severed"]
+  },
+
   "relationship_count_subject": {
-    "source": "DEC-CONTENT-011",
+    "source": "DEC-CONTENT-011, DEC-CONTENT-022",
+    "$comment": "relationship_state 와 달리 unformed 를 포함하지 않는다. 해결되지 않은 주민의 수는 엔딩 조건으로 쓰지 않는다 (DEC-CONTENT-022).",
     "values": ["friendly", "trade", "companion", "coercive", "severed"]
   },
 
@@ -215,12 +286,6 @@
     "values": ["null", "NULL", "N/A", "없음", "-"]
   },
 
-  "open_questions": [
-    {
-      "id": "enums.relationship_state_key",
-      "type": "규칙 누락",
-      "summary": "DEC-RESIDENT-012는 관계 상태를 미형성·우호·거래·동료·강압·단절로 열거하고, DEC-CONTENT-011은 relationship_count의 대상으로 friendly·trade·companion·coercive·severed를 열거한다. specific_resident_relationship의 target_value에 사용할 관계 키 목록과 미형성 상태의 키는 결정로그에 없다.",
-      "status": "기획 책임자 확정 대기"
-    }
-  ]
+  "$open_questions_comment": "UI·시스템 에셋 ID 고정 목록은 2026-08-05 에 ui_system_asset_id 로 넣었다. A1 에셋 19종이 도착해 '실제 화면과 에셋이 나올 때' 라는 조건이 충족됐다. logo·hud·font 구간의 ID 는 아직 파일도 확정 ID 도 없어 넣지 않았다 — 필요할 때 같은 절차로 이 목록에 추가한다 (DEC-ART-001).",
+  "open_questions": []
 }

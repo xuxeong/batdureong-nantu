@@ -1,0 +1,4 @@
+id,kind,content_status,content_version,display_name,design_intent,raid_type,opening_text,hud_label
+raid_notice.none,raid_notice,approved,1,조용한 밤 예고,습격이 없는 날. 사라지지 않고 다른 문구로 계속 떠 있어야 하므로 안심시키되 밭일에 집중하라는 방향으로 쓴다.,none,오늘 밤은 아무도 오지 않는다. 밭을 돌보고 몸을 챙길 시간이다.,오늘 밤 · 조용함
+raid_notice.raid,raid_notice,approved,1,습격 예고,일반 습격일. 누가 오는지는 밝히지 않고 온다는 사실만 알린다. 주민 이름과 전투·보상 정보를 넣지 않는다.,raid,해가 지면 밭으로 오는 발소리가 있을 것이다.,오늘 밤 · 습격
+raid_notice.final_raid,raid_notice,approved,1,마지막 습격 예고,마지막 밤. 일반 습격일과 확실히 구분되게 끝이라는 사실을 알리되 이후 일정은 넣지 않는다.,final_raid,오늘이 마지막 밤이다. 끝을 보러 오는 발소리가 있을 것이다.,마지막 밤

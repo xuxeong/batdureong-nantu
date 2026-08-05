@@ -1,0 +1,1490 @@
+/*
+  UI 수치의 단일 원본 (개발 로드맵 2절).
+
+  패널 위치·크기·여백·색을 여기 커스텀 프로퍼티로 선언하고 각 UI 파일은 변수만 참조한다.
+  기획자 UI 사진을 받으면 **이 파일의 값만 고친다.** TS 를 건드리지 않으므로
+  김민주 담당 영역 안에서 끝나고 최수정 작업과 충돌하지 않는다.
+
+  여기 있는 수치는 DEC-PIPELINE-016 이 말하는 "변경 가능한 게임 데이터"가 아니다.
+  화면 표현이라 CSV 로 빼지 않는다. 반대로 작물 성장 시간·가격·확률은 여기 두지 않는다.
+
+  기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3). 창 크기가 다르면 전체를
+  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-001 이 월드 1단위 = 화면
+  1픽셀로 확정해서 배율은 1.0 고정이다. 맵이 1600×900 이라 좌우 160·상하 90 의 여백이
+  남고 그 여백을 필드 HUD 가 쓴다.
+
+  색·여백·그림자는 DEC-ART-001 이 "layout.css 의 값으로 관리하고 이미지로 만들지
+  않는다"로 확정했다 (8/4). **여기가 임시가 아니라 원본이다.**
+*/
+
+:root {
+  /* ── 간격·모서리 ─────────────────────────────── */
+  --ui-gap-xs: 4px;
+  --ui-gap-sm: 8px;
+  --ui-gap-md: 12px;
+  --ui-gap-lg: 20px;
+  --ui-radius: 6px;
+
+  /* ── 기준 해상도 (DEC-UI-025) ────────────────── */
+  --ui-base-width: 1920px;
+  --ui-base-height: 1080px;
+
+  /* ── 색 — 여기가 원본이다 (DEC-ART-001) ──────── */
+  --ui-bg-panel: rgba(17, 23, 15, 0.82);
+  --ui-bg-slot: rgba(0, 0, 0, 0.45);
+  --ui-border: rgba(232, 217, 160, 0.35);
+  --ui-border-strong: #e8d9a0;
+  --ui-text: #f4ecd0;
+  --ui-text-dim: rgba(244, 236, 208, 0.55);
+  --ui-accent: #c8d94a;
+  --ui-danger: #e8613c;
+
+  /* ── 글자 ────────────────────────────────────── */
+  --ui-font: system-ui, 'Malgun Gothic', sans-serif;
+  --ui-font-sm: 12px;
+  --ui-font-md: 14px;
+  --ui-font-lg: 18px;
+  --ui-font-xl: 26px;
+
+  /* ── HUD (DEC-UI-017) ────────────────────────── */
+  --hud-edge: 16px;
+  --hud-health-width: 220px;
+  --hud-health-height: 18px;
+  --hud-slot-size: 48px;
+  --hud-slot-gap: 6px;
+
+  /* ── 정비 허브 (DEC-UI-020, DEC-UI-021) ───────── */
+  --hub-shutter: rgba(10, 8, 6, 0.94);
+  --hub-pad: 28px;
+  --hub-inventory-width: 340px;
+  --hub-popup-width: 560px;
+  --hub-popup-height: 420px;
+
+  /* ── 결과 화면 (DEC-UI-023) ───────────────────────
+     독립 화면이 필드를 덮을 때 쓰는 값. 화면마다 자기 규칙에서 참조한다.
+     DEC-UI-023 이 금지한 것은 네 화면을 하나의 템플릿으로 묶는 것이지
+     같은 변수를 참조하는 것이 아니다 — 변수를 모으는 게 layout.css 의 목적이다
+     (개발 로드맵 2절). */
+  --screen-backdrop: rgba(8, 10, 7, 0.96);
+  --screen-panel-width: 620px;
+  --screen-pad: 36px;
+
+  /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
+  --dialogue-width: 760px;
+
+  /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
+     습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
+     DEC-ART-001 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
+     그래서 아래 셋은 **플레이스홀더**이며 기존 토큰을 가리키기만 한다 —
+     새 색을 여기서 만들지 않는다. 4.5 가 채워지면 이 세 줄만 바꾼다.
+
+     붉은색을 쓰지 않는 것은 플레이스홀더 단계에서도 지킨다 (아트 디렉션 4.2). */
+  --day-start-notice-none: var(--ui-text-dim);
+  --day-start-notice-raid: var(--ui-text);
+  --day-start-notice-final: var(--ui-accent);
+}
+
+/* HUD 는 필드 위에 얹히지만 클릭을 가로채면 안 된다.
+   마우스가 HUD 위에 있을 때만 필드 클릭 공격이 막혀야 한다 (DEC-INPUT-009). */
+.hud {
+  position: absolute;
+  inset: 0;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: none;
+  user-select: none;
+}
+
+.hud__corner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+}
+
+.hud__corner--top-left {
+  top: var(--hud-edge);
+  left: var(--hud-edge);
+}
+
+.hud__corner--top-center {
+  top: var(--hud-edge);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.hud__corner--top-right {
+  top: var(--hud-edge);
+  right: var(--hud-edge);
+}
+
+.hud__corner--bottom-center {
+  bottom: var(--hud-edge);
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: flex-end;
+}
+
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-017) ──── */
+.hud__health {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+.hud__health-bar {
+  width: var(--hud-health-width);
+  height: var(--hud-health-height);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  overflow: hidden;
+}
+
+.hud__health-fill {
+  height: 100%;
+  background: var(--ui-accent);
+  transition: width 120ms linear;
+}
+
+.hud__health-text {
+  font-size: var(--ui-font-md);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 일차·남은 시간 ────────────────────────────── */
+.hud__day {
+  font-size: var(--ui-font-lg);
+}
+
+.hud__time {
+  font-size: var(--ui-font-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 남은 시간이 임박하면 강조한다 (DEC-UI-018) */
+.hud__time--urgent {
+  color: var(--ui-danger);
+  font-weight: 700;
+}
+
+/* ── 습격 예고 (DEC-UI-017, DEC-RUN-011) ────────
+   문구는 raid_notices.csv 에서 온다. 아직 그 테이블이 없어 자리만 둔다.
+   임시 문구를 여기에도 TS 에도 넣지 않는다. */
+.hud__raid-notice {
+  min-height: 20px;
+  padding: 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hud__raid-notice:empty {
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius);
+  min-width: 120px;
+}
+
+/* ── 투척 퀵슬롯 5칸 (DEC-UI-002, DEC-UI-017) ──── */
+.hud__quickslots {
+  display: flex;
+  gap: var(--hud-slot-gap);
+}
+
+.hud__slot {
+  width: var(--hud-slot-size);
+  height: var(--hud-slot-size);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-font-sm);
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 현재 선택된 칸을 명확하게 강조한다 (DEC-UI-002) */
+.hud__slot--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+}
+
+/* 수량이 0이면 편성은 유지하고 사용 불가로만 구분한다 (DEC-RESOURCE-015) */
+.hud__slot--empty {
+  opacity: 0.4;
+}
+
+.hud__slot-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-text-dim);
+}
+
+/* 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화한다 (DEC-UI-002) */
+.hud__quickslots--exhausted .hud__slot {
+  opacity: 0.3;
+}
+
+.hud__no-throwable {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-danger);
+}
+
+/*
+  소진 자동 전환으로 방금 선택된 칸 (DEC-UI-002, DEC-INPUT-007).
+
+  상시 선택 강조(.hud__slot--selected)와 **다른 표현을 쓴다.** 하나는 유지되는
+  상태이고 하나는 "방금 바뀌었다"는 알림이라, 같은 모양이면 자동 전환이 일어난 것을
+  플레이어가 알 수 없다. 여기는 배경으로, 선택 강조는 테두리로 나눈다.
+*/
+.hud__slot--switched {
+  background: var(--ui-accent);
+  color: #11170f;
+}
+
+.hud__slot--switched .hud__slot-count {
+  color: #11170f;
+}
+
+/* 무기 없이 좌클릭했을 때의 짧은 안내. `투척 무기 없음` 상태 표시와 자리를 나눈다 */
+.hud__empty-fire {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text);
+}
+
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
+.hud__recovery {
+  width: var(--hud-slot-size);
+  height: var(--hud-slot-size);
+  border: 1px dashed var(--ui-border);
+  border-radius: var(--ui-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-font-sm);
+  text-align: center;
+  color: var(--ui-text-dim);
+}
+
+/* ── 일시정지·설정 진입 (DEC-UI-017) ───────────── */
+.hud__icon-button {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: var(--ui-gap-xs) var(--ui-gap-sm);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+}
+
+.hud__icon-button:hover {
+  border-color: var(--ui-border-strong);
+}
+
+/* ─────────────────────────────────────────────────
+   정비 허브 (DEC-UI-020)
+
+   화면 전환이 아니라 셔터가 필드를 덮고 그 위에 올라오는 오버레이다.
+   캔버스는 계속 살아 있고 시뮬레이션만 멈춘다.
+   ───────────────────────────────────────────────── */
+
+/*
+  `display` 를 선언한 요소에는 `hidden` 속성이 안 먹는다.
+  `[hidden]` 은 브라우저 기본 스타일의 `display: none` 으로 동작하는데
+  author 스타일의 `display: grid` 가 그것을 이기기 때문이다.
+  숨김을 쓰는 요소마다 이 규칙을 같이 둔다.
+*/
+.hub[hidden],
+.hub__popup-layer[hidden] {
+  display: none;
+}
+
+.hub {
+  position: absolute;
+  inset: 0;
+  background: var(--hub-shutter);
+  display: grid;
+  grid-template-columns: var(--hub-inventory-width) 1fr;
+  grid-template-rows: 1fr auto;
+  gap: var(--ui-gap-lg);
+  padding: var(--hub-pad);
+  box-sizing: border-box;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+/* 보관함은 상시 표시 영역이다. 팝업이 열려 있어도 계속 보여야 한다 (DEC-UI-020) */
+.hub__inventory {
+  grid-row: 1 / 3;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  padding: var(--ui-gap-md);
+  overflow-y: auto;
+}
+
+.hub__inventory-group + .hub__inventory-group {
+  margin-top: var(--ui-gap-lg);
+}
+
+.hub__inventory-title {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.hub__inventory-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  padding: 2px 0;
+}
+
+.hub__inventory-row--empty {
+  color: var(--ui-text-dim);
+}
+
+.hub__count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-017) */
+.hub__money {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--ui-font-lg);
+  padding-bottom: var(--ui-gap-sm);
+  margin-bottom: var(--ui-gap-sm);
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.hub__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-md);
+  min-height: 0;
+}
+
+.hub__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-md);
+}
+
+.hub__title {
+  font-size: var(--ui-font-xl);
+}
+
+/* 습격 예고는 정비 허브에서도 계속 표시한다 (DEC-UI-020) */
+.hub__raid-notice {
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hub__buttons {
+  display: flex;
+  gap: var(--ui-gap-md);
+}
+
+.hub__button {
+  flex: 1;
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.hub__button:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+.hub__button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 하단 진행 버튼. 문구는 DEC-RUN-006 이 정한 두 가지다 */
+.hub__finish {
+  grid-column: 2;
+  justify-self: end;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+/* ── 팝업 (DEC-UI-020) ────────────────────────────
+   정비 허브 내부 화면이지 DEC-UI-022 의 오버레이 층이 아니다.
+   한 번에 하나만, 항상 같은 자리에 연다.
+   닫기 버튼으로만 닫힌다 — 바깥 클릭도 Esc 도 안 된다. */
+
+.hub__popup-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hub__popup {
+  width: var(--hub-popup-width);
+  height: var(--hub-popup-height);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: #171c12;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  gap: var(--ui-gap-md);
+}
+
+.hub__popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hub__popup-title {
+  font-size: var(--ui-font-lg);
+}
+
+.hub__popup-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.hub__popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-gap-md);
+  border-top: 1px solid var(--ui-border);
+  padding-top: var(--ui-gap-md);
+}
+
+.hub__row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-sm);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  cursor: pointer;
+  text-align: left;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+}
+
+.hub__row:hover:not(:disabled) {
+  border-color: var(--ui-border);
+}
+
+.hub__row--selected {
+  border-color: var(--ui-border-strong);
+}
+
+.hub__row:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hub__row-name {
+  flex: 1;
+}
+
+.hub__row-sub {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+}
+
+/* 거래·제작 실행 전 미리보기 (DEC-UI-005, DEC-UI-006) */
+.hub__preview {
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hub__preview strong {
+  color: var(--ui-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hub__qty {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-xs);
+}
+
+.hub__qty input {
+  width: 64px;
+  padding: var(--ui-gap-xs);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: right;
+}
+
+/* ── 상점·제작 모달 (DEC-UI-005, DEC-UI-006) ───────
+   둘 다 정비 허브 팝업 안에서 목록 + 상세 + 바닥(수량·미리보기·실행) 구조를 쓴다. */
+
+/* 거래·제작 실행 버튼. 바닥 오른쪽 끝에 둔다 */
+.hub__action {
+  margin-left: auto;
+  padding: var(--ui-gap-sm) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hub__action:hover:not(:disabled) {
+  background: var(--ui-bg-slot);
+}
+
+/* 불가능한 거래·제작은 눌리지 않는다 (DEC-UI-005, DEC-UI-006) */
+.hub__action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 제작 목록의 결과 분류 구획 — 투척 무기 / 회복 아이템 (DEC-UI-006) */
+.hub__popup-group + .hub__popup-group {
+  margin-top: var(--ui-gap-md);
+}
+
+.hub__popup-group-title {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  margin: var(--ui-gap-sm) 0 var(--ui-gap-xs);
+}
+
+/* 고른 레시피의 상세. 잠긴 레시피면 이름과 해금 진행도만 들어온다 */
+.hub__detail {
+  border-top: 1px solid var(--ui-border);
+  padding-top: var(--ui-gap-md);
+  margin-top: var(--ui-gap-md);
+}
+
+.hub__detail:empty {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.hub__detail-title {
+  font-size: var(--ui-font-lg);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.hub__detail-text {
+  margin: 0 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.6;
+}
+
+.hub__detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 0;
+}
+
+/* 필요 수량이 보유를 넘는 입력. 부족한 것을 따로 안내하지 않고 표에서 보인다 */
+.hub__lack {
+  color: var(--ui-danger);
+}
+
+/* ── 투척 퀵슬롯 편성 (DEC-UI-021, DEC-RESOURCE-015) ─
+   다섯 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
+   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 다섯 칸을 가리키지만
+   한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 규칙이 갈린다. */
+
+.hub__slots {
+  display: flex;
+  gap: var(--hud-slot-gap);
+  margin-bottom: var(--ui-gap-md);
+}
+
+.hub__slot {
+  flex: 1;
+  min-height: calc(var(--hud-slot-size) + var(--ui-gap-md));
+  padding: var(--ui-gap-sm);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-sm);
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+
+.hub__slot:hover {
+  border-color: var(--ui-border-strong);
+}
+
+/* 지금 고른 칸. 편성은 이 칸에 적용된다 */
+.hub__slot--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+}
+
+/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-021) */
+.hub__slot--empty .hub__slot-name {
+  color: var(--ui-text-dim);
+}
+
+/* 수량 0. 편성은 유지하고 사용 불가로만 구분한다 (DEC-RESOURCE-015) */
+.hub__slot--unusable {
+  border-style: dashed;
+}
+
+.hub__slot--unusable .hub__slot-name {
+  color: var(--ui-danger);
+}
+
+/* `1~5` 입력과 같은 번호다 (DEC-INPUT-006) */
+.hub__slot-index {
+  color: var(--ui-text-dim);
+}
+
+.hub__slot-name {
+  margin-top: var(--ui-gap-xs);
+  font-size: var(--ui-font-md);
+}
+
+/* ─────────────────────────────────────────────────
+   전투 전 대화 · 투항 대화 (DEC-UI-007~010, DEC-UI-014)
+
+   필드 위 오버레이다. **배경을 완전히 덮지 않는다** — DEC-UI-010 이 "투항 대화가
+   열려 있는 동안 배경의 필드를 정지 상태로 구분해 표시한다"고 정했으므로 필드가
+   비치되 눈에 띄게 어두워야 한다. 불투명하게 덮으면 정지한 필드가 아예 안 보인다.
+
+   필수 화면이라 Esc 로 닫히지 않는다. 닫는 경로가 선택지뿐이라 닫기 버튼도 없다.
+   ───────────────────────────────────────────────── */
+
+.dialogue[hidden] {
+  display: none;
+}
+
+.dialogue {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  /* 필드가 비치는 정지 표시 (DEC-UI-010) */
+  background: rgba(8, 10, 7, 0.55);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.dialogue__panel {
+  width: var(--dialogue-width);
+  max-width: 100%;
+  padding: var(--ui-gap-lg);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-md);
+}
+
+.dialogue__speaker {
+  font-size: var(--ui-font-lg);
+  color: var(--ui-accent);
+}
+
+/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 선택지가 사라진다 */
+.dialogue__text {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+  min-height: 3.4em;
+}
+
+.dialogue__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+/* 선택지는 마우스 클릭으로 고른다 (DEC-UI-008) */
+.dialogue__choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-left-width: 4px;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.dialogue__choice:hover:not(:disabled) {
+  border-color: var(--ui-border-strong);
+}
+
+/*
+  세 선택지를 시각적으로 구분한다 (DEC-UI-007).
+
+  **자리 순서로만 구분한다.** 기능(공감·설득 / 자원 협상 / 위협·대립)은 뷰에 오지도
+  않으므로 이 색이 기능 이름을 드러내지 않는다. 색을 기능에 묶으면 그 순간
+  "빨간 게 위협"이라는 태그가 되어 확정문이 금지한 것과 같아진다.
+*/
+.dialogue__choice[data-slot='0'] { border-left-color: var(--ui-accent); }
+.dialogue__choice[data-slot='1'] { border-left-color: var(--ui-border-strong); }
+.dialogue__choice[data-slot='2'] { border-left-color: var(--ui-text-dim); }
+
+/* 총수량이 모자란 자원 협상. 흐리게만 하고 안내 문구를 덧붙이지 않는다 (DEC-UI-008) */
+.dialogue__choice:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 제안 수량·현재 총수량·무작위 소비 사실 한 줄 (DEC-UI-008) */
+.dialogue__choice-offer {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+}
+
+.dialogue__proceed {
+  align-self: flex-end;
+  padding: var(--ui-gap-sm) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  cursor: pointer;
+}
+
+.dialogue__proceed[hidden] {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────
+   밤 결과 (DEC-RUN-015, DEC-UI-023)
+
+   승인된 고정 문구 하나와 진행 입력 하나뿐이다.
+   그날의 수확량·자원 변화·조우 결과를 담지 않는다.
+
+   조우 결과와 **클래스를 공유하지 않는다.** DEC-UI-023 이 네 화면을 공유 템플릿으로
+   묶지 말라고 확정했고, 규칙을 한 벌로 합치면 한쪽을 고칠 때 다른 쪽이 같이 움직인다.
+   두 화면의 규칙이 닮아 보이는 것은 지금 둘 다 단순해서일 뿐이다.
+   ───────────────────────────────────────────────── */
+
+/* `display` 를 선언한 요소에는 `hidden` 속성이 안 먹는다 (위 .hub 주석 참고) */
+.night-result[hidden] {
+  display: none;
+}
+
+.night-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.night-result__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.night-result__text {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  line-height: 1.6;
+}
+
+.night-result__continue {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.night-result__continue:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   조우 결과 (DEC-RUN-015, DEC-UI-011, DEC-UI-013, DEC-UI-023)
+
+   주민 이름·해결 방식·최종 상태 셋이 항상 있고, 보상·소비·사연·이후 습격 구획은
+   결과에 따라 있고 없고가 갈린다. 없는 구획은 비워 두는 게 아니라 만들지 않는다.
+   ───────────────────────────────────────────────── */
+
+.encounter-result[hidden] {
+  display: none;
+}
+
+.encounter-result {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.encounter-result__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  max-height: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+  overflow-y: auto;
+}
+
+.encounter-result__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-md);
+  border-bottom: 1px solid var(--ui-border);
+  padding-bottom: var(--ui-gap-md);
+}
+
+.encounter-result__resident {
+  font-size: var(--ui-font-xl);
+}
+
+/* 해결 방식. final_outcome 키가 아니라 사람이 읽는 말이다 (DEC-UI-011) */
+.encounter-result__outcome {
+  font-size: var(--ui-font-lg);
+  color: var(--ui-accent);
+}
+
+/* 최종 생존·소속·관계 (DEC-UI-011, DEC-UI-013) */
+.encounter-result__states {
+  display: flex;
+  gap: var(--ui-gap-md);
+  flex-wrap: wrap;
+}
+
+.encounter-result__chip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  font-size: var(--ui-font-md);
+}
+
+.encounter-result__chip-label {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+}
+
+.encounter-result__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+}
+
+.encounter-result__section-title {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.encounter-result__resource {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  padding: 2px 0;
+}
+
+.encounter-result__count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 사연 정보는 ending_fact_text 만 표시한다. source_fact_text 는 넘어오지 않는다 */
+.encounter-result__fact {
+  margin: 0 0 var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+  line-height: 1.6;
+}
+
+.encounter-result__note {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.6;
+}
+
+/* 진행 입력은 하나뿐이다 (DEC-UI-023) */
+.encounter-result__continue {
+  align-self: flex-end;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.encounter-result__continue:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   일차 시작 (DEC-UI-016, DEC-UI-028, DEC-RUN-011)
+
+   결과 화면 2종과 **클래스를 공유하지 않는다.** DEC-UI-023 이 묶지 말라고 한 것은
+   결과 화면 넷이지만 같은 이유가 여기에도 걸린다 — 일차 시작은 일지 영역이 있고
+   없고가 갈리는 유일한 화면이라 규칙을 합치면 그 분기가 다른 화면으로 샌다.
+   ───────────────────────────────────────────────── */
+
+/* `display` 를 선언한 요소에는 `hidden` 속성이 안 먹는다 */
+.day-start[hidden] {
+  display: none;
+}
+
+.day-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.day-start__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.day-start__day {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* 문장 형태다. HUD·정비 허브의 짧은 표지(hud_label)와 길이만 다른 같은 정보다 */
+.day-start__notice {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+}
+
+.day-start__notice--none {
+  color: var(--day-start-notice-none);
+}
+
+.day-start__notice--raid {
+  color: var(--day-start-notice-raid);
+}
+
+/* 마지막 습격은 일반 습격일과 확실히 구분한다 (DEC-RUN-011) */
+.day-start__notice--final_raid {
+  color: var(--day-start-notice-final);
+}
+
+/* 폴백 일지와 정상 생성 일지를 구분하지 않는다 (DEC-UI-028).
+   구분이 있는 것은 "생성 중" 하나뿐이다. */
+.day-start__journal {
+  margin: 0;
+  padding-top: var(--ui-gap-lg);
+  border-top: 1px solid var(--ui-border);
+  align-self: stretch;
+  font-size: var(--ui-font-md);
+  line-height: 1.8;
+  color: var(--ui-text);
+}
+
+.day-start__journal--pending {
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+.day-start__continue {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.day-start__continue:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   런 실패 (DEC-UI-023, DEC-RUN-008)
+
+   엔딩과 **클래스를 공유하지 않는다.** DEC-UI-014 와 DEC-UI-023 이 둘 다
+   "분리해 구현하고 공유 템플릿으로 묶지 않는다"로 확정했다. 규칙을 한 벌로 합치면
+   런 실패에 넣지 말라고 열거한 것들이 엔딩 쪽 규칙을 타고 들어온다.
+   ───────────────────────────────────────────────── */
+
+.run-failed[hidden] {
+  display: none;
+}
+
+.run-failed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.run-failed__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.run-failed__text {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  line-height: 1.6;
+}
+
+/* 도달한 일차. 런 통계가 아니라 이 한 줄만이다 (DEC-UI-023) */
+.run-failed__day {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+}
+
+.run-failed__return {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.run-failed__return:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   엔딩 (DEC-UI-023, DEC-CONTENT-011)
+
+   제목·요약·기록문 셋이 항상 있고, 공포도 구획만 개발 빌드에서 붙는다.
+   폴백 기록문과 생성된 기록문을 구분하는 규칙은 여기에 없다 — 없는 것이 규칙이다.
+   ───────────────────────────────────────────────── */
+
+.ending[hidden] {
+  display: none;
+}
+
+.ending {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.ending__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.ending__title {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ending__summary {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+  color: var(--ui-text-dim);
+}
+
+/* 폴백과 생성분을 구분하지 않는다 (DEC-UI-023, DEC-UI-024).
+   구분이 있는 것은 "생성 중" 하나뿐이다. */
+.ending__record {
+  margin: 0;
+  padding-top: var(--ui-gap-lg);
+  border-top: 1px solid var(--ui-border);
+  align-self: stretch;
+  font-size: var(--ui-font-md);
+  line-height: 1.9;
+}
+
+.ending__record--pending {
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+/* 개발 빌드 전용. 제출 빌드에서는 이 요소가 DOM 에 없다 (DEC-RESIDENT-047) */
+.ending__fear {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.ending__return {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.ending__return:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   입력을 소유하지 않은 오버레이 (DEC-UI-026)
+
+   **표시와 입력은 다르다.** 가장 위 오버레이가 입력을 독점하고 아래 층위는
+   표시만 남는다. 8/5 플레이 테스트에서 브라우저 저장 대화상자로 포커스를 잃자
+   대화창이 통째로 사라졌는데, 그건 표시 판단에 `inputOwner()` 를 쓴 탓이었다.
+
+   일시정지 화면이 아직 뼈대라 위를 덮어 주는 것이 없다. 그래서 "지금은 못 누른다"
+   를 여기서 직접 드러낸다 — 일시정지 화면이 생기면 이 흐림은 다시 볼 값이다.
+   ───────────────────────────────────────────────── */
+.is-inert {
+  pointer-events: none;
+  opacity: 0.45;
+  filter: saturate(0.6);
+}
+
+/* ─────────────────────────────────────────────────
+   타이틀 · 이름 입력 · 튜토리얼 (DEC-UI-015)
+
+   런이 시작되는 세 화면이다. 결과 화면·일차 시작과 클래스를 공유하지 않는다 —
+   이유는 DEC-UI-023 과 같고, 여기 셋은 서로도 나눈다. 이름 입력만 키보드
+   입력이 있고 튜토리얼만 승인 데이터를 기다린다.
+   ───────────────────────────────────────────────── */
+
+.title[hidden],
+.name-input[hidden],
+.tutorial[hidden] {
+  display: none;
+}
+
+.title,
+.name-input,
+.tutorial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.title__panel,
+.name-input__panel,
+.tutorial__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+/* ── 타이틀 ────────────────────────────────────── */
+
+/* 로고 에셋(asset.logo.*)으로 바뀔 자리다. 교체는 아트 통합에서 한다 */
+.title__name {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* ── 이름 입력 ─────────────────────────────────── */
+
+.name-input__prompt {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+}
+
+/* 이 화면만 키보드 입력이 있다 (DEC-UI-025 의 마우스 전용 규칙 예외) */
+.name-input__field {
+  width: 320px;
+  max-width: 100%;
+  padding: var(--ui-gap-md);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-xl);
+  text-align: center;
+}
+
+.name-input__field:focus {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* ── 튜토리얼 ──────────────────────────────────── */
+
+/* 안내 문구가 승인 데이터 대기라는 사실. 임시 안내를 지어 넣지 않는다 */
+.tutorial__pending {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+.tutorial__notice {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.7;
+}
+
+/* ── 세 화면의 진행 입력 ───────────────────────── */
+
+.title__start,
+.name-input__confirm,
+.tutorial__skip {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.title__start:hover,
+.name-input__confirm:hover,
+.tutorial__skip:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* 이름이 비어 있으면 진행할 수 없다 (DEC-UI-015) */
+.name-input__confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.name-input__confirm:disabled:hover {
+  background: var(--ui-bg-panel);
+}
+
+/* ─────────────────────────────────────────────────
+   회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008)
+
+   `Q` 를 누르고 있는 동안에만 뜬다. 닫기 버튼이 없다 — 손을 떼면 닫힌다.
+   필드를 덮지 않고 아래쪽에 붙는다. 퀵슬롯 옆의 회복 칸이 무엇을 고르고
+   있는지 보여주는 자리이므로 그 근처에서 열리는 것이 읽기 쉽다.
+   ───────────────────────────────────────────────── */
+
+.recovery-menu[hidden] {
+  display: none;
+}
+
+.recovery-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(var(--hud-edge) + var(--hud-slot-size) + var(--ui-gap-lg));
+  box-sizing: border-box;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  /* 배경을 덮지 않는다. 느려진 필드가 보여야 한다 (DEC-INPUT-008) */
+  pointer-events: none;
+}
+
+.recovery-menu__panel {
+  min-width: 320px;
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  pointer-events: auto;
+}
+
+/* 느려진 상태임을 알린다 (DEC-UI-001) */
+.recovery-menu__notice {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.recovery-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+}
+
+.recovery-menu__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--ui-gap-md);
+  align-items: baseline;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recovery-menu__item:hover {
+  border-color: var(--ui-border);
+}
+
+/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-001) */
+.recovery-menu__item--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+  padding: calc(var(--ui-gap-sm) - 1px) calc(var(--ui-gap-md) - 1px);
+}
+
+.recovery-menu__name {
+  font-weight: 600;
+}
+
+.recovery-menu__held,
+.recovery-menu__heal {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.recovery-menu__empty {
+  margin: 0;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
