@@ -85,6 +85,13 @@ import type {
   EncounterResultView,
 } from './ui/encounter-result.ts'
 import { createEconomy } from './systems/economy.ts'
+import {
+  advanceRecovery,
+  recoveryOptions,
+  startRecovery,
+  syncSelection,
+} from './systems/recovery.ts'
+import type { RecoverySources } from './systems/recovery.ts'
 import type { Economy } from './systems/economy.ts'
 import { createShopModal } from './ui/shop-modal.ts'
 import type { ShopItemView, ShopMode } from './ui/shop-modal.ts'
@@ -404,6 +411,135 @@ function startNewRun(playerName: string): void {
   player.y = src.spawnY
 }
 
+/**
+ * 회복 파우치가 읽는 승인 데이터 (DEC-RESOURCE-017).
+ *
+ * 파우치는 목록을 저장하지 않고 보관함에서 매번 계산한다. 그 계산에 필요한
+ * 승인 행과 최대 체력을 여기 담아 둔다 — 최대 체력은 런 상태에 없다.
+ */
+let recoverySources: RecoverySources | null = null
+
+/**
+ * 회복 선택을 규칙대로 맞춘다 (DEC-RESOURCE-017, 018).
+ *
+ * **매 프레임 불러도 안전하다.** 현재 선택의 수량이 남아 있으면 아무것도 하지
+ * 않는다. `회복 아이템 없음` 에서 뭔가를 얻으면 자동 선택되고, 선택한 것이
+ * 소진되면 정해진 순서에서 다음으로 넘어간다. 이 두 경우 말고는 안 바뀐다.
+ */
+function syncRecoverySelection(): void {
+  if (run === null || recoverySources === null) return
+
+  const changed = syncSelection(run.pouch, recoveryOptions(run, recoverySources))
+  if (changed && isDevBuild) {
+    console.info(`[회복] 선택 — ${run.pouch.selectedId ?? '회복 아이템 없음'}`)
+  }
+}
+
+/**
+ * `Q` 를 짧게 눌렀다 — 사용 시작 또는 자발적 취소 (DEC-INPUT-005, DEC-INPUT-012).
+ *
+ * **진행 중이면 취소가 먼저다.** 같은 입력이 두 뜻을 갖는 것은 확정 규칙이고
+ * (`DEC-INPUT-012` — 게이지가 도는 동안 `Q` 를 다시 누르면 자발적 취소),
+ * 취소는 아이템을 소비하지 않으며 선택도 유지한다.
+ *
+ * 재배·습격 단계에서만 받는다 (`DEC-RESOURCE-018` — 정비에서는 쓸 수 없다).
+ * 그 판단은 입력 잠금(`syncInputLock`)이 이미 하지만, 여기서도 한 번 본다 —
+ * 입력 경로가 하나 더 생겨도 규칙이 새지 않게 한다.
+ */
+function onRecoverPressed(): void {
+  if (run === null || recoverySources === null) return
+  if (scenes.currentFieldMode() === null) return
+
+  if (run.recovering !== null) {
+    // 자발적 취소. 소비하지 않고 체력도 안 오른다 (DEC-INPUT-012)
+    const cancelled = run.recovering.itemId
+    run.recovering = null
+    bus.emit('recovery.cancelled', { itemId: cancelled })
+    if (isDevBuild) console.info(`[회복] 취소 — ${cancelled} (자발적)`)
+    return
+  }
+
+  const started = startRecovery(run, recoveryOptions(run, recoverySources))
+  if (!started.ok) {
+    if (isDevBuild) console.warn(`[회복] 시작 못 함 — ${started.reason}`)
+    return
+  }
+
+  run.recovering = {
+    itemId: started.option.id,
+    elapsedSeconds: 0,
+    durationSeconds: started.option.useDurationSeconds,
+  }
+  bus.emit('recovery.started', {
+    itemId: started.option.id,
+    durationSeconds: started.option.useDurationSeconds,
+  })
+  if (isDevBuild) {
+    console.info(
+      `[회복] 시작 — ${started.option.displayName} · ${started.option.useDurationSeconds}초`,
+    )
+  }
+}
+
+/**
+ * 회복 게이지를 진행한다. 재배·습격 양쪽에서 흐른다.
+ *
+ * 완료되면 소비와 회복이 한 처리로 끝난다 (`systems/recovery.ts`).
+ */
+function advanceRecoveryGauge(dt: number): void {
+  if (run === null || recoverySources === null) return
+
+  const finished = advanceRecovery(run, dt, recoverySources)
+  if (finished === null) return
+
+  bus.emit('recovery.completed', { itemId: finished.itemId, healedAmount: finished.healed })
+  if (isDevBuild) {
+    console.info(`[회복] 완료 — ${finished.itemId} · +${finished.healed} → 체력 ${finished.health}`)
+  }
+  // 마지막 하나를 썼으면 다음 것으로 넘어간다 (DEC-RESOURCE-018)
+  syncRecoverySelection()
+}
+
+/**
+ * 회복이 진행 중이면 취소한다. **소비하지 않는다.**
+ *
+ * 공격받았을 때(`DEC-INPUT-005`)와 대화로 전환될 때(로드맵 9-2) 쓴다.
+ * 정지 후 재개가 아니라 취소다 — 재개로 만들면 대화를 열었다 닫는 것으로
+ * 무적 시간을 만들 수 있다.
+ */
+function cancelRecovery(reason: 'damaged' | 'dialogue'): void {
+  if (run === null || run.recovering === null) return
+
+  const cancelled = run.recovering.itemId
+  run.recovering = null
+  // 계약에 사유가 없다. 이벤트는 "취소됐다" 만 알리고 왜인지는 개발 로그에 남긴다 —
+  // 듣는 쪽이 사유로 갈라지는 규칙이 아직 없어서 필드를 늘리지 않았다.
+  bus.emit('recovery.cancelled', { itemId: cancelled })
+  if (isDevBuild) console.info(`[회복] 취소 — ${cancelled} (${reason})`)
+}
+
+/**
+ * 회복 사용 중의 이동속도 배율 (DEC-INPUT-005).
+ *
+ * 진행 중이 아니면 1 이다. 배율은 승인 데이터(`use_duration_seconds` 옆의
+ * `move_speed_multiplier`)에서 오며 코드에 숫자를 두지 않는다.
+ */
+function recoveryMoveMultiplier(): number {
+  if (run === null || run.recovering === null || recoverySources === null) return 1
+
+  const option = recoveryOptions(run, recoverySources).find(
+    (o) => o.id === run!.recovering!.itemId,
+  )
+  return option?.moveSpeedMultiplier ?? 1
+}
+
+/** 선택된 회복 아이템의 표시 이름. 없으면 null 이고 HUD 가 `회복 아이템 없음` 을 쓴다 */
+function selectedRecoveryName(): string | null {
+  const id = run?.pouch.selectedId ?? null
+  if (id === null) return null
+  return displayNames.get(id) ?? id
+}
+
 const player = { x: 0, y: 0 }
 
 /**
@@ -599,6 +735,13 @@ async function bootData(): Promise<void> {
     recipesById = new Map(craftRecipes.map((r) => [r.id, r]))
     recoveryItemsById = new Map((data.recovery_items ?? []).map((r) => [r.id, r]))
 
+    // 최대 체력은 런 상태에 없다. 승인 행이 원본이다 (DEC-CONTENT-019)
+    recoverySources = {
+      items: data.recovery_items ?? [],
+      crops,
+      maxHealth: data.player_base_stats![0].max_health,
+    }
+
     console.info(
       `[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종 · ` +
         `${schedule.total_days}일 런 · 재배 ${schedule.farming_duration_seconds}초`,
@@ -706,6 +849,8 @@ function updateRaid(dt: number): void {
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
+    // 회복이 완료되기 전에 공격받으면 취소된다. 아이템은 소비하지 않는다 (DEC-INPUT-005)
+    cancelRecovery('damaged')
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
   }
 
@@ -1375,6 +1520,10 @@ function failRunIfDead(): void {
  * (DEC-UI-010).
  */
 function onSurrenderOffered(): void {
+  // 회복은 대화 전환 시 **취소**된다. 정지 후 재개가 아니다 (로드맵 9-2) —
+  // 재개로 만들면 대화를 열었다 닫는 것으로 무적 구간을 만들 수 있다.
+  cancelRecovery('dialogue')
+
   if (hostile === null) return
 
   residentCombat?.suspendForSurrender()
@@ -1700,7 +1849,7 @@ const input = createInput(renderer.canvas, {
     if (combat === null || run === null) return
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
   },
-  onRecoverShortPress: () => console.info('[입력] 회복 짧게 누름 — 시작 또는 취소'),
+  onRecoverShortPress: () => onRecoverPressed(),
   onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
   onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
   onEscape: () => scenes.handleEscape(),
@@ -2308,7 +2457,9 @@ function hudView() {
     remainingSeconds: inFarmingStage() ? (farmingTimer?.remainingSeconds ?? null) : null,
     timeUrgent: farmingTimer?.urgent ?? false,
     quickslots,
-    recoveryName: run?.pouch.selectedId ?? null,
+    // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
+    // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
+    recoveryName: selectedRecoveryName(),
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
@@ -2321,12 +2472,21 @@ const loop = createGameLoop(
   {
     update(dt) {
       const move = input.move()
-      const speed = runConfig.moveSpeed
+      // 회복 사용 중에는 이동속도가 감소한다 (DEC-INPUT-005). 배율은 승인 데이터에서 온다.
+      const speed = runConfig.moveSpeed * recoveryMoveMultiplier()
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
 
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
       advanceThrowFeedback(dt)
+
+      // 회복 게이지도 양쪽에서 흐른다. 완료되면 소비와 회복이 한 처리로 끝난다.
+      advanceRecoveryGauge(dt)
+
+      // 보관함이 바뀌면 선택이 규칙대로 따라간다 (DEC-RESOURCE-017, 018).
+      // 수확·제작·구매가 각자 부르지 않고 한 곳에서 본다 — 부르는 곳을 늘리면
+      // 하나를 빠뜨렸을 때 "얻었는데 회복 아이템 없음" 이 다시 생긴다.
+      syncRecoverySelection()
 
       // 습격 모드 — 주민만 돈다. 작물은 자라지 않고 재배 타이머도 없다.
       if (inRaidStage()) {
