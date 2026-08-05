@@ -26,6 +26,8 @@ import type {
 import type { HostileResidentInstance, ProjectileInstance } from '../state/types.ts'
 import { DataMissingError } from '../data/run-config.ts'
 import { effectiveMoveSpeed } from './combat.ts'
+import { clampToWorld } from './world-bounds.ts'
+import type { WorldBounds } from './world-bounds.ts'
 
 /**
  * 조우 하나 동안 고정되는 적대 주민의 최종 수치.
@@ -104,10 +106,12 @@ export interface SpawnOptions {
 export interface ResidentCombatOptions {
   /** 둔화 배율을 읽기 위해 필요하다 */
   weapons: readonly ThrowableWeapon[]
+  /** 맵 크기. 이동 위치를 경계 안으로 제한한다 (DEC-CONTENT-016) */
+  bounds: WorldBounds
 }
 
 export function createResidentCombat(options: ResidentCombatOptions): ResidentCombatSystem {
-  const { weapons } = options
+  const { weapons, bounds } = options
 
   let hostiles: HostileRuntime[] = []
   let projectiles: ProjectileInstance[] = []
@@ -202,6 +206,8 @@ export function createResidentCombat(options: ResidentCombatOptions): ResidentCo
           if (distance > 0) {
             hostile.entity.x += (dx / distance) * step
             hostile.entity.y += (dy / distance) * step
+            // 이동 위치는 맵 경계 안으로 제한한다 (DEC-CONTENT-016)
+            clampToWorld(hostile.entity, bounds)
           }
           continue
         }

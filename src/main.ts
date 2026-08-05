@@ -13,6 +13,7 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
 import { createAssetImages, UI_ASSET } from './render/assets.ts'
@@ -220,6 +221,13 @@ let hostile: HostileRuntime | null = null
 let hostileTarget: CombatTarget | null = null
 /** 맵의 resident_spawn 지점 (DEC-CONTENT-016) */
 let raidSpawnPoint: { x: number; y: number } | null = null
+/**
+ * 승인 맵의 크기 (DEC-CONTENT-016).
+ *
+ * 플레이어·야생동물·적대 주민의 이동을 여기 안으로 자른다. 승인 데이터가 오기
+ * 전에는 null 이고 그때는 자르지 않는다 — 경계를 지어내면 그 값이 원본이 된다.
+ */
+let worldBounds: import('./systems/world-bounds.ts').WorldBounds | null = null
 /** 맵의 ally_support 지점. 영입 주민이 여기 선다 (DEC-CONTENT-016, DEC-RESIDENT-021) */
 let allySupportPoint: { x: number; y: number } | null = null
 /** 주민 ID → 지원 공격 수치. `resident_support_attack_profiles.csv` 가 원본 (DEC-RESIDENT-045) */
@@ -720,7 +728,8 @@ async function bootData(): Promise<void> {
       }),
     )
 
-    residentCombat = createResidentCombat({ weapons })
+    worldBounds = { width: map.world_width, height: map.world_height }
+    residentCombat = createResidentCombat({ weapons, bounds: worldBounds })
     encounter = createEncounter({
       residents: data.residents ?? [],
       personalityProfiles: data.resident_personality_profiles ?? [],
@@ -2770,6 +2779,10 @@ const loop = createGameLoop(
       const speed = runConfig.moveSpeed * recoveryMoveMultiplier()
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
+      // 이동 위치는 맵 경계 안으로 제한한다 (DEC-CONTENT-016).
+      // 승인 데이터가 오기 전에는 경계를 모르므로 제한하지 않는다 — 그때는
+      // 임시 수치로 움직여 보는 상태이고 밭도 그려지지 않는다.
+      if (worldBounds !== null) clampToWorld(player, worldBounds)
 
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
       advanceThrowFeedback(dt)
