@@ -61,6 +61,10 @@ import { createNightResult, selectNightResultText } from './ui/night-result.ts'
 import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
+import { createRunFailed } from './ui/run-failed.ts'
+import type { RunFailedScreen } from './ui/run-failed.ts'
+import { createEnding } from './ui/ending.ts'
+import type { EndingScreen } from './ui/ending.ts'
 import {
   buildJournalInput,
   fearDirection,
@@ -232,6 +236,23 @@ let encounterResultView: EncounterResultView | null = null
 
 /** 엔딩 판정 (DEC-CONTENT-011) */
 let endingJudge: EndingJudge | null = null
+
+/**
+ * 승인된 엔딩. 엔딩 화면이 제목과 요약을 여기서 읽는다 (DEC-UI-023).
+ *
+ * `run.ending` 에는 확정된 ID 와 기록문만 저장한다 — 제목·요약은 승인 데이터의
+ * 값이라 런 상태에 복제하지 않는다.
+ */
+let endingsById = new Map<string, import('./data/types.ts').Ending>()
+
+/**
+ * 엔딩 기록문을 생성 중인가 (DEC-UI-023, DEC-UI-024).
+ *
+ * `run.ending.recordText` 는 확정 즉시 승인된 폴백으로 채워지므로 "문장이 있는가"
+ * 로는 생성 중인지 알 수 없다. 재시도 중이라는 사실은 화면에 노출하지 않으므로
+ * 이 값은 켜짐·꺼짐 둘뿐이다.
+ */
+let endingRecordPending = false
 /**
  * 엔딩 기록문과 일지 입력을 만드는 데 필요한 승인 데이터
  * (DEC-CONTENT-011, DEC-JOURNAL-002).
@@ -390,6 +411,7 @@ async function bootData(): Promise<void> {
       crops,
       cropAttributes: data.crop_attributes ?? [],
     })
+    endingsById = new Map((data.endings ?? []).map((e) => [e.id, e]))
 
     // ── 결과 화면이 읽는 승인 데이터 ────────────────
     residentNames = new Map((data.residents ?? []).map((r) => [r.id, r.display_name]))
@@ -761,7 +783,8 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
  * 엔딩 판정 (DEC-CONTENT-011).
  *
  * 시스템이 엔딩을 먼저 확정하고 그 값을 런 결과에 저장한 **뒤에만** LLM 기록문을
- * 요청한다. 기록문 생성은 아직 붙지 않았고, 붙어도 실패가 엔딩 진행을 막지 않는다.
+ * 요청한다. 기록문 생성이 실패해도 엔딩 진행을 막지 않는다 — 확정 즉시 승인된
+ * 폴백 문장으로 채워 두므로 화면에 보여 줄 문장이 항상 있다.
  */
 function decideEnding(): void {
   if (endingJudge === null || run === null) return
@@ -811,6 +834,10 @@ function decideEnding(): void {
 
   // 기록문은 비동기로 채운다. **기다리지 않는다** — LLM 요청이 엔딩 진행을 막지
   // 않아야 한다 (DEC-CONTENT-011). 응답이 오면 폴백 문장을 대체한다.
+  //
+  // 승인 데이터가 없으면 요청 자체를 못 하므로 대기 표시를 켜지 않는다. 켜면
+  // 엔딩 화면이 영영 `기록을 남기는 중…` 에 머문다.
+  endingRecordPending = approvedForLlm !== null
   void fillEndingRecord(judgement.ending, judgement)
 }
 
@@ -840,6 +867,11 @@ async function fillEndingRecord(
   })
 
   const result = await requestEndingRecord(input, ending.fallback_record_text)
+
+  // 성공이든 폴백이든 여기 오면 대기는 끝났다. 화면 갱신보다 먼저 끈다 —
+  // 아래 `return` 으로 빠지는 경우에도 대기 표시가 남으면 안 된다.
+  endingRecordPending = false
+
   if (run === null || run.ending === null) return // 그 사이 런이 초기화됐다
 
   run.ending.recordText = result.recordText
@@ -1583,6 +1615,21 @@ const dayStartScreen: DayStartScreen = createDayStart(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
+// ── 런 종료 2종 (DEC-UI-014, DEC-UI-023) ─────────────────────
+//
+// 둘 다 "런 종료" 계열이지만 **분리해 구현한다.** 체력 0 실패에는 엔딩 판정도
+// 기록문도 없으므로 런 실패 화면은 보여 줄 것이 애초에 다르다.
+//
+// 진행 입력은 각각 하나뿐이고 둘 다 타이틀로 간다 (scenes/flow.ts).
+
+const runFailedScreen: RunFailedScreen = createRunFailed(uiRoot, {
+  onReturnToTitle: () => scenes.send({ type: 'confirm' }),
+})
+
+const endingScreen: EndingScreen = createEnding(uiRoot, {
+  onReturnToTitle: () => scenes.send({ type: 'confirm' }),
+})
+
 const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
@@ -1606,6 +1653,14 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
  */
 function syncScreens(): void {
   const screen = scenes.currentScreen()
+
+  // HUD 는 **필드 공통** 요소다 (DEC-UI-017). 독립 화면은 필드를 대체하는 전환이라
+  // (DEC-UI-014) HUD 를 남기지 않는다. 독립 화면의 배경이 완전 불투명이 아니라서
+  // 그냥 두면 엔딩·런 실패 화면 위로 체력과 일차가 비친다.
+  //
+  // 정비 허브는 반대다 — 셔터가 필드를 덮는 오버레이라 필드 모드가 살아 있고
+  // HUD 도 그대로 남는다.
+  hud.setVisible(scenes.currentFieldMode() !== null)
 
   if (screen === 'day_start') {
     const step = scenes.step()
@@ -1672,6 +1727,49 @@ function syncScreens(): void {
     }
   } else {
     encounterResultScreen.hide()
+  }
+
+  if (screen === 'run_failed') {
+    // 도달한 일차만 넣는다. 런 통계도 엔딩 정보도 넣지 않는다 (DEC-UI-023).
+    runFailedScreen.render({ dayNumber: run?.dayNumber ?? 1 })
+    runFailedScreen.show()
+  } else {
+    runFailedScreen.hide()
+  }
+
+  if (screen === 'ending') {
+    const decided = run?.ending ?? null
+    const ending = decided === null ? null : (endingsById.get(decided.endingId) ?? null)
+
+    if (decided !== null && ending !== null) {
+      endingScreen.render({
+        // 제목·요약은 승인 데이터의 값이다. 런 상태에 복제해 두지 않는다
+        title: ending.ending_title,
+        summary: ending.ending_summary,
+        // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
+        record: endingRecordPending
+          ? { state: 'pending' }
+          : { state: 'ready', text: decided.recordText },
+        // 제출 빌드에서는 공포도 수치와 구간 이름을 표시하지 않는다 (DEC-RESIDENT-047)
+        fear: isDevBuild
+          ? { total: decided.fear, bandName: fearBandNameOf(decided.fear) }
+          : null,
+      })
+      endingScreen.show()
+    } else {
+      // 엔딩이 확정되지 않았거나 승인 데이터에 그 엔딩이 없다. 빈 화면으로 넘기지
+      // 않고 드러낸다 — 조우 결과가 비어 있을 때와 같은 처리다.
+      endingScreen.hide()
+      bus.emit('data.error', {
+        summary: '엔딩을 표시할 수 없다',
+        detail:
+          decided === null
+            ? '엔딩이 확정되지 않은 채 엔딩 화면으로 넘어왔다'
+            : `확정된 ${decided.endingId} 가 승인 데이터에 없다`,
+      })
+    }
+  } else {
+    endingScreen.hide()
   }
 }
 
@@ -2367,6 +2465,13 @@ bus.on('screen.changed', beginDayStart)
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
 bus.on('screen.changed', syncScreens)
 bus.on('field.entered', syncScreens)
+
+// 기록문이 늦게 도착하면 대기 표시를 실제 문장으로 바꾼다 (DEC-UI-023).
+// 화면은 그대로인데 내용만 바뀌는 경우라 위 두 신호로는 오지 않는다.
+// 일지 쪽은 요청을 건 자리에서 직접 다시 그린다 — 그쪽은 늦은 응답을 버리는
+// 판단(`journalRequestDay`)이 같이 필요해서 구독으로 나누지 않았다.
+bus.on('ending.recordReady', syncScreens)
+
 syncScreens()
 
 /**
@@ -2465,7 +2570,7 @@ if (isDevBuild) {
     console.info(`[보상] ${residentId} · ${bundleId} 지급`),
   )
   bus.on('ending.decided', ({ endingId, endingTitle }) =>
-    console.warn(`[엔딩] 확정 — ${endingTitle} (${endingId}). 엔딩 화면은 8/4~5 최수정`),
+    console.warn(`[엔딩] 확정 — ${endingTitle} (${endingId})`),
   )
 
   // 흐름을 손으로 밟아 보기 위한 개발용 통로.

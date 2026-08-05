@@ -1094,3 +1094,155 @@
 .day-start__continue:hover {
   background: var(--ui-bg-slot);
 }
+
+/* ─────────────────────────────────────────────────
+   런 실패 (DEC-UI-023, DEC-RUN-008)
+
+   엔딩과 **클래스를 공유하지 않는다.** DEC-UI-014 와 DEC-UI-023 이 둘 다
+   "분리해 구현하고 공유 템플릿으로 묶지 않는다"로 확정했다. 규칙을 한 벌로 합치면
+   런 실패에 넣지 말라고 열거한 것들이 엔딩 쪽 규칙을 타고 들어온다.
+   ───────────────────────────────────────────────── */
+
+.run-failed[hidden] {
+  display: none;
+}
+
+.run-failed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.run-failed__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.run-failed__text {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  line-height: 1.6;
+}
+
+/* 도달한 일차. 런 통계가 아니라 이 한 줄만이다 (DEC-UI-023) */
+.run-failed__day {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+}
+
+.run-failed__return {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.run-failed__return:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   엔딩 (DEC-UI-023, DEC-CONTENT-011)
+
+   제목·요약·기록문 셋이 항상 있고, 공포도 구획만 개발 빌드에서 붙는다.
+   폴백 기록문과 생성된 기록문을 구분하는 규칙은 여기에 없다 — 없는 것이 규칙이다.
+   ───────────────────────────────────────────────── */
+
+.ending[hidden] {
+  display: none;
+}
+
+.ending {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.ending__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.ending__title {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ending__summary {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+  color: var(--ui-text-dim);
+}
+
+/* 폴백과 생성분을 구분하지 않는다 (DEC-UI-023, DEC-UI-024).
+   구분이 있는 것은 "생성 중" 하나뿐이다. */
+.ending__record {
+  margin: 0;
+  padding-top: var(--ui-gap-lg);
+  border-top: 1px solid var(--ui-border);
+  align-self: stretch;
+  font-size: var(--ui-font-md);
+  line-height: 1.9;
+}
+
+.ending__record--pending {
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+/* 개발 빌드 전용. 제출 빌드에서는 이 요소가 DOM 에 없다 (DEC-RESIDENT-047) */
+.ending__fear {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.ending__return {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.ending__return:hover {
+  background: var(--ui-bg-slot);
+}

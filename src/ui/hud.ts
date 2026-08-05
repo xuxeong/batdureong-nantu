@@ -61,6 +61,17 @@ export interface HudView {
 
 export interface Hud {
   render(view: HudView): void
+  /**
+   * 필드가 떠 있는 동안만 보인다 (DEC-UI-017 — **필드 공통** HUD).
+   *
+   * 독립 화면(일차 시작·결과 2종·런 실패·엔딩)은 필드를 대체하는 전환이라
+   * HUD 가 남으면 안 된다 (DEC-UI-014). 그런데 독립 화면의 배경이 완전 불투명이
+   * 아니라서, 안 지우면 엔딩 화면 위로 체력과 일차가 비친다.
+   *
+   * 정비 허브는 반대다 — 셔터가 필드를 덮는 **오버레이**라 필드가 살아 있고
+   * HUD 도 그대로 둔다.
+   */
+  setVisible(visible: boolean): void
   destroy(): void
 }
 
@@ -188,6 +199,10 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
 
       // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다
       recovery.textContent = view.recoveryName ?? '회복 아이템 없음'
+    },
+
+    setVisible(visible) {
+      root.hidden = !visible
     },
 
     destroy() {
