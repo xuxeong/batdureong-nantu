@@ -41,6 +41,9 @@ import type {
   FearBand,
   FearIncrement,
   FinalOutcome,
+  JournalFallback,
+  RaidNotice,
+  RaidType,
   Recipe,
   RecoveryItem,
   RewardBundle,
@@ -49,13 +52,21 @@ import type {
   WildlifeSpawnProfile,
 } from './data/types.ts'
 import { createRunState } from './state/run-state.ts'
-import type { RunState } from './state/types.ts'
+import type { JournalBaseline, RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
 import type { Hud } from './ui/hud.ts'
 import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
 import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
 import { createNightResult, selectNightResultText } from './ui/night-result.ts'
 import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
+import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
+import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
+import {
+  buildJournalInput,
+  fearDirection,
+  requestJournal,
+  selectJournalFallback,
+} from './llm/journal.ts'
 import { createEncounterResult } from './ui/encounter-result.ts'
 import type {
   EncounterResourceLine,
@@ -221,12 +232,46 @@ let encounterResultView: EncounterResultView | null = null
 
 /** 엔딩 판정 (DEC-CONTENT-011) */
 let endingJudge: EndingJudge | null = null
-/** 엔딩 기록문 입력을 만드는 데 필요한 승인 데이터 (DEC-CONTENT-011) */
-let endingData: {
+/**
+ * 엔딩 기록문과 일지 입력을 만드는 데 필요한 승인 데이터
+ * (DEC-CONTENT-011, DEC-JOURNAL-002).
+ *
+ * **두 시스템이 같은 승인 테이블을 읽는 것뿐이다.** `DEC-JOURNAL-004` 가 분리하라고
+ * 한 것은 프롬프트 원본·버전·폴백 원본과 "일지 원문을 엔딩 입력에 넘기지 않는 것"
+ * 이며, 같은 `residents.csv` 를 두 번 적재하라는 뜻이 아니다. 입력을 만드는 함수는
+ * `llm/ending.ts` 와 `llm/journal.ts` 로 나뉘어 있고 서로를 부르지 않는다.
+ */
+let approvedForLlm: {
   manifest: import('./data/types.ts').RuntimeManifest
   residents: readonly import('./data/types.ts').Resident[]
   storyInfos: readonly import('./data/types.ts').StoryInfo[]
 } | null = null
+
+/**
+ * 승인된 습격 예고 (DEC-RUN-011, DEC-CONTENT-021).
+ *
+ * 일차 시작 화면은 `opening_text`(문장), HUD·정비 허브는 `hud_label`(짧은 표지)를
+ * 쓴다. **같은 행에서 온다** — 둘은 같은 정보를 길이만 달리 전달한다.
+ */
+let raidNotices: readonly RaidNotice[] = []
+
+/** 폴백 일지 (DEC-JOURNAL-003). 공포도 구간 × 변화 방향으로 고른다 */
+let journalFallbacks: readonly JournalFallback[] = []
+
+/**
+ * 일차 시작 화면이 그릴 일지 (DEC-UI-028).
+ *
+ * `null` 은 1일차 아침 하나뿐이며 "영역을 만들지 않는다" 는 뜻이다.
+ */
+let dayStartJournal: DayStartJournal = null
+
+/**
+ * 지금 일지를 생성 중인 일차.
+ *
+ * 응답이 늦게 도착했을 때 **그 사이에 아침이 바뀌었는지** 보기 위한 것이다.
+ * 없으면 2일차 일지가 3일차 화면에 뒤늦게 나타난다.
+ */
+let journalRequestDay: number | null = null
 
 const player = { x: 0, y: 0 }
 
@@ -362,7 +407,14 @@ async function bootData(): Promise<void> {
       console.warn(`[데이터] 밤 결과 문구를 고르지 못했다 — ${nightResult.reason}`)
     }
 
-    endingData = {
+    // 습격 예고와 폴백 일지는 고르지 않고 통째로 들고 있는다. 예고는 그날의
+    // raid_type 이, 폴백은 그때의 공포도 구간과 변화 방향이 정해져야 고를 수 있다.
+    raidNotices = data.raid_notices ?? []
+    // 폴백 일지는 독립 테이블이 아니라 fear_bands 의 자식이다 (스키마 2, 연결 CSV).
+    // 자식 행이 부모 키를 그대로 들고 있어 평탄화해도 구간 정보가 남는다.
+    journalFallbacks = (data.fear_bands ?? []).flatMap((band) => band.journal_fallbacks ?? [])
+
+    approvedForLlm = {
       manifest: data.manifest,
       residents: data.residents ?? [],
       // 사연 정보는 독립 콘텐츠다. 확인한 것만 골라 쓰는 것은 입력을 만드는
@@ -558,10 +610,19 @@ function updateRaid(dt: number): void {
  * 제출 빌드는 구간 이름도 표시하지 않으므로 이 값이 화면까지 가지 않는다.
  */
 function fearBandNameOf(fear: number): string | null {
-  const band = fearBands.find(
-    (b) => fear >= b.min_fear && (b.max_fear === null || fear <= b.max_fear),
+  return fearBandOf(fear)?.display_name ?? null
+}
+
+/**
+ * 공포도가 속한 구간 (DEC-RESIDENT-046).
+ *
+ * 일지 입력은 구간 자체를 요구하고(수치가 아니라) 폴백 일지도 구간으로 고르므로
+ * 표시용 이름만 돌려주는 위 함수와 나눴다. 상한이 비어 있으면 무한대다.
+ */
+function fearBandOf(fear: number): FearBand | null {
+  return (
+    fearBands.find((b) => fear >= b.min_fear && (b.max_fear === null || fear <= b.max_fear)) ?? null
   )
-  return band?.display_name ?? null
 }
 
 /**
@@ -763,10 +824,10 @@ async function fillEndingRecord(
   ending: import('./data/types.ts').Ending,
   judgement: import('./systems/ending.ts').EndingJudgement,
 ): Promise<void> {
-  if (run === null || endingData === null) return
+  if (run === null || approvedForLlm === null) return
 
   const input = buildEndingInput({
-    manifest: endingData.manifest,
+    manifest: approvedForLlm.manifest,
     playerName: run.playerName,
     finalDay: run.dayNumber,
     ending,
@@ -774,8 +835,8 @@ async function fillEndingRecord(
     dominantCrop: judgement.dominantCrop,
     record: run.record,
     residents: run.residents,
-    residentData: endingData.residents,
-    storyInfos: endingData.storyInfos,
+    residentData: approvedForLlm.residents,
+    storyInfos: approvedForLlm.storyInfos,
   })
 
   const result = await requestEndingRecord(input, ending.fallback_record_text)
@@ -1516,6 +1577,12 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
+// 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
+// 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
+const dayStartScreen: DayStartScreen = createDayStart(uiRoot, {
+  onContinue: () => scenes.send({ type: 'confirm' }),
+})
+
 const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
@@ -1539,6 +1606,39 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
  */
 function syncScreens(): void {
   const screen = scenes.currentScreen()
+
+  if (screen === 'day_start') {
+    const step = scenes.step()
+    const day = 'day' in step ? step.day : 1
+    const raidType = raidTypeOfDay(day)
+    const notice = selectRaidNotice(raidNotices, raidType)
+
+    if (notice.ok) {
+      dayStartScreen.render({
+        dayNumber: day,
+        raidType,
+        // 일차 시작 연출은 문장 형태다. 짧은 표지(hud_label)는 HUD·정비 허브 몫이다
+        raidNoticeText: notice.notice.opening_text,
+        journal: dayStartJournal,
+      })
+    } else {
+      // 예고 문구를 코드에 둘 수 없으므로(DEC-RUN-011) 비운 채 올리고 오류로 드러낸다.
+      // 진행 버튼은 남으므로 아침이 막히지는 않는다 (DEC-UI-024).
+      dayStartScreen.render({
+        dayNumber: day,
+        raidType,
+        raidNoticeText: '',
+        journal: dayStartJournal,
+      })
+      bus.emit('data.error', {
+        summary: '습격 예고를 표시할 수 없다',
+        detail: notice.reason,
+      })
+    }
+    dayStartScreen.show()
+  } else {
+    dayStartScreen.hide()
+  }
 
   if (screen === 'night_result') {
     if (nightResult.ok) {
@@ -1575,8 +1675,13 @@ function syncScreens(): void {
   }
 }
 
-/** 승인된 일정에서 해당 일차의 습격 종류를 읽는다 */
-let raidTypeOfDay: (day: number) => string = () => 'none'
+/**
+ * 승인된 일정에서 해당 일차의 습격 종류를 읽는다.
+ *
+ * 반환형이 `string` 이 아니라 `RaidType` 인 이유는 일차 시작 화면이 이 값으로
+ * 예고 세 종류를 고르기 때문이다 (DEC-RUN-011). 넓은 타입이면 오타가 런타임까지 간다.
+ */
+let raidTypeOfDay: (day: number) => RaidType = () => 'none'
 
 const POPUP_TITLES: Record<string, string> = {
   sell: '판매',
@@ -2132,6 +2237,131 @@ function syncInputLock(): void {
 bus.on('screen.changed', syncInputLock)
 bus.on('field.entered', syncInputLock)
 bus.on('field.exited', syncInputLock)
+
+/**
+ * 총합을 센다. 일지가 보는 것은 작물별 내역이 아니라 "어제 얼마나 거뒀나" 다.
+ */
+function sumOf(store: Record<string, number>): number {
+  return Object.values(store).reduce((total, n) => total + n, 0)
+}
+
+/** 지금 상태를 일지 기준점으로 찍는다 (DEC-JOURNAL-002) */
+function snapshotJournalBaseline(state: RunState, day: number): JournalBaseline {
+  return {
+    dayNumber: day,
+    fear: state.record.fear,
+    resolvedResidentIds: Object.values(state.residents)
+      .filter((r) => r.resolved)
+      .map((r) => r.residentId),
+    harvestedTotal: sumOf(state.record.cropHarvested),
+    craftConsumedTotal: sumOf(state.record.cropCraftConsumed),
+  }
+}
+
+/**
+ * 아침이 열렸다. 전날 일지를 준비한다 (DEC-JOURNAL-001, DEC-UI-028).
+ *
+ * **1일차 아침에는 아무것도 하지 않는다.** 전날 기록이 없어 생성도 표시도 하지
+ * 않는다고 `DEC-JOURNAL-001` 이 확정했고, `DEC-UI-028` 은 영역 자체를 만들지
+ * 말라고 한다 — 그래서 빈 문자열이 아니라 `null` 이다.
+ *
+ * 생성은 여기서 시작만 하고 기다리지 않는다. **일지 생성 실패도 지연도 일차 진행을
+ * 막지 않는다** (DEC-JOURNAL-003). 진행 버튼은 처음부터 눌린다.
+ *
+ * `DEC-JOURNAL-001` 은 "전날 취침 전환 시점에 수행할 수 있다" 로 열어 두었다.
+ * 아침에 부르는 쪽을 골랐다 — 취침 전환은 습격일과 비습격일에서 서로 다른 두
+ * 지점이라 같은 호출을 두 군데 두게 되고, 화면 안 대기 표시가 이미 허용돼 있어
+ * (DEC-UI-028) 미리 만들어 둘 이득이 없다.
+ */
+function beginDayStart(): void {
+  const step = scenes.step()
+  if (step.at !== 'day_start' || run === null) return
+
+  const day = step.day
+  const baseline = run.record.journalBaseline
+
+  // 기준점이 없으면 비교할 전날이 없다. 1일차이거나 새 런의 첫 아침이다.
+  if (day <= 1 || baseline === null) {
+    dayStartJournal = null
+    journalRequestDay = null
+    run.record.journalBaseline = snapshotJournalBaseline(run, day)
+    return
+  }
+
+  // 승인 데이터가 없으면 입력을 만들 수 없다. 빈 매니페스트·빈 주민 목록으로
+  // 대신 채우지 않는다 — 그러면 프롬프트 버전 0 짜리 일지가 정상처럼 생성된다.
+  if (approvedForLlm === null) {
+    dayStartJournal = null
+    journalRequestDay = null
+    run.record.journalBaseline = snapshotJournalBaseline(run, day)
+    bus.emit('data.error', {
+      summary: '일지를 만들 수 없다',
+      detail: '승인 데이터를 읽지 못해 일지 입력을 구성할 수 없다',
+    })
+    return
+  }
+
+  const band = fearBandOf(run.record.fear)
+  const direction = fearDirection(run.record.fear, baseline.fear)
+
+  const input = buildJournalInput({
+    manifest: approvedForLlm.manifest,
+    playerName: run.playerName,
+    dayNumber: day,
+    baseline,
+    fear: run.record.fear,
+    fearBand: band,
+    residents: run.residents,
+    residentData: approvedForLlm.residents,
+    storyInfos: approvedForLlm.storyInfos,
+    harvestedTotal: sumOf(run.record.cropHarvested),
+    craftConsumedTotal: sumOf(run.record.cropCraftConsumed),
+  })
+
+  // **입력을 만든 직후에 기준점을 옮긴다.** 응답을 기다렸다 옮기면 요청이 실패했을 때
+  // 다음 아침이 이틀치를 전날로 착각한다.
+  run.record.journalBaseline = snapshotJournalBaseline(run, day)
+
+  const fallback = selectJournalFallback(journalFallbacks, band?.id ?? null, direction)
+  if (!fallback.ok) {
+    // 폴백 문구가 없으면 LLM 이 실패했을 때 보여줄 승인 문장이 없다. 지어내지 않고
+    // 비운 채 진행한다 — 오류가 화면에 남는다 (DEC-UI-024).
+    bus.emit('data.error', {
+      summary: '폴백 일지를 고를 수 없다',
+      detail: fallback.reason,
+    })
+  }
+
+  dayStartJournal = { state: 'pending' }
+  journalRequestDay = day
+
+  void requestJournal(input, fallback.ok ? fallback.text : '').then((result) => {
+    // 그 사이에 아침이 바뀌었으면 버린다. 늦은 응답이 다른 날의 화면을 덮으면
+    // 플레이어에게는 "일지가 하루 밀렸다" 로 보인다.
+    if (journalRequestDay !== day) return
+    journalRequestDay = null
+
+    dayStartJournal = { state: 'ready', text: result.text }
+    // 폴백인지 아닌지는 기록에만 남기고 화면은 구분하지 않는다 (DEC-UI-028)
+    run?.record.journalEntries.push({
+      dayNumber: day,
+      text: result.text,
+      usedFallback: result.usedFallback,
+    })
+
+    if (isDevBuild) {
+      console.info(
+        `[일지] ${day}일차 — ${result.usedFallback ? '폴백' : result.generatorModelId ?? 'LLM'}`,
+      )
+    }
+
+    syncScreens()
+  })
+}
+
+// 일지 준비를 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫 그리기가 이전 아침의
+// 일지를 그대로 쓰고, 대기 표시가 한 박자 늦게 나타난다.
+bus.on('screen.changed', beginDayStart)
 
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.

@@ -210,6 +210,15 @@ export interface RunRecord {
 
   /** 일차별 생성된 일지. 1일차 아침은 표시하지 않는다 (DEC-JOURNAL-001) */
   journalEntries: JournalEntry[]
+
+  /**
+   * 직전 일차 시작 시점의 스냅샷 (DEC-JOURNAL-002).
+   *
+   * 일지 입력은 "전날 조우 결과", "전날 변경된 관계", "전날 대비 공포도 변화 방향"
+   * 처럼 **변화**를 요구하는데 위 누적값만으로는 어제 무엇이 달라졌는지 알 수 없다.
+   * 일차 시작마다 새로 찍는다. 1일차 아침에는 비교 대상이 없어 null 이다.
+   */
+  journalBaseline: JournalBaseline | null
 }
 
 export interface JournalEntry {
@@ -218,6 +227,24 @@ export interface JournalEntry {
   text: string
   /** LLM 생성이 실패해 폴백 문구를 쓴 경우 true (DEC-JOURNAL-003) */
   usedFallback: boolean
+}
+
+/**
+ * 일지의 "전날 대비" 를 재기 위한 기준점 (DEC-JOURNAL-002).
+ *
+ * 런 상태 쪽에 둔다 — `llm/journal.ts` 가 이것을 읽지만, 무엇을 기억할지는
+ * 런 상태의 계약이지 LLM 호출의 계약이 아니다.
+ */
+export interface JournalBaseline {
+  /** 이 스냅샷을 찍은 일차 */
+  dayNumber: number
+  fear: number
+  /** 그 시점에 이미 조우가 끝난 주민 */
+  resolvedResidentIds: string[]
+  /** 그 시점까지의 총수확 수량 */
+  harvestedTotal: number
+  /** 그 시점까지 제작으로 소비한 총수량 */
+  craftConsumedTotal: number
 }
 
 // ─────────────────────────────────────────────────────────────

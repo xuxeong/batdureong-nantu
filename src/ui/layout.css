@@ -71,6 +71,17 @@
 
   /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
   --dialogue-width: 760px;
+
+  /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
+     습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
+     DEC-ART-001 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
+     그래서 아래 셋은 **플레이스홀더**이며 기존 토큰을 가리키기만 한다 —
+     새 색을 여기서 만들지 않는다. 4.5 가 채워지면 이 세 줄만 바꾼다.
+
+     붉은색을 쓰지 않는 것은 플레이스홀더 단계에서도 지킨다 (아트 디렉션 4.2). */
+  --day-start-notice-none: var(--ui-text-dim);
+  --day-start-notice-raid: var(--ui-text);
+  --day-start-notice-final: var(--ui-accent);
 }
 
 /* HUD 는 필드 위에 얹히지만 클릭을 가로채면 안 된다.
@@ -985,5 +996,101 @@
 }
 
 .encounter-result__continue:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* ─────────────────────────────────────────────────
+   일차 시작 (DEC-UI-016, DEC-UI-028, DEC-RUN-011)
+
+   결과 화면 2종과 **클래스를 공유하지 않는다.** DEC-UI-023 이 묶지 말라고 한 것은
+   결과 화면 넷이지만 같은 이유가 여기에도 걸린다 — 일차 시작은 일지 영역이 있고
+   없고가 갈리는 유일한 화면이라 규칙을 합치면 그 분기가 다른 화면으로 샌다.
+   ───────────────────────────────────────────────── */
+
+/* `display` 를 선언한 요소에는 `hidden` 속성이 안 먹는다 */
+.day-start[hidden] {
+  display: none;
+}
+
+.day-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.day-start__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+.day-start__day {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* 문장 형태다. HUD·정비 허브의 짧은 표지(hud_label)와 길이만 다른 같은 정보다 */
+.day-start__notice {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  line-height: 1.7;
+}
+
+.day-start__notice--none {
+  color: var(--day-start-notice-none);
+}
+
+.day-start__notice--raid {
+  color: var(--day-start-notice-raid);
+}
+
+/* 마지막 습격은 일반 습격일과 확실히 구분한다 (DEC-RUN-011) */
+.day-start__notice--final_raid {
+  color: var(--day-start-notice-final);
+}
+
+/* 폴백 일지와 정상 생성 일지를 구분하지 않는다 (DEC-UI-028).
+   구분이 있는 것은 "생성 중" 하나뿐이다. */
+.day-start__journal {
+  margin: 0;
+  padding-top: var(--ui-gap-lg);
+  border-top: 1px solid var(--ui-border);
+  align-self: stretch;
+  font-size: var(--ui-font-md);
+  line-height: 1.8;
+  color: var(--ui-text);
+}
+
+.day-start__journal--pending {
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+.day-start__continue {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.day-start__continue:hover {
   background: var(--ui-bg-slot);
 }

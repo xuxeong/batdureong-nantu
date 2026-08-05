@@ -110,6 +110,9 @@ export function createRunState(options: NewRunOptions): RunState {
       cropHarvested: {},
       unlockedRecipeIds: [],
       journalEntries: [],
+      // 1일차 아침에는 비교할 전날이 없다 (DEC-JOURNAL-001).
+      // 1일차 시작 화면을 지나면서 채워진다.
+      journalBaseline: null,
     },
 
     ending: null,
