@@ -849,8 +849,6 @@ function updateRaid(dt: number): void {
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
-    // 회복이 완료되기 전에 공격받으면 취소된다. 아이템은 소비하지 않는다 (DEC-INPUT-005)
-    cancelRecovery('damaged')
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
   }
 
@@ -1850,8 +1848,20 @@ const input = createInput(renderer.canvas, {
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
-  onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
+  // ── 회복 퀵메뉴는 P2 로 컷됐다 (로드맵 6절) ────────────────
+  //
+  // 컷 원문이 *"회복 퀵메뉴 롱프레스(→ `Q` 짧게 누르기만)"* 다. 그런데 여기서
+  // 오버레이를 열고 있었고, **오버레이가 열리면 시뮬레이션이 정지한다**
+  // (`scenes/manager.ts` 의 `syncSimulation`). 그릴 UI 는 없으므로 롱프레스하면
+  // **게임이 멈춘 채 아무것도 안 보이는 상태**가 됐다 — 컷이 아니라 버그였다
+  // (8/5 담당자 플레이 테스트).
+  //
+  // 되살릴 때는 오버레이만으로 부족하다. `DEC-INPUT-008` 이 퀵메뉴를 **정지가
+  // 아니라 감속**으로 정했으므로(`loop.setTimeScale`) `syncSimulation` 이
+  // 퀵메뉴를 다른 오버레이와 갈라야 한다. 그때까지 회복 선택은 `DEC-RESOURCE-018`
+  // 의 자동 선택만 쓴다.
+  onRecoverMenuOpen: () => {},
+  onRecoverMenuClose: () => {},
   onEscape: () => scenes.handleEscape(),
 })
 
@@ -2909,6 +2919,16 @@ bus.on('field.entered', ({ mode }) => {
 })
 
 bus.on('field.exited', () => wildlife?.endFarming())
+/**
+ * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
+ *
+ * **피해를 주는 쪽마다 부르지 않고 이벤트 한 곳에서 듣는다.** 처음에는 습격의
+ * 주민 피해 자리에만 넣었는데 야생동물 피해가 빠져 있었다 — 재배에서는 맞아도
+ * 회복이 계속 진행됐다. 피해 경로가 늘 때마다 같은 호출을 기억해야 하는 구조는
+ * 반드시 하나를 빠뜨린다.
+ */
+bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
+
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)
 syncInputLock()
