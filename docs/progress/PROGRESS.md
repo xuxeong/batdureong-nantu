@@ -9,18 +9,42 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 196개 · 2026-07-31 ~ 2026-08-05
+커밋 226개 · 2026-07-31 ~ 2026-08-06
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 110 | Docs 35 · Feat 28 · Fix 25 · Chore 12 · (태그 없음) 6 · Refactor 2 · Test 1 · Art 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| gamome44 | 42 | Docs 35 · (태그 없음) 6 · Art 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 30 | Data 14 · Feat 7 · Docs 5 · (태그 없음) 3 · Fix 1 | data/approved, data/drafts, docs/progress, src, tests |
-| github-actions[bot] | 14 | Docs 14 | docs/progress |
+| SUJEONG CHOI | 133 | Docs 42 · Feat 35 · Fix 30 · Chore 13 · (태그 없음) 9 · Refactor 2 · Test 1 · Art 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| gamome44 | 45 | Docs 37 · (태그 없음) 7 · Art 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
+| ming9 | 33 | Data 15 · Feat 7 · Docs 6 · (태그 없음) 4 · Fix 1 | data/approved, data/drafts, docs/progress, src, tests |
+| github-actions[bot] | 15 | Docs 15 | docs/progress |
 
 ## 날짜별 기록
+
+### 2026-08-06
+
+- `[Docs]` 8번 세션 로그 — 카탈로그를 안 만든 이유와 놓칠 뻔한 것 둘 — SUJEONG CHOI · `09147f3`
+- `[Feat]` hud.ts 를 A1 배치로 다시 짜고 raid_notices 를 배선한다 — SUJEONG CHOI · `e9859d9`
+- `[Docs]` 튜토리얼 순서가 확정 DEC 둘과 어긋난다 — 전성민 판단으로 올린다 — SUJEONG CHOI · `92d0e1e`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `c11dcaa`
+- `[Feat]` 영입 주민 지원 공격 — 조우 결과가 더는 거짓말하지 않는다 — SUJEONG CHOI · `9ff89dc`
+- `[Fix]` 지원 공격 표시가 0.1초라 보고 있어도 놓쳤다 — SUJEONG CHOI · `cb3a14c`
+- `[Docs]` DEC-UI-015·DEC-CONTENT-023 폐기 — 튜토리얼 순서 규칙을 데이터로 넘긴다 — gamome44 · `b7042dd`
+- `[Fix]` 맵 경계 제한이 셋 다 없었다 — 플레이어가 화면 밖으로 걸어 나갔다 — SUJEONG CHOI · `b6bdda1`
+- `[Fix]` 지원 기회 소비 표시가 조우 상대를 읽고 있었다 — 죽은 코드였다 — SUJEONG CHOI · `1597662`
+- `[Feat]` 일시정지 화면 — 계속하기·조작 안내·타이틀로(확인 절차) — SUJEONG CHOI · `3c7ddd8`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — SUJEONG CHOI · `a8c1673`
+- `[Chore]` DEC-UI-030·DEC-CONTENT-025 반영 + 같은 stage 연속 검증 규칙 신설 — SUJEONG CHOI · `7c91f3f`
+- `[Fix]` 재배 게이지 홈을 613 으로 잘못 읽었다 — 실제로는 789 다 — SUJEONG CHOI · `39eac6e`
+- `[Fix]` 게이지 홈은 595 다 — 앞 커밋의 789 는 글자 가장자리를 센 값이었다 — SUJEONG CHOI · `5a37595`
+- `[Feat]` 로딩·데이터 오류 화면 — data.error 가 8/2부터 콘솔로만 나갔다 — SUJEONG CHOI · `2b51353`
+- `[Feat]` 튜토리얼 — 안내를 필드 위로 옮기고 조작으로 넘어가게 한다 — SUJEONG CHOI · `2851a22`
+- `[Docs]` 튜토리얼 P0 둘과 김민주 인계 — 4-2 절 신설 — SUJEONG CHOI · `334cac0`
+- `[Docs]` 캡처 3장 재촬영 — 8·9번 뒤의 확정 배치다 — SUJEONG CHOI · `d5890dd`
+- `[Docs]` 4-2 인계 날짜 정정 + 남은 작업 표 — SUJEONG CHOI · `d04ecdd`
+- Merge branch 'develop' — v0.2 아트 적용 빌드 — SUJEONG CHOI · `f7f62dc`
+- Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — SUJEONG CHOI · `5c17462`
 
 ### 2026-08-05
 
@@ -90,10 +114,19 @@
 - `[Docs]` 완주 2경로 확인 — 엔딩까지 닿았다 — SUJEONG CHOI · `6200868`
 - `[Fix]` 12fps 를 60fps 로 — 캔버스 백킹과 1픽셀 격자 — SUJEONG CHOI · `2aced98`
 - `[Fix]` 배경이 화면 일부만 덮였다 — 백킹과 좌표계를 섞었다 — SUJEONG CHOI · `7c4e08e`
+- `[Docs]` 게이지는 한 장 · 적대 체력 게이지는 회전 재사용 · 스프라이트 키움 — gamome44 · `effedf2`
 - `[Fix]` 회복 퀵메뉴가 열리자마자 같은 틱에 닫혔다 — SUJEONG CHOI · `64aac81`
 - `[Docs]` 8/5 밤 인계 절을 로드맵에 넣는다 — SUJEONG CHOI · `9d9f6dd`
 - `[Docs]` 12번 병합을 8번보다 먼저 — 합친 전제가 깨졌다 — SUJEONG CHOI · `b4b93f5`
 - Merge develop into main — v0.1-build1 (1차 빌드) — SUJEONG CHOI · `87d7558`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `0f843d3`
+- `[Docs]` 12번 완료 — main 을 v0.1-build1 로 태그했다 — SUJEONG CHOI · `1ee5170`
+- `[Data]` CSV 5건 — 경작지 좌표·튜토리얼·에셋 연결·밤 결과·토란 전환 — ming9 · `65f132e`
+- `[Docs]` CSV 5건 세션 기록 — ming9 · `ca81ebe`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `d56c759`
+- `[Docs]` 김민주 CSV 네 건 도착을 로드맵에 반영 — 8번 전제와 10번이 바뀐다 — SUJEONG CHOI · `e5051ae`
+- `[Feat]` types.ts 에 tutorial_steps 와 콘텐츠 에셋 중첩을 넣는다 — SUJEONG CHOI · `8c570ed`
+- `[Feat]` A1 에셋 3층 렌더 — 배경 · 경작지/작물 · 수풀 앞 겹 — SUJEONG CHOI · `42922df`
 
 ### 2026-08-04
 
