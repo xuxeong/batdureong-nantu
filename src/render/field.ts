@@ -487,22 +487,37 @@ export function createFieldRenderer(
     const at = camera.worldToScreen(ally)
     const radius = 16 * WORLD_TO_PIXEL
 
-    ctx.fillStyle = '#5f7a8a'
+    // 공격이 발생하는 순간을 알 수 있게 표시한다 (DEC-UI-012).
+    //
+    // **두 가지로 표시한다.** 링 하나만 두었더니 페이드아웃 때문에 선명한 구간이
+    // 0.1초 남짓이라 보고 있어도 놓쳤다 (8/6). 몸통이 같이 밝아지면 링을 놓쳐도
+    // "방금 무슨 일이 있었다" 가 남는다.
+    //
+    // 예고가 아니라 이미 일어난 것의 여운이다 — 다음 공격까지 남은 시간을
+    // 표시하는 것은 같은 확정문이 금지했다.
+    const flash = ally.attackFlash
+
+    ctx.fillStyle = flash > 0 ? '#9fc0cf' : '#5f7a8a'
     ctx.beginPath()
     ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
     ctx.fill()
 
+    // 지원 주민은 밝은 테두리로 구분한다 (아트 디렉션 4.3). 적대 표시에 붉은색을
+    // 쓸 수 없어(4.2) 색만으로는 갈리지 않으므로 테두리가 구분의 본체다.
     ctx.strokeStyle = '#f4ecd0'
     ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
     ctx.stroke()
 
-    // 공격이 발생하는 순간을 알 수 있게 표시한다 (DEC-UI-012).
-    // 예고가 아니라 이미 일어난 것의 여운이다 — 남은 시간 표시는 금지돼 있다.
-    if (ally.attackFlash > 0) {
-      ctx.strokeStyle = `rgba(244, 236, 208, ${ally.attackFlash.toFixed(3)})`
-      ctx.lineWidth = 3
+    if (flash > 0) {
+      // 알파를 선형으로 떨어뜨리지 않는다. 후반이 눈에 안 들어와서 표시 시간을
+      // 늘려도 체감이 거의 안 늘었다. 제곱근을 쓰면 오래 밝게 남다가 끝에서 진다.
+      const alpha = Math.sqrt(flash)
+      ctx.strokeStyle = `rgba(244, 236, 208, ${alpha.toFixed(3)})`
+      ctx.lineWidth = 5
       ctx.beginPath()
-      ctx.arc(at.x, at.y, radius + 6 + (1 - ally.attackFlash) * 16, 0, Math.PI * 2)
+      ctx.arc(at.x, at.y, radius + 8 + (1 - flash) * 14, 0, Math.PI * 2)
       ctx.stroke()
     }
   }

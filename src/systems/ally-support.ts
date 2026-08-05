@@ -65,8 +65,16 @@ export interface AllySupport {
   update(deltaSeconds: number): number | null
 }
 
-/** 공격 표시가 남는 시간(초). 표현이라 승인 데이터가 아니다 (개발 로드맵 2절) */
-const ATTACK_FLASH_SECONDS = 0.35
+/**
+ * 공격 표시가 남는 시간(초). 표현이라 승인 데이터가 아니다 (개발 로드맵 2절).
+ *
+ * 처음에 0.35 로 뒀다가 올렸다. `DEC-UI-012` 가 *"지원 공격이 발생하는 순간을 알 수
+ * 있게 표시한다"* 를 요구하는데, 0.35 초는 페이드아웃까지 포함한 값이라 선명하게
+ * 보이는 구간이 0.1 초 남짓이었다. 8/6 헤드리스 표본에서 8.3초 60표본 중 2개(3.3%)
+ * 에서만 잡혔고, 담당자도 플레이 중 "가만히 서 있는 것 아니냐" 고 물었다.
+ * **보고 있어도 놓치면 표시한 것이 아니다.**
+ */
+const ATTACK_FLASH_SECONDS = 0.8
 
 export function createAllySupport(options: AllySupportOptions): AllySupport {
   const { residentId, x, y, profile } = options
