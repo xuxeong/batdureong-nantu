@@ -1,4 +1,4 @@
 id,kind,content_status,content_version,display_name,design_intent,player_description,buy_price
-material.cloth_sack,material,approved,1,천 자루,가장 싼 기본 재료. 직접 투척 무기 2종(고춧가루 주머니·바나나 껍질)의 공통 포장재로 초반 제작 진입 장벽을 낮춘다.,거칠게 짠 천 주머니. 무엇이든 담아 힘껏 던지기 좋다.,3
+material.cloth_sack,material,approved,2,천 자루,가장 싼 기본 재료. 직접 투척 무기 2종(고춧가루 주머니·미끈 토란 주머니)의 공통 포장재로 초반 제작 진입 장벽을 낮춘다.,거칠게 짠 천 주머니. 무엇이든 담아 힘껏 던지기 좋다.,3
 material.empty_bottle,material,approved,1,빈 병,중간 가격 재료. 범위 투척 무기 2종(토마토 폭탄·찹쌀풀 병)의 용기로 광역 공격의 공통 관문.,잘 깨지는 유리병. 던지면 깨지며 안에 담긴 것을 사방에 흩뿌린다.,5
-material.honey,material,approved,1,꿀,고급 재료. 회복 아이템 3종(꿀 토마토·꿀바나나·과일 꿀범벅)의 단맛 기반으로 회복 계통을 전담한다.,걸쭉하고 달콤한 꿀. 무엇에 발라도 기운이 나게 한다.,8
+material.honey,material,approved,2,꿀,고급 재료. 회복 아이템 3종(꿀 토마토·꿀토란·과일 꿀범벅)의 단맛 기반으로 회복 계통을 전담한다.,걸쭉하고 달콤한 꿀. 무엇에 발라도 기운이 나게 한다.,8

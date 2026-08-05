@@ -1,4 +1,4 @@
 id,kind,content_status,content_version,display_name,design_intent,max_health,move_speed,collision_radius,attack_damage,attack_range,attack_windup_seconds,attack_cooldown_seconds,crop_eat_duration_seconds,target_mode
-wildlife.crow,wildlife,approved,1,까마귀,경제 도둑. 아주 빠르고 아주 약해 낫이든 투척이든 한 번이면 잡히지만 놓치면 다 익은 작물부터 채간다. 카운터: 바나나 껍질로 잡아 세우기.,2,320,14,2,36,0.4,1.2,2.0,crop_first
+wildlife.crow,wildlife,approved,2,까마귀,경제 도둑. 아주 빠르고 아주 약해 낫이든 투척이든 한 번이면 잡히지만 놓치면 다 익은 작물부터 채간다. 카운터: 미끈 토란 주머니로 잡아 세우기.,2,320,14,2,36,0.4,1.2,2.0,crop_first
 wildlife.water_deer,wildlife,approved,1,고라니,기본 압박. 속도·체력·피해 모두 무난한 주력으로 밭을 가로지르며 꾸준히 갉아먹는다. 낫 3방. 카운터: 여럿일 때 토마토 폭탄.,25,230,22,8,42,0.6,1.5,3.5,crop_first
 wildlife.boar,wildlife,approved,1,멧돼지,생존 위협. 느리지만 체력과 공격력이 높아 낮에도 체력 0 런 실패를 상기시킨다. 낫 8방·투척 필수급. 카운터: 고춧가루 도트 걸고 카이팅.,75,170,30,15,48,0.9,2.0,3.0,player_only
