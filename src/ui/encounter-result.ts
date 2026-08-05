@@ -24,6 +24,7 @@
 // 이 파일은 화면만 만든다. 결과 확정과 자원 변경은 systems/resolution.ts 가 끝냈다.
 
 import type { FinalOutcome } from '../data/types.ts'
+import { subjectParticle } from './korean.ts'
 import type {
   RelationshipState,
   ResidentAllegiance,
@@ -62,8 +63,14 @@ export interface EncounterResultView {
 
   /** 이번 조우에서 **새로** 확인한 사연 정보의 ending_fact_text */
   revealedFacts: readonly string[]
-  /** 영입 주민이 이번 습격에서 지원 기회를 소비했는가 (DEC-UI-012) */
-  supportUsed: boolean
+  /**
+   * 이번 습격을 지원한 영입 주민의 표시 이름. 지원이 없었으면 null (DEC-UI-012).
+   *
+   * **조우 상대가 아니라 지원한 쪽이다.** 8/6까지 이 자리가 조우 상대의
+   * `supportUsed` 였는데, 해결된 주민은 다시 적대로 나오지 않으므로
+   * (`DEC-RESIDENT-043`) 그 값이 항상 false 였고 줄이 한 번도 안 떴다.
+   */
+  supportedBy: string | null
 
   /** 개발 빌드에서만 값이 있다 */
   fear: EncounterFearView | null
@@ -251,10 +258,17 @@ export function createEncounterResult(
       const supportNotes: HTMLElement[] = []
       const note = SUPPORT_NOTE[view.outcome]
       if (note !== undefined) supportNotes.push(el('p', 'encounter-result__note', note))
-      // 지원 기회 소비도 이 화면에서 전달한다 (DEC-UI-012)
-      if (view.supportUsed) {
+      // 지원 기회 소비도 이 화면에서 전달한다 (DEC-UI-012).
+      // **누가 썼는지 밝힌다** — 이름 없이 "소비했다" 만 두면 조우 상대의 이야기로
+      // 읽히고, 실제로는 이전 습격에서 영입한 다른 주민이다.
+      if (view.supportedBy !== null) {
+        const who = view.supportedBy
         supportNotes.push(
-          el('p', 'encounter-result__note', '이번 습격에서 지원 기회를 소비했다.'),
+          el(
+            'p',
+            'encounter-result__note',
+            `${who}${subjectParticle(who)} 이번 습격을 지원했다. 지원 기회는 여기서 소비됐다.`,
+          ),
         )
       }
       if (supportNotes.length > 0) sections.push(section('이후 습격', supportNotes))

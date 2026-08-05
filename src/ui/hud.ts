@@ -25,7 +25,7 @@
 // 함께 표시, 바 우측에 수치" 로 못박았다.
 //
 // **플레이어 이름은 아트 장식이다.** `DEC-UI-017` 의 공통 요소 여덟 개에 이름이
-// 없지만 `DEC-UI-015` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
+// 없지만 `DEC-UI-030` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
 // 근거는 아트 디렉션 14.2 이며 `DEC-UI-017` 을 폐기·대체하지 않는다.
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
@@ -41,7 +41,7 @@ export interface QuickslotView {
 }
 
 export interface HudView {
-  /** 이름 입력에서 온 값 (DEC-UI-015). 카드 장식이다 — 아트 디렉션 14.2 */
+  /** 이름 입력에서 온 값 (DEC-UI-030). 카드 장식이다 — 아트 디렉션 14.2 */
   playerName: string
   health: number
   maxHealth: number
@@ -79,6 +79,15 @@ export interface HudView {
    * 아직 없다(6절 P2). 표시하지 않을 때는 null 이다.
    */
   emptyFireNotice: string | null
+
+  /**
+   * 습격 진입 시 어느 주민이 지원하는지 알리는 짧은 안내 (DEC-UI-012).
+   *
+   * `DEC-UI-017` 의 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+   * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
+   * 잠깐 떴다 사라지므로 자리를 상시로 잡지 않는다. 없으면 null 이다.
+   */
+  allySupportNotice: string | null
 
   /**
    * 습격 예고 표지 (`raid_notices.hud_label`).
@@ -206,6 +215,8 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   // 하나는 "지금 쓸 것이 없다" 는 상태이고 하나는 방금 누른 것에 대한 반응이다.
   const noThrowable = el('div', 'hud__no-throwable', '투척 무기 없음')
   const emptyFire = el('div', 'hud__empty-fire')
+  // 지원 안내는 같은 자리를 쓰되 클래스를 나눈다 — 경고가 아니라 알림이라 색이 다르다
+  const allyNotice = el('div', 'hud__ally-notice')
   const notices = el('div', 'hud__notices')
 
   root.append(signboard, timer, pauseButton, card, notices, bottomRight)
@@ -286,6 +297,14 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       } else {
         emptyFire.textContent = view.emptyFireNotice
         if (!emptyFire.isConnected) notices.appendChild(emptyFire)
+      }
+
+      // 습격 진입 시 지원 주민 안내 (DEC-UI-012)
+      if (view.allySupportNotice === null) {
+        allyNotice.remove()
+      } else {
+        allyNotice.textContent = view.allySupportNotice
+        if (!allyNotice.isConnected) notices.appendChild(allyNotice)
       }
 
       // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다

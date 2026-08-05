@@ -48,8 +48,14 @@ function presentationOf(step: FlowStep): Presentation {
       return { layer: 'screen', screen: 'title' }
     case 'name_input':
       return { layer: 'screen', screen: 'name_input' }
+    // 튜토리얼은 **필드다** (DEC-UI-030, DEC-RUN-003).
+    // 각 안내가 조작을 실제로 성공해야 넘어가므로 심을 밭과 팔 상점이 있어야 한다.
+    // 안내 자체는 `scenes` 오버레이가 아니라 필드 위 DOM 이다 — 오버레이로 올리면
+    // `syncSimulation()` 이 필드를 멈춰 작물이 자라지 않는다 (ui/tutorial.ts).
+    //
+    // 정비 안내 차례에는 `main.ts` 가 `maintenance_hub` 오버레이를 직접 연다.
     case 'tutorial':
-      return { layer: 'screen', screen: 'tutorial' }
+      return { layer: 'field', mode: 'farming' }
     case 'day_start':
       return { layer: 'screen', screen: 'day_start' }
     case 'farming':

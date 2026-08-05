@@ -502,3 +502,63 @@ test('수량이 남아 있으면 자동 전환하지 않는다', () => {
   assert.equal(result.slot.autoSwitchedTo, null)
   assert.equal(run.quickslots.selectedIndex, 0)
 })
+
+// ── 영입 주민의 지원 공격 (DEC-RESIDENT-021) ─────────────────
+//
+// 화면으로는 "좀 약하네" 로만 보이는 것들이다. 처치가 안 되는 것은 마지막 한 대에서만
+// 드러나고, 지원 공격이 투항을 발동시키는지는 그 한 번을 재현해야 보인다.
+
+test('지원 공격은 적대 주민의 체력을 0으로 만들 수 없다', () => {
+  const c = combat()
+  const t = resident('chief', 5, 0)
+  c.setTargets([t])
+
+  // 남은 체력보다 큰 피해를 줘도 1이 남는다
+  const events = c.applySupportDamage('chief', 999)
+
+  assert.equal(t.entity.health, 1)
+  assert.ok(!events.some((e) => e.type === 'killed'))
+})
+
+test('체력이 이미 1이면 지원 공격이 아무 일도 하지 않는다', () => {
+  const c = combat()
+  const t = resident('chief', 1, 0)
+  c.setTargets([t])
+
+  const events = c.applySupportDamage('chief', 10)
+
+  assert.equal(t.entity.health, 1)
+  assert.deepEqual(events, [])
+})
+
+test('지원 공격으로 투항 기준에 닿으면 투항이 발동한다', () => {
+  const c = combat()
+  // 최대 40, 투항 기준 20. 25 → 15 로 떨어지며 기준을 지난다
+  const t = resident('yeongsun', 25, 20)
+  c.setTargets([t])
+
+  const events = c.applySupportDamage('yeongsun', 10)
+
+  assert.equal(t.entity.health, 15)
+  assert.equal(t.surrenderOffered, true)
+  assert.ok(events.some((e) => e.type === 'surrenderOffered'))
+})
+
+test('이미 투항을 제안한 주민은 지원 공격으로 다시 투항하지 않는다', () => {
+  const c = combat()
+  const t = resident('yeongsun', 25, 20)
+  c.setTargets([t])
+
+  c.applySupportDamage('yeongsun', 10)
+  const again = c.applySupportDamage('yeongsun', 5)
+
+  assert.equal(t.entity.health, 10)
+  assert.ok(!again.some((e) => e.type === 'surrenderOffered'))
+})
+
+test('대상이 없으면 지원 공격은 조용히 아무 일도 하지 않는다', () => {
+  const c = combat()
+  c.setTargets([])
+
+  assert.deepEqual(c.applySupportDamage('없는주민', 10), [])
+})

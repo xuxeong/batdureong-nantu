@@ -39,13 +39,13 @@
   },
 
   "stage": {
-    "source": "DEC-CONTENT-023",
+    "source": "DEC-CONTENT-025",
     "$comment": "튜토리얼 단계가 속한 구간. DEC-RUN-003 이 정한 재배 → 전투 → 정비 순서를 따른다.",
     "values": ["farming", "combat", "maintenance"]
   },
 
   "completion_key": {
-    "source": "DEC-CONTENT-023",
+    "source": "DEC-CONTENT-025",
     "$comment": "튜토리얼 단계의 완료를 코드가 판정하는 고정 시스템 키. 콘텐츠 담당자가 새로 만들 수 없고 추가는 스키마와 구현 변경으로 처리한다.",
     "values": [
       "plant_crop",

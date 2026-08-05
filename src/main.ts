@@ -13,12 +13,16 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { subjectParticle } from './ui/korean.ts'
+import { clampToWorld } from './systems/world-bounds.ts'
+import { createAllySupport } from './systems/ally-support.ts'
+import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
 import { createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
 import type { FieldAssetIds, HostileView, PlotView } from './render/field.ts'
-import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
+import { runConfig, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
 import { createFarming } from './systems/farming.ts'
 import type { FarmingSystem } from './systems/farming.ts'
@@ -52,6 +56,8 @@ import type {
   RecoveryItem,
   RewardBundle,
   ThrowableWeapon,
+  TutorialCompletionKey,
+  TutorialStep,
   WildlifeSpawnEntry,
   WildlifeSpawnProfile,
 } from './data/types.ts'
@@ -67,8 +73,16 @@ import { createTitle } from './ui/title.ts'
 import type { TitleScreen } from './ui/title.ts'
 import { createNameInput } from './ui/name-input.ts'
 import type { NameInputScreen } from './ui/name-input.ts'
+import { createPause } from './ui/pause.ts'
+import type { PauseScreen } from './ui/pause.ts'
+import { createLoading } from './ui/loading.ts'
+import type { LoadingScreen } from './ui/loading.ts'
+import { createDataError } from './ui/data-error.ts'
+import type { DataErrorScreen } from './ui/data-error.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
+import { createTutorialProgress } from './systems/tutorial.ts'
+import type { TutorialProgress } from './systems/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
 import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
@@ -218,6 +232,45 @@ let hostile: HostileRuntime | null = null
 let hostileTarget: CombatTarget | null = null
 /** 맵의 resident_spawn 지점 (DEC-CONTENT-016) */
 let raidSpawnPoint: { x: number; y: number } | null = null
+/**
+ * 승인 맵의 크기 (DEC-CONTENT-016).
+ *
+ * 플레이어·야생동물·적대 주민의 이동을 여기 안으로 자른다. 승인 데이터가 오기
+ * 전에는 null 이고 그때는 자르지 않는다 — 경계를 지어내면 그 값이 원본이 된다.
+ */
+let worldBounds: import('./systems/world-bounds.ts').WorldBounds | null = null
+/** 맵의 ally_support 지점. 영입 주민이 여기 선다 (DEC-CONTENT-016, DEC-RESIDENT-021) */
+let allySupportPoint: { x: number; y: number } | null = null
+/** 주민 ID → 지원 공격 수치. `resident_support_attack_profiles.csv` 가 원본 (DEC-RESIDENT-045) */
+let supportProfileByResident = new Map<string, AllySupportProfile>()
+/**
+ * 이번 습격을 지원하는 영입 주민 (DEC-RESIDENT-021). 지원자가 없으면 null.
+ *
+ * 습격 전투가 시작할 때 정해지고 조우가 끝날 때 치운다. 한 습격에 한 명뿐이다.
+ */
+let allySupport: AllySupport | null = null
+
+/**
+ * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
+ *
+ * `DEC-UI-017` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
+ * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
+ */
+let allySupportNotice: { text: string; remaining: number } | null = null
+
+/**
+ * 이번 습격을 지원한 주민의 표시 이름 (DEC-UI-012).
+ *
+ * `allySupport` 는 조우가 끝나는 순간 치워지는데 조우 결과 화면은 그 뒤에 만들어진다.
+ * **8/6까지 이 자리를 조우 상대의 `supportUsed` 로 읽고 있었다** — 상대는 적대
+ * 주민이라 그 값이 항상 false 이고, 그래서 확정문이 요구한 줄이 한 번도 안 떴다.
+ * 담당자가 "3일차에 영입한 뒤 4일차에 지원이 없다" 고 물어 드러났다.
+ */
+let raidSupporterName: string | null = null
+
+/** 지원 안내가 떠 있는 시간(초). 표현이라 승인 데이터가 아니다 */
+const ALLY_SUPPORT_NOTICE_SECONDS = 4
 /** 습격 조우를 시작하는 데 필요한 승인 데이터 묶음 */
 let raidData: {
   hostileResidentByDay: Map<number, string | null>
@@ -426,6 +479,11 @@ function startNewRun(playerName: string): void {
 
   hostile = null
   hostileTarget = null
+  // 지원 기회는 런 상태(`supportUsed`)에 있고 그것은 새 런 객체가 통째로 지운다.
+  // 여기서 치우는 것은 필드에 서 있던 인스턴스와 화면 알림이다 (로드맵 9-5).
+  allySupport = null
+  allySupportNotice = null
+  raidSupporterName = null
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
@@ -594,10 +652,12 @@ function readFearIncrements(rows: readonly FearIncrement[] | undefined): FearInc
 /**
  * 승인 데이터를 읽어 맵·작물·플레이어 수치를 붙인다.
  *
- * 실패하면 데이터 오류로 올리고(DEC-UI-024) 이동만 확인할 수 있는 임시 값으로 남는다.
- * 임시 값은 폴백이 아니라 **명시적 선언**이며 콘솔에 경고가 남는다 (run-config.ts).
+ * **실패하면 부팅하지 않는다** (DEC-UI-024 — "필수 데이터 누락 또는 검증 실패로
+ * 부팅할 수 없으면 데이터 오류 화면을 표시한다"). 8/5까지는 여기서 임시 수치로
+ * 넘어가 이동만 되는 상태로 계속 갔는데, 그것은 승인 데이터가 아직 없던 시절의
+ * 임시 조치였고 지금은 **데이터가 깨진 것을 화면이 숨기는 셈**이 된다.
  */
-async function bootData(): Promise<void> {
+async function bootData(): Promise<boolean> {
   try {
     const data = await loadRuntimeData()
     requireTables(data, ['maps', 'crops', 'player_base_stats', 'run_schedules'])
@@ -667,7 +727,33 @@ async function bootData(): Promise<void> {
     const residentSpawn = (map.points ?? []).find((p) => p.point_role === 'resident_spawn')
     raidSpawnPoint = residentSpawn === undefined ? null : { x: residentSpawn.x, y: residentSpawn.y }
 
-    residentCombat = createResidentCombat({ weapons })
+    // 지원 주민은 "화면의 정해진 위치" 에 선다 (DEC-RESIDENT-021). 그 자리는
+    // 맵의 ally_support 지점이며 런 내내 움직이지 않는다.
+    const allyPoint = (map.points ?? []).find((p) => p.point_role === 'ally_support')
+    allySupportPoint = allyPoint === undefined ? null : { x: allyPoint.x, y: allyPoint.y }
+
+    // 지원 공격 수치는 승인 데이터가 단일 원본이다 (DEC-RESIDENT-045).
+    // 주민 행이 프로필 ID 를 들고 있어 한 번 이어 둔다.
+    const supportProfileById = new Map(
+      (data.resident_support_attack_profiles ?? []).map((p) => [p.id, p]),
+    )
+    supportProfileByResident = new Map(
+      (data.residents ?? []).flatMap((resident) => {
+        const profile = supportProfileById.get(resident.support_attack_profile_id)
+        if (profile === undefined) return []
+        return [[
+          resident.id,
+          {
+            damage: profile.damage,
+            firstAttackDelaySeconds: profile.first_attack_delay_seconds,
+            attackIntervalSeconds: profile.attack_interval_seconds,
+          },
+        ] as const]
+      }),
+    )
+
+    worldBounds = { width: map.world_width, height: map.world_height }
+    residentCombat = createResidentCombat({ weapons, bounds: worldBounds })
     encounter = createEncounter({
       residents: data.residents ?? [],
       personalityProfiles: data.resident_personality_profiles ?? [],
@@ -716,6 +802,10 @@ async function bootData(): Promise<void> {
     // 실제로 그 화면에 닿는 순간 데이터 오류로 올린다.
     // 고르는 것은 화면을 열 때다 (DEC-CONTENT-018). 여기서는 목록만 들고 있는다.
     nightResultTexts = data.night_result_texts ?? []
+
+    // 튜토리얼 안내. 순서는 `step_order` 가 단일 원본이라 여기서 정렬하지 않는다
+    // (DEC-CONTENT-025). 정렬은 진행 모듈이 한 번만 한다.
+    tutorialSteps = data.tutorial_steps ?? []
 
     // 습격 예고와 폴백 일지는 고르지 않고 통째로 들고 있는다. 예고는 그날의
     // raid_type 이, 폴백은 그때의 공포도 구간과 변화 방향이 정해져야 고를 수 있다.
@@ -796,20 +886,15 @@ async function bootData(): Promise<void> {
       `[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종 · ` +
         `${schedule.total_days}일 런 · 재배 ${schedule.farming_duration_seconds}초`,
     )
+    return true
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     bus.emit('data.error', { summary: '승인 데이터를 읽지 못했다', detail })
 
-    // 승인 전에도 이동과 카메라는 확인할 수 있어야 한다. 밭은 뜨지 않는다.
-    usePlaceholderStats({
-      moveSpeed: 210,
-      collisionRadius: 20,
-      worldWidth: 1600,
-      worldHeight: 900,
-    })
-    camera.setWorldSize(1600, 900)
-    player.x = 800
-    player.y = 450
+    // **임시 수치로 넘어가지 않는다.** `usePlaceholderStats()` 로 이동만 되는
+    // 상태를 만들면 화면에는 게임이 도는 것처럼 보이고 밭만 비어 있어서,
+    // "데이터가 깨졌다" 가 "밭이 안 보인다" 로만 드러난다 (AGENTS.md 6절).
+    return false
   }
 }
 
@@ -912,6 +997,25 @@ function updateRaid(dt: number): void {
     }
   }
 
+  // 영입 주민의 지원 공격 (DEC-RESIDENT-021).
+  //
+  // **플레이어 피해 처리 뒤, 같은 프레임 안에서 돈다.** 피해는 `combat` 을 거치므로
+  // 투항 발동이 낫·투척과 같은 판정을 지난다. 처치는 구조적으로 불가능하다 —
+  // `applySupportDamage()` 가 체력 1 아래로 못 내려간다.
+  if (allySupport !== null && hostileTarget !== null) {
+    const damage = allySupport.update(dt)
+    if (damage !== null) {
+      for (const event of combat.applySupportDamage(hostileTarget.entity.instanceId, damage)) {
+        if (event.type === 'surrenderOffered') onSurrenderOffered()
+      }
+    }
+  }
+
+  if (allySupportNotice !== null) {
+    allySupportNotice.remaining -= dt
+    if (allySupportNotice.remaining <= 0) allySupportNotice = null
+  }
+
   // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
   failRunIfDead()
 }
@@ -1010,7 +1114,10 @@ function buildEncounterResultView(
     revealedFacts: (collected?.revealedFactIds ?? [])
       .map((id) => storyFactById.get(id))
       .filter((text): text is string => typeof text === 'string' && text.length > 0),
-    supportUsed: resident.supportUsed,
+    // **조우 상대가 아니라 이번 습격을 지원한 주민이다** (DEC-UI-012).
+    // 상대의 supportUsed 를 읽으면 항상 false 다 — 해결된 주민은 다시 적대로
+    // 나오지 않으므로(DEC-RESIDENT-043) 적대 주민이 지원했을 수가 없다.
+    supportedBy: raidSupporterName,
 
     // 제출 빌드에서는 점수·구간·변화량을 어떤 형태로도 두지 않는다 (DEC-UI-013)
     fear: isDevBuild
@@ -1046,6 +1153,12 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   }
 
   const { rewardBundleId, fearDelta, fearPending } = result.value
+
+  // 조우가 끝나면 지원 주민은 필드에서 사라진다 (DEC-RESIDENT-021 — 지원은 습격
+  // 전투 하나에 붙는다). `supportUsed` 는 세울 때 이미 켰으므로 여기서 손대지
+  // 않는다. 생존·영입 상태도 유지된다.
+  allySupport = null
+  allySupportNotice = null
 
   // 결과 화면 내용을 여기서 확정한다. 화면 전환보다 앞이라야 한다 —
   // 아래 `scenes.send()` 가 곧바로 조우 결과 화면을 열고 그때 이 값을 읽는다.
@@ -1740,7 +1853,87 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
     surrenderThreshold: runtime.surrenderThreshold,
     surrenderOffered: false,
   }
+
+  // 이 습격을 지원할 영입 주민을 세운다 (DEC-RESIDENT-021).
+  // 전투가 실제로 시작하는 지점이라 여기서 정한다 — 확정문이 "다음에 **실제로
+  // 발생하는 습격 전투**부터" 로 정했고, 전투 전 협상으로 해결되면 이 함수가
+  // 아예 불리지 않아 지원 기회도 소비되지 않는다.
+  startAllySupport()
   return runtime
+}
+
+/**
+ * 이번 습격을 지원할 영입 주민을 고른다 (DEC-RESIDENT-021).
+ *
+ * **한 습격에 한 명뿐이다.** 대상은 영입돼 있고 살아 있고 아직 지원 기회를 쓰지
+ * 않은 주민이며, 여럿이면 **먼저 영입된 쪽**이다. 확정문이 누구를 고를지까지는
+ * 정하지 않았는데, `DEC-RESIDENT-045` 가 *"영입 시점이 이를수록 피해가 낮고
+ * 공격이 잦게, 늦을수록 피해가 높고 간격이 길게 둔다"* 로 수치를 배치해서
+ * 데이터가 이미 그 순서를 전제하고 있다. 영입 순서는 각 주민의 습격 일차로
+ * 판단한다 — 승인 일정이 주민을 하루에 한 명씩만 배치하므로 일차가 곧 순서다.
+ */
+function startAllySupport(): void {
+  allySupport = null
+  raidSupporterName = null
+  if (run === null || raidData === null) return
+
+  if (allySupportPoint === null) {
+    bus.emit('data.error', {
+      summary: '지원 주민을 세울 수 없다',
+      detail: '맵에 ally_support 지점이 없다 (DEC-CONTENT-016)',
+    })
+    return
+  }
+
+  // 주민 → 그 주민이 적대로 나온 일차. 영입은 그 조우에서 일어나므로 순서가 같다.
+  const dayOf = new Map<string, number>()
+  for (const [day, residentId] of raidData.hostileResidentByDay) {
+    if (residentId !== null && residentId !== '') dayOf.set(residentId, day)
+  }
+
+  const candidate = Object.values(run.residents)
+    .filter(
+      (r) =>
+        r.allegiance === 'recruited' &&
+        r.lifeState === 'alive' &&
+        !r.supportUsed,
+    )
+    .sort((a, b) => (dayOf.get(a.residentId) ?? 0) - (dayOf.get(b.residentId) ?? 0))[0]
+
+  if (candidate === undefined) return
+
+  const profile = supportProfileByResident.get(candidate.residentId)
+  if (profile === undefined) {
+    // 스키마가 주민마다 1:1 참조를 요구하므로 없으면 데이터가 어긋난 것이다.
+    // 조용히 넘기면 영입해도 아무 일이 없고 화면만 지원한다고 말한다.
+    bus.emit('data.error', {
+      summary: '지원 주민을 세울 수 없다',
+      detail: `${candidate.residentId} 의 지원 공격 프로필이 없다 (DEC-RESIDENT-045)`,
+    })
+    return
+  }
+
+  allySupport = createAllySupport({
+    residentId: candidate.residentId,
+    x: allySupportPoint.x,
+    y: allySupportPoint.y,
+    profile,
+  })
+
+  // 지원 기회는 이 습격 전투를 지원하는 순간 소비된다 (DEC-RESIDENT-021).
+  // 첫 공격을 기다리지 않는 이유는 확정문이 "한 번의 습격 전투를 **지원하면**"
+  // 이라고만 정했고, 첫 공격 전에 투항이 끝나도 그 습격은 지원받은 것이기 때문이다.
+  candidate.supportUsed = true
+
+  // 습격 전투에 진입할 때 어느 주민이 지원하는지 알린다 (DEC-UI-012)
+  const name = residentNames.get(candidate.residentId) ?? candidate.residentId
+  allySupportNotice = {
+    text: `${name}${subjectParticle(name)} 돕는다`,
+    remaining: ALLY_SUPPORT_NOTICE_SECONDS,
+  }
+  // 조우 결과가 "누구의 지원 기회가 소비됐는지" 를 말해야 한다 (DEC-UI-012).
+  // `allySupport` 는 조우가 끝날 때 치워지므로 이름을 따로 들고 있는다.
+  raidSupporterName = name
 }
 
 /** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
@@ -1852,6 +2045,10 @@ function onSickle(): void {
   const result = combat.swingSickle(player, input.aimAngle())
   if (!result.swung) return // 재사용 대기 중
 
+  // 휘두른 것 자체가 조작 성공이다 — 명중과 무관하다 (DEC-RUN-003).
+  // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
+  bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
+
   for (const hit of result.hits) {
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
@@ -1927,6 +2124,30 @@ const input = createInput(renderer.canvas, {
 const uiRoot = document.getElementById('ui')
 if (uiRoot === null) throw new Error('#ui 요소가 없다')
 
+/**
+ * 부팅 화면 둘 (DEC-UI-024).
+ *
+ * 흐름(`scenes/flow.ts`) 밖이다 — 흐름은 타이틀에서 시작하는데 그 타이틀조차
+ * 승인 데이터가 들어온 뒤라야 의미가 있다. 부팅은 입력으로 오가는 단계가 아니라
+ * 한 번 끝나면 돌아오지 않으므로 상태기계에 넣지 않는다.
+ */
+const loadingScreen: LoadingScreen = createLoading(uiRoot)
+const dataErrorScreen: DataErrorScreen = createDataError(uiRoot)
+
+/**
+ * 부팅 중에 올라온 데이터 오류.
+ *
+ * 화면이 원인을 그리려면 이벤트를 모아 둬야 한다 — `bus` 는 지나간 것을 다시
+ * 주지 않는다. **부팅이 끝난 뒤에는 쌓지 않는다.** 플레이 중 오류는 이 화면의
+ * 몫이 아니고(같은 확정문이 "부팅할 수 없으면" 으로 한정했다) 계속 쌓으면
+ * 메모리에 남기만 한다.
+ */
+const bootErrors: { summary: string; detail: string }[] = []
+let booting = true
+bus.on('data.error', ({ summary, detail }) => {
+  if (booting) bootErrors.push({ summary, detail })
+})
+
 const hud: Hud = createHud(uiRoot, {
   onPause: () => scenes.handleEscape(),
 })
@@ -1961,7 +2182,7 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
-// ── 런이 시작되는 세 화면 (DEC-UI-015) ───────────────────────
+// ── 런이 시작되는 세 화면 (DEC-UI-030) ───────────────────────
 //
 // 8/5까지 셋 다 뼈대여서 개발 통로(`devSkipToFarming()`)가 흐름을 대신 밀었다.
 // 그래서 제출 빌드로 바꾸면 첫 화면에서 못 나갔고, 이름이 없어 일지와 엔딩
@@ -1982,8 +2203,76 @@ const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
 })
 
 const tutorialScreen: TutorialScreen = createTutorial(uiRoot, {
-  onSkip: () => scenes.send({ type: 'confirm' }),
+  onSkip: () => finishTutorial(),
+  onContinue: () => finishTutorial(),
 })
+
+/**
+ * 튜토리얼 진행 (DEC-UI-030, DEC-RUN-003, DEC-CONTENT-025).
+ *
+ * 튜토리얼 밖에서는 null 이다. 흐름이 `tutorial` 에 들어올 때 만들고 나갈 때 버린다.
+ */
+let tutorial: TutorialProgress | null = null
+/** 승인 안내. 순서는 `step_order` 가 단일 원본이다 (DEC-CONTENT-025) */
+let tutorialSteps: readonly TutorialStep[] = []
+
+/** 지금 튜토리얼 중인가. 재배 타이머·야생동물을 가르는 조건이다 */
+function inTutorial(): boolean {
+  return scenes.step().at === 'tutorial'
+}
+
+/**
+ * 튜토리얼을 끝내고 1일차로 간다 (DEC-RUN-003).
+ *
+ * **런을 통째로 새로 만든다.** 확정문이 *"튜토리얼에서 소비하거나 획득한 체력·작물·
+ * 자원은 본 런에 반영하지 않는다"* 로 정했다. 항목을 골라 되돌리지 않는 이유는
+ * 되돌릴 목록을 유지해야 하고 하나를 빠뜨리면 조용히 새기 때문이다 — 버리는 쪽이
+ * 규칙과 같은 모양이다 (로드맵 9-5 의 런 리셋과 같은 통로).
+ */
+function finishTutorial(): void {
+  tutorial = null
+  tutorialScreen.hide()
+  scenes.closeOverlay('maintenance_hub')
+  startNewRun(run?.playerName ?? '')
+  scenes.send({ type: 'confirm' })
+}
+
+/**
+ * 현재 안내를 화면에 맞춘다.
+ *
+ * `stage` 가 `maintenance` 면 정비 허브를 연다 — 팔고 사고 만드는 것은 거기서만
+ * 할 수 있다 (`DEC-INPUT-006` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
+ */
+function syncTutorial(): void {
+  if (tutorial === null) return
+
+  if (tutorial.finished) {
+    scenes.closeOverlay('maintenance_hub')
+    tutorialScreen.showFinished()
+    return
+  }
+
+  const step = tutorial.current!
+  if (step.stage === 'maintenance') scenes.openOverlay('maintenance_hub')
+  else scenes.closeOverlay('maintenance_hub')
+
+  tutorialScreen.render({
+    guideText: step.guide_text,
+    position: tutorial.position,
+    total: tutorial.total,
+  })
+}
+
+/**
+ * 조작 성공을 튜토리얼에 알린다.
+ *
+ * 튜토리얼 밖에서는 아무 일도 하지 않는다 — 본 런에서 심었다고 진행도가 움직이면
+ * 안 된다. `completion_key` 는 고정 일곱 개이고 코드가 판정한다 (DEC-CONTENT-025).
+ */
+function completeTutorialStep(key: TutorialCompletionKey): void {
+  if (tutorial === null || !inTutorial()) return
+  if (tutorial.complete(key)) syncTutorial()
+}
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
@@ -2018,6 +2307,23 @@ const endingScreen: EndingScreen = createEnding(uiRoot, {
 
 const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
+})
+
+/**
+ * 일시정지 (DEC-UI-027).
+ *
+ * 독립 화면이 아니라 **오버레이**다 — `DEC-UI-022` 가 일시정지를 필드 위에 겹치는
+ * 것으로 정했고 `DEC-UI-026` 이 항상 최상위로 뒀다. 그래서 `syncScreens()` 가
+ * 아니라 오버레이 동기화 쪽에서 켜고 끈다.
+ */
+const pauseScreen: PauseScreen = createPause(uiRoot, {
+  // `Esc` 를 다시 누른 것과 같다. 화면 매니저가 정지 사유까지 되돌린다
+  // (포커스 이탈로 걸린 정지도 여기서 풀린다 — manager.ts 의 syncSimulation).
+  onResume: () => scenes.closeOverlay('pause'),
+
+  // 확인은 화면이 이미 거쳤다 (DEC-UI-027). 흐름은 무엇을 확인했는지 모르므로
+  // 여기서 다시 묻지 않는다. 오버레이는 `apply()` 가 층위를 바꾸며 같이 닫는다.
+  onReturnToTitle: () => scenes.send({ type: 'abandon_run' }),
 })
 
 // 전투 전 대화와 투항 대화는 같은 표시·입력 규칙을 쓴다 (DEC-UI-010).
@@ -2055,8 +2361,8 @@ function syncScreens(): void {
   if (screen === 'name_input') nameInputScreen.show()
   else nameInputScreen.hide()
 
-  if (screen === 'tutorial') tutorialScreen.show()
-  else tutorialScreen.hide()
+  // 튜토리얼은 화면이 아니라 필드다 (DEC-UI-030). 여기서 다루지 않는다 —
+  // `field.entered` 가 시작하고 `finishTutorial()` 이 끝낸다.
 
   if (screen === 'day_start') {
     const step = scenes.step()
@@ -2561,7 +2867,9 @@ function hudView() {
 
   // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
   // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
-  const timer = inFarmingStage() ? farmingTimer : null
+  // 튜토리얼에는 시간제한이 없으므로 게이지를 아예 숨긴다 (DEC-RUN-003).
+  // 안 가리면 60초짜리 게이지가 멈춘 채 떠 있어 "고장났나" 로 읽힌다.
+  const timer = inFarmingStage() && !inTutorial() ? farmingTimer : null
 
   return {
     playerName: run?.playerName ?? '',
@@ -2580,6 +2888,8 @@ function hudView() {
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
+    // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
+    allySupportNotice: allySupportNotice?.text ?? null,
     // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
     raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
@@ -2594,6 +2904,10 @@ const loop = createGameLoop(
       const speed = runConfig.moveSpeed * recoveryMoveMultiplier()
       player.x += move.x * speed * dt
       player.y += move.y * speed * dt
+      // 이동 위치는 맵 경계 안으로 제한한다 (DEC-CONTENT-016).
+      // 승인 데이터가 오기 전에는 경계를 모르므로 제한하지 않는다 — 그때는
+      // 임시 수치로 움직여 보는 상태이고 밭도 그려지지 않는다.
+      if (worldBounds !== null) clampToWorld(player, worldBounds)
 
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
       advanceThrowFeedback(dt)
@@ -2676,6 +2990,10 @@ const loop = createGameLoop(
 
       // 제한시간이 끝나면 재배 단계를 자동 종료한다 (DEC-RUN-004).
       // 조기 종료 조건을 만들지 않는다 — DEC-RUN-005 는 보류다.
+      //
+      // **튜토리얼에서는 흘리지 않는다** (DEC-RUN-003 — 시간제한을 두지 않는다).
+      // HUD 쪽은 `hudView()` 가 `inFarmingStage()` 로 이미 가리고 있다.
+      if (inTutorial()) return
       if (farmingTimer?.tick(dt)) {
         bus.emit('farm.timeExpired', {})
         scenes.send({ type: 'farming_time_expired' })
@@ -2705,6 +3023,11 @@ const loop = createGameLoop(
           life: p.remaining / HARVEST_POPUP_SECONDS,
         })),
         hostiles: hostileViews(),
+        // 지원 주민은 습격 전투에만 있다 (DEC-RESIDENT-021). 체력도 대기 표시도 없다.
+        ally:
+          allySupport === null
+            ? null
+            : { x: allySupport.x, y: allySupport.y, attackFlash: allySupport.attackFlash },
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
@@ -2803,6 +3126,11 @@ const loop = createGameLoop(
       } else {
         dialogueModal.hide()
       }
+
+      // 일시정지 (DEC-UI-027). **가장 위 층위라 입력 소유를 따로 보지 않는다** —
+      // `DEC-UI-026` 이 일시정지를 최상위로 정했으므로 열려 있으면 곧 입력 소유자다.
+      if (open.includes('pause')) pauseScreen.show()
+      else pauseScreen.hide()
     },
   },
   {
@@ -3027,6 +3355,27 @@ bus.on('field.entered', ({ mode }) => {
     return
   }
 
+  // 튜토리얼은 재배 필드를 쓰지만 **1일차가 아니다** (DEC-RUN-003 — 1일차 타이머와
+  // 분리하고 시간제한을 두지 않는다). 그래서 타이머를 돌리지 않고 야생동물도
+  // 세우지 않는다. 조작을 배우는 자리에 제한시간과 적을 같이 두면 배울 수 없다.
+  if (inTutorial()) {
+    wildlife?.endFarming()
+    tutorial = createTutorialProgress(tutorialSteps)
+
+    if (tutorial.total === 0) {
+      // 안내가 없으면 튜토리얼이 성립하지 않는다. 임시 문구를 지어내지 않고
+      // 데이터 오류로 올린 뒤 넘어간다 (DEC-UI-030 — 문구는 승인 데이터에서만).
+      bus.emit('data.error', {
+        summary: '튜토리얼 안내가 없다',
+        detail: 'tutorial_steps 에 승인 행이 없다 (DEC-CONTENT-025)',
+      })
+      finishTutorial()
+      return
+    }
+    syncTutorial()
+    return
+  }
+
   farmingTimer?.reset()
 
   const day = run?.dayNumber ?? 1
@@ -3044,6 +3393,24 @@ bus.on('field.entered', ({ mode }) => {
 })
 
 bus.on('field.exited', () => wildlife?.endFarming())
+
+/**
+ * 튜토리얼 완료 판정 (DEC-CONTENT-025, DEC-RUN-003).
+ *
+ * **일곱 개가 전부 이미 있는 이벤트에 붙는다.** 튜토리얼용 판정을 시스템 안에
+ * 따로 만들지 않았다 — 그러면 "진짜 조작" 과 "튜토리얼이 인정하는 조작" 이 갈리고,
+ * 갈리는 순간 안내를 따라 했는데 안 넘어가는 상태가 생긴다.
+ *
+ * 반대로 `use_sickle` 만 이벤트가 없어서 새로 만들었다(`combat.sickleSwung`).
+ * 낫은 명중과 무관하게 휘두른 것이 성공이다.
+ */
+bus.on('farm.planted', () => completeTutorialStep('plant_crop'))
+bus.on('farm.harvested', () => completeTutorialStep('harvest_crop'))
+bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
+bus.on('shop.bought', () => completeTutorialStep('buy_material'))
+bus.on('craft.made', () => completeTutorialStep('craft_item'))
+bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
+bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
 /**
  * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
  *
@@ -3135,7 +3502,24 @@ if (isDevBuild) {
 
 // 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
 // 먼저 부르면 오류 이벤트가 아무 데도 도달하지 않고 화면만 비어 보인다.
-void bootData().then(() => {
+//
+// 부팅 중에는 로딩 표시를 덮는다 (DEC-UI-024). 타이틀은 `INITIAL_STEP` 이라
+// 이미 떠 있는데, 승인 데이터가 없는 타이틀은 눌러도 갈 곳이 없다.
+loadingScreen.show()
+
+void bootData().then((ok) => {
+  booting = false
+  loadingScreen.hide()
+
+  if (!ok) {
+    // 부팅할 수 없으면 데이터 오류 화면이고 여기서 끝이다 (DEC-UI-024).
+    // **루프를 시작하지 않는다** — 돌 것이 없고, 돌리면 빈 필드가 오류 화면
+    // 뒤에서 계속 그려진다.
+    dataErrorScreen.render(bootErrors)
+    dataErrorScreen.show()
+    return
+  }
+
   // **흐름을 밀지 않는다.** 타이틀 화면이 생겼으므로 플레이어가 직접 시작한다.
   // 8/5까지는 `devSkipToFarming()` 이 여기서 네 화면을 건너뛰었다 — 마지막
   // 개발 통로였고 타이틀·이름 입력·튜토리얼이 들어오면서 지웠다 (로드맵 11-2).

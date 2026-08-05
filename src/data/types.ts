@@ -50,7 +50,7 @@ export type Kind =
   | 'night_result_text'
   | 'fear_increment'
   // `schema/enums.json` 의 고정 목록에는 8/4부터 있었는데 여기만 빠져 있었다
-  // (김민주 발견, 8/5). 튜토리얼 구현이 이 값을 읽는다 (DEC-CONTENT-023).
+  // (김민주 발견, 8/5). 튜토리얼 구현이 이 값을 읽는다 (DEC-CONTENT-025).
   | 'tutorial_step'
 
 /** DEC-CONTENT-013 — 작물 속성이 전투에서 일으키는 효과 */
@@ -170,11 +170,11 @@ export type ImportantActionSubject =
 /** DEC-JOURNAL-003 — 일지 폴백을 고르는 공포도 변화 방향 */
 export type JournalChangeDirection = 'up' | 'same' | 'down'
 
-/** DEC-CONTENT-023 — 튜토리얼 안내가 붙는 단계 */
+/** DEC-CONTENT-025 — 튜토리얼 안내가 붙는 단계 */
 export type TutorialStage = 'farming' | 'combat' | 'maintenance'
 
 /**
- * DEC-CONTENT-023 — 튜토리얼 안내를 넘기는 조작. **고정 일곱 개다.**
+ * DEC-CONTENT-025 — 튜토리얼 안내를 넘기는 조작. **고정 일곱 개다.**
  *
  * 새 키가 필요하면 데이터 행 추가가 아니라 스키마·구현 변경으로 올린다.
  * 코드가 이 키를 판정하므로 여기 없는 값이 CSV 에 오면 아무도 그 안내를 넘길 수 없다.
@@ -731,13 +731,13 @@ export interface NightResultText extends CommonEntry {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 튜토리얼 (DEC-CONTENT-023, DEC-UI-015, DEC-RUN-003)
+// 튜토리얼 (DEC-CONTENT-025, DEC-UI-030, DEC-RUN-003)
 // ─────────────────────────────────────────────────────────────
 
 /**
  * 튜토리얼 안내 한 단계.
  *
- * `guide_text` 는 승인 데이터에서만 온다 — `DEC-UI-015` 가 안내 문구를 코드에
+ * `guide_text` 는 승인 데이터에서만 온다 — `DEC-UI-030` 가 안내 문구를 코드에
  * 두는 것을 금지했다. `completion_key` 는 고정 일곱 개이며 코드가 판정한다.
  * `step_order` 는 1부터 빈틈 없이 이어지고 세 단계가 모두 한 번은 나온다
  * (스키마 규칙 `step_order_sequential`·`covers_all_stages`).

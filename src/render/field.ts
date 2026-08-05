@@ -115,6 +115,8 @@ export interface FieldView {
   harvestPopups?: readonly HarvestPopupView[]
   /** 필드 위 적대 개체 (야생동물·적대 주민) */
   hostiles?: readonly HostileView[]
+  /** 지원하는 영입 주민. 습격 전투에 한 명뿐이고 없으면 null (DEC-RESIDENT-021) */
+  ally?: AllyView | null
   /** 날아가는 투사체 */
   projectiles?: readonly ProjectileView[]
   /**
@@ -166,6 +168,24 @@ export interface ProjectileView {
   radius: number
   /** 플레이어 것인지 적 것인지 — 색을 가른다 */
   hostile: boolean
+}
+
+/**
+ * 지원하는 영입 주민 (DEC-UI-012).
+ *
+ * **체력을 두지 않는다.** 확정문이 "지원 주민에게 체력 표시를 두지 않는다"로
+ * 정했고 애초에 체력이라는 상태가 없다 (DEC-RESIDENT-021). `HostileView` 와
+ * 한 타입으로 합치지 않는 이유가 이것이다 — 합치면 체력 필드를 0이나 1로
+ * 채워야 하고, 그 값이 언젠가 화면에 나온다.
+ *
+ * **다음 공격까지 남은 시간도 없다.** 같은 확정문이 금지했다. `attackFlash` 는
+ * 이미 일어난 공격의 여운이지 예고가 아니다.
+ */
+export interface AllyView {
+  x: number
+  y: number
+  /** 공격이 방금 일어났다는 표시가 남은 정도 1~0 */
+  attackFlash: number
 }
 
 export interface FieldRenderer {
@@ -309,6 +329,7 @@ export function createFieldRenderer(
     // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
     for (const plot of view.plots ?? []) drawPlot(plot, view.assets)
 
+    if (view.ally !== null && view.ally !== undefined) drawAlly(view.ally)
     for (const hostile of view.hostiles ?? []) drawHostile(hostile)
     for (const projectile of view.projectiles ?? []) drawProjectile(projectile)
 
@@ -450,6 +471,55 @@ export function createFieldRenderer(
     ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth, 4)
     ctx.fillStyle = '#c94b3f'
     ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth * hostile.healthRatio, 4)
+  }
+
+  /**
+   * 지원하는 영입 주민 — 플레이스holder (`field_sprite` 가 아직 없다).
+   *
+   * **적대 주민과 시각적으로 구분한다** (DEC-UI-012). 적대는 붉은 계열 원이므로
+   * 여기는 밝은 테두리를 쓴다 — 아트 디렉션 4.3 이 *"지원 주민은 밝은 테두리로
+   * 구분한다"* 로 정했고, 4.2 가 적대 표시에 붉은색을 쓰지 못하게 해서 색만으로는
+   * 갈리지 않는다.
+   *
+   * 체력 막대도, 다음 공격까지 남은 시간도 그리지 않는다 (DEC-UI-012).
+   */
+  function drawAlly(ally: AllyView): void {
+    const at = camera.worldToScreen(ally)
+    const radius = 16 * WORLD_TO_PIXEL
+
+    // 공격이 발생하는 순간을 알 수 있게 표시한다 (DEC-UI-012).
+    //
+    // **두 가지로 표시한다.** 링 하나만 두었더니 페이드아웃 때문에 선명한 구간이
+    // 0.1초 남짓이라 보고 있어도 놓쳤다 (8/6). 몸통이 같이 밝아지면 링을 놓쳐도
+    // "방금 무슨 일이 있었다" 가 남는다.
+    //
+    // 예고가 아니라 이미 일어난 것의 여운이다 — 다음 공격까지 남은 시간을
+    // 표시하는 것은 같은 확정문이 금지했다.
+    const flash = ally.attackFlash
+
+    ctx.fillStyle = flash > 0 ? '#9fc0cf' : '#5f7a8a'
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    // 지원 주민은 밝은 테두리로 구분한다 (아트 디렉션 4.3). 적대 표시에 붉은색을
+    // 쓸 수 없어(4.2) 색만으로는 갈리지 않으므로 테두리가 구분의 본체다.
+    ctx.strokeStyle = '#f4ecd0'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+    ctx.stroke()
+
+    if (flash > 0) {
+      // 알파를 선형으로 떨어뜨리지 않는다. 후반이 눈에 안 들어와서 표시 시간을
+      // 늘려도 체감이 거의 안 늘었다. 제곱근을 쓰면 오래 밝게 남다가 끝에서 진다.
+      const alpha = Math.sqrt(flash)
+      ctx.strokeStyle = `rgba(244, 236, 208, ${alpha.toFixed(3)})`
+      ctx.lineWidth = 5
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius + 8 + (1 - flash) * 14, 0, Math.PI * 2)
+      ctx.stroke()
+    }
   }
 
   function drawProjectile(projectile: ProjectileView): void {
