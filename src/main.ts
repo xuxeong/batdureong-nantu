@@ -13,6 +13,7 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -248,6 +249,16 @@ let allySupport: AllySupport | null = null
  */
 let allySupportNotice: { text: string; remaining: number } | null = null
 
+/**
+ * 이번 습격을 지원한 주민의 표시 이름 (DEC-UI-012).
+ *
+ * `allySupport` 는 조우가 끝나는 순간 치워지는데 조우 결과 화면은 그 뒤에 만들어진다.
+ * **8/6까지 이 자리를 조우 상대의 `supportUsed` 로 읽고 있었다** — 상대는 적대
+ * 주민이라 그 값이 항상 false 이고, 그래서 확정문이 요구한 줄이 한 번도 안 떴다.
+ * 담당자가 "3일차에 영입한 뒤 4일차에 지원이 없다" 고 물어 드러났다.
+ */
+let raidSupporterName: string | null = null
+
 /** 지원 안내가 떠 있는 시간(초). 표현이라 승인 데이터가 아니다 */
 const ALLY_SUPPORT_NOTICE_SECONDS = 4
 /** 습격 조우를 시작하는 데 필요한 승인 데이터 묶음 */
@@ -462,6 +473,7 @@ function startNewRun(playerName: string): void {
   // 여기서 치우는 것은 필드에 서 있던 인스턴스와 화면 알림이다 (로드맵 9-5).
   allySupport = null
   allySupportNotice = null
+  raidSupporterName = null
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
@@ -1091,7 +1103,10 @@ function buildEncounterResultView(
     revealedFacts: (collected?.revealedFactIds ?? [])
       .map((id) => storyFactById.get(id))
       .filter((text): text is string => typeof text === 'string' && text.length > 0),
-    supportUsed: resident.supportUsed,
+    // **조우 상대가 아니라 이번 습격을 지원한 주민이다** (DEC-UI-012).
+    // 상대의 supportUsed 를 읽으면 항상 false 다 — 해결된 주민은 다시 적대로
+    // 나오지 않으므로(DEC-RESIDENT-043) 적대 주민이 지원했을 수가 없다.
+    supportedBy: raidSupporterName,
 
     // 제출 빌드에서는 점수·구간·변화량을 어떤 형태로도 두지 않는다 (DEC-UI-013)
     fear: isDevBuild
@@ -1848,6 +1863,7 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
  */
 function startAllySupport(): void {
   allySupport = null
+  raidSupporterName = null
   if (run === null || raidData === null) return
 
   if (allySupportPoint === null) {
@@ -1904,26 +1920,9 @@ function startAllySupport(): void {
     text: `${name}${subjectParticle(name)} 돕는다`,
     remaining: ALLY_SUPPORT_NOTICE_SECONDS,
   }
-}
-
-/**
- * 주격 조사 — 받침이 있으면 `이`, 없으면 `가`.
- *
- * 이름이 승인 데이터(`residents.display_name`)에서 오므로 코드가 고를 수밖에 없다.
- * `이(가)` 로 두면 만들다 만 문장으로 읽힌다 — 실제로 8/6 플레이 확인에서
- * `영순 이(가) 돕는다` 가 화면에 그대로 나왔다.
- *
- * 한글 음절이 아니면 붙이지 않는다. 숫자나 로마자 이름에 규칙을 지어내지 않는다.
- */
-function subjectParticle(word: string): string {
-  const last = word.at(-1)
-  if (last === undefined) return ''
-
-  const code = last.charCodeAt(0)
-  if (code < 0xac00 || code > 0xd7a3) return ''
-
-  // 한글 음절 = 0xAC00 + (초성×21 + 중성)×28 + 종성. 나머지가 종성이다.
-  return (code - 0xac00) % 28 === 0 ? '가' : '이'
+  // 조우 결과가 "누구의 지원 기회가 소비됐는지" 를 말해야 한다 (DEC-UI-012).
+  // `allySupport` 는 조우가 끝날 때 치워지므로 이름을 따로 들고 있는다.
+  raidSupporterName = name
 }
 
 /** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
