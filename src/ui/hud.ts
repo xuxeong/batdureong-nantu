@@ -25,7 +25,7 @@
 // 함께 표시, 바 우측에 수치" 로 못박았다.
 //
 // **플레이어 이름은 아트 장식이다.** `DEC-UI-017` 의 공통 요소 여덟 개에 이름이
-// 없지만 `DEC-UI-015` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
+// 없지만 `DEC-UI-030` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
 // 근거는 아트 디렉션 14.2 이며 `DEC-UI-017` 을 폐기·대체하지 않는다.
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
@@ -41,7 +41,7 @@ export interface QuickslotView {
 }
 
 export interface HudView {
-  /** 이름 입력에서 온 값 (DEC-UI-015). 카드 장식이다 — 아트 디렉션 14.2 */
+  /** 이름 입력에서 온 값 (DEC-UI-030). 카드 장식이다 — 아트 디렉션 14.2 */
   playerName: string
   health: number
   maxHealth: number

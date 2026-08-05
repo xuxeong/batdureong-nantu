@@ -2145,7 +2145,7 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
-// ── 런이 시작되는 세 화면 (DEC-UI-015) ───────────────────────
+// ── 런이 시작되는 세 화면 (DEC-UI-030) ───────────────────────
 //
 // 8/5까지 셋 다 뼈대여서 개발 통로(`devSkipToFarming()`)가 흐름을 대신 밀었다.
 // 그래서 제출 빌드로 바꾸면 첫 화면에서 못 나갔고, 이름이 없어 일지와 엔딩

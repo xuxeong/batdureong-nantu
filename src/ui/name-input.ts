@@ -1,10 +1,10 @@
-// 이름 입력 화면 (DEC-UI-015, DEC-UI-025)
+// 이름 입력 화면 (DEC-UI-030, DEC-UI-025)
 //
 // 여기서 받은 값이 런 상태의 `playerName` 이 되고, 엔딩 기록문과 일지 LLM 입력에
 // `player_name` 으로 들어간다 (DEC-CONTENT-011, DEC-JOURNAL-002). 그래서 이 화면이
 // 없는 동안은 **이름 없는 일지**가 생성되고 있었다.
 //
-// ── 확정된 제약 (DEC-UI-015) ───────────────────────────────
+// ── 확정된 제약 (DEC-UI-030) ───────────────────────────────
 //
 //   - 키보드로 입력한다. `DEC-UI-025` 의 마우스 전용 규칙에서 **제외**된다
 //   - 이름이 비어 있으면 다음으로 진행할 수 없다
@@ -47,7 +47,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
 /**
  * 최대 길이.
  *
- * **근거 없이 고른 값이다.** `DEC-UI-015` 는 "최대 길이를 제한한다" 고만 했고
+ * **근거 없이 고른 값이다.** `DEC-UI-030` 는 "최대 길이를 제한한다" 고만 했고
  * 숫자를 정한 확정 DEC 가 없다. 게임 데이터(가격·확률·시간)가 아니라 입력 제약이라
  * 승인 CSV 로 빼지 않았다. 12 로 둔 이유는 플레이어 카드의 이름 자리와 일지 문장
  * 안에서 읽히는 길이라서다 (아트 디렉션 14.2). 확정되면 이 상수만 바꾼다.
@@ -74,7 +74,7 @@ export function createNameInput(
   const panel = el('div', 'name-input__panel')
   const prompt = el('p', 'name-input__prompt', PROMPT_TEXT)
 
-  // 줄바꿈을 표현할 수 없는 요소를 쓴다 (DEC-UI-015)
+  // 줄바꿈을 표현할 수 없는 요소를 쓴다 (DEC-UI-030)
   const field = el('input', 'name-input__field')
   field.type = 'text'
   field.maxLength = MAX_NAME_LENGTH
@@ -84,7 +84,7 @@ export function createNameInput(
   const confirmButton = el('button', 'name-input__confirm', CONFIRM_LABEL)
   confirmButton.type = 'button'
 
-  /** 이름이 비어 있으면 진행할 수 없다 (DEC-UI-015) */
+  /** 이름이 비어 있으면 진행할 수 없다 (DEC-UI-030) */
   function trimmed(): string {
     return field.value.trim()
   }
