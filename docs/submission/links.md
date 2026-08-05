@@ -6,12 +6,12 @@
 | 항목 | 링크 | 상태 |
 |---|---|---|
 | 플레이 빌드 | | 미정 |
-| GitHub 저장소 | https://github.com/xuxeong/batdureong-nantu | 공개 여부 확인 필요 |
+| GitHub 저장소 | https://github.com/xuxeong/batdureong-nantu | **공개** (2026-08-06 확인) |
 | 플레이 영상 (YouTube, 30~60초) | | 미정 |
 
 ## 확인 사항
 
-- [ ] 저장소를 공개(public)로 전환했는가
+- [x] 저장소를 공개(public)로 전환했는가
       (비공개로 제출할 경우 심사 계정 `dl_gameai_reviewer@nhn.com` 초대)
 - [ ] 링크 클릭만으로 브라우저에서 바로 플레이되는가
 - [ ] 별도 유료 라이선스 없이 심사자가 실행할 수 있는가
