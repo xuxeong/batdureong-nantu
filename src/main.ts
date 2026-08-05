@@ -1848,8 +1848,20 @@ const input = createInput(renderer.canvas, {
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
-  onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
+  // ── 회복 퀵메뉴는 P2 로 컷됐다 (로드맵 6절) ────────────────
+  //
+  // 컷 원문이 *"회복 퀵메뉴 롱프레스(→ `Q` 짧게 누르기만)"* 다. 그런데 여기서
+  // 오버레이를 열고 있었고, **오버레이가 열리면 시뮬레이션이 정지한다**
+  // (`scenes/manager.ts` 의 `syncSimulation`). 그릴 UI 는 없으므로 롱프레스하면
+  // **게임이 멈춘 채 아무것도 안 보이는 상태**가 됐다 — 컷이 아니라 버그였다
+  // (8/5 담당자 플레이 테스트).
+  //
+  // 되살릴 때는 오버레이만으로 부족하다. `DEC-INPUT-008` 이 퀵메뉴를 **정지가
+  // 아니라 감속**으로 정했으므로(`loop.setTimeScale`) `syncSimulation` 이
+  // 퀵메뉴를 다른 오버레이와 갈라야 한다. 그때까지 회복 선택은 `DEC-RESOURCE-018`
+  // 의 자동 선택만 쓴다.
+  onRecoverMenuOpen: () => {},
+  onRecoverMenuClose: () => {},
   onEscape: () => scenes.handleEscape(),
 })
 
