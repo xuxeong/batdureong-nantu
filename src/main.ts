@@ -599,8 +599,9 @@ function updateRaid(dt: number): void {
   // 체력 0이면 어떤 경로로 여기 들어왔든 전투가 돌지 않는다 (DEC-RUN-008).
   //
   // 화면 전환만으로 막으면 화면을 우회하는 경로가 생겼을 때 그대로 뚫린다 —
-  // 실제로 `enterFieldPreview()` 가 run_failed 위에 필드를 다시 띄워서, 체력 0인
-  // 플레이어가 주민을 투항 직전까지 때리는 상태가 나왔다. 실패 여부는 상태로 판단한다.
+  // 실제로 개발 통로(`enterFieldPreview()`)가 run_failed 위에 필드를 다시 띄워서,
+  // 체력 0인 플레이어가 주민을 투항 직전까지 때리는 상태가 나왔다 (그 통로는 8/5에
+  // 지웠다). 화면이 아니라 **상태로** 판단하는 이유가 이것이다.
   if (run.health <= 0) {
     failRunIfDead()
     return
@@ -768,13 +769,14 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   if (scenes.step().at === 'raid') {
     scenes.send({ type: 'encounter_finished' })
   } else {
-    // 개발 통로(`enterFieldPreview`)로 들어오면 흐름은 습격 단계가 아니다.
-    // 그대로 보내면 흐름 오류로 데이터 오류 화면이 떠서 테스트가 끊긴다.
-    // **정상 흐름에서는 여기 오지 않는다.** 조용히 넘기지 않고 남긴다.
-    console.warn(
-      `[개발 전용] 흐름이 습격 단계가 아니라(${scenes.step().at}) 조우 결과로 넘기지 않는다. ` +
-        '개발 통로로 필드에 들어왔기 때문이다 (로드맵 11-2).',
-    )
+    // **여기 오면 버그다.** 조우는 습격 단계에서만 시작되므로 끝날 때도 습격이어야
+    // 한다. 8/5 까지는 개발 통로(`enterFieldPreview`)가 흐름을 건너뛰고 필드를 띄워
+    // 정상적으로 도달했고 그때는 경고만 남겼는데, 그 통로를 지웠으므로 이제는
+    // 흐름과 조우 상태가 갈라졌다는 뜻이다. 조용히 넘기면 하루가 끝나지 않는다.
+    bus.emit('data.error', {
+      summary: '조우가 끝났는데 흐름이 습격 단계가 아니다',
+      detail: `현재 단계 ${scenes.step().at} · ${residentId} · ${outcome}`,
+    })
   }
   return true
 }
@@ -2573,28 +2575,24 @@ if (isDevBuild) {
     console.warn(`[엔딩] 확정 — ${endingTitle} (${endingId})`),
   )
 
-  // 흐름을 손으로 밟아 보기 위한 개발용 통로.
-  // 승인 데이터가 없으면 일차로 진입하는 순간 데이터 오류가 뜨는 것이 정상이다.
+  // 흐름을 손으로 들여다보기 위한 노출. **상태를 바꾸는 통로는 없다.**
   //
-  // `__dev` 안의 둘은 **김민주의 8/4 UI 를 임시로 대신한다.** 제작 모달·편성 팝업·
-  // 대화 모달이 오면 이 두 함수와 여기 노출을 지운다 (로드맵 11-2).
+  // `__dev` 넷(`fillThrowables`·`goToDay`·`startRaid`·`surrender`)은 8/5에 지웠다.
+  // 대신하던 UI 가 전부 도착했고(제작·편성·대화 모달), 특히 `goToDay` 는
+  // `syncRunDay()` 가 들어온 뒤로 **런 상태만 옮기고 흐름은 그대로 둬서** 5일차
+  // 습격을 1일차로 판정하게 만들었다 (로드맵 11-2).
+  //
+  // 남은 `devSkipToFarming()` 은 노출하지 않는다 — 부팅 때 한 번 스스로 돈다.
   Object.assign(window, {
     __scenes: scenes,
     __bus: bus,
     __loop: loop,
-    __dev: {
-      fillThrowables: (count = 5) => devFillThrowables(count),
-      goToDay: (dayNumber: number) => devGoToDay(dayNumber),
-      startRaid: (choiceIndex = 0) => devStartRaid(choiceIndex),
-      surrender: (choiceIndex = 0) => devSurrender(choiceIndex),
-    },
   })
 
   console.info(
-    '[개발 전용] __dev.fillThrowables(5) 투척 무기 채우기 · ' +
-      '__dev.goToDay(2) 일차 이동 · __dev.startRaid(0) 습격 시작 (0=공감 1=협상 2=위협) · ' +
-      '__dev.surrender(0) 투항 선택 (0=영입 1=대가·퇴각 2=거부·전투 계속). ' +
-      '승인 일정상 습격은 2일차부터다.',
+    '[개발 전용] __scenes.step() 으로 현재 흐름을, __scenes.send({type:...}) 로 ' +
+      '흐름 입력을 넣을 수 있다. 상태를 직접 바꾸는 통로는 없다 — 무기는 제작·편성으로, ' +
+      '일차는 정상 흐름으로 넘긴다.',
   )
 
 }
@@ -2618,274 +2616,6 @@ function devSkipToFarming(): void {
     scenes.send({ type: 'confirm' })
   }
   console.warn('[개발 전용] 타이틀~일차 시작 화면을 건너뛰고 재배 단계로 들어왔다.')
-}
-
-/**
- * **개발 전용.** 무기 보관함과 퀵슬롯을 채운다.
- *
- * 무기를 얻으려면 제작 모달(`DEC-UI-006`), 슬롯에 넣으려면 편성 팝업(`DEC-UI-021`)이
- * 필요한데 둘 다 아직 없다(로드맵 8/4, 김민주). 그래서 좌클릭이 항상
- * `투척 무기 없음` 으로 떨어지고 투척·`direct`/`area`·전투 효과·소진 자동 전환을
- * 하나도 확인할 수 없다.
- *
- * **경제를 우회한다.** 제작 비용도 숙련도 해금도 거치지 않는다. 그래서 이건
- * 밸런스 확인에 쓸 수 없고 오직 "동작하는가" 만 본다.
- * 두 UI 가 오면 이 함수와 호출을 지운다 (로드맵 11-2).
- */
-function devFillThrowables(count: number): void {
-  if (run === null) {
-    console.warn('[개발 전용] 런 상태가 없어 무기를 채울 수 없다')
-    return
-  }
-
-  const ids = [...throwablesById.keys()].sort()
-  if (ids.length === 0) {
-    console.warn('[개발 전용] 승인된 투척 무기가 없다')
-    return
-  }
-
-  // 퀵슬롯은 5칸 고정이다 (DEC-INPUT-006). 승인 무기를 앞에서부터 채운다.
-  run.quickslots.slots = run.quickslots.slots.map((_, index) => ids[index] ?? null)
-  run.quickslots.selectedIndex = 0
-  for (const id of ids) run.resources.throwables[id] = count
-
-  console.warn(
-    `[개발 전용] 제작·편성 UI 를 우회해 투척 무기 ${ids.length}종을 ${count}개씩 넣었다. ` +
-      '제작 비용과 숙련도 해금을 거치지 않았으므로 밸런스 확인에 쓸 수 없다.',
-  )
-}
-
-/**
- * **개발 전용.** 일차를 옮긴다.
- *
- * 정상 흐름은 재배 → 정비 → (습격) → 결과 → 다음 일차인데, 정비 허브와 결과 화면이
- * 아직 없어서(로드맵 8/4) 하루를 넘길 수단이 없다. 습격은 2일차부터라 1일차에
- * 갇히면 습격을 한 번도 볼 수 없다.
- *
- * **런 상태의 일차만 바꾼다.** 자원·주민 상태·공포도는 건드리지 않으므로 이 통로로
- * 넘긴 날은 실제 플레이와 다르다. 정비·결과 화면이 오면 지운다.
- */
-/**
- * **개발 전용.** 투항 대화의 선택지 3개를 대신한다 (`DEC-UI-007`, `DEC-RESIDENT-016`).
- *
- * `surrender-modal.ts` 가 로드맵 8/4 김민주 몫이라 투항이 발동하면 오버레이만 열리고
- * 거기서 멈춘다. 그런데 이 세 선택이 최종 결과 다섯 개 중 셋(`recruited`,
- * `retreated`, 거부 후 `killed`)과 **보상 지급 경로 전체**로 가는 유일한 문이라,
- * 통로가 없으면 `DEC-RESIDENT-042` 의 원자적 지급을 플레이로 확인할 방법이 없다.
- *
- * **판정을 우회하지 않는다.** 투항 선택에는 성격 판정이 없고 선택 기능이 곧 시스템
- * 결과다 (`DEC-CONTENT-009`). 우회하는 것은 대사 표시와 클릭뿐이다.
- * 모달이 오면 이 함수와 노출을 지운다 (로드맵 11-2).
- */
-function devSurrender(choiceIndex: number): void {
-  if (hostile === null || resolution === null) {
-    console.warn('[개발 전용] 투항 중인 주민이 없다')
-    return
-  }
-  // 입력 소유가 아니라 **열려 있는지**를 본다. 콘솔로 전환하면 창이 포커스를 잃어
-  // 자동 일시정지가 걸리고(DEC-UI-022) 일시정지는 항상 최상위라(DEC-UI-026)
-  // inputOwner() 가 언제나 'pause' 다. 개발 통로는 콘솔에서만 불리므로 항상 막힌다.
-  if (!scenes.openOverlays().includes('surrender_dialogue')) {
-    console.warn('[개발 전용] 투항 대화가 열려 있지 않다')
-    return
-  }
-
-  const residentId = hostile.entity.residentId
-  const choices = ['recruit', 'retreat_reward', 'resume_combat'] as const
-  const choice = choices[choiceIndex]
-  if (choice === undefined) {
-    console.warn(`[개발 전용] 투항 선택지 ${choiceIndex} 가 없다. 0=영입 1=대가·퇴각 2=거부`)
-    return
-  }
-
-  // 무엇을 골랐는지는 최종 결과와 별개로 남는다 (DEC-RESIDENT-042)
-  resolution.recordSurrenderChoice(residentId, choice)
-  console.warn(`[개발 전용] 투항 대화 UI 를 우회해 선택을 확정한다 — ${choice}`)
-
-  if (choice === 'resume_combat') {
-    // 거부는 최종 결과가 아니다. 전투로 돌아가고 실제로 처치했을 때만
-    // killed 를 확정한다 (DEC-RESIDENT-052).
-    resolution.recordSurrenderResumed(residentId)
-    scenes.closeOverlay('surrender_dialogue')
-    console.info('[조우] 투항 거부 — 전투 재개. 처치하면 killed 로 확정된다')
-    return
-  }
-
-  // 영입·대가 요구는 조우를 끝낸다. 보상과 상태 변경이 하나의 처리다.
-  if (!finishEncounter(residentId, choice === 'recruit' ? 'recruited' : 'retreated')) return
-
-  scenes.closeOverlay('surrender_dialogue')
-  hostile = null
-  hostileTarget = null
-  residentCombat?.reset()
-}
-
-function devGoToDay(dayNumber: number): void {
-  if (run === null) {
-    console.warn('[개발 전용] 런 상태가 없다')
-    return
-  }
-  run.dayNumber = dayNumber
-  console.warn(
-    `[개발 전용] 정비·결과 화면을 건너뛰고 ${dayNumber}일차로 옮겼다. ` +
-      '자원과 주민 상태는 그대로라 실제 플레이와 다르다.',
-  )
-}
-
-/**
- * **개발 전용.** 습격 모드로 들어가 적대 주민을 세운다.
- *
- * 전투 전 대화 UI(`DEC-UI-007/008`, 로드맵 8/4 김민주)가 없어서 선택지를 마우스로
- * 고를 수단이 없다. **판정 자체는 우회하지 않는다** — 실제 `encounter.judge()` 를
- * 부르고 그 결과가 지정한 전투 보정으로 주민을 세운다 (`DEC-RESIDENT-049`).
- * 사람이 화면에서 고르던 것을 인자로 받을 뿐이다.
- *
- * 대화 모달이 오면 이 함수를 지우고 모달의 선택 이벤트에 같은 경로를 연결한다.
- */
-function devStartRaid(choiceIndex = 0): void {
-  if (encounter === null || raidData === null || run === null) {
-    console.warn('[개발 전용] 승인 데이터가 없어 습격을 시작할 수 없다')
-    return
-  }
-
-  if (run.health <= 0) {
-    console.warn('[개발 전용] 체력이 0이라 습격을 시작할 수 없다. 런이 이미 실패했다 (DEC-RUN-008)')
-    return
-  }
-
-  const dayNumber = run.dayNumber
-  const residentId = raidData.hostileResidentByDay.get(dayNumber) ?? null
-  if (residentId === null || residentId === '') {
-    // 어느 날에 습격이 있는지 같이 알려준다. 이 말이 없으면 "안 되는 건가" 로 읽힌다.
-    const raidDays = [...raidData.hostileResidentByDay]
-      .filter(([, id]) => id !== null && id !== '')
-      .map(([day, id]) => `${day}일차(${id})`)
-
-    console.warn(
-      `[개발 전용] ${dayNumber}일차는 습격이 없는 날이다. 습격일: ${raidDays.join(', ')}. ` +
-        '__dev.goToDay(n) 으로 일차를 옮긴다.',
-    )
-    return
-  }
-
-  // 해결된 주민과는 대화도 다시 열리지 않는다 (DEC-RESIDENT-043).
-  // 전투 진입 전에 막아야 한다 — spawnHostile 에서 막으면 판정이 이미 돌아
-  // 중요 행동과 공포도가 한 번 더 기록된다.
-  if (resolution !== null && !resolution.canAppearAsHostile(residentId)) {
-    console.warn(`[개발 전용] ${residentId} 는 이미 해결된 주민이라 다시 조우하지 않는다`)
-    return
-  }
-
-  const scenario = raidData.scenarioByResident.get(residentId)
-  if (scenario === undefined) {
-    console.warn(`[개발 전용] ${residentId} 의 사연 시나리오가 없다`)
-    return
-  }
-
-  const choices = encounter.availableChoices(scenario.id, run.resources.crops)
-  const picked = choices[choiceIndex]
-  if (picked === undefined) {
-    console.warn(`[개발 전용] 선택지 ${choiceIndex} 가 없다. 0~${choices.length - 1}`)
-    return
-  }
-  if (!picked.usable) {
-    console.warn(
-      `[개발 전용] ${picked.choiceFunction} 은 지금 쓸 수 없다 ` +
-        `(수확물 ${picked.heldTotal} / 필요 ${picked.offerQuantity})`,
-    )
-    return
-  }
-
-  console.warn(`[개발 전용] 대화 UI 를 우회해 선택지를 확정한다 — ${picked.choiceFunction}`)
-  console.info('[조우] 선택 가능:', choices.map((c) => `${c.choiceFunction}${c.usable ? '' : '(불가)'}`).join(' / '))
-
-  // 이번 조우의 결과 화면 재료를 여기서 연다. 조우가 시작되는 유일한 지점이라
-  // 이전 조우의 협상 내역·사연이 남아 넘어가지 않는다 (DEC-UI-011).
-  const collected: PendingEncounter = {
-    consumedCrops: {},
-    negotiationRejected: false,
-    revealedFactIds: [],
-  }
-  pendingEncounter = collected
-
-  const judgement = encounter.judge(residentId, picked.choiceId, run.resources.crops)
-  console.info(`[조우] 판정 → ${judgement.systemResultId}`)
-  console.info(`[조우] 반응 대사: ${judgement.reactionText}`)
-
-  // 반응 대사와 함께 사연이 공개될 수 있다 (DEC-CONTENT-009)
-  recordRevealedStoryInfo(residentId, judgement.revealedStoryInfoId)
-
-  // 위협·대립 선택은 조우를 해결하지 않지만 중요 행동이고 공포도를 올린다
-  // (DEC-RESIDENT-046, DEC-RESIDENT-052).
-  if (judgement.choiceFunction === 'threat') {
-    const { fearDelta, fearPending } = resolution!.recordThreat(residentId)
-    console.info(`[조우] 위협 선택 — 공포도 +${fearDelta} (누적 ${run.record.fear})`)
-    if (fearPending) warnFearPending()
-  }
-
-  if (judgement.resolved) {
-    // 조우 해결 — 전투에 들어가지 않는다 (DEC-RESIDENT-049)
-    if (picked.offerQuantity !== null) {
-      const settled = encounter.settleNegotiation(
-        run.resources.crops,
-        `encounter.day${dayNumber}`,
-        picked.choiceId,
-        picked.offerQuantity,
-        run.seed,
-      )
-      console.info('[조우] 자원 협상', settled.ok ? settled.consumed : settled.reason)
-      if (!settled.ok) {
-        // 수확물을 못 냈으면 조우가 해결되지 않는다. 여기서 결과를 확정하면
-        // 대가를 치르지 않고 거래 관계가 된다.
-        console.warn('[조우] 협상이 성립하지 않아 최종 결과를 확정하지 않는다')
-        return
-      }
-      // 실제로 무엇이 빠져나갔는지는 실행 후에만 알 수 있다 (DEC-RESIDENT-050).
-      // 조우 결과가 이 내역을 그대로 표시한다 (DEC-UI-011).
-      collected.consumedCrops = settled.consumed
-    }
-
-    // 어느 선택으로 해결됐는지가 최종 결과를 가른다 (DEC-RESIDENT-052)
-    finishEncounter(
-      residentId,
-      picked.choiceFunction === 'empathy' ? 'empathy_resolve' : 'resource_negotiation_resolve',
-    )
-    console.warn('[개발 전용] 조우가 해결돼 전투에 들어가지 않는다.')
-    return
-  }
-
-  // 자원 협상이 성격 프로필에 막힌 것도 중요 행동이다 (DEC-CONTENT-011)
-  if (judgement.choiceFunction === 'resource_negotiation') {
-    resolution!.recordNegotiationRejected(residentId)
-    // 수확물이 소비되지 않았다는 사실을 조우 결과에서 알린다 (DEC-UI-011)
-    collected.negotiationRejected = true
-    console.info('[조우] 자원 협상 거절 — 중요 행동으로 기록')
-  }
-
-  // 전투 결과 — 시스템 결과 ID 에서 전투 보정 키를 얻는다 (DEC-CONTENT-009)
-  const combatState = judgement.systemResultId.replace('system_result.precombat.combat_', '')
-
-  // **정상 흐름으로 이미 습격 단계면 개발 통로로 다시 들어가지 않는다.**
-  //
-  // `enterFieldPreview()` 는 화면만 바꾸고 흐름(`scenes.step()`)은 건드리지 않는다.
-  // 한 번 거치면 조우가 끝나도 `encounter_finished` 를 보낼 수 없어 조우 결과 화면에
-  // 닿지 못한다 (로드맵 11-2 — "개발 통로가 흐름과 런 상태를 갈라놓는다").
-  // 정비 종료로 들어온 습격은 흐름이 이미 `raid` 라 그 경로를 탈 이유가 없다.
-  if (scenes.step().at === 'raid') {
-    // 전투 전 대화가 오버레이로 열려 있다. 대화 모달이 선택 확정 뒤에 할 일을
-    // 대신 한다 — 열려 있는 동안은 `inRaidStage()` 가 false 라 전투가 돌지 않는다.
-    scenes.closeOverlay('precombat_dialogue')
-  } else {
-    scenes.enterFieldPreview('raid')
-  }
-
-  hostile = spawnHostile(dayNumber, combatState)
-  if (hostile !== null) {
-    console.info(
-      `[습격] ${residentId} — ${combatState} · 체력 ${hostile.maxHealth} · ` +
-        `투항 기준 ${hostile.surrenderThreshold}`,
-    )
-  }
 }
 
 // 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
