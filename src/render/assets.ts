@@ -106,6 +106,21 @@ export function hasAssetFile(assetId: string | null | undefined): boolean {
   return assetId !== null && assetId !== undefined && URL_BY_ID.has(assetId)
 }
 
+/**
+ * DOM 이 배경 이미지로 쓸 URL. 파일이 없으면 null.
+ *
+ * **CSS 파일에 경로를 적지 않기 위한 통로다.** `layout.css` 는 위치·크기·색의
+ * 원본이지만(`DEC-ART-001`, 8/4) 파일 경로까지 갖게 하면 경로를 아는 곳이 둘이 되고,
+ * 번들러가 해시를 붙이므로 CSS 에 적은 이름은 빌드에서 깨진다.
+ *
+ * 그래서 TS 가 `--...-image` 커스텀 프로퍼티에 URL 만 넣고 CSS 가 그것을 참조한다.
+ * 어디에 얼마나 크게 그릴지는 계속 CSS 가 정한다.
+ */
+export function assetCssUrl(assetId: string): string | null {
+  const url = URL_BY_ID.get(assetId)
+  return url === undefined ? null : `url("${url}")`
+}
+
 export interface AssetImages {
   /**
    * 그릴 준비가 된 이미지. 아직 적재 중이거나 파일이 없으면 null 이다.

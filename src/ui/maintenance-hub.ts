@@ -209,7 +209,10 @@ export function createPopupShell(
 ): { root: HTMLElement; body: HTMLElement; footer: HTMLElement } {
   const root = el('div', 'hub__popup')
   const header = el('div', 'hub__popup-header')
-  const closeButton = el('button', 'hud__icon-button', '닫기')
+  // 팝업 닫기는 정비 허브 안의 버튼이다. 8/5까지 필드 HUD 의 아이콘 버튼 클래스를
+  // 빌려 썼는데, A1 에서 HUD 쪽이 톱니바퀴 그림 한 장으로 바뀌면서 규칙이 갈렸다.
+  // `asset.ui.close_button` 은 B단계라 파일이 아직 없다 (schema/enums.json).
+  const closeButton = el('button', 'hub__close', '닫기')
   closeButton.type = 'button'
   closeButton.addEventListener('click', onClose)
   header.append(el('div', 'hub__popup-title', titleText), closeButton)

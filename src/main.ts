@@ -2503,6 +2503,37 @@ function rowsOf(store: ItemStore): InventoryRow[] {
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
 
+/**
+ * 이미 올린 습격 예고 데이터 오류. 매 프레임 같은 것을 다시 올리지 않는다.
+ *
+ * `hudView()` 가 프레임마다 불리므로 가드가 없으면 오류 하나가 초당 60번 발행된다.
+ */
+const raidNoticeErrorsReported = new Set<RaidType>()
+
+/**
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-017).
+ *
+ * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
+ * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
+ * 여기에 들어간다" 인 채였다. `raid_notices.csv` 는 8/4에 이미 승인됐다.
+ *
+ * 없거나 여럿이면 문구를 지어내지 않고 비운 채 데이터 오류로 올린다.
+ */
+function raidNoticeLabelOf(day: number): string | null {
+  const raidType = raidTypeOfDay(day)
+  const notice = selectRaidNotice(raidNotices, raidType)
+  if (notice.ok) return notice.notice.hud_label
+
+  if (!raidNoticeErrorsReported.has(raidType)) {
+    raidNoticeErrorsReported.add(raidType)
+    bus.emit('data.error', {
+      summary: '습격 예고를 표시할 수 없다',
+      detail: notice.reason,
+    })
+  }
+  return null
+}
+
 function hubView() {
   const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
   return {
@@ -2514,8 +2545,7 @@ function hubView() {
       throwables: rowsOf(run?.resources.throwables ?? {}),
       recoveries: rowsOf(run?.resources.recoveries ?? {}),
     },
-    // raid_notices.csv 가 승인되면 여기에 hud_label 이 들어간다 (DEC-RUN-011)
-    raidNoticeLabel: null,
+    raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
     // 문구는 DEC-RUN-006 이 정한 두 가지다
     finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
   }
@@ -2529,11 +2559,19 @@ function hudView() {
     selected: index === (run?.quickslots.selectedIndex ?? 0),
   }))
 
+  // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
+  // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
+  const timer = inFarmingStage() ? farmingTimer : null
+
   return {
+    playerName: run?.playerName ?? '',
     health: run?.health ?? 0,
     maxHealth: runConfig.loaded ? runConfig.maxHealth : 0,
     dayNumber: run?.dayNumber ?? 1,
-    remainingSeconds: inFarmingStage() ? (farmingTimer?.remainingSeconds ?? null) : null,
+    timeRatio:
+      timer === null || timer.durationSeconds <= 0
+        ? null
+        : timer.remainingSeconds / timer.durationSeconds,
     timeUrgent: farmingTimer?.urgent ?? false,
     quickslots,
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
@@ -2542,8 +2580,9 @@ function hudView() {
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
-    // raid_notices.csv 가 없어 비워 둔다 (DEC-RUN-011, DEC-CONTENT-021)
-    raidNoticeLabel: null,
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
+    // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
+    raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
   }
 }
 
