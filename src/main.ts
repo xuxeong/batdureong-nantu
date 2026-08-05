@@ -13,9 +13,11 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
-import type { HostileView, PlotView } from './render/field.ts'
+import { createStage } from './render/stage.ts'
+import type { FieldAssetIds, HostileView, PlotView } from './render/field.ts'
 import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
 import { createFarming } from './systems/farming.ts'
@@ -36,6 +38,7 @@ import { createEndingJudge } from './systems/ending.ts'
 import type { EndingJudge } from './systems/ending.ts'
 import { buildEndingInput, requestEndingRecord } from './llm/ending.ts'
 import type {
+  ContentAssets,
   CraftingMaterial,
   Crop,
   FearBand,
@@ -66,6 +69,8 @@ import { createNameInput } from './ui/name-input.ts'
 import type { NameInputScreen } from './ui/name-input.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
+import { createRecoveryMenu } from './ui/recovery-menu.ts'
+import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
 import { createRunFailed } from './ui/run-failed.ts'
@@ -109,18 +114,40 @@ import type { ItemStore } from './state/types.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
 
+// 기준 해상도 무대를 창에 맞춘다 (DEC-UI-025). 필드와 UI 가 함께 확대·축소된다.
+const stageRoot = document.getElementById('stage')
+if (stageRoot === null) throw new Error('#stage 요소가 없다')
+
 const gameRoot = document.getElementById('game')
 if (gameRoot === null) throw new Error('#game 요소가 없다')
 
 const bus = createEventBus()
 const camera = createCamera()
-const renderer = createFieldRenderer(gameRoot, camera)
+// 논리 에셋 ID → 그림. 파일 경로를 아는 곳은 render/assets.ts 하나다 (AGENTS.md 6절)
+const assetImages = createAssetImages()
+const renderer = createFieldRenderer(gameRoot, camera, assetImages)
+
+// 배율이 정해진 뒤에 캔버스 백킹을 다시 잡는다. 순서가 반대면 렌더러가 이전
+// 배율을 보고 창보다 큰 해상도로 그린다 (8/5에 12fps 까지 떨어졌다).
+createStage(stageRoot, { onScaleChanged: () => renderer.resize() })
 
 // 재배는 승인 데이터가 들어와야 시작된다. 없으면 null 로 남고 밭이 그려지지 않는다.
 // 여기에 임시 경작지를 만들어 넣지 않는다 — 데이터가 없다는 사실이 화면에 보여야 한다.
 let farming: FarmingSystem | null = null
 let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
+
+/**
+ * 필드가 그릴 논리 에셋 ID (DEC-ART-001).
+ *
+ * 승인 데이터가 오기 전에는 비어 있고, 그동안 필드는 플레이스홀더 도형으로 그려진다.
+ * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
+ */
+let fieldAssets: FieldAssetIds = {}
+/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
+let seedAssetId: string | null = null
+/** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
+let cropAssetsById = new Map<string, ContentAssets>()
 let throwablesById = new Map<string, ThrowableWeapon>()
 let run: RunState | null = null
 let economy: Economy | null = null
@@ -580,6 +607,29 @@ async function bootData(): Promise<void> {
     // 1차 프로토타입은 승인된 맵 하나만 쓴다 (DEC-CONTENT-016)
     const map = data.maps![0]
     camera.setWorldSize(map.world_width, map.world_height)
+
+    // ── 논리 에셋 ID (DEC-ART-001) ──────────────────
+    //
+    // 붙어 있는 것만 온다. **없는 역할을 코드가 지어내지 않는다** — 그림이 없으면
+    // 렌더가 플레이스홀더로 그리고, 그 사실이 화면에 보이는 것이 맞다.
+    // 배경·경작지·씨앗은 맵에, 성장·수확 가능은 작물에 붙는다. 씨앗이 작물 쪽에
+    // 없는 것은 누락이 아니라 확정 규칙이다 (씨앗은 종류를 공개하지 않는다).
+    fieldAssets = { background: map.assets?.background, farmPlot: map.assets?.farm_plot }
+    seedAssetId = map.assets?.crop_seed ?? null
+    cropAssetsById = new Map(
+      (data.crops ?? []).map((crop) => [crop.id, crop.assets ?? {}]),
+    )
+
+    // 첫 프레임에 밭이 비어 보이지 않게 미리 받는다. 실패해도 진행을 막지 않는다 —
+    // 아트는 아직 없을 수 있고 그것 때문에 런이 안 시작되면 안 된다.
+    void assetImages.preload([
+      fieldAssets.background,
+      fieldAssets.farmPlot,
+      seedAssetId,
+      UI_ASSET.fieldFrameFront,
+      UI_ASSET.plotHighlight,
+      ...[...cropAssetsById.values()].flatMap((a) => [a.crop_growing, a.crop_ready]),
+    ])
     player.x = map.world_width / 2
     player.y = map.world_height / 2
 
@@ -1599,8 +1649,25 @@ function plotViews(): readonly PlotView[] {
       highlighted: target?.plot.plotId === plot.plotId,
       readyFlash: (readyFlashes.get(plot.plotId) ?? 0) / READY_FLASH_SECONDS,
       eatingProgress: eatingProgressOf(plot.plotId),
+      cropAssetId: cropAssetOf(plot.stage, plot.cropId),
     }
   })
+}
+
+/**
+ * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-001).
+ *
+ * **씨앗은 작물을 보지 않는다.** 씨앗 단계에서 종류를 공개하지 않는 것이 확정
+ * 규칙(`DEC-FARM-001`)이라 그림도 작물별로 두지 않고 맵에 한 장이다. 여기서 작물
+ * 그림을 쓰면 스프라이트만 보고 무엇이 심겼는지 알 수 있게 된다.
+ */
+function cropAssetOf(stage: PlotView['stage'], cropId: string | null): string | null {
+  if (stage === 'empty') return null
+  if (stage === 'seed') return seedAssetId
+  if (cropId === null) return null
+
+  const assets = cropAssetsById.get(cropId)
+  return (stage === 'growing' ? assets?.crop_growing : assets?.crop_ready) ?? null
 }
 
 /**
@@ -1848,20 +1915,12 @@ const input = createInput(renderer.canvas, {
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  // ── 회복 퀵메뉴는 P2 로 컷됐다 (로드맵 6절) ────────────────
+  // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
   //
-  // 컷 원문이 *"회복 퀵메뉴 롱프레스(→ `Q` 짧게 누르기만)"* 다. 그런데 여기서
-  // 오버레이를 열고 있었고, **오버레이가 열리면 시뮬레이션이 정지한다**
-  // (`scenes/manager.ts` 의 `syncSimulation`). 그릴 UI 는 없으므로 롱프레스하면
-  // **게임이 멈춘 채 아무것도 안 보이는 상태**가 됐다 — 컷이 아니라 버그였다
-  // (8/5 담당자 플레이 테스트).
-  //
-  // 되살릴 때는 오버레이만으로 부족하다. `DEC-INPUT-008` 이 퀵메뉴를 **정지가
-  // 아니라 감속**으로 정했으므로(`loop.setTimeScale`) `syncSimulation` 이
-  // 퀵메뉴를 다른 오버레이와 갈라야 한다. 그때까지 회복 선택은 `DEC-RESOURCE-018`
-  // 의 자동 선택만 쓴다.
-  onRecoverMenuOpen: () => {},
-  onRecoverMenuClose: () => {},
+  // `Q` 를 누르고 있는 동안에만 열린다. 오버레이로 올리면 화면 매니저가 시간을
+  // 늦춘다 — 다른 오버레이처럼 멈추지 않는 것이 확정 규칙이다 (`syncSimulation`).
+  onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
+  onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
   onEscape: () => scenes.handleEscape(),
 })
 
@@ -1928,6 +1987,16 @@ const tutorialScreen: TutorialScreen = createTutorial(uiRoot, {
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
+// 회복 퀵메뉴 (DEC-UI-001). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
+const recoveryMenu: RecoveryMenu = createRecoveryMenu(uiRoot, {
+  onSelect: (itemId) => {
+    if (run === null) return
+    // **선택만 바꾼다.** 사용 시작은 `Q` 를 짧게 누를 때다.
+    run.pouch.selectedId = itemId
+    if (isDevBuild) console.info(`[회복] 선택 변경 — ${itemId}`)
+  },
+})
+
 const dayStartScreen: DayStartScreen = createDayStart(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
@@ -2434,6 +2503,37 @@ function rowsOf(store: ItemStore): InventoryRow[] {
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
 
+/**
+ * 이미 올린 습격 예고 데이터 오류. 매 프레임 같은 것을 다시 올리지 않는다.
+ *
+ * `hudView()` 가 프레임마다 불리므로 가드가 없으면 오류 하나가 초당 60번 발행된다.
+ */
+const raidNoticeErrorsReported = new Set<RaidType>()
+
+/**
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-017).
+ *
+ * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
+ * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
+ * 여기에 들어간다" 인 채였다. `raid_notices.csv` 는 8/4에 이미 승인됐다.
+ *
+ * 없거나 여럿이면 문구를 지어내지 않고 비운 채 데이터 오류로 올린다.
+ */
+function raidNoticeLabelOf(day: number): string | null {
+  const raidType = raidTypeOfDay(day)
+  const notice = selectRaidNotice(raidNotices, raidType)
+  if (notice.ok) return notice.notice.hud_label
+
+  if (!raidNoticeErrorsReported.has(raidType)) {
+    raidNoticeErrorsReported.add(raidType)
+    bus.emit('data.error', {
+      summary: '습격 예고를 표시할 수 없다',
+      detail: notice.reason,
+    })
+  }
+  return null
+}
+
 function hubView() {
   const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
   return {
@@ -2445,8 +2545,7 @@ function hubView() {
       throwables: rowsOf(run?.resources.throwables ?? {}),
       recoveries: rowsOf(run?.resources.recoveries ?? {}),
     },
-    // raid_notices.csv 가 승인되면 여기에 hud_label 이 들어간다 (DEC-RUN-011)
-    raidNoticeLabel: null,
+    raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
     // 문구는 DEC-RUN-006 이 정한 두 가지다
     finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
   }
@@ -2460,11 +2559,19 @@ function hudView() {
     selected: index === (run?.quickslots.selectedIndex ?? 0),
   }))
 
+  // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
+  // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
+  const timer = inFarmingStage() ? farmingTimer : null
+
   return {
+    playerName: run?.playerName ?? '',
     health: run?.health ?? 0,
     maxHealth: runConfig.loaded ? runConfig.maxHealth : 0,
     dayNumber: run?.dayNumber ?? 1,
-    remainingSeconds: inFarmingStage() ? (farmingTimer?.remainingSeconds ?? null) : null,
+    timeRatio:
+      timer === null || timer.durationSeconds <= 0
+        ? null
+        : timer.remainingSeconds / timer.durationSeconds,
     timeUrgent: farmingTimer?.urgent ?? false,
     quickslots,
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
@@ -2473,8 +2580,9 @@ function hudView() {
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
-    // raid_notices.csv 가 없어 비워 둔다 (DEC-RUN-011, DEC-CONTENT-021)
-    raidNoticeLabel: null,
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
+    // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
+    raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
   }
 }
 
@@ -2587,6 +2695,7 @@ const loop = createGameLoop(
         player,
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
+        assets: fieldAssets,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({
@@ -2659,6 +2768,22 @@ const loop = createGameLoop(
         hub.hide()
         openPopup = null
         renderOpenPopup = null
+      }
+
+      // 회복 퀵메뉴. 목록은 보관함에서 매번 계산한다 (DEC-RESOURCE-017)
+      if (open.includes('recovery_quickmenu') && run !== null && recoverySources !== null) {
+        recoveryMenu.render({
+          items: recoveryOptions(run, recoverySources).map((option) => ({
+            id: option.id,
+            displayName: option.displayName,
+            healAmount: option.healAmount,
+            held: option.held,
+          })),
+          selectedId: run.pouch.selectedId,
+        })
+        recoveryMenu.show()
+      } else {
+        recoveryMenu.hide()
       }
 
       const talking =

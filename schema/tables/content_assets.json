@@ -1,11 +1,11 @@
 {
-  "$comment": "콘텐츠에 논리 에셋 ID를 붙이는 공통 연결 CSV. 파일 경로는 카탈로그 없이 asset.<구간>.<이름> → assets/final/<구간>/<이름>.<확장자> 로 해석한다 (DEC-ART-001). 부모가 한 테이블이 아니라 에셋을 쓰는 콘텐츠 전체라 parent.table 이 후보 목록이다. 어떤 콘텐츠가 어떤 역할을 가질 수 있는지는 결정로그가 정하지 않았으므로 역할×테이블을 제한하지 않는다.",
+  "$comment": "콘텐츠에 논리 에셋 ID를 붙이는 공통 연결 CSV. 파일 경로는 카탈로그 없이 asset.<구간>.<이름> → assets/final/<구간>/<이름>.<확장자> 로 해석한다 (DEC-ART-001). 부모가 한 테이블이 아니라 에셋을 쓰는 콘텐츠 전체라 parent.table 이 후보 목록이다. 어떤 콘텐츠가 어떤 역할을 가질 수 있는지는 결정로그가 정하지 않았으므로 역할×테이블을 제한하지 않는다. player_base_stats.csv 는 2026-08-05 에 부모 후보로 더했다 — 대화 화면에 플레이어 상반신 일러스트를 넣기로 하면서 플레이어의 field_sprite 와 portrait 를 붙일 자리가 없다는 것이 드러났다 (아트 디렉션 14.7). enums.json 의 UI·시스템 고정 목록은 답이 아니다 — DEC-ART-001 이 그 범주를 배경·로고·셔터·패널·버튼·아이콘·HUD 틀·폰트로 한정했고 구간도 ui·logo·hud·font 뿐이라 인물 그림이 들어갈 자리가 아니다. 승인 행이 정확히 하나라 참조가 모호해지지 않는다.",
   "file": "content_assets.csv",
   "step": 12,
   "entry_type": "link",
   "common_columns": false,
   "parent": {
-    "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv",
+    "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv | player_base_stats.csv",
     "field": "content_id"
   },
   "unique_key": [
@@ -22,7 +22,7 @@
       "required": true,
       "type": "reference",
       "ref": {
-        "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv",
+        "table": "maps.csv | crops.csv | crafting_materials.csv | throwable_weapons.csv | recovery_items.csv | wildlife.csv | wildlife_spawn_profiles.csv | residents.csv | endings.csv | player_base_stats.csv",
         "require_status": "approved"
       },
       "owner": "designer"

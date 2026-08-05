@@ -39,26 +39,66 @@
   --ui-accent: #c8d94a;
   --ui-danger: #e8613c;
 
-  /* ── 글자 ────────────────────────────────────── */
+  /* ── 글자 ──────────────────────────────────────
+     **1920 기준이다.** 8/5까지의 값(12/14/18/26)은 무대가 없던 시절에 정한 것이라
+     창 크기 그대로 그려졌다. DEC-UI-025 가 1920×1080 무대를 확정하면서 UI 가 1920
+     좌표에 그려지고 상자째 축소되므로, 1280 화면에서 14px 는 실제 9.3px 이 된다.
+     A1 에셋이 실제 크기(퀵슬롯 154 등)로 오면서 차이가 화면에 드러났다.
+     비율 계산이 틀렸던 것이 아니라 정한 수치가 작았던 것이다. */
   --ui-font: system-ui, 'Malgun Gothic', sans-serif;
-  --ui-font-sm: 12px;
-  --ui-font-md: 14px;
-  --ui-font-lg: 18px;
-  --ui-font-xl: 26px;
+  /* 그림 안 좁은 칸(회복 칸·퀵슬롯)에만 쓴다. 본문에는 쓰지 않는다 */
+  --ui-font-xs: 15px;
+  --ui-font-sm: 17px;
+  --ui-font-md: 20px;
+  --ui-font-lg: 26px;
+  --ui-font-xl: 38px;
 
-  /* ── HUD (DEC-UI-017) ────────────────────────── */
+  /* ── HUD (DEC-UI-017, A1 확정 배치) ─────────────
+     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-001 이 월드
+     1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
+     그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
-  --hud-health-width: 220px;
-  --hud-health-height: 18px;
-  --hud-slot-size: 48px;
-  --hud-slot-gap: 6px;
 
-  /* ── 정비 허브 (DEC-UI-020, DEC-UI-021) ───────── */
-  --hub-shutter: rgba(10, 8, 6, 0.94);
+  /* 표지판 253×174 — 위칸 일차 / 아래칸 습격 예고 */
+  --hud-signboard-width: 253px;
+  --hud-signboard-height: 174px;
+
+  /* 재배 시간 게이지 911×83 — 숫자 없음 */
+  --hud-timer-width: 911px;
+  --hud-timer-height: 83px;
+
+  /* 설정 버튼 138×122 — 일시정지 겸용 하나 (아트 디렉션 14.3) */
+  --hud-settings-size-w: 138px;
+  --hud-settings-size-h: 122px;
+
+  /* 플레이어 카드 585×161 — 초상화 자리 + 이름 + 체력 바 */
+  --hud-card-width: 585px;
+  --hud-card-height: 161px;
+  --hud-portrait-size: 118px;
+  --hud-health-height: 26px;
+
+  /* 퀵슬롯 154×145 · 회복 칸 162×166.
+     5칸(770) + 회복(162) = 932px 이라 1920 하단에 들어간다. */
+  --hud-slot-width: 154px;
+  --hud-slot-height: 145px;
+  --hud-recovery-width: 162px;
+  --hud-recovery-height: 166px;
+  --hud-slot-gap: 0px;
+
+  /* ── 정비 허브 (DEC-UI-020, DEC-UI-021) ─────────
+     셔터 불투명도를 0.94 에서 올렸다. `DEC-UI-020` 이 셔터를 "필드를 덮는" 것으로
+     정했는데, 0.94 로는 뒤의 필드 HUD 가 비친다. 8/5에는 HUD 부품이 작아 "거의
+     안 보인다" 로 넘어갔지만, A1 배치에서 표지판이 253×174 로 커지면서 허브의
+     `소지금` 위에 `1일차` 가 겹쳐 읽혔다 — 아트 디렉션 3절 판독 우선에 걸린다.
+     필드가 아주 옅게 남아 "덮였을 뿐 사라지지 않았다" 는 인상은 유지된다. */
+  --hub-shutter: rgba(10, 8, 6, 0.985);
   --hub-pad: 28px;
   --hub-inventory-width: 340px;
   --hub-popup-width: 560px;
   --hub-popup-height: 420px;
+  /* 편성 팝업의 슬롯 버튼. 필드 HUD 퀵슬롯(154×145)과 다른 것이다 —
+     한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 크기가 갈린다 */
+  --hub-slot-min-height: 78px;
 
   /* ── 결과 화면 (DEC-UI-023) ───────────────────────
      독립 화면이 필드를 덮을 때 쓰는 값. 화면마다 자기 규칙에서 참조한다.
@@ -95,49 +135,258 @@
   user-select: none;
 }
 
-.hud__corner {
+/*
+  A1 확정 배치 (아트 디렉션 12.2).
+
+  네 모서리를 각각 절대 배치한다. 예전에는 `.hud__corner` 하나로 묶어 위치만
+  바꿔 썼는데, 부품마다 그림 크기가 정해져 있어(표지판 253×174, 게이지 911×83 …)
+  공통 컨테이너가 더 이상 공통이 아니다.
+
+  **HUD 는 밭 바깥 띠를 넘어 밭 위로 올라온다.** 띠가 위아래 각 90px 인데 부품이
+  그보다 크다. 의도한 것이다 (아트 디렉션 14.6) — 화면 네 모서리가 수풀이라
+  시각적으로는 자연스럽고, 경작지가 전부 밭 중앙이라 실제 플레이에서 가리지 않는다.
+*/
+
+/*
+  ── 그림 안쪽 자리는 픽셀로 적는다 ────────────────────────
+
+  A1 부품은 테두리·홈·크림색 판이 그림 안에 이미 그려져 있다. 글자와 게이지가
+  그 안에 정확히 앉아야 하므로 아래 값들은 **에셋에서 잰 실측 좌표**다.
+  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-001) 배율이 없으므로
+  픽셀이 그대로 맞는다. 에셋이 다시 오면 이 값들을 같이 고친다.
+*/
+:root {
+  /* 표지판 253×174 — 크림 판 두 칸 */
+  --hud-sign-inset-x: 18px;
+  --hud-sign-top-y: 22px;
+  --hud-sign-top-h: 62px;
+  --hud-sign-bottom-y: 96px;
+  --hud-sign-bottom-h: 60px;
+
+  /* 재배 게이지 911×83 — 홈은 왼쪽 613px 뿐이다. 오른쪽은 그림에 박힌 글자다 */
+  --hud-timer-track-x: 45px;
+  --hud-timer-track-y: 28px;
+  --hud-timer-track-w: 613px;
+  --hud-timer-track-h: 30px;
+
+  /* 플레이어 카드 585×161 — 초상화 / 이름 / 체력 홈 / 수치 */
+  --hud-card-portrait: 13px 20px 147px 127px;
+  --hud-card-name-x: 200px;
+  --hud-card-name-y: 28px;
+  --hud-card-name-w: 337px;
+  --hud-card-name-h: 57px;
+  --hud-card-bar-x: 200px;
+  --hud-card-bar-y: 93px;
+  --hud-card-bar-w: 272px;
+  --hud-card-bar-h: 47px;
+  --hud-card-num-x: 482px;
+  --hud-card-num-w: 55px;
+
+  /* 크림색 판 위의 글자. 무채색 나무 위라 어두워야 읽힌다 (아트 디렉션 4.4) */
+  --ui-text-on-panel: #3b2a1c;
+}
+
+/*
+  그림이 붙은 부품은 테두리·배경색을 지운다. 없으면 그것이 플레이스홀더가 된다.
+
+  **부품 규칙보다 뒤에, 더 구체적으로 쓴다.** `.hud--has-art` 를 앞에 두면
+  같은 명시도(0,1,0)인 `.hud__slot` 의 `border`·`background-color` 가 뒤에 와서
+  이긴다 — 그림 위에 임시 테두리가 겹쳐 보인다.
+*/
+.hud .hud--has-art {
+  border: none;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+
+/* ── 상단 왼쪽 끝: 표지판 (일차 / 습격 예고) ───── */
+.hud__signboard {
   position: absolute;
+  top: 0;
+  left: var(--hud-edge);
+  width: var(--hud-signboard-width);
+  height: var(--hud-signboard-height);
+  background-image: var(--hud-signboard-image);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background-color: var(--ui-bg-panel);
+}
+
+/* 두 칸은 그림 안의 크림 판 위에 정확히 앉는다 */
+.hud__signboard-day,
+.hud__signboard-raid {
+  position: absolute;
+  left: var(--hud-sign-inset-x);
+  right: var(--hud-sign-inset-x);
   display: flex;
   align-items: center;
-  gap: var(--ui-gap-md);
+  justify-content: center;
+  text-align: center;
+  line-height: 1.1;
 }
 
-.hud__corner--top-left {
-  top: var(--hud-edge);
-  left: var(--hud-edge);
+.hud__signboard-day {
+  top: var(--hud-sign-top-y);
+  height: var(--hud-sign-top-h);
+  font-size: var(--ui-font-lg);
+  font-weight: 700;
+  color: var(--ui-text-on-panel);
 }
 
-.hud__corner--top-center {
+/*
+  습격 예고 (DEC-UI-017, DEC-RUN-011).
+
+  재배 모드 내내 상시 노출하고 습격이 없는 날에도 사라지지 않는다.
+  문구는 raid_notices.csv 에서 온다 — 임시 문구를 여기에도 TS 에도 넣지 않는다.
+*/
+.hud__signboard-raid {
+  top: var(--hud-sign-bottom-y);
+  height: var(--hud-sign-bottom-h);
+  padding: 0 var(--ui-gap-xs);
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-on-panel);
+}
+
+/* 그림이 없을 때만 어두운 글씨가 안 보인다. 그때는 밝은 쪽으로 되돌린다 */
+.hud__signboard:not(.hud--has-art) .hud__signboard-day,
+.hud__signboard:not(.hud--has-art) .hud__signboard-raid {
+  color: var(--ui-text);
+}
+
+/* ── 상단 가운데: 남은 재배 시간 게이지 ─────────
+   숫자를 넣지 않는다 (A1). 게이지가 줄어드는 것만으로 읽힌다.
+   `남은 재배 시간` 글자는 그림에 이미 박혀 있어 DOM 에 두지 않는다. */
+.hud__timer {
+  position: absolute;
   top: var(--hud-edge);
   left: 50%;
   transform: translateX(-50%);
-  flex-direction: column;
-  gap: var(--ui-gap-sm);
+  width: var(--hud-timer-width);
+  height: var(--hud-timer-height);
+  background-image: var(--hud-timer-image);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background-color: var(--ui-bg-panel);
 }
 
-.hud__corner--top-right {
+.hud__timer[hidden] {
+  display: none;
+}
+
+/*
+  홈 안에서만 찬다.
+
+  **비율을 폭 퍼센트로 받지 않는다.** 절대 배치라 퍼센트의 기준이 그림 전체(911)가
+  되는데 홈은 왼쪽 613px 뿐이라, 남은 시간이 67% 여도 게이지가 홈 끝까지 차 보이고
+  그림에 박힌 `남은 재배 시간` 글자 위로 넘어간다. 그래서 TS 가 0~1 비율만 넘기고
+  기준 폭은 여기가 갖는다.
+*/
+.hud__timer-fill {
+  position: absolute;
+  left: var(--hud-timer-track-x);
+  top: var(--hud-timer-track-y);
+  height: var(--hud-timer-track-h);
+  width: calc(var(--hud-timer-track-w) * var(--hud-timer-ratio, 0));
+  border-radius: 999px;
+  background: var(--ui-accent);
+  transition: width 120ms linear;
+}
+
+/*
+  남은 시간이 임박하면 강조한다 (DEC-UI-018).
+
+  --ui-danger 는 아트 디렉션 4.1 판정 색 규약의 예외다 — 게이지가 차 있는 **면**
+  이라 허용된다. 틀과 판은 계속 무채색이다.
+*/
+.hud__timer--urgent .hud__timer-fill {
+  background: var(--ui-danger);
+}
+
+/* ── 상단 오른쪽 끝: 일시정지·설정 (버튼 하나) ─── */
+.hud__settings {
+  position: absolute;
   top: var(--hud-edge);
   right: var(--hud-edge);
+  width: var(--hud-settings-size-w);
+  height: var(--hud-settings-size-h);
+  background-image: var(--hud-settings-image);
+  pointer-events: auto;
+  cursor: pointer;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background-color: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
 }
 
-.hud__corner--bottom-center {
-  bottom: var(--hud-edge);
-  left: 50%;
-  transform: translateX(-50%);
-  align-items: flex-end;
+/* 아이콘이 붙으면 글자를 숨긴다. 없을 때만 `일시정지` 가 보인다 */
+.hud__settings.hud--has-art {
+  font-size: 0;
+}
+
+.hud__settings:hover {
+  filter: brightness(1.15);
+}
+
+/* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
+   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-017, 아트 디렉션 14.2)
+
+   그림 안에 네 자리가 이미 그려져 있어 flex 로 나누지 않고 각 자리에 앉힌다. */
+.hud__card {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: var(--hud-card-width);
+  height: var(--hud-card-height);
+  background-image: var(--hud-card-image);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background-color: var(--ui-bg-panel);
+}
+
+/* 초상화는 F단계(NovelAI)라 아직 없다. 자리만 만들어 둔다 */
+.hud__portrait {
+  position: absolute;
+  inset: var(--hud-card-portrait);
+}
+
+.hud__card-body {
+  display: contents;
+}
+
+/* 이름은 카드 디자인의 일부다. DEC-UI-017 의 공통 요소가 아니다 (아트 디렉션 14.2) */
+.hud__name {
+  position: absolute;
+  left: var(--hud-card-name-x);
+  top: var(--hud-card-name-y);
+  width: var(--hud-card-name-w);
+  height: var(--hud-card-name-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--ui-gap-sm);
+  box-sizing: border-box;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-on-panel);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── 체력 (게이지 바 + 우측 수치, DEC-UI-017) ──── */
 .hud__health {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-gap-sm);
+  display: contents;
 }
 
 .hud__health-bar {
-  width: var(--hud-health-width);
-  height: var(--hud-health-height);
-  border: 1px solid var(--ui-border);
+  position: absolute;
+  left: var(--hud-card-bar-x);
+  top: var(--hud-card-bar-y);
+  width: var(--hud-card-bar-w);
+  height: var(--hud-card-bar-h);
   border-radius: var(--ui-radius);
   background: var(--ui-bg-slot);
   overflow: hidden;
@@ -149,67 +398,75 @@
   transition: width 120ms linear;
 }
 
+/*
+  바 우측 수치 (DEC-UI-017 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
+
+  **현재 체력 하나만 넣는다.** 확정문이 요구하는 것은 `현재 체력`의 수치이고,
+  카드 그림의 이 자리가 55px 이라 `100 / 100` 은 애초에 안 들어간다. 최대치는
+  게이지가 찬 정도로 읽힌다.
+*/
 .hud__health-text {
-  font-size: var(--ui-font-md);
+  position: absolute;
+  left: var(--hud-card-num-x);
+  top: var(--hud-card-bar-y);
+  width: var(--hud-card-num-w);
+  height: var(--hud-card-bar-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ui-font-sm);
   font-variant-numeric: tabular-nums;
+  color: var(--ui-text-on-panel);
 }
 
-/* ── 일차·남은 시간 ────────────────────────────── */
-.hud__day {
-  font-size: var(--ui-font-lg);
+.hud__card:not(.hud--has-art) .hud__name,
+.hud__card:not(.hud--has-art) .hud__health-text {
+  color: var(--ui-text);
 }
 
-.hud__time {
-  font-size: var(--ui-font-xl);
-  font-variant-numeric: tabular-nums;
+/* ── 하단 오른쪽: 퀵슬롯 5칸 + 회복 칸 ──────────
+   회복 칸이 화면 오른쪽 끝에 닿는다 (A1) */
+.hud__bottom-right {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
 }
 
-/* 남은 시간이 임박하면 강조한다 (DEC-UI-018) */
-.hud__time--urgent {
-  color: var(--ui-danger);
-  font-weight: 700;
-}
-
-/* ── 습격 예고 (DEC-UI-017, DEC-RUN-011) ────────
-   문구는 raid_notices.csv 에서 온다. 아직 그 테이블이 없어 자리만 둔다.
-   임시 문구를 여기에도 TS 에도 넣지 않는다. */
-.hud__raid-notice {
-  min-height: 20px;
-  padding: 0 var(--ui-gap-sm);
-  font-size: var(--ui-font-md);
-  color: var(--ui-text-dim);
-}
-
-.hud__raid-notice:empty {
-  border: 1px dashed var(--ui-border);
-  border-radius: var(--ui-radius);
-  min-width: 120px;
-}
-
-/* ── 투척 퀵슬롯 5칸 (DEC-UI-002, DEC-UI-017) ──── */
 .hud__quickslots {
   display: flex;
   gap: var(--hud-slot-gap);
+  align-items: flex-end;
 }
 
 .hud__slot {
-  width: var(--hud-slot-size);
-  height: var(--hud-slot-size);
+  width: var(--hud-slot-width);
+  height: var(--hud-slot-height);
+  background-image: var(--hud-slot-image);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
-  background: var(--ui-bg-slot);
+  background-color: var(--ui-bg-slot);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: var(--ui-font-sm);
+  gap: var(--ui-gap-xs);
+  font-size: var(--ui-font-xs);
   line-height: 1.2;
   text-align: center;
+  word-break: keep-all;
   overflow: hidden;
 }
 
-/* 현재 선택된 칸을 명확하게 강조한다 (DEC-UI-002) */
+.hud__slot-name {
+  padding: 0 var(--ui-gap-md);
+}
+
+/* 현재 선택된 칸을 명확하게 강조한다 (DEC-UI-002).
+   그림이 있으면 선택된 칸 전용 한 장으로 갈아 끼운다 */
 .hud__slot--selected {
+  background-image: var(--hud-slot-selected-image);
   border-color: var(--ui-border-strong);
   border-width: 2px;
 }
@@ -257,34 +514,56 @@
 }
 
 /* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
+/* 안쪽이 크림색 판이라 어두운 글씨다 (퀵슬롯 칸과 반대) */
 .hud__recovery {
-  width: var(--hud-slot-size);
-  height: var(--hud-slot-size);
+  width: var(--hud-recovery-width);
+  height: var(--hud-recovery-height);
+  background-image: var(--hud-recovery-image);
   border: 1px dashed var(--ui-border);
   border-radius: var(--ui-radius);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--ui-font-sm);
+  /* 크림 판 안쪽까지만. 그림 테두리가 각 변 약 20px 이다 */
+  padding: var(--ui-gap-lg) var(--ui-gap-md);
+  box-sizing: border-box;
+  font-size: var(--ui-font-xs);
+  line-height: 1.2;
   text-align: center;
+  /* 한국어는 기본으로 아무 데서나 끊긴다. `회복 아이템 없` / `음` 이 되면
+     칸 밖으로 넘치므로 띄어쓰기에서만 끊는다 */
+  word-break: keep-all;
   color: var(--ui-text-dim);
 }
 
-/* ── 일시정지·설정 진입 (DEC-UI-017) ───────────── */
-.hud__icon-button {
-  pointer-events: auto;
-  cursor: pointer;
-  padding: var(--ui-gap-xs) var(--ui-gap-sm);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-bg-panel);
-  color: var(--ui-text);
-  font-family: var(--ui-font);
-  font-size: var(--ui-font-md);
+.hud__recovery.hud--has-art {
+  color: var(--ui-text-on-panel);
 }
 
-.hud__icon-button:hover {
-  border-color: var(--ui-border-strong);
+/*
+  퀵슬롯 상태 문구 둘 (DEC-UI-002).
+
+  칸 안이 아니라 칸 **위**에 쌓는다. 칸이 154×145 라 안에 넣으면 무기 이름과
+  겹치고, `투척 무기 없음` 은 어느 한 칸이 아니라 전체 상태다.
+*/
+.hud__notices {
+  position: absolute;
+  right: 0;
+  bottom: var(--hud-recovery-height);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--ui-gap-xs);
+  padding: 0 var(--ui-gap-lg) var(--ui-gap-sm);
+  text-align: right;
+}
+
+/* 수풀 위에 글자만 얹히면 안 읽힌다. 문구가 있을 때만 판을 깐다 */
+.hud__no-throwable,
+.hud__empty-fire {
+  padding: var(--ui-gap-xs) var(--ui-gap-sm);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
 }
 
 /* ─────────────────────────────────────────────────
@@ -636,9 +915,27 @@
   margin-bottom: var(--ui-gap-md);
 }
 
+/* 팝업 닫기 버튼 (DEC-UI-020).
+   `asset.ui.close_button` 이 B단계라 파일이 없어 아직 글자 버튼이다 */
+.hub__close {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: var(--ui-gap-xs) var(--ui-gap-md);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+}
+
+.hub__close:hover {
+  border-color: var(--ui-border-strong);
+}
+
 .hub__slot {
   flex: 1;
-  min-height: calc(var(--hud-slot-size) + var(--ui-gap-md));
+  min-height: var(--hub-slot-min-height);
   padding: var(--ui-gap-sm);
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
@@ -1389,4 +1686,103 @@
 
 .name-input__confirm:disabled:hover {
   background: var(--ui-bg-panel);
+}
+
+/* ─────────────────────────────────────────────────
+   회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008)
+
+   `Q` 를 누르고 있는 동안에만 뜬다. 닫기 버튼이 없다 — 손을 떼면 닫힌다.
+   필드를 덮지 않고 아래쪽에 붙는다. 퀵슬롯 옆의 회복 칸이 무엇을 고르고
+   있는지 보여주는 자리이므로 그 근처에서 열리는 것이 읽기 쉽다.
+   ───────────────────────────────────────────────── */
+
+.recovery-menu[hidden] {
+  display: none;
+}
+
+.recovery-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* 퀵슬롯·회복 칸 위에 뜬다. 회복 칸이 둘 중 높다 (166 대 145) */
+  padding-bottom: calc(var(--hud-recovery-height) + var(--ui-gap-lg));
+  box-sizing: border-box;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  /* 배경을 덮지 않는다. 느려진 필드가 보여야 한다 (DEC-INPUT-008) */
+  pointer-events: none;
+}
+
+.recovery-menu__panel {
+  min-width: 320px;
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  pointer-events: auto;
+}
+
+/* 느려진 상태임을 알린다 (DEC-UI-001) */
+.recovery-menu__notice {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.recovery-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+}
+
+.recovery-menu__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--ui-gap-md);
+  align-items: baseline;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recovery-menu__item:hover {
+  border-color: var(--ui-border);
+}
+
+/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-001) */
+.recovery-menu__item--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+  padding: calc(var(--ui-gap-sm) - 1px) calc(var(--ui-gap-md) - 1px);
+}
+
+.recovery-menu__name {
+  font-weight: 600;
+}
+
+.recovery-menu__held,
+.recovery-menu__heal {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.recovery-menu__empty {
+  margin: 0;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
 }
