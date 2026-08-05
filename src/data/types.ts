@@ -49,6 +49,9 @@ export type Kind =
   | 'raid_notice'
   | 'night_result_text'
   | 'fear_increment'
+  // `schema/enums.json` 의 고정 목록에는 8/4부터 있었는데 여기만 빠져 있었다
+  // (김민주 발견, 8/5). 튜토리얼 구현이 이 값을 읽는다 (DEC-CONTENT-023).
+  | 'tutorial_step'
 
 /** DEC-CONTENT-013 — 작물 속성이 전투에서 일으키는 효과 */
 export type CombatMechanicKey = 'damage_over_time' | 'movement_slow'

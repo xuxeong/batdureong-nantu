@@ -42,6 +42,7 @@ import type {
   FearIncrement,
   FinalOutcome,
   JournalFallback,
+  NightResultText,
   RaidNotice,
   RaidType,
   Recipe,
@@ -202,14 +203,22 @@ let storyFactById = new Map<string, string>()
 let fearBands: readonly FearBand[] = []
 
 /**
- * 승인된 밤 결과 문구 (DEC-RUN-015).
+ * 승인된 밤 결과 문구 전량 (DEC-RUN-015, DEC-CONTENT-021).
  *
- * 부팅 때 한 번 고른다. 여러 행 중 무엇을 고를지가 `DEC-CONTENT-018` 보류라
- * 정확히 한 행일 때만 성공한다 (ui/night-result.ts).
+ * 부팅 때 고르지 않는다 — `DEC-CONTENT-018` 이 **화면을 열 때 한 번** 고르라고
+ * 확정했다. 부팅에서 고르면 한 런 안에서 밤 결과가 여러 번 나와도 같은 문구가 뜬다.
+ */
+let nightResultTexts: readonly NightResultText[] = []
+
+/**
+ * 이번 밤 결과 화면에 띄울 문구.
+ *
+ * `beginNightResult()` 가 화면이 열릴 때 한 번 고르고, 열려 있는 동안 다시
+ * 고르지 않는다 (DEC-CONTENT-018). 매 프레임 고르면 문구가 깜빡인다.
  */
 let nightResult: NightResultSelection = {
   ok: false,
-  reason: '승인 데이터를 아직 읽지 않았다',
+  reason: '밤 결과 화면이 아직 열리지 않았다',
 }
 
 /**
@@ -424,10 +433,8 @@ async function bootData(): Promise<void> {
     // 밤 결과 문구는 승인 행이 정확히 하나일 때만 쓴다 (DEC-CONTENT-018 보류).
     // 실패해도 부팅을 막지 않는다 — 문구 하나가 없다고 런 전체가 안 돌 이유는 없고,
     // 실제로 그 화면에 닿는 순간 데이터 오류로 올린다.
-    nightResult = selectNightResultText(data.night_result_texts)
-    if (!nightResult.ok) {
-      console.warn(`[데이터] 밤 결과 문구를 고르지 못했다 — ${nightResult.reason}`)
-    }
+    // 고르는 것은 화면을 열 때다 (DEC-CONTENT-018). 여기서는 목록만 들고 있는다.
+    nightResultTexts = data.night_result_texts ?? []
 
     // 습격 예고와 폴백 일지는 고르지 않고 통째로 들고 있는다. 예고는 그날의
     // raid_type 이, 폴백은 그때의 공포도 구간과 변화 방향이 정해져야 고를 수 있다.
@@ -910,6 +917,10 @@ function recordRevealedStoryInfo(residentId: string, storyInfoId: string | null)
 
   resident.revealedStoryInfoIds.push(storyInfoId)
   pendingEncounter?.revealedFactIds.push(storyInfoId)
+
+  // 기록됐다는 것이 화면에 바로 안 보인다 — 조우 결과까지 가야 드러난다.
+  // 그래서 개발 빌드에 남긴다. 이게 없으면 "기록한다" 와 "안 한다" 가 같아 보인다.
+  if (isDevBuild) console.info(`[사연] ${residentId} · ${storyInfoId} 확인함`)
 }
 
 // ── 대화 (DEC-UI-007, 008, 009, 010, DEC-RESIDENT-015) ──────
@@ -966,6 +977,14 @@ function openPrecombatDialogue(): void {
   // 조우가 시작되는 지점이다. 결과 화면 재료를 여기서 연다 (DEC-UI-011).
   pendingEncounter = { consumedCrops: {}, negotiationRejected: false, revealedFactIds: [] }
 
+  // 시작 대사가 공개하는 `basic` 사연을 확인한 정보로 기록한다 (DEC-CONTENT-024).
+  //
+  // **선택보다 앞이다.** 대사를 읽은 시점에 이미 안 것이므로 무엇을 고르든,
+  // 싸워서 죽이든 남는다. 이게 없으면 대화를 열고 바로 전투로 간 런은 엔딩 LLM 에
+  // 넘길 사실이 하나도 없다. `pendingEncounter` 를 연 뒤라야 이번 조우 목록에도
+  // 같이 들어간다 (DEC-UI-011 — 새로 확인한 것만 결과 화면에 뜬다).
+  recordRevealedStoryInfo(actor.residentId, scenario.precombat_opening_story_info_id)
+
   // 판정에 쓰는 사용 가능 여부는 encounter 가, 화면에 띄울 문장은 승인 선택지가 준다.
   // 선택지 문장은 아무것도 결정하지 않는다 (DEC-RESIDENT-049).
   const availability = encounter.availableChoices(scenario.id, run.resources.crops)
@@ -1014,6 +1033,13 @@ function openSurrenderDialogue(): void {
     })
     return
   }
+
+  // 투항 시작 대사가 공개하는 `core` 사연을 확인한 정보로 기록한다.
+  //
+  // **`DEC-CONTENT-017` 이 원래부터 확정해 둔 규칙인데 기록하는 곳이 없었다.**
+  // 김민주는 전투 전 쪽만 비었다고 알렸으나 실제로는 양쪽 다 빠져 있었다.
+  // `core` 는 사연의 핵심이라 여기서 놓치면 투항까지 간 런도 엔딩에 넘길 것이 얇아진다.
+  recordRevealedStoryInfo(residentId, scenario.surrender_opening_story_info_id)
 
   const choices = [...dialogueChoicesById.values()].filter(
     (choice) => choice.scenario_id === scenario.id && choice.dialogue_phase === 'surrender',
@@ -2459,9 +2485,27 @@ function beginDayStart(): void {
   })
 }
 
-// 일지 준비를 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫 그리기가 이전 아침의
-// 일지를 그대로 쓰고, 대기 표시가 한 박자 늦게 나타난다.
+/**
+ * 밤 결과 화면이 열렸다. 표시할 문구를 **한 번** 고른다 (DEC-CONTENT-018).
+ *
+ * 승인 행 중 무작위 하나이며, 행이 하나면 그 행이 항상 뽑히므로 행 수가 바뀌어도
+ * 코드를 고치지 않는다. 여기서 고르는 이유는 확정 규칙이 "그날의 밤 결과 화면을
+ * 열 때 한 번" 이기 때문이다 — 부팅에서 고르면 한 런 안의 여러 밤이 전부 같은
+ * 문구가 되고, 매 프레임 고르면 깜빡인다.
+ */
+function beginNightResult(): void {
+  if (scenes.currentScreen() !== 'night_result') return
+
+  nightResult = selectNightResultText(nightResultTexts)
+  if (!nightResult.ok) {
+    console.warn(`[데이터] 밤 결과 문구를 고르지 못했다 — ${nightResult.reason}`)
+  }
+}
+
+// 일지 준비와 밤 결과 문구 선택을 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫
+// 그리기가 지난 값을 그대로 쓰고 한 박자 늦게 바뀐다.
 bus.on('screen.changed', beginDayStart)
+bus.on('screen.changed', beginNightResult)
 
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.

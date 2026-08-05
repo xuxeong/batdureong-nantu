@@ -10,13 +10,18 @@
 // 않았다 — 확정 문구가 "고정 문구만"이라 진행 정보를 덧붙일 근거가 없다.
 // HUD 가 일차를 이미 표시하므로 화면에서 사라지는 정보도 아니다.
 //
-// ── 문구를 고르는 방식이 아직 없다 (DEC-CONTENT-018 보류) ──
+// ── 문구는 승인 행 중 무작위 하나다 (DEC-CONTENT-018, 8/5 확정) ──
 //
-// `DEC-RUN-015` 는 "고정 문구의 실제 목록과 선택 방식은 후속 콘텐츠 기획에서 정한다"
-// 로 남겨 두었고 그 후속이 `DEC-CONTENT-018`(보류)이다. 그래서 승인 행이 여럿이면
-// 코드가 고를 근거가 없다. 첫 행을 쓰거나 무작위로 뽑으면 그 순간 코드가 보류 결정을
-// 대신 확정하는 것이 된다 (AGENTS.md 2절). 아래 `selectNightResultText()` 는
-// **행이 정확히 하나일 때만** 문구를 돌려주고, 그 외에는 이유를 돌려준다.
+// 8/4까지는 `DEC-CONTENT-018` 이 보류라 **행이 정확히 하나일 때만** 문구를 돌려주고
+// 여럿이면 데이터 오류로 올렸다. 코드가 고르면 그 순간 보류 결정을 대신 확정하는
+// 것이었기 때문이다. 8/5에 *"승인 문구 중 무작위"* 로 확정되면서 그 가드가 규칙과
+// 반대가 됐다 — 이제 행을 늘리는 것이 정상이고 막으면 안 된다.
+//
+// **행 수와 무관하게 같은 규칙을 쓴다.** 한 행이면 그 행이 항상 뽑히므로 행이
+// 늘거나 줄어도 코드를 고치지 않는다 (같은 결정).
+//
+// 순환은 후보에서 빠졌다. `DEC-UI-015` 가 이어하기와 저장 슬롯을 두지 않기로 확정해
+// 런 사이에 진행 위치를 보관할 데가 없고, 매 런 처음으로 돌아가면 고정과 같아진다.
 //
 // 이 파일은 화면만 만든다. 흐름 전진은 호출하는 쪽이 한다.
 
@@ -48,14 +53,19 @@ export type NightResultSelection =
   | { ok: false; reason: string }
 
 /**
- * 승인된 밤 결과 문구를 고른다.
+ * 승인된 밤 결과 문구 중 하나를 무작위로 고른다 (DEC-CONTENT-018).
  *
- * 행이 정확히 하나일 때만 성공한다. 0행이면 표시할 승인 문구가 없는 것이고,
- * 2행 이상이면 **선택 방식이 미확정**이라 코드가 고를 수 없다 (DEC-CONTENT-018 보류).
- * 둘 다 데이터 오류로 올려 화면에 드러낸다 (DEC-UI-024, AGENTS.md 6절).
+ * **부르는 쪽이 화면을 열 때 한 번만 부른다.** 같은 화면이 열려 있는 동안 다시
+ * 고르지 않는다는 것이 확정 규칙이라, 이 함수를 매 프레임 부르면 문구가 깜빡인다.
+ *
+ * 0행이면 실패다. 밤 결과는 승인된 고정 문구만 표시하므로 코드가 문장을 만들지
+ * 않는다 (DEC-RUN-015). 데이터 오류로 올려 화면에 드러낸다 (DEC-UI-024).
+ *
+ * @param random 0 이상 1 미만. 테스트에서 고정하려고 받는다
  */
 export function selectNightResultText(
   rows: readonly NightResultText[] | undefined,
+  random: () => number = Math.random,
 ): NightResultSelection {
   const approved = rows ?? []
 
@@ -68,17 +78,9 @@ export function selectNightResultText(
     }
   }
 
-  if (approved.length > 1) {
-    return {
-      ok: false,
-      reason:
-        `night_result_texts 승인 행이 ${approved.length} 개다. 여러 문구 중 무엇을 ` +
-        '고를지가 DEC-CONTENT-018 보류라 코드가 고를 근거가 없다. 한 행만 승인하거나 ' +
-        '선택 방식을 확정한다',
-    }
-  }
-
-  return { ok: true, text: approved[0].text }
+  // 행이 하나면 그 행이 항상 뽑힌다. 그래서 행 수로 갈래를 나누지 않는다.
+  const index = Math.min(approved.length - 1, Math.floor(random() * approved.length))
+  return { ok: true, text: approved[index].text }
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
