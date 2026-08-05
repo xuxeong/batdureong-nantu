@@ -575,6 +575,116 @@
 }
 
 /* ─────────────────────────────────────────────────
+   일시정지 (DEC-UI-027, DEC-UI-022, DEC-UI-026)
+
+   필드 위에 겹치는 **오버레이**이며 항상 최상위다.
+   독립 화면이 아니므로 필드를 완전히 지우지 않는다 — 뒤가 멈춰 있는 것이 보인다.
+   ───────────────────────────────────────────────── */
+
+.pause[hidden] {
+  display: none;
+}
+
+.pause {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 정비 셔터보다 옅다. 여기는 덮는 연출이 아니라 위에 뜨는 창이다 */
+  background: rgba(8, 10, 7, 0.72);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.pause__panel {
+  width: var(--screen-panel-width);
+  max-height: 88%;
+  overflow-y: auto;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+}
+
+.pause__title {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+}
+
+.pause__menu,
+.pause__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.pause__menu[hidden],
+.pause__controls[hidden],
+.pause__confirm[hidden] {
+  display: none;
+}
+
+.pause__button {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+}
+
+.pause__button:hover {
+  border-color: var(--ui-border-strong);
+}
+
+/* 타이틀로 돌아가기는 나머지와 무게를 다르게 둔다 — 런이 사라지는 입력이다 */
+.pause__button--quiet {
+  color: var(--ui-text-dim);
+}
+
+.pause__button--danger {
+  border-color: var(--ui-danger);
+  color: var(--ui-danger);
+}
+
+/* 조작 안내 (DEC-INPUT-001~009). 키는 input/bindings.ts 에서 온다 */
+.pause__controls {
+  display: grid;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-md) 0;
+  border-top: 1px solid var(--ui-border);
+  font-size: var(--ui-font-sm);
+}
+
+.pause__control-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: var(--ui-gap-md);
+  align-items: baseline;
+}
+
+.pause__control-keys {
+  color: var(--ui-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.pause__confirm-text {
+  margin: 0;
+  color: var(--ui-text-dim);
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────
    정비 허브 (DEC-UI-020)
 
    화면 전환이 아니라 셔터가 필드를 덮고 그 위에 올라오는 오버레이다.

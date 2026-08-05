@@ -71,6 +71,8 @@ import { createTitle } from './ui/title.ts'
 import type { TitleScreen } from './ui/title.ts'
 import { createNameInput } from './ui/name-input.ts'
 import type { NameInputScreen } from './ui/name-input.ts'
+import { createPause } from './ui/pause.ts'
+import type { PauseScreen } from './ui/pause.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
@@ -2202,6 +2204,23 @@ const encounterResultScreen: EncounterResultScreen = createEncounterResult(uiRoo
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
+/**
+ * 일시정지 (DEC-UI-027).
+ *
+ * 독립 화면이 아니라 **오버레이**다 — `DEC-UI-022` 가 일시정지를 필드 위에 겹치는
+ * 것으로 정했고 `DEC-UI-026` 이 항상 최상위로 뒀다. 그래서 `syncScreens()` 가
+ * 아니라 오버레이 동기화 쪽에서 켜고 끈다.
+ */
+const pauseScreen: PauseScreen = createPause(uiRoot, {
+  // `Esc` 를 다시 누른 것과 같다. 화면 매니저가 정지 사유까지 되돌린다
+  // (포커스 이탈로 걸린 정지도 여기서 풀린다 — manager.ts 의 syncSimulation).
+  onResume: () => scenes.closeOverlay('pause'),
+
+  // 확인은 화면이 이미 거쳤다 (DEC-UI-027). 흐름은 무엇을 확인했는지 모르므로
+  // 여기서 다시 묻지 않는다. 오버레이는 `apply()` 가 층위를 바꾸며 같이 닫는다.
+  onReturnToTitle: () => scenes.send({ type: 'abandon_run' }),
+})
+
 // 전투 전 대화와 투항 대화는 같은 표시·입력 규칙을 쓴다 (DEC-UI-010).
 // 하나뿐인 이 모달이 둘 다 그린다 — 동시에 열리지 않는다 (DEC-UI-026).
 const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
@@ -2996,6 +3015,11 @@ const loop = createGameLoop(
       } else {
         dialogueModal.hide()
       }
+
+      // 일시정지 (DEC-UI-027). **가장 위 층위라 입력 소유를 따로 보지 않는다** —
+      // `DEC-UI-026` 이 일시정지를 최상위로 정했으므로 열려 있으면 곧 입력 소유자다.
+      if (open.includes('pause')) pauseScreen.show()
+      else pauseScreen.hide()
     },
   },
   {
