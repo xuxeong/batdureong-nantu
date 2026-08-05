@@ -21,8 +21,23 @@
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v3.png` | A1 v1 필드와 v2 HUD 합성 목업 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-005` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v4.png` | 최신 아트 디렉션 기반 A1 낮 플레이 화면 목업 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-006` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | A1 숲 테두리 침범 깊이 축소본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-007` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v2.png` | A3 정비 허브 UI 목업 재제작본 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-008` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v3.png` | A3 조선시대 창호 배경·제작 상세 UI 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-009` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v4.png` | A3 소지품 정렬·소지금 HUD·상세 여백 보정본 | AI 보정 2회 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-010` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v5.png` | A3 독립 소지금 HUD·소지품 제목판·기능 버튼 선택 표시 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-011` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v6.png` | A3 소지금 HUD 축소·기능 버튼 선택선 정돈본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-012` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_hud_components_sheet_chroma.png` | A1 HUD 10종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-001` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/final/ui/*.png` | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b1_common_ui_frame_components_sheet_chroma.png` | B1 공용 패널·한지·버튼 상태·닫기 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-005` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma.png` | B2 정비 화면 소형 부품 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-006` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma_v2.png` | B2 정비 화면 소형 부품 재추출 시트 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-007` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma_v3.png` | B2 정비 화면 5종 부품 재생성 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-008` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma_v4.png` | B2 배지 없는 아이템 칸 추가 시트 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-013` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b3_raid_notice_plate_variants_sheet_chroma.png` | B3 습격 예고 표지 3단계 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-009` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b4_button_components_sheet_chroma.png` | B4 선택 기능·수량 조절 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-010` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b4_button_components_sheet_chroma_v2.png` | B4 빼기·더하기 기호 밝은색 보정본 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-012` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/sheets/b5_closed_sliding_paper_doors_1920x1080.png` | B5 닫힌 창호지 미닫이문 단독 배경 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + System.Drawing | `IMG-B-011` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/*.png` (B1~B5) | B 시트에서 분리한 UI 부품 17종. `button_selected`는 실제 배치에서 기능 버튼이 셋으로 줄어 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-005`~`IMG-B-013` 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/*.png` (A1) | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_background_1920x1080_sheet.png` | A1 낮 필드 바닥 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_forest_frame_1920x1080_sheet.png` | A1 숲 뒤·앞 레이어 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/background/prototype_field.png` | A1 낮 필드 바닥과 바깥 숲을 합친 배경 한 장 | AI 생성 + 직접 분리·리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-002` 참조 | 해당 없음 (AI 생성) |
@@ -456,4 +471,629 @@ Use substantially larger heart-shaped or arrowhead-shaped leaves, thicker stems,
 yellow-olive accents, and a small partially exposed dusty brown-purple taro corm shoulder at each
 plant base. Keep every corm rooted; no loose produce. Center it on a flat solid #ff00ff chroma-key
 background. No other crop, UI, text, character, animal, scenery, tools, shadow, 3D, or gradients.
+```
+
+### IMG-A-008 — A3 정비 허브 재제작본
+
+참조 이미지 역할은 다음과 같이 제한했다.
+
+- `A1_daytime_gameplay_mockup_v5.png`: 톤, 선 굵기, 평면 명암
+- `a1_hud_components_sheet_chroma.png`: 나무 판자와 한지 재질. 초록 크로마 배경은 제외
+
+```text
+Use case: ui-mockup
+Asset type: 1920×1080 landscape game screen mockup — maintenance hub (A3)
+Primary request: Create exactly one complete maintenance-hub screen according to the specification
+below. This mockup becomes the UI layout specification, so element counts, hierarchy, generous
+readable scale, and relative placement matter more than decoration. This is a practical game UI
+mockup, not environment concept art.
+
+Input images:
+- Image 1 is a style reference only: match its thick clean black outlines, muted colors, confident
+  hand-drawn asymmetry, flat two-to-three-tone shading, clarity, and overall visual tone. Do not
+  copy its field layout.
+- Image 2 is a material reference only: match its neutral worn wood boards, pale clean hanji paper
+  surfaces, black outline weight, and solid wood button/slot construction. Ignore the bright green
+  chroma background and do not reproduce it.
+
+[Visual direction]
+Use Don't Starve only as a broad reference for thick black outlines, hand-drawn asymmetric shapes,
+flat shading, and a paper-drawn impression. Transform it into the dry, restrained mood of a
+famine-stricken Korean rural village. No gothic horror darkness, scratchy or sketchy lines,
+elongated proportions, or rough hatching. Every contour is a thick, black, clean, confident single
+stroke. No repeated sketch lines. Interior surfaces are simple and clean. No hatching, grain noise,
+or gradients; shade only with two or three flat color planes.
+Palette: low saturation and faded earth colors—dry soil, old wood, faded cloth, pale hanji. Keep
+every form readable instead of sinking into black. The UI is nearly neutral wood. Because no field
+is visible, ripe colors may appear only inside the storage crop icons.
+No neon, glow, pastel palette, glossy 3D rendering, photorealism, watermark, or logos.
+
+[Output]
+Exactly one full 1920×1080 landscape game screen. No readable text anywhere. All label and
+paragraph regions must be blank pale surfaces or short illegible muted strokes. Do not render
+letters, words, button numbers, or selection numbers.
+
+[Backdrop]
+A Korean rural storehouse shutter covers the entire screen. No field, grass, forest, or outdoor
+scene is visible at all. The shutter consists of old horizontal wooden planks. It is the darkest
+and quietest layer, but details remain visible.
+
+[Overall layout]
+LEFT: one tall storage panel, nearly full screen height and about one quarter of screen width. It
+must remain fully visible and must not be covered by the center popup.
+- At top: one currency row, blank name area on left and blank numeric area on far right.
+- One horizontal divider.
+- Below it, exactly four vertically stacked groups:
+  1) harvest group: one small blank group heading plus exactly 3 item rows;
+  2) materials group: one small blank group heading plus exactly 2 item rows;
+  3) weapons group: one small blank group heading plus exactly 4 item rows;
+  4) consumables group: one short blank heading line only, with no item rows.
+- Every item row has one square icon at left, one blank name area beside it, and one small blank
+  quantity area at far right.
+- Icons are visually distinct: ripe crops for harvest, sacks and bottles for materials, thrown
+  rural weapons for weapons. These are filled entries, never an empty slot grid.
+
+TOP AREA TO THE RIGHT OF STORAGE:
+- One long horizontal blank title surface.
+- Immediately to its right, one small compact signboard for tonight's raid warning.
+- Directly below: exactly 4 equal-width horizontal function buttons in one row, evenly dividing the
+  available width.
+- At the extreme upper-right corner: exactly one square wooden gear button with a simple gear icon.
+  No other settings button.
+
+BOTTOM-RIGHT:
+- Exactly one long horizontal wooden button for ending maintenance. No readable text and no number.
+
+CENTER:
+One large popup is open, placed entirely to the right of the storage panel and not covering the
+storage panel or currency row. The popup has a worn wood border and a clean pale hanji interior.
+- Exactly one close button at the popup's upper-right corner, using a simple X icon.
+- One vertical divider splits the popup into a left list column and right detail column.
+
+POPUP LEFT LIST:
+Exactly two vertical groups.
+- Upper group: exactly 4 item rows.
+- Lower group: exactly 3 item rows.
+- Each row contains one square icon and one blank name region.
+- The second row from the top is the only selected row; emphasize it with a brighter pale outline
+  or pale wooden highlight.
+- The very last row at the bottom is the only disabled/locked row; dim that single row.
+- All other rows are normal. No stock quantity columns.
+
+POPUP RIGHT DETAIL, stacked top to bottom:
+1) one large square item icon with one blank name area beside it;
+2) one broad multi-line description area represented only by a few illegible muted strokes;
+3) one compact two-row ingredient table; each row has a small square icon in the left column and
+   two separate blank numeric regions in the middle and right columns;
+4) exactly two short standalone blank value rows;
+5) one small quantity box with one tiny wooden minus button on its left and one tiny wooden plus
+   button on its right;
+6) one long horizontal wooden action button.
+
+[Scale and materials]
+Do not inherit the physical sizes from either reference. Make the storage panel, popup, buttons,
+rows, icons, and blank text regions generously sized and comfortably readable at 1920×1080.
+Storage panel and popup: thick worn wood border with clean pale hanji inside.
+Function buttons, end button, close button, quantity minus/plus buttons, and icon cells: solid
+neutral wood boards without hanji inserts. The old shutter is darker and quieter than all UI layers.
+
+[Hard exclusions]
+No empty inventory grid. No encyclopedia or collection screen. No slots for unobtained items.
+No second popup. No confirmation dialog. No close method besides the single X button; no
+outside-click instruction. No store stock counts, discount badges, remaining days, calendar,
+overall schedule, timer, minimap, field HUD, or character portrait. No people or character
+illustrations. No button numbers or selection numbers. No extra decorative panels, tabs, badges,
+ribbons, signs, or buttons beyond those specified.
+```
+
+### IMG-A-009 — A3 조선시대 창호 배경·제작 상세 UI 보정
+
+```text
+Use case: precise-object-edit
+Asset type: A3 maintenance hub game UI mockup, 1920×1080 landscape
+Input images: Image 1 is the sole edit target. Preserve its composition and visual identity.
+
+Primary request:
+Modify only two areas of Image 1:
+A) replace the background shutter with the newly specified Joseon-era changho sliding doors;
+B) restructure only the popup's RIGHT detail column as specified below.
+Everything else must remain unchanged.
+
+A. BACKGROUND REPLACEMENT
+Replace only the dark horizontal-plank shutter behind the interface.
+The new background is exactly two traditional Korean changho-paper sliding door panels covering
+the full screen. The left and right sliding panels meet at the exact horizontal center of the
+screen, creating one clear vertical seam from top to bottom. Each door has thin wooden muntins
+arranged as a fine rectangular lattice, with pale hanji paper stretched across it. Soft daylight
+comes from behind the paper, making it gently luminous and casting subtle lattice shadows.
+The foreground storage panel and popup have uninterrupted solid hanji surfaces, restrained shadows,
+and wood borders substantially thicker and darker than the fine door lattice.
+Do not include western buildings, glass windows, metal machinery, modern objects, hinged doors, or
+vertically opening shutters. The world has the restrained impression of a famine-stricken Korean
+rural village in the Joseon period, but no new props or characters are added.
+
+B. POPUP RIGHT DETAIL COLUMN RESTRUCTURE
+Keep the popup frame, outer dimensions, vertical divider, close button, and entire popup LEFT recipe
+list unchanged. Keep the selected second normal recipe selected and the disabled bottom recipe
+unselected. This right column is the normal unlocked-recipe state.
+
+Preserve the existing large square item icon, blank item-name region, and broad description area.
+Immediately below the description, arrange the remaining detail area in this exact order:
+
+1. Add one compact performance table with exactly 3 rows. Each row has a short blank name region on
+   the left and a narrow blank numeric region on the right. No icons.
+2. Rebuild the existing input table as exactly 2 rows and 4 columns: small square ingredient icon,
+   wide blank ingredient-name region, narrow blank numeric region, and a second equally narrow blank
+   numeric region.
+3. Delete the person-icon row and clock-icon row. Replace them with exactly 2 short rows, each with
+   a short blank name region on the left and a narrow blank numeric region on the right. No icons.
+4. Keep the existing quantity box and wooden minus/plus buttons unchanged.
+5. Add exactly one more short no-icon value row below the quantity control and above the craft
+   button, again with a short blank name region on the left and narrow blank numeric region on the
+   right.
+6. Keep the existing long wooden craft button unchanged at the bottom.
+
+Fit these elements inside the existing right detail column by adjusting spacing only within that
+column. Keep rows clean, aligned, and readable.
+
+STRICT INVARIANTS
+Keep unchanged: exact framing; the full left storage panel and its 3+2+4 rows; the top title panel;
+raid-warning sign; exactly four function buttons; gear button; maintenance-end button; popup frame,
+dimensions, border, hanji interior, divider, and close button; the full 4+3 popup left list and its
+selection/disabled states; the right-column large icon, item-name region, description, quantity
+control, minus/plus buttons, and craft button; palette, line weight, wood and hanji colors, shadows,
+flat shading, and handmade asymmetry.
+
+Do not add readable text, letters, numbers, logos, watermark, people, character art, extra icons,
+extra buttons, extra panels, extra recipes, empty slot grids, western architecture, glass, metal
+machinery, modern props, hinged doors, or vertical shutters. No photorealism, 3D, gradients,
+hatching, scratchy repeated lines, neon, glow, pastel cuteness, or glossy materials.
+```
+
+### IMG-A-010 — A3 소지품 정렬·소지금 HUD·상세 여백 보정
+
+#### 1차 편집
+
+```text
+Use case: precise-object-edit
+Input images:
+- Image 1: sole edit target, A3 v3.
+- Image 2: layout reference only for the left inventory panel's category rows and square item tiles.
+
+Edit only the left storage panel and the text-placeholder treatment in the popup right detail area.
+
+[Left panel]
+- Shorten the panel so its top remains aligned with the right title area and its bottom aligns with
+  the popup bottom. Keep its width, margin, wood border, hanji interior, and shadow.
+- Add one clear currency HUD in the upper-left header: a traditional square-hole yeopjeon coin
+  pictogram, blank label area, and blank amount area. No text or numbers.
+- Replace the vertical icon-name-quantity list with the v1 category-row alignment: one small blank
+  category tab and horizontally arranged large square wooden item tiles. Each tile contains one
+  centered icon and one small blank quantity plaque at its lower-right. No long item-name boxes.
+- Keep exactly 3 harvest tiles, 2 material tiles, 4 weapon tiles, and 0 consumable tiles. The
+  consumables category has only its heading. Do not add empty slots or an empty grid.
+
+[Popup right detail]
+Keep the existing information order: large item icon/name, description, three-row performance area,
+two-row four-column ingredient layout, two value rows, quantity control, one row below quantity,
+and craft button.
+Remove closed rectangles around all code-rendered text and number placeholders. Use open blank hanji
+space, generous whitespace, and only a few faint separators where necessary. Keep ingredient icons
+in square cells. Keep the large icon, quantity box, minus/plus buttons, and craft button bounded.
+
+Preserve the changho background, title, raid-warning sign showing village houses and fire, exactly
+four function buttons, gear button, maintenance-end button, popup frame/divider/close button, full
+4+3 popup left recipe list and states, colors, line weight, shadows, wood, hanji, and flat shading.
+No readable text, numbers, logos, watermarks, people, extra items, extra UI, modern props, glass,
+metal machinery, hinged doors, 3D, gradients, hatching, neon, glow, or glossy materials.
+```
+
+#### 2차 보정 — 팝업 왼쪽 레시피 목록 복원
+
+```text
+Use case: precise-object-edit
+Input images:
+- Image 1: sole edit target, the result of the first edit.
+- Image 2: A3 v3 reference only for the popup left recipe-list structure.
+
+Restore only the popup left recipe-list row structure:
+- two groups, exactly 4 upper rows and 3 lower rows;
+- every row has one square wooden icon cell and one adjacent wide blank name cell;
+- the second row from the top is the only selected row with a pale highlight;
+- the last row is the only disabled row, dimmed with its lock icon;
+- restore clean row boundaries and blank name cells; no text or numbers.
+
+Change nothing else. Preserve the shortened inventory panel, yeopjeon currency HUD, 3+2+4+0 item
+tiles, changho background, top UI, raid-warning sign, popup right detail's open-hanji treatment,
+all right-detail information structure and controls, palette, line weight, shadows, wood, hanji, and
+flat shading. Do not reintroduce rectangular text boxes in the popup right detail area.
+```
+
+### IMG-A-011 — A3 독립 소지금 HUD·소지품 제목판·기능 버튼 선택 표시
+
+```text
+Use case: precise-object-edit
+Input images:
+- Image 1: sole edit target, A3 v4.
+- Image 2: style reference only for the pale cream, slightly irregular, hand-drawn selection outline
+  from `plot_highlight.png`.
+
+Make exactly three UI edits.
+
+1. Remove the currency row from inside the inventory panel. Create one independent floating currency
+   HUD in the open upper-left screen space above the inventory panel. Align its top and height with
+   the long title HUD and raid-warning sign. Use a wood border and clean hanji interior, keep the
+   square-hole yeopjeon coin icon at left, and leave open blank label and amount regions. No text or
+   numbers; exactly one currency HUD.
+
+2. Add one centered solid-wood inventory title plaque overlapping the inventory panel's top border.
+   Match the four function buttons' wood material and shape; no hanji inset and no rendered text.
+   Shift the inventory categories upward after removing the currency row. Preserve panel dimensions,
+   category order, tile layout, and exactly 3 harvest, 2 material, 4 weapon, and 0 consumable items.
+
+3. Highlight only the third of the four top function buttons, representing the open crafting popup.
+   Keep its wooden button unchanged and place a separate pale ivory, slightly wobbly hand-drawn
+   outline around its outer perimeter with an even gap, matching `plot_highlight`. No glow. Do not
+   highlight the other three buttons or any other control.
+
+Preserve the changho background, long title HUD, raid-warning sign, all four buttons, gear button,
+maintenance-end button, popup frame and both columns, recipe states, quiet open-hanji detail layout,
+all icons, palette, line weight, shadows, wood and hanji materials, and flat shading.
+No readable text, Korean or Latin characters, numbers, logos, watermark, extra HUD, extra buttons,
+extra highlights, empty slots, people, modern props, western architecture, glass, machinery,
+photorealism, 3D, gradients, hatching, neon, glow, pastel cuteness, or glossy materials.
+```
+
+### IMG-A-012 — A3 소지금 HUD 축소·기능 버튼 선택선 정돈
+
+```text
+Use case: precise-object-edit
+Input images: Image 1 is the sole edit target, A3 v5.
+
+Change only two elements.
+
+1. Keep the upper-left currency HUD independent, but remove its internal divider and separate
+   right-hand compartment. Use one uninterrupted hanji interior in one wood frame. Preserve the
+   square-hole yeopjeon icon at left and one modest open blank amount area to its right. Shorten the
+   entire HUD substantially to about two-thirds or less of its previous width. No separate label
+   cell, text, or numbers.
+
+2. Keep the third function button selected, but replace the wavy cream outline with a clean regular
+   outline that follows the wooden button's actual outer silhouette. Use a constant small gap and
+   constant line thickness. Keep edges straight and parallel to the button and follow its corner
+   shape. Preserve only the button's existing handmade asymmetry; add no waviness, scallops, ripples,
+   glow, or irregular blobs. Keep the pale ivory color. Do not highlight any other control.
+
+Preserve the entire remaining v5 layout, changho background, inventory panel and title plaque,
+item counts, title HUD, raid-warning sign, four function buttons, gear, end button, popup frame and
+both columns, recipe states, detail layout, icons, palette, line weight, shadows, wood, hanji, and
+flat shading. No readable text, numbers, logos, watermark, extra HUD, compartments, highlights,
+buttons, items, or slots.
+```
+
+### IMG-B-005 — B1 공용 UI 틀 부품 시트
+
+최초 생성본을 채택했다. 이후 생성한 버튼 규격 보정안은 사용하지 않았다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified B1 reusable common UI-frame component sheet for later manual slicing
+
+Redraw the reusable panel and button parts used in the approved A3 maintenance-hub mockup as clean
+standalone production components. Do not redesign them. Preserve A3's wood tone, joint shapes, line
+weight, hanji color, and two-to-three-step shading, but clean away accumulated edit noise.
+
+Input images:
+- Image 1, A3 v6: shape and component reference only. Do not copy its screen layout, background,
+  contents, icons, or degraded surface noise.
+- Image 2, A1 HUD component sheet: sole quality authority for texture, outline weight, muted wood
+  color, flat shading, and clean interior fills.
+
+Create exactly one wide sheet on one perfectly flat solid #00ff00 chroma-key background. The green
+must be uniform with no gradient, shadow, texture, vignette, lighting variation, or floor plane.
+Place exactly six components with generous separation and no overlap, all front-facing. Do not cast
+shadows and do not use #00ff00 inside components.
+
+1. One large empty panel frame, close to square. Show only its wooden border and leave the whole
+   interior as a real green opening. Four identical corner ornaments are rotated by 90 degrees.
+   Straight edges use repeatable wooden-band segments with clear corner-to-edge boundaries and
+   consistent thickness, suitable for 9-slice use.
+2. One separate square seamless hanji swatch. Left matches right and top matches bottom. Pale and
+   almost flat, with only an extremely subtle paper-fiber impression; no border, wood, stain,
+   illustration, fold, wrinkle, dark edge, vignette, or lighting gradient.
+3–5. Exactly three identical-size long solid wooden buttons in one row: default, pressed, disabled.
+   All share the same silhouette, dimensions, corners, outline, and proportions. Default looks
+   slightly raised; pressed gently inset; disabled desaturated and receded. No outer frame, hanji,
+   icon, or text.
+6. One small square solid wooden close button with a centered carved X, matching A3.
+
+Repaint interiors close to solid flat color. Limit wood grain to two or three broad restrained
+strokes. No dense grain, stains, mottling, speckles, scratches, hatching, creases, or ripple patterns.
+Use only two or three flat shading planes and thick clean confident black contours.
+
+No icons except the close-button X; no items, characters, background scene, UI screen, labels, text,
+numbers, logo, watermark, lists, slots, recipes, table cells, tall panel, multiple panel sizes,
+fourth button state, hover state, selection highlight, glow, drop shadow, 3D, photorealism, pastel,
+or glossy finish. Exactly six components total.
+```
+
+### IMG-B-006 — B2 정비 화면 소형 부품 시트
+
+```text
+Use case: ui-mockup
+Asset type: one unified B2 maintenance-screen small-component sheet for later manual slicing
+
+Create one clean component sheet containing exactly three separate UI components from the established A3 maintenance hub design. Do not redesign them.
+
+Reference roles:
+- Image 1 (A3 maintenance hub v6): reference component shapes, proportions, construction, and visual language only.
+- Image 2 (A1 HUD components sheet): reference wood color, wood treatment, thick clean black contour weight, flat shading, and clean surfaces. Match this cleaner source quality and do not reproduce accumulated texture damage from edited mockups.
+
+Art direction:
+- Hand-drawn, slightly asymmetric forms with confident thick clean black outlines.
+- Muted, weathered old wood colors and warm pale hanji.
+- Flat fills with only two or three discrete shading values, absolutely no gradients.
+- Clean interiors. Wood grain is limited to two or three broad deliberate strokes per component. No fine grain, speckling, stains, scratches, paper wrinkles, hatching, noise, or dense texture.
+- Joseon-era rural Korean material feeling, no western or modern hardware.
+- All components front-facing and presented orthographically.
+
+Sheet layout:
+- Use a single uniform flat chroma green background, exact color #00FF00.
+- No cast shadows beneath any component.
+- Place the three components with generous empty space between them so each can be cut out later.
+- Do not distort component proportions to fill the sheet.
+
+Exactly these three components, one copy of each:
+
+1. Item slot
+- One square wooden slot.
+- Its center is slightly darker and visibly recessed as an empty image area.
+- Leave the slot completely empty; no icon or item.
+- A small pale bright square quantity plaque overlaps the bottom-right corner slightly.
+- Leave the quantity plaque blank.
+
+2. List row
+- One horizontal list row, approximately five times wider than its height.
+- It is one joined unit made of two touching parts with no gap.
+- On the far left: one square wooden icon slot, matching component 1 in construction and recessed dark center, but with NO quantity plaque.
+- Attached directly to its right: a long bright clean hanji name area.
+- Leave both sections empty.
+
+3. Currency frame
+- One small horizontal wooden frame, clearly shorter and lower in height than component 2.
+- On the left: one small square blank wooden icon cell.
+- Attached directly to its right: one bright clean hanji amount area.
+- Leave both sections empty. Do not draw a coin.
+
+Hard exclusions:
+- No text, numbers, letters, symbols, logos, or watermark.
+- No icons, items, crops, tools, coins, characters, scenery, or background illustration.
+- No filled content inside slots or fields.
+- No selected, pressed, locked, disabled, or hover states.
+- No grids or repeated/multiple components.
+- Exactly three objects total, with the specified relative sizes and structure.
+```
+
+### IMG-B-007 — B2 정비 화면 소형 부품 재추출 시트
+
+```text
+Use case: precise-object-edit
+Asset type: one B2 maintenance-screen component extraction sheet
+
+Input images:
+- Image 1 is the A3 maintenance hub mockup and is the sole authority for the exact shapes, construction, proportions, recessed depth, corner shapes, and relative scale of the three requested components.
+- Image 2 is the approved B1 common-frame sheet and is the quality authority only for clean wood texture, wood color, hanji color, thick confident black line weight, and two-to-three-step flat shading.
+
+Primary request:
+Take the three small UI components already drawn in Image 1 out of that screen and place enlarged copies together on one component sheet. Do not redesign or reinterpret them. Their appearance must remain exactly as in Image 1; only enlarge all three consistently and replace the screen background with one flat solid color. Use Image 2 only to clean the surfaces and linework without changing Image 1's forms.
+
+Extract exactly these three components:
+
+1. Item slot
+- Take one square inventory item slot from the harvest/material area inside the tall storage panel on the left side of Image 1.
+- Preserve its exact wooden border thickness, corner shape, recessed depth, wood color, and the small pale square quantity plaque overlapping its bottom-right corner.
+- Remove the crop or material illustration from the recessed center and leave it empty.
+- Leave the overlapping small quantity plaque empty.
+
+2. Normal recipe-list row
+- Take one ordinary, unselected, unlocked row from the left list inside the central popup in Image 1.
+- Preserve the exact joined construction: one square recessed wooden icon cell on the left, directly attached with no gap to one long bright hanji name field on the right.
+- Remove the illustration from the square cell and leave both parts empty.
+- Do not use the selected highlighted row or the locked row.
+
+3. Currency HUD
+- Take the independent currency HUD from the upper-left corner of Image 1.
+- Preserve its exact compact wood frame, pale hanji field, proportions, border thickness, and square-hole yeopjeon coin icon on the left.
+- The yeopjeon coin remains exactly as shown because it is a permanent part of this component.
+- Leave only the bright hanji amount area on its right empty.
+
+Output and composition:
+- Put the three components in a single horizontal row on one sheet, with generous non-overlapping space between them.
+- Enlarge all three by the same scale factor so their relative sizes remain exactly as visible in Image 1. The item slot is square; the normal recipe row is much wider than tall; the compact currency HUD is shorter than the recipe row and retains the coin.
+- Front-facing orthographic presentation.
+- Perfectly flat solid #00FF00 chroma-key background, uniform edge to edge.
+- No cast shadow, contact shadow, gradient, texture, vignette, floor plane, or lighting variation in the background.
+- Do not use #00FF00 inside the components.
+
+Invariants:
+- Do not change the wooden border thickness or corner shapes, recessed depth, wood color, hanji color, shading steps, or relative proportions.
+- Do not add decorations, joints, ornaments, hardware, or frames absent from the matching components in Image 1.
+- Retain the restrained A3 hand-drawn asymmetry while keeping outlines clean and confident.
+- Surfaces should be clean like Image 2: no accumulated edit artifacts, fine noise, dense wood grain, wrinkles, stains, scratches, hatching, or gradients.
+
+Exclude:
+- No text, numbers, letters, logos, or watermark.
+- No icons, crops, tools, or item pictures in the emptied item slot or recipe row.
+- The only allowed pictogram is the existing yeopjeon coin in the currency HUD.
+- No selected, locked, hover, pressed, or disabled state.
+- No grid or repeated slots. Exactly one copy of each of the three components.
+- No characters, background illustration, changho doors, scenery, extra UI, or extra objects.
+```
+
+### IMG-B-008 — B2 정비 화면 5종 부품 재생성 시트
+
+최초 시안에서 목록 줄이 나무 판자로 생성되어, A3의 정사각형 아이콘 칸과 한지 이름 면 구조를 명시한 두 번째 시안을 채택했다. 참조 이미지는 A3 최신본 한 장만 사용했다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified maintenance-screen component sheet for later slicing
+Input images: Image 1 is the approved maintenance hub mockup and the sole visual authority.
+
+Redraw the listed maintenance-screen components together on one asset sheet. This is not a
+redesign. Every component must look as if it was lifted from Image 1 and redrawn cleanly by the
+same artist. Match its muted brown wood palette, pale hanji color, black outline thickness, flat
+two-step shading, slight handmade asymmetry, corner shapes, recess depth, restrained detail, and
+relative scale.
+
+Use one perfectly flat solid #00ff00 chroma-key background. Isolate every component with generous
+space and no overlap. Include exactly five components once each: inventory item cell with its small
+quantity box attached at the lower-right corner, normal list row, selected list row, money plate,
+and lock pictogram.
+
+Critical list-row structure from Image 1:
+- BOTH list rows must each be one joined horizontal unit composed of a square recessed wooden icon
+  cell on the left and a long pale-hanji rectangular name field attached directly on the right.
+- The normal row and selected row must have identical dimensions, proportions, wood framing, square
+  icon-cell size, and pale-hanji name field. Do not turn either row into a solid wooden plank.
+- Leave both square icon cells empty and leave both pale-hanji fields empty.
+- Only the selected row carries the same thin pale yellow selection outline shown around the second
+  recipe row in Image 1. The normal row has no selection outline.
+
+Keep the coin engraving inside the money plate — it never changes and belongs to the part. Leave
+every other inset empty: no crop, tool, item, or icon inside the item cell or the list rows, and no
+number inside the quantity box or the money plate.
+
+Do not enlarge every element to fill its cell. Preserve their relative scale from Image 1. No
+beveled 3D wood, glossy highlights, smooth gradients, realistic wood grain, extra scratches, added
+ornaments absent from Image 1, tiled grids of repeated cells, labels, text, numbers, duplicate
+variants, characters, items, scenery, logo, or watermark. Exactly five components total.
+```
+
+### IMG-B-009 — B3 습격 예고 표지 3단계 원본 시트
+
+```text
+Use case: ui-mockup
+Asset type: one unified raid-notice plate sheet for later slicing
+Input images: Image 1 is the approved maintenance hub mockup and the sole visual authority.
+
+Redraw the raid-notice plate from Image 1 as three variants on one asset sheet. This is not a
+redesign. Every plate must look as if it was lifted from Image 1 and redrawn cleanly by the same
+artist. Match its muted brown wood palette, pale hanji color, black outline thickness, flat
+two-step shading, slight handmade asymmetry, corner shapes, and relative scale.
+
+Restructure the plate so that it carries both a pictogram and a code-rendered label, the same way
+the money plate in Image 1 does: a small square pictogram area on the left and a wider blank hanji
+area on the right. Leave the right area completely empty on all three.
+
+Use one perfectly flat solid #00ff00 chroma-key background. Isolate every plate with generous space
+and no overlap. Include exactly three plates once each, identical in outer shape and size,
+differing only in the pictogram on the left:
+first, a quiet village silhouette with no fire;
+second, the same village silhouette with one small flame;
+third, the same village silhouette with a large spreading fire.
+
+Keep the three pictograms clearly distinguishable at a glance. The village silhouette must be the
+same drawing in all three so that only the fire reads as the difference. Fire may use saturated
+warm red and orange.
+
+Do not enlarge the pictograms to fill the plate. No beveled 3D wood, glossy highlights, smooth
+gradients, realistic wood grain, extra scratches, added ornaments absent from Image 1, people,
+animals, crops, weapons, labels, text, numbers, duplicate variants, scenery, logo, or watermark.
+
+Hard count and structure constraints:
+- Exactly three plates total and no other objects.
+- All three plates have exactly the same outer dimensions and the same internal division.
+- Each plate has one small square pictogram compartment on the left and one directly attached wider pale-hanji label area on the right.
+- The right pale-hanji label areas contain absolutely nothing.
+- Use the exact same village silhouette geometry in all three pictogram compartments; add no fire to the first, one small flame to the second, and one large spreading fire to the third.
+- No cast shadows beneath the plates.
+```
+
+### IMG-B-010 — B4 선택 기능·수량 조절 버튼 원본 시트
+
+```text
+Use case: ui-mockup
+Asset type: one unified button sheet for later slicing
+Input images: Image 1 is the approved maintenance hub mockup and the sole visual authority.
+
+Redraw three button variants from Image 1 together on one asset sheet. This is not a redesign.
+Every button must look as if it was lifted from Image 1 and redrawn cleanly by the same artist.
+Match its muted brown wood palette, black outline thickness, flat two-step shading, slight
+handmade asymmetry, corner shapes, and relative scale.
+
+Use one perfectly flat solid #00ff00 chroma-key background. Isolate every button with generous
+space and no overlap. Include exactly three buttons once each:
+first, the wide horizontal function button in its highlighted state, the one Image 1 marks as
+currently open — same size and shape as the other function buttons, differing only in the way
+Image 1 marks it;
+second, the small square minus button from the quantity stepper;
+third, the small square plus button from the quantity stepper.
+
+Keep the minus and plus signs engraved in the wood — they never change and belong to the parts.
+The minus and plus buttons must be identical in size and shape, differing only in the sign.
+
+Do not enlarge the small buttons to match the wide one. Preserve their relative scale from Image 1.
+No beveled 3D wood, glossy highlights, smooth gradients, realistic wood grain, extra scratches,
+added ornaments absent from Image 1, hanji paper inside the buttons, labels, text, numbers,
+duplicate variants, characters, items, scenery, logo, or watermark.
+```
+
+### IMG-B-011 — B5 닫힌 창호지 미닫이문 단독 배경
+
+내장 이미지 생성 결과를 최종 규격 1920×1080으로 직접 리사이즈했다.
+
+```text
+Use case: ui-mockup
+Asset type: 1920×1080 full-screen background — closed sliding paper doors
+Input images: Image 1 is the approved maintenance hub mockup and the sole visual authority.
+
+Redraw only the background of Image 1 — the closed sliding paper doors — as a standalone
+full-screen image with nothing in front of it. This is not a redesign. It must look as if it was
+lifted from Image 1 and redrawn cleanly by the same artist. Match its wood tone, lattice spacing,
+hanji color, light falling from behind the paper, black outline thickness, and flat two-step
+shading.
+
+Two door panels meet at the exact horizontal center of the frame. A single vertical seam runs down
+the middle where they touch. The lattice is made of thin wooden bars in a regular grid with hanji
+pasted over them. Light from outside makes the paper glow softly and casts the shadows of the bars
+onto it.
+
+Remove everything that sits in front of the doors in Image 1: the inventory panel, the popup, the
+buttons, the plates, the settings button, and every UI element. Fill those areas with the doors as
+they would continue behind.
+
+Composition: 1920x1080, the doors fill the entire frame edge to edge, no margin, no border, no
+device frame. No text, letters, numbers, logo, or watermark. No people, animals, crops, tools, or
+furniture. No opened or half-opened doors. No hinged doors swinging outward. No beveled 3D wood,
+glossy highlights, smooth gradients, realistic wood grain, photorealism, neon, glow, or pastel.
+```
+
+### IMG-B-012 — B4 빼기·더하기 기호 밝은색 보정본
+
+```text
+Use case: precise-object-edit
+Asset type: B4 button component sheet color correction
+Input images: Image 1 is the sole edit target.
+
+Change only the color of the engraved minus sign and the engraved plus sign on the two small square buttons. Recolor the visible face of both signs to the exact same pale ivory-gold bright color used by the highlighted outline around the wide function button above. Keep the signs engraved in the wood and preserve their existing dark contour/engraved edge so their shapes remain crisp.
+
+Do not change the wide highlighted function button or its outline. Do not change the square button shapes, sizes, positions, wood surfaces, black outlines, shading, spacing, or the flat #00ff00 background. The minus and plus buttons must remain identical except for their signs. Add no glow, extra highlight, border, hanji, text, numbers, objects, shadows, logo, or watermark. Preserve the entire image exactly outside the two sign interiors.
+```
+
+### IMG-B-013 — B2 배지 없는 아이템 칸 추가 시트
+
+```text
+Use case: precise-object-edit
+Asset type: B2 maintenance component sheet extension
+Input images: Image 1 is the sole edit target.
+
+Add exactly one new sixth component to the existing B2 sheet: an inventory item cell without a quantity badge.
+
+The new component must be an exact duplicate of the existing square inventory item cell at the upper-left of Image 1 in size, shape, wood border, corner geometry, recessed center, palette, black outline, and flat shading, except remove the small pale quantity badge from its lower-right corner completely. Reconstruct the wood corner underneath so the new version reads as the same uninterrupted square slot. Leave its recessed center empty.
+
+Place the new badge-free item cell in available chroma-green space with generous separation and no overlap. Minor repositioning is allowed only if necessary to fit all six components cleanly.
+
+Preserve all five existing components unchanged: the original item cell with quantity badge, normal list row, selected list row, money plate with coin, and lock pictogram. Preserve the selected row highlight and the flat solid #00ff00 background.
+
+Exactly six components total. Do not remove, duplicate, redesign, recolor, resize, or alter any existing component. No icons inside either item cell, no crop, tool, item, label, text, number, logo, watermark, shadow, scenery, or extra object.
 ```
