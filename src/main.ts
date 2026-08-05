@@ -644,6 +644,23 @@ function fearBandNameOf(fear: number): string | null {
 }
 
 /**
+ * 주민 투사체의 반지름 (DEC-CONTENT-008).
+ *
+ * `sourceId` 는 쏜 주민의 전투 프로필 ID 다. 승인 데이터에 `projectile_radius` 가
+ * 있으므로 못 찾으면 데이터가 어긋난 것이다 — 그때는 보이기라도 하도록 최소값을
+ * 쓰고 개발 빌드에 남긴다. 조용히 0으로 두면 다시 안 보이는 투사체가 된다.
+ */
+function hostileProjectileRadius(profileId: string): number {
+  const radius = raidData?.profileById.get(profileId)?.projectile_radius ?? null
+  if (radius !== null) return radius
+
+  if (isDevBuild) {
+    console.warn(`[전투] ${profileId} 의 projectile_radius 를 찾지 못했다`)
+  }
+  return 4
+}
+
+/**
  * 공포도가 속한 구간 (DEC-RESIDENT-046).
  *
  * 일지 입력은 구간 자체를 요구하고(수치가 아니라) 폴백 일지도 구간으로 고르므로
@@ -2280,12 +2297,30 @@ const loop = createGameLoop(
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
-        projectiles: (combat?.projectiles ?? []).map((p) => ({
-          x: p.x,
-          y: p.y,
-          radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
-          hostile: p.source === 'resident',
-        })),
+        // **플레이어 것과 주민 것을 둘 다 그린다.**
+        //
+        // 8/5까지 `combat.projectiles`(플레이어 투척)만 넘기고 있었다. 주민
+        // 투사체는 `residentCombat` 이 따로 들고 있어서 화면에 아예 안 나왔고,
+        // 그래서 만복(`ranged_chase`)과 싸우면 **아무것도 안 보이는데 체력만
+        // 줄었다.** 담당자 플레이 테스트에서 나왔다 (로드맵 11-2).
+        //
+        // 반지름 원본이 다르다 — 투척 무기는 `collision_radius`, 주민 투사체는
+        // 전투 프로필의 `projectile_radius` 다 (DEC-CONTENT-008). 한 맵에서
+        // 둘 다 찾으면 주민 쪽이 늘 기본값으로 떨어진다.
+        projectiles: [
+          ...(combat?.projectiles ?? []).map((p) => ({
+            x: p.x,
+            y: p.y,
+            radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
+            hostile: false,
+          })),
+          ...(residentCombat?.projectiles ?? []).map((p) => ({
+            x: p.x,
+            y: p.y,
+            radius: hostileProjectileRadius(p.sourceId),
+            hostile: true,
+          })),
+        ],
       })
       hud.render(hudView())
 
