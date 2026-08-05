@@ -194,10 +194,21 @@ export function createInput(
   }
 
   // 포커스를 잃으면 눌린 키가 계속 눌린 것으로 남는다. 돌아왔을 때 혼자 걸어간다.
-  function handleBlur(): void {
+  /**
+   * 눌려 있던 키와 진행 중인 롱프레스를 비운다.
+   *
+   * **회복 퀵메뉴가 열려 있는지는 건드리지 않는다.** 그게 `handleBlur()` 와 다른
+   * 점이고, 그 차이가 8/5에 실제 버그였다 — 아래 `setFieldLocked` 주석 참고.
+   */
+  function clearHeldKeys(): void {
     held.clear()
     window.clearTimeout(recoverLongPressTimer)
     recoverPressedAt = null
+  }
+
+  function handleBlur(): void {
+    clearHeldKeys()
+    // 창이 포커스를 잃으면 손을 뗀 것과 같다. 퀵메뉴는 누르고 있는 동안만 열린다.
     if (recoverMenuOpen) {
       recoverMenuOpen = false
       events.onRecoverMenuClose?.()
@@ -232,7 +243,11 @@ export function createInput(
     setFieldLocked(next) {
       locked = next
       // 잠기는 순간 눌려 있던 키를 비운다. 대화가 끝나자마자 이동이 이어지면 안 된다.
-      if (next) handleBlur()
+      //
+      // **`handleBlur()` 를 부르면 안 된다.** 그건 퀵메뉴까지 닫는데, 회복 퀵메뉴가
+      // 열리면 그 자체로 오버레이가 생겨 여기가 `true` 로 불린다 — 열리자마자
+      // 같은 틱에 닫혔다 (8/5 담당자 플레이 테스트). 눌린 키만 비운다.
+      if (next) clearHeldKeys()
     },
 
     fieldLocked: () => locked,
