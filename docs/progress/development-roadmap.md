@@ -360,7 +360,11 @@ CSV 10종은 한 번에 다 필요한 게 아니다. **필요한 순서**는 다
 > CSV 작성·승인과 기획 판단만 김민주에게 남긴다.** 플레이 테스트는 가져올 수 있지만
 > 일부러 남겼다 — 사유는 김민주 항목에 적었다.
 
-- [ ] 승인 CSV 전량 `npm run data:validate` → `npm run data:build` → 클라이언트 바인딩 검증
+- [x] 승인 CSV 전량 `npm run data:validate` → `npm run data:build` → 클라이언트 바인딩 검증
+  - `data:validate` 문제 없음 (36/38 작성 · 미작성은 `content_assets`·`tutorial_steps` 둘이며 알려진 것). `data:build` 25개 + 매니페스트
+  - **코드가 한 번도 안 읽는 승인 테이블은 `resident_support_attack_profiles` 하나다** (4행). 이미 11-2에 있는 영입 주민 지원 공격 미구현과 같은 건이라 새 줄을 만들지 않았다
+  - 연결 CSV 는 부모에 병합돼 **다른 이름으로** 읽힌다. `points`·`farm_plots`·`inputs`·`entries`·`choice_outcomes`·`responses`·`days`·`journal_fallbacks`·`conditions`·`mastery_unlock` 전부 읽히는 것을 확인했다
+  - 검증 방법: 매니페스트의 `files` 로 최상위 테이블을, `data/types.ts` 의 자식 배열 이름으로 연결 테이블을 각각 `src/` 에서 찾는다. **테이블 이름으로만 찾으면 연결 CSV 가 전부 미사용으로 보인다** — 처음에 그렇게 세어 다섯 개를 잘못 의심했다
 - [ ] `DEC-UI-025` 기준 해상도 — `index.html`·`layout.css`·`field.ts`. `index.html` 주석의 "보류" 표기도 같이 정리한다
 - [ ] **A1 에셋 통합** — `assets/final/` 19종. 이건 원래 "UI 사진 대조 → `layout.css` 값 조정" 이었는데 실물이 도착하면서 범위가 달라졌다
   - 그리는 순서 셋: `asset.background.prototype_field` → 경작지·작물·캐릭터·동물 → `asset.ui.field_frame_front` → HUD
@@ -389,7 +393,7 @@ CSV 10종은 한 번에 다 필요한 게 아니다. **필요한 순서**는 다
 1  day_start 화면 + 일지 + 습격 예고  ← 완주의 마지막 구멍
 2  run-failed.ts · ending.ts 화면
 3  개발 통로 제거 (셋 + goToDay)        [완료 · 8/5 밤에 4번과 맞바꿨다]
-3-1 승인 CSV 전량 validate → build → 클라이언트 바인딩 검증
+3-1 승인 CSV 전량 validate → build → 클라이언트 바인딩 검증   [완료]
 4  DEC-CONTENT-018 가드 · DEC-CONTENT-024 story_info 기록
    + 김민주가 확인 요청한 syncRunDay() 설계와 types.ts 추가분
 5  완주 2경로 + submission 빌드 확인

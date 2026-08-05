@@ -1698,3 +1698,35 @@ Node 22 에 전역 `WebSocket` 이 있어서 스크립트 하나로 끝난다. �
 때 갈라지던 그 값이다.
 
 **막힌 것** — 없음.
+
+---
+
+## 2026-08-05 실행 순서 3-1 — 승인 CSV 검증과 클라이언트 바인딩
+
+**한 일**
+`data:validate`·`data:build` 를 돌리고, 승인된 테이블이 실제로 코드에서 읽히는지
+하나씩 맞춰 봤다.
+
+**결과** — 안 읽히는 것은 `resident_support_attack_profiles` 하나(4행)다.
+영입 주민 지원 공격이 아직 없어서이고 **11-2에 이미 있는 건**이라 새 줄을 만들지
+않았다. 오늘 두 번 중복으로 올렸으니 이번엔 먼저 검색했다.
+
+**AI가 잘못한 것**
+
+바인딩을 **테이블 이름으로만 세었다.** 그랬더니 `dialogue_choice_responses`·
+`map_points`·`personality_choice_outcomes`·`recipe_inputs`·`reward_bundle_entries`
+다섯이 0으로 나와 "승인해 놓고 안 쓰는 데이터가 다섯" 이라고 읽을 뻔했다.
+
+실제로는 연결 CSV 가 빌드 때 부모에 병합되면서 **이름이 바뀐다** — `recipe_inputs`
+는 `recipe.inputs`, `reward_bundle_entries` 는 `bundle.entries` 다. 자식 배열
+이름으로 다시 세니 전부 읽히고 있었다.
+
+`crop_mastery_unlocks` 도 처음에 "부모가 `crops.csv` 인데 `recipes` 에 붙어 있다"
+로 의심했는데, 스키마를 열어 보니 부모가 처음부터 `recipes.csv` 였다. 로드맵
+문장을 대충 읽고 기억으로 부모를 지어냈다.
+
+**두 번 다 같은 모양이다** — 확인할 수 있는 원본(스키마 정의, 타입 파일)이 있는데
+안 열고 이름만 보고 판단했다. 오늘 `journal_fallbacks` 를 독립 테이블로 착각한
+것과도 같다.
+
+**막힌 것** — 없음.
