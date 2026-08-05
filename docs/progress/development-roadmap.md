@@ -363,7 +363,9 @@ CSV 10종은 한 번에 다 필요한 게 아니다. **필요한 순서**는 다
   - **플레이어 이름은 아트 장식으로 처리한다.** `DEC-UI-017` 의 공통 요소 여덟 개에 이름이 없으나 `DEC-UI-015` 이름 입력에서 오는 값이라 새 정보가 아니다. 근거는 아트 디렉션 14.2이며 `DEC-UI-017` 을 폐기·대체하지 않는다. **이름 입력 화면이 아직 뼈대라 런 상태에 이름이 실제로 들어가는지 이때 확인한다**
   - `raid_notices` HUD 배선을 여기서 같이 한다 — 지금 `topCenter` 의 `raidNotice` div 에 배선하면 그 div 는 표지판으로 합쳐지며 사라진다
 - [ ] `schema/enums.json` 에 UI 에셋 ID **11개** 고정 목록 신설 — `open_questions` 가 *"실제 화면과 에셋이 나올 때 스키마 변경으로 넣는다"* 로 미뤄둔 조건이 충족됐다. `close_button`·`resident_hp_gauge` 는 B단계라 아직 파일이 없다
-- [ ] 전성민에게 `maintenance-hub`·`dialogue-modal` 화면 캡처 전달 — A3·A4 목업이 이것 때문에 막혀 있다
+- [x] 전성민에게 `maintenance-hub`·`dialogue-modal` 화면 캡처 전달 — A3·A4 목업이 이것 때문에 막혀 있다
+  - `docs/planning/captures/` 에 3장. 보관함 항목 행이 안 보여 무기가 든 정비 허브를 한 장 더 넣었다
+  - 같은 폴더 `README.md` 에 **HUD·필드는 목업 기준이 아니다** 를 적었다 — 8번(A1 통합)·9번(`hud.ts` 재배치) 전이라 지금 캡처의 그 두 부분은 곧 바뀐다
 - [ ] `--ui-danger: #e8613c` 는 **그대로 둔다.** 게이지가 차 있는 면은 아트 디렉션 4.1 판정 색 규약의 예외다 (틀과 판은 계속 무채색)
 
 **실행 순서 (8/5 오후 확정)**
@@ -854,7 +856,7 @@ CSV에 열을 추가하거나 코드에 예외를 만들어 우회하는 것이 
 | 8/5 | `schema/enums.json` UI 에셋 ID 고정 목록 | `open_questions` 가 *"지금은 `src/` 와 `schema/tables/` 어디에도 에셋을 참조하는 코드·필드가 없어 막히는 것이 없으므로, 실제 화면과 에셋이 나올 때 스키마 변경으로 넣는다"* 로 미뤄둔 조건이 8/5에 충족됐다. 11개(`close_button`·`resident_hp_gauge` 는 B단계라 파일 없음) | 최수정 | 8/5 병합 후 | P1 |
 | 8/5 | `asset.background.prototype_field` 자리가 두 곳으로 갈렸다 | 전성민이 `enums.json` UI 고정 목록 12개에 넣었는데, `content_assets.json` 의 `asset_role` 에 `background` 가 이미 있고 `maps.csv` 가 부모 후보이며 `content_asset.id_section_matches_role` 규칙과도 맞는다. **`content_assets.csv` 행이 맞고 고정 목록은 11개다.** 반대로 `asset.ui.*` 는 `ui` 구간이 `asset_role` 에 없어 CSV 에 못 넣으므로 고정 목록이 맞다 | 전성민 확인 | 8/5 | P2 |
 | 8/5 | `RunState.phase`(`RunPhase`)를 **아무도 안 읽고 쓴다** | `state/types.ts` 에 선언돼 있는데 단계의 실제 원본은 흐름(`scenes/flow.ts`)이다. `syncRunDay()` 로 일차만 동기화했고 단계는 손대지 않았다. **계약에 있는데 안 쓰이는 타입은 다음 사람이 그것을 믿고 짠다** — 8/3의 경작지 단계 키 불일치와 같은 모양이다. 동기화하든 지우든 하나를 골라야 한다 (김민주 발견) | 최수정 | 8/6 | P2 |
-| 8/5 | **A3·A4 목업이 최수정 캡처를 기다린다** | 전성민이 정비 허브·대화 목업을 이미 구현된 배치에 맞춰 뽑겠다며 `maintenance-hub`·`dialogue-modal` 화면 캡처를 요청했다. 5분이면 되는데 안 보내면 **전성민이 오늘 남은 시간을 못 쓴다.** 실행 순서 0번에 넣었다 | 최수정 | 8/5 즉시 | P1 |
+| 8/5 | **A3·A4 목업이 최수정 캡처를 기다린다** | 전성민이 정비 허브·대화 목업을 이미 구현된 배치에 맞춰 뽑겠다며 `maintenance-hub`·`dialogue-modal` 화면 캡처를 요청했다. 5분이면 되는데 안 보내면 **전성민이 오늘 남은 시간을 못 쓴다.** 실행 순서 0번에 넣었다 | 최수정 | 8/5 **완료** (`docs/planning/captures/`) | — |
 
 적을 때 판단할 것은 **티어 하나**뿐이다 (6절 기준).
 P0면 그날 일정을 다시 짜고, P2면 목록에만 남기고 넘어간다.
