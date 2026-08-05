@@ -121,9 +121,22 @@ export interface FieldRenderer {
   /** 캔버스를 컨테이너 크기에 맞춘다. devicePixelRatio 를 반영한다 */
   resize(): void
   draw(view: FieldView): void
+  /**
+   * 필드를 지운다. 독립 화면일 때 쓴다 (DEC-UI-014).
+   *
+   * 필드는 베이스 화면이고 독립 화면은 그것을 **대체하는 전환**이다. 그런데
+   * 캔버스가 화면 층위와 무관하게 매 프레임 그려서, 런 실패 뒤 타이틀로 돌아가면
+   * **죽은 플레이어와 적대 주민이 그대로 남아 있었다** (8/5 플레이 테스트).
+   *
+   * 정비 허브는 다르다 — 셔터가 덮는 오버레이라 필드가 살아 있고 계속 그린다.
+   */
+  clear(): void
   readonly canvas: HTMLCanvasElement
   readonly camera: Camera
 }
+
+/** 필드 바탕색. `draw()` 와 `clear()` 가 같은 값을 써야 전환할 때 색이 튀지 않는다 */
+const BACKDROP = '#1d2b1a'
 
 export function createFieldRenderer(container: HTMLElement, camera: Camera): FieldRenderer {
   const canvas = document.createElement('canvas')
@@ -149,12 +162,22 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     camera.resize(width, height)
   }
 
+  /** 바탕만 남기고 지운다. `draw()` 와 같은 바탕색을 쓴다 */
+  function clear(): void {
+    const width = canvas.width / (window.devicePixelRatio || 1)
+    const height = canvas.height / (window.devicePixelRatio || 1)
+
+    ctx.clearRect(0, 0, width, height)
+    ctx.fillStyle = BACKDROP
+    ctx.fillRect(0, 0, width, height)
+  }
+
   function draw(view: FieldView): void {
     const width = canvas.width / (window.devicePixelRatio || 1)
     const height = canvas.height / (window.devicePixelRatio || 1)
 
     ctx.clearRect(0, 0, width, height)
-    ctx.fillStyle = '#1d2b1a'
+    ctx.fillStyle = BACKDROP
     ctx.fillRect(0, 0, width, height)
 
     camera.follow(view.player)
@@ -367,5 +390,5 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
   resize()
   window.addEventListener('resize', resize)
 
-  return { resize, draw, canvas, camera }
+  return { resize, draw, clear, canvas, camera }
 }

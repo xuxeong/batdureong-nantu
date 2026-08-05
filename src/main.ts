@@ -2281,7 +2281,16 @@ const loop = createGameLoop(
       }
     },
     render() {
-      renderer.draw({
+      // 필드는 베이스 화면이고 독립 화면은 그것을 **대체하는 전환**이다 (DEC-UI-014).
+      // 그런데 캔버스가 화면 층위와 무관하게 매 프레임 그려서, 런 실패 뒤 타이틀로
+      // 돌아가면 죽은 플레이어와 적대 주민이 그대로 남아 있었다 (8/5 플레이 테스트).
+      //
+      // 정비 허브는 여기 걸리지 않는다 — 셔터가 덮는 오버레이라 필드 모드가 살아 있다.
+      //
+      // **여기서 return 하지 않는다.** 아래 오버레이 숨김이 같이 건너뛰어지면
+      // 정비 허브가 열린 채 밤 결과로 넘어갔을 때 허브가 화면에 남는다.
+      if (scenes.currentFieldMode() === null) renderer.clear()
+      else renderer.draw({
         player,
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
