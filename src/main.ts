@@ -2289,25 +2289,33 @@ const loop = createGameLoop(
       })
       hud.render(hudView())
 
-      // 정비 허브는 오버레이가 열려 있는 동안만 보인다.
-      // 입력 소유는 scenes 가 판단한다 — 각자 "내가 열려 있나"를 보면
-      // 일시정지가 겹쳤을 때 둘 다 입력을 받는다 (DEC-UI-026).
-      if (scenes.inputOwner() === 'maintenance_hub') {
+      // ── 표시와 입력을 나눈다 (DEC-UI-026) ──────────────────
+      //
+      // **열려 있는가**로 표시를, **입력을 소유하는가**로 조작 가능 여부를 정한다.
+      // 8/5 플레이 테스트에서 브라우저 저장 대화상자로 포커스를 잃자 대화창이
+      // 통째로 사라졌다 — 자동 일시정지가 겹치며 `inputOwner()` 가 `pause` 가 됐고
+      // 표시 판단이 그 값을 보고 있었기 때문이다. 확정문은 "가장 위가 입력을
+      // 독점하고 아래 층위는 **표시만** 한다" 이므로 사라지면 안 된다.
+      const open = scenes.openOverlays()
+      const owner = scenes.inputOwner()
+
+      if (open.includes('maintenance_hub')) {
         hub.render(hubView())
         // 거래·제작이 성공하면 소지금·보관함·제작 가능 상태를 즉시 갱신한다
         // (DEC-UI-005, DEC-UI-006). 열려 있는 팝업도 같은 프레임에 다시 그린다.
         renderOpenPopup?.()
         hub.show()
+        hub.setInteractive(owner === 'maintenance_hub')
       } else {
+        // 여기서만 팝업을 버린다. 입력 소유만 잃었을 때 버리면 포커스를 되찾아도
+        // 열려 있던 상점·제작 팝업이 사라져 있다.
         hub.hide()
         openPopup = null
         renderOpenPopup = null
       }
 
-      // 대화 오버레이. 입력을 소유할 때만 그린다 — 일시정지가 겹치면 표시만 남고
-      // 입력은 일시정지가 가져간다 (DEC-UI-026).
-      const owner = scenes.inputOwner()
-      const talking = owner === 'precombat_dialogue' || owner === 'surrender_dialogue'
+      const talking =
+        open.includes('precombat_dialogue') || open.includes('surrender_dialogue')
       if (talking && dialogue !== null) {
         dialogueModal.render({
           phase: dialogue.phase,
@@ -2317,6 +2325,9 @@ const loop = createGameLoop(
           reaction: dialogue.reaction,
         })
         dialogueModal.show()
+        dialogueModal.setInteractive(
+          owner === 'precombat_dialogue' || owner === 'surrender_dialogue',
+        )
       } else {
         dialogueModal.hide()
       }

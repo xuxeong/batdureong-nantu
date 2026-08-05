@@ -49,6 +49,16 @@ export interface MaintenanceHub {
   setPopup(node: HTMLElement | null): void
   show(): void
   hide(): void
+
+  /**
+   * 입력을 소유하고 있는가 (DEC-UI-026).
+   *
+   * **표시와 입력은 다르다.** 일시정지가 겹치면 가장 위가 입력을 독점하고 아래
+   * 층위는 *표시만* 남는다. 그래서 `hide()` 가 아니라 이것으로 끈다 — 8/5 플레이
+   * 테스트에서 브라우저 저장 대화상자로 포커스를 잃자 대화창이 통째로 사라졌고,
+   * 일시정지 화면이 아직 뼈대라 왜 사라졌는지 알 수단이 없었다.
+   */
+  setInteractive(interactive: boolean): void
   destroy(): void
 }
 
@@ -175,6 +185,11 @@ export function createMaintenanceHub(
       root.hidden = true
       popupLayer.replaceChildren()
       popupLayer.hidden = true
+    },
+
+    setInteractive(interactive) {
+      // 입력만 끈다. 표시는 그대로 남는다 (DEC-UI-026).
+      root.classList.toggle('is-inert', !interactive)
     },
 
     destroy() {
