@@ -849,8 +849,6 @@ function updateRaid(dt: number): void {
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
-    // 회복이 완료되기 전에 공격받으면 취소된다. 아이템은 소비하지 않는다 (DEC-INPUT-005)
-    cancelRecovery('damaged')
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
   }
 
@@ -2909,6 +2907,16 @@ bus.on('field.entered', ({ mode }) => {
 })
 
 bus.on('field.exited', () => wildlife?.endFarming())
+/**
+ * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
+ *
+ * **피해를 주는 쪽마다 부르지 않고 이벤트 한 곳에서 듣는다.** 처음에는 습격의
+ * 주민 피해 자리에만 넣었는데 야생동물 피해가 빠져 있었다 — 재배에서는 맞아도
+ * 회복이 계속 진행됐다. 피해 경로가 늘 때마다 같은 호출을 기억해야 하는 구조는
+ * 반드시 하나를 빠뜨린다.
+ */
+bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
+
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)
 syncInputLock()
