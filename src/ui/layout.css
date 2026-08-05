@@ -560,10 +560,18 @@
 
 /* 수풀 위에 글자만 얹히면 안 읽힌다. 문구가 있을 때만 판을 깐다 */
 .hud__no-throwable,
-.hud__empty-fire {
+.hud__empty-fire,
+.hud__ally-notice {
   padding: var(--ui-gap-xs) var(--ui-gap-sm);
   border-radius: var(--ui-radius);
   background: var(--ui-bg-panel);
+}
+
+/* 지원 주민 안내 (DEC-UI-012). 경고가 아니라 알림이라 danger 색을 쓰지 않는다.
+   필드의 지원 주민 표시와 같은 밝은 색으로 묶는다 (아트 디렉션 4.3) */
+.hud__ally-notice {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text);
 }
 
 /* ─────────────────────────────────────────────────

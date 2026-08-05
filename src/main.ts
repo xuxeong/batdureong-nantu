@@ -13,6 +13,8 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { createAllySupport } from './systems/ally-support.ts'
+import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
 import { createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
@@ -218,6 +220,28 @@ let hostile: HostileRuntime | null = null
 let hostileTarget: CombatTarget | null = null
 /** 맵의 resident_spawn 지점 (DEC-CONTENT-016) */
 let raidSpawnPoint: { x: number; y: number } | null = null
+/** 맵의 ally_support 지점. 영입 주민이 여기 선다 (DEC-CONTENT-016, DEC-RESIDENT-021) */
+let allySupportPoint: { x: number; y: number } | null = null
+/** 주민 ID → 지원 공격 수치. `resident_support_attack_profiles.csv` 가 원본 (DEC-RESIDENT-045) */
+let supportProfileByResident = new Map<string, AllySupportProfile>()
+/**
+ * 이번 습격을 지원하는 영입 주민 (DEC-RESIDENT-021). 지원자가 없으면 null.
+ *
+ * 습격 전투가 시작할 때 정해지고 조우가 끝날 때 치운다. 한 습격에 한 명뿐이다.
+ */
+let allySupport: AllySupport | null = null
+
+/**
+ * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
+ *
+ * `DEC-UI-017` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
+ * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
+ */
+let allySupportNotice: { text: string; remaining: number } | null = null
+
+/** 지원 안내가 떠 있는 시간(초). 표현이라 승인 데이터가 아니다 */
+const ALLY_SUPPORT_NOTICE_SECONDS = 4
 /** 습격 조우를 시작하는 데 필요한 승인 데이터 묶음 */
 let raidData: {
   hostileResidentByDay: Map<number, string | null>
@@ -426,6 +450,10 @@ function startNewRun(playerName: string): void {
 
   hostile = null
   hostileTarget = null
+  // 지원 기회는 런 상태(`supportUsed`)에 있고 그것은 새 런 객체가 통째로 지운다.
+  // 여기서 치우는 것은 필드에 서 있던 인스턴스와 화면 알림이다 (로드맵 9-5).
+  allySupport = null
+  allySupportNotice = null
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
@@ -666,6 +694,31 @@ async function bootData(): Promise<void> {
 
     const residentSpawn = (map.points ?? []).find((p) => p.point_role === 'resident_spawn')
     raidSpawnPoint = residentSpawn === undefined ? null : { x: residentSpawn.x, y: residentSpawn.y }
+
+    // 지원 주민은 "화면의 정해진 위치" 에 선다 (DEC-RESIDENT-021). 그 자리는
+    // 맵의 ally_support 지점이며 런 내내 움직이지 않는다.
+    const allyPoint = (map.points ?? []).find((p) => p.point_role === 'ally_support')
+    allySupportPoint = allyPoint === undefined ? null : { x: allyPoint.x, y: allyPoint.y }
+
+    // 지원 공격 수치는 승인 데이터가 단일 원본이다 (DEC-RESIDENT-045).
+    // 주민 행이 프로필 ID 를 들고 있어 한 번 이어 둔다.
+    const supportProfileById = new Map(
+      (data.resident_support_attack_profiles ?? []).map((p) => [p.id, p]),
+    )
+    supportProfileByResident = new Map(
+      (data.residents ?? []).flatMap((resident) => {
+        const profile = supportProfileById.get(resident.support_attack_profile_id)
+        if (profile === undefined) return []
+        return [[
+          resident.id,
+          {
+            damage: profile.damage,
+            firstAttackDelaySeconds: profile.first_attack_delay_seconds,
+            attackIntervalSeconds: profile.attack_interval_seconds,
+          },
+        ] as const]
+      }),
+    )
 
     residentCombat = createResidentCombat({ weapons })
     encounter = createEncounter({
@@ -912,6 +965,25 @@ function updateRaid(dt: number): void {
     }
   }
 
+  // 영입 주민의 지원 공격 (DEC-RESIDENT-021).
+  //
+  // **플레이어 피해 처리 뒤, 같은 프레임 안에서 돈다.** 피해는 `combat` 을 거치므로
+  // 투항 발동이 낫·투척과 같은 판정을 지난다. 처치는 구조적으로 불가능하다 —
+  // `applySupportDamage()` 가 체력 1 아래로 못 내려간다.
+  if (allySupport !== null && hostileTarget !== null) {
+    const damage = allySupport.update(dt)
+    if (damage !== null) {
+      for (const event of combat.applySupportDamage(hostileTarget.entity.instanceId, damage)) {
+        if (event.type === 'surrenderOffered') onSurrenderOffered()
+      }
+    }
+  }
+
+  if (allySupportNotice !== null) {
+    allySupportNotice.remaining -= dt
+    if (allySupportNotice.remaining <= 0) allySupportNotice = null
+  }
+
   // 습격 중 체력 0도 즉시 런 실패다 (DEC-RUN-008)
   failRunIfDead()
 }
@@ -1046,6 +1118,12 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
   }
 
   const { rewardBundleId, fearDelta, fearPending } = result.value
+
+  // 조우가 끝나면 지원 주민은 필드에서 사라진다 (DEC-RESIDENT-021 — 지원은 습격
+  // 전투 하나에 붙는다). `supportUsed` 는 세울 때 이미 켰으므로 여기서 손대지
+  // 않는다. 생존·영입 상태도 유지된다.
+  allySupport = null
+  allySupportNotice = null
 
   // 결과 화면 내용을 여기서 확정한다. 화면 전환보다 앞이라야 한다 —
   // 아래 `scenes.send()` 가 곧바로 조우 결과 화면을 열고 그때 이 값을 읽는다.
@@ -1740,7 +1818,103 @@ function spawnHostile(dayNumber: number, combatState: string): HostileRuntime | 
     surrenderThreshold: runtime.surrenderThreshold,
     surrenderOffered: false,
   }
+
+  // 이 습격을 지원할 영입 주민을 세운다 (DEC-RESIDENT-021).
+  // 전투가 실제로 시작하는 지점이라 여기서 정한다 — 확정문이 "다음에 **실제로
+  // 발생하는 습격 전투**부터" 로 정했고, 전투 전 협상으로 해결되면 이 함수가
+  // 아예 불리지 않아 지원 기회도 소비되지 않는다.
+  startAllySupport()
   return runtime
+}
+
+/**
+ * 이번 습격을 지원할 영입 주민을 고른다 (DEC-RESIDENT-021).
+ *
+ * **한 습격에 한 명뿐이다.** 대상은 영입돼 있고 살아 있고 아직 지원 기회를 쓰지
+ * 않은 주민이며, 여럿이면 **먼저 영입된 쪽**이다. 확정문이 누구를 고를지까지는
+ * 정하지 않았는데, `DEC-RESIDENT-045` 가 *"영입 시점이 이를수록 피해가 낮고
+ * 공격이 잦게, 늦을수록 피해가 높고 간격이 길게 둔다"* 로 수치를 배치해서
+ * 데이터가 이미 그 순서를 전제하고 있다. 영입 순서는 각 주민의 습격 일차로
+ * 판단한다 — 승인 일정이 주민을 하루에 한 명씩만 배치하므로 일차가 곧 순서다.
+ */
+function startAllySupport(): void {
+  allySupport = null
+  if (run === null || raidData === null) return
+
+  if (allySupportPoint === null) {
+    bus.emit('data.error', {
+      summary: '지원 주민을 세울 수 없다',
+      detail: '맵에 ally_support 지점이 없다 (DEC-CONTENT-016)',
+    })
+    return
+  }
+
+  // 주민 → 그 주민이 적대로 나온 일차. 영입은 그 조우에서 일어나므로 순서가 같다.
+  const dayOf = new Map<string, number>()
+  for (const [day, residentId] of raidData.hostileResidentByDay) {
+    if (residentId !== null && residentId !== '') dayOf.set(residentId, day)
+  }
+
+  const candidate = Object.values(run.residents)
+    .filter(
+      (r) =>
+        r.allegiance === 'recruited' &&
+        r.lifeState === 'alive' &&
+        !r.supportUsed,
+    )
+    .sort((a, b) => (dayOf.get(a.residentId) ?? 0) - (dayOf.get(b.residentId) ?? 0))[0]
+
+  if (candidate === undefined) return
+
+  const profile = supportProfileByResident.get(candidate.residentId)
+  if (profile === undefined) {
+    // 스키마가 주민마다 1:1 참조를 요구하므로 없으면 데이터가 어긋난 것이다.
+    // 조용히 넘기면 영입해도 아무 일이 없고 화면만 지원한다고 말한다.
+    bus.emit('data.error', {
+      summary: '지원 주민을 세울 수 없다',
+      detail: `${candidate.residentId} 의 지원 공격 프로필이 없다 (DEC-RESIDENT-045)`,
+    })
+    return
+  }
+
+  allySupport = createAllySupport({
+    residentId: candidate.residentId,
+    x: allySupportPoint.x,
+    y: allySupportPoint.y,
+    profile,
+  })
+
+  // 지원 기회는 이 습격 전투를 지원하는 순간 소비된다 (DEC-RESIDENT-021).
+  // 첫 공격을 기다리지 않는 이유는 확정문이 "한 번의 습격 전투를 **지원하면**"
+  // 이라고만 정했고, 첫 공격 전에 투항이 끝나도 그 습격은 지원받은 것이기 때문이다.
+  candidate.supportUsed = true
+
+  // 습격 전투에 진입할 때 어느 주민이 지원하는지 알린다 (DEC-UI-012)
+  const name = residentNames.get(candidate.residentId) ?? candidate.residentId
+  allySupportNotice = {
+    text: `${name}${subjectParticle(name)} 돕는다`,
+    remaining: ALLY_SUPPORT_NOTICE_SECONDS,
+  }
+}
+
+/**
+ * 주격 조사 — 받침이 있으면 `이`, 없으면 `가`.
+ *
+ * 이름이 승인 데이터(`residents.display_name`)에서 오므로 코드가 고를 수밖에 없다.
+ * `이(가)` 로 두면 만들다 만 문장으로 읽힌다 — 실제로 8/6 플레이 확인에서
+ * `영순 이(가) 돕는다` 가 화면에 그대로 나왔다.
+ *
+ * 한글 음절이 아니면 붙이지 않는다. 숫자나 로마자 이름에 규칙을 지어내지 않는다.
+ */
+function subjectParticle(word: string): string {
+  const last = word.at(-1)
+  if (last === undefined) return ''
+
+  const code = last.charCodeAt(0)
+  if (code < 0xac00 || code > 0xd7a3) return ''
+
+  // 한글 음절 = 0xAC00 + (초성×21 + 중성)×28 + 종성. 나머지가 종성이다.
+  return (code - 0xac00) % 28 === 0 ? '가' : '이'
 }
 
 /** 낫 재사용 대기 0~1. 개발 빌드가 아니거나 대기가 없으면 null */
@@ -2580,6 +2754,8 @@ function hudView() {
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
+    // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
+    allySupportNotice: allySupportNotice?.text ?? null,
     // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
     raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
@@ -2705,6 +2881,11 @@ const loop = createGameLoop(
           life: p.remaining / HARVEST_POPUP_SECONDS,
         })),
         hostiles: hostileViews(),
+        // 지원 주민은 습격 전투에만 있다 (DEC-RESIDENT-021). 체력도 대기 표시도 없다.
+        ally:
+          allySupport === null
+            ? null
+            : { x: allySupport.x, y: allySupport.y, attackFlash: allySupport.attackFlash },
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
