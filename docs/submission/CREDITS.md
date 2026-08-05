@@ -22,7 +22,7 @@
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v4.png` | 최신 아트 디렉션 기반 A1 낮 플레이 화면 목업 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-006` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | A1 숲 테두리 침범 깊이 축소본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-007` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_hud_components_sheet_chroma.png` | A1 HUD 10종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-001` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/final/ui/*.png` | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 행동 안내는 아직 분리하지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/*.png` | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_background_1920x1080_sheet.png` | A1 낮 필드 바닥 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_forest_frame_1920x1080_sheet.png` | A1 숲 뒤·앞 레이어 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/background/prototype_field.png` | A1 낮 필드 바닥과 바깥 숲을 합친 배경 한 장 | AI 생성 + 직접 분리·리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-002` 참조 | 해당 없음 (AI 생성) |

@@ -74,7 +74,7 @@
 | `asset.ui.quickslot_selected` | `assets/final/ui/quickslot_selected.png` | 155×145 | 선택 강조 상태 |
 | `asset.ui.recovery_slot` | `assets/final/ui/recovery_slot.png` | 162×166 | 선택 회복 아이템 슬롯 |
 | `asset.ui.heal_gauge` | `assets/final/ui/heal_gauge.png` | 38×139 | 동적 채움은 코드 처리 |
-| `asset.ui.interaction_prompt` | **미분리** — 시트에만 있다 | 141×72 | 행동 안내 (`DEC-UI-018`). HUD 시트 10종 중 이것만 옮기지 않았다 |
+| ~~`asset.ui.interaction_prompt`~~ | **사용하지 않음** | — | 행동 안내는 스프라이트 없이 글자만 띄우기로 2026-08-05에 정했다. 시트에는 남아 있으나 `final/`로 옮기지 않는다 |
 | `asset.ui.plot_highlight` | `assets/final/ui/plot_highlight.png` | 186×166 | 선택 경작지 외곽선 |
 
 UI 파일은 모두 투명 PNG다. 화면 배치 크기는 파일 크기를 그대로 강제하지 않고 A1-v5의
