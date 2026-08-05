@@ -11,8 +11,10 @@
       CSS 커스텀 프로퍼티에 모은다 (개발 로드맵 2절).
       기획자 UI 사진을 받으면 그 파일 값만 고친다.
 
-      기준 해상도는 DEC-UI-025 가 보류라 아직 고정하지 않는다.
-      지금은 뷰포트를 그대로 채우고, 규격이 오면 그때 비율 유지 스케일을 넣는다.
+      기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3).
+      #stage 하나가 그 크기를 갖고, 창이 다르면 그 상자만 비율을 유지한 채
+      확대·축소한다. 남는 영역은 여백이고 body 배경색이 그대로 보인다.
+      배율 계산은 src/render/stage.ts 에 있다 — 숫자를 두 곳에 두지 않는다.
     -->
     <style>
       html,
@@ -21,6 +23,22 @@
         height: 100%;
         background: #11170f;
         overflow: hidden;
+      }
+
+      /*
+        기준 해상도 무대 (DEC-UI-025).
+
+        크기는 여기서 고정하지 않는다 — stage.ts 가 BASE_WIDTH/HEIGHT 를 갖고
+        있고, 숫자를 CSS 에도 적으면 두 곳이 갈라진다. 여기는 배치만 정한다.
+
+        **필드와 UI 를 서로 다른 비율로 늘리지 않는다**는 것이 확정 내용이라
+        둘 다 이 상자 안에 들어가고 상자 하나만 scale 된다.
+      */
+      #stage {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center center;
       }
 
       /* 필드. Canvas 2D 한 장이 여기 들어간다 */
@@ -59,11 +77,14 @@
     </style>
   </head>
   <body>
-    <!-- 필드 렌더링 영역 (src/render/) -->
-    <div id="game"></div>
+    <!-- 기준 해상도 무대. 필드와 UI 가 함께 확대·축소된다 (DEC-UI-025) -->
+    <div id="stage">
+      <!-- 필드 렌더링 영역 (src/render/) -->
+      <div id="game"></div>
 
-    <!-- HUD·상점·제작·대화 등 DOM 오버레이 (src/ui/) -->
-    <div id="ui"></div>
+      <!-- HUD·상점·제작·대화 등 DOM 오버레이 (src/ui/) -->
+      <div id="ui"></div>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

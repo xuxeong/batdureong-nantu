@@ -111,6 +111,15 @@ export interface SceneManager {
  * 임시 일정을 지어내지 않는다. 일차로 넘어가려는 순간 데이터 오류로 보고한다
  * (AGENTS.md 6절 — 누락을 코드 기본값으로 숨기지 않는다).
  */
+/**
+ * 회복 퀵메뉴가 열려 있는 동안의 게임 속도 (DEC-INPUT-008).
+ *
+ * **근거 없이 고른 값이다.** 확정문은 "크게 낮춘다" 로만 정했고 배율을 정한 DEC 가
+ * 없다. 표현이지 게임 데이터가 아니므로 CSV 로 빼지 않는다 (로드맵 2절).
+ * 0.15 는 2.5초짜리 회복을 고르는 동안 주민이 한 대도 못 때리는 정도다.
+ */
+const QUICKMENU_TIME_SCALE = 0.15
+
 const NO_SCHEDULE: FlowContext = {
   totalDays: 0,
   raidTypeOf: () => undefined,
@@ -125,6 +134,23 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
   const overlays: OverlayId[] = []
 
   function syncSimulation(): void {
+    // **회복 퀵메뉴만 예외다.** `DEC-INPUT-008` 이 퀵메뉴에 대해서만
+    // *"플레이어, 적, 투사체, 전투 타이머를 포함한 게임 전체의 속도를 함께 크게
+    // 낮춘다"* 로 정했다 — 정지가 아니라 감속이다. 다른 오버레이와 같이 멈추면
+    // 그 확정문이 무의미해지고, 퀵메뉴를 여는 것이 곧 무적 시간이 된다.
+    //
+    // 일시정지가 겹쳐 있으면 정지가 이긴다. 일시정지는 항상 최상위다 (DEC-UI-026).
+    const onlyQuickmenu =
+      overlays.length === 1 && overlays[0] === 'recovery_quickmenu'
+
+    if (onlyQuickmenu) {
+      loop.resumeAll()
+      loop.setTimeScale(QUICKMENU_TIME_SCALE)
+      return
+    }
+
+    loop.setTimeScale(1)
+
     // 오버레이가 하나라도 열려 있으면 필드 시뮬레이션을 멈춘다.
     // 정지 대상은 이동·조준·공격·상호작용 입력, 주민 AI, 투사체, 상태이상 틱이다.
     if (overlays.length > 0) {

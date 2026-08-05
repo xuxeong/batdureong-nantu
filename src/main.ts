@@ -15,6 +15,7 @@ import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
+import { createStage } from './render/stage.ts'
 import type { HostileView, PlotView } from './render/field.ts'
 import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
@@ -66,6 +67,8 @@ import { createNameInput } from './ui/name-input.ts'
 import type { NameInputScreen } from './ui/name-input.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
+import { createRecoveryMenu } from './ui/recovery-menu.ts'
+import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
 import { createRunFailed } from './ui/run-failed.ts'
@@ -108,6 +111,11 @@ import type {
 import type { ItemStore } from './state/types.ts'
 
 const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
+
+// 기준 해상도 무대를 창에 맞춘다 (DEC-UI-025). 필드와 UI 가 함께 확대·축소된다.
+const stageRoot = document.getElementById('stage')
+if (stageRoot === null) throw new Error('#stage 요소가 없다')
+createStage(stageRoot)
 
 const gameRoot = document.getElementById('game')
 if (gameRoot === null) throw new Error('#game 요소가 없다')
@@ -1848,20 +1856,12 @@ const input = createInput(renderer.canvas, {
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  // ── 회복 퀵메뉴는 P2 로 컷됐다 (로드맵 6절) ────────────────
+  // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
   //
-  // 컷 원문이 *"회복 퀵메뉴 롱프레스(→ `Q` 짧게 누르기만)"* 다. 그런데 여기서
-  // 오버레이를 열고 있었고, **오버레이가 열리면 시뮬레이션이 정지한다**
-  // (`scenes/manager.ts` 의 `syncSimulation`). 그릴 UI 는 없으므로 롱프레스하면
-  // **게임이 멈춘 채 아무것도 안 보이는 상태**가 됐다 — 컷이 아니라 버그였다
-  // (8/5 담당자 플레이 테스트).
-  //
-  // 되살릴 때는 오버레이만으로 부족하다. `DEC-INPUT-008` 이 퀵메뉴를 **정지가
-  // 아니라 감속**으로 정했으므로(`loop.setTimeScale`) `syncSimulation` 이
-  // 퀵메뉴를 다른 오버레이와 갈라야 한다. 그때까지 회복 선택은 `DEC-RESOURCE-018`
-  // 의 자동 선택만 쓴다.
-  onRecoverMenuOpen: () => {},
-  onRecoverMenuClose: () => {},
+  // `Q` 를 누르고 있는 동안에만 열린다. 오버레이로 올리면 화면 매니저가 시간을
+  // 늦춘다 — 다른 오버레이처럼 멈추지 않는 것이 확정 규칙이다 (`syncSimulation`).
+  onRecoverMenuOpen: () => scenes.openOverlay('recovery_quickmenu'),
+  onRecoverMenuClose: () => scenes.closeOverlay('recovery_quickmenu'),
   onEscape: () => scenes.handleEscape(),
 })
 
@@ -1928,6 +1928,16 @@ const tutorialScreen: TutorialScreen = createTutorial(uiRoot, {
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
+// 회복 퀵메뉴 (DEC-UI-001). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
+const recoveryMenu: RecoveryMenu = createRecoveryMenu(uiRoot, {
+  onSelect: (itemId) => {
+    if (run === null) return
+    // **선택만 바꾼다.** 사용 시작은 `Q` 를 짧게 누를 때다.
+    run.pouch.selectedId = itemId
+    if (isDevBuild) console.info(`[회복] 선택 변경 — ${itemId}`)
+  },
+})
+
 const dayStartScreen: DayStartScreen = createDayStart(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
@@ -2659,6 +2669,22 @@ const loop = createGameLoop(
         hub.hide()
         openPopup = null
         renderOpenPopup = null
+      }
+
+      // 회복 퀵메뉴. 목록은 보관함에서 매번 계산한다 (DEC-RESOURCE-017)
+      if (open.includes('recovery_quickmenu') && run !== null && recoverySources !== null) {
+        recoveryMenu.render({
+          items: recoveryOptions(run, recoverySources).map((option) => ({
+            id: option.id,
+            displayName: option.displayName,
+            healAmount: option.healAmount,
+            held: option.held,
+          })),
+          selectedId: run.pouch.selectedId,
+        })
+        recoveryMenu.show()
+      } else {
+        recoveryMenu.hide()
       }
 
       const talking =

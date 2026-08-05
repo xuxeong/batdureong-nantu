@@ -1390,3 +1390,101 @@
 .name-input__confirm:disabled:hover {
   background: var(--ui-bg-panel);
 }
+
+/* ─────────────────────────────────────────────────
+   회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008)
+
+   `Q` 를 누르고 있는 동안에만 뜬다. 닫기 버튼이 없다 — 손을 떼면 닫힌다.
+   필드를 덮지 않고 아래쪽에 붙는다. 퀵슬롯 옆의 회복 칸이 무엇을 고르고
+   있는지 보여주는 자리이므로 그 근처에서 열리는 것이 읽기 쉽다.
+   ───────────────────────────────────────────────── */
+
+.recovery-menu[hidden] {
+  display: none;
+}
+
+.recovery-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: calc(var(--hud-edge) + var(--hud-slot-size) + var(--ui-gap-lg));
+  box-sizing: border-box;
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  /* 배경을 덮지 않는다. 느려진 필드가 보여야 한다 (DEC-INPUT-008) */
+  pointer-events: none;
+}
+
+.recovery-menu__panel {
+  min-width: 320px;
+  padding: var(--ui-gap-md);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  pointer-events: auto;
+}
+
+/* 느려진 상태임을 알린다 (DEC-UI-001) */
+.recovery-menu__notice {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.recovery-menu__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+}
+
+.recovery-menu__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--ui-gap-md);
+  align-items: baseline;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recovery-menu__item:hover {
+  border-color: var(--ui-border);
+}
+
+/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-001) */
+.recovery-menu__item--selected {
+  border-color: var(--ui-border-strong);
+  border-width: 2px;
+  padding: calc(var(--ui-gap-sm) - 1px) calc(var(--ui-gap-md) - 1px);
+}
+
+.recovery-menu__name {
+  font-weight: 600;
+}
+
+.recovery-menu__held,
+.recovery-menu__heal {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.recovery-menu__empty {
+  margin: 0;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
