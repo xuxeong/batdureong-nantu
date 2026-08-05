@@ -115,7 +115,6 @@ const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
 // 기준 해상도 무대를 창에 맞춘다 (DEC-UI-025). 필드와 UI 가 함께 확대·축소된다.
 const stageRoot = document.getElementById('stage')
 if (stageRoot === null) throw new Error('#stage 요소가 없다')
-createStage(stageRoot)
 
 const gameRoot = document.getElementById('game')
 if (gameRoot === null) throw new Error('#game 요소가 없다')
@@ -123,6 +122,10 @@ if (gameRoot === null) throw new Error('#game 요소가 없다')
 const bus = createEventBus()
 const camera = createCamera()
 const renderer = createFieldRenderer(gameRoot, camera)
+
+// 배율이 정해진 뒤에 캔버스 백킹을 다시 잡는다. 순서가 반대면 렌더러가 이전
+// 배율을 보고 창보다 큰 해상도로 그린다 (8/5에 12fps 까지 떨어졌다).
+createStage(stageRoot, { onScaleChanged: () => renderer.resize() })
 
 // 재배는 승인 데이터가 들어와야 시작된다. 없으면 null 로 남고 밭이 그려지지 않는다.
 // 여기에 임시 경작지를 만들어 넣지 않는다 — 데이터가 없다는 사실이 화면에 보여야 한다.

@@ -31,13 +31,23 @@ export interface Stage {
   destroy(): void
 }
 
+export interface StageOptions {
+  /**
+   * 배율이 바뀐 뒤 불린다.
+   *
+   * **캔버스가 이걸 기다려야 한다.** 렌더러는 변환이 반영된 크기를 읽어 백킹
+   * 해상도를 정하는데, 자기 `resize` 리스너가 먼저 돌면 이전 배율을 본다.
+   */
+  onScaleChanged?(): void
+}
+
 /**
  * 무대를 창에 맞춘다.
  *
  * 여백은 무대 바깥이며 `body` 배경색이 그대로 보인다. 여백에 아무것도 그리지
  * 않는 것이 확정 내용이다 — 늘려서 채우면 비율이 깨진다.
  */
-export function createStage(element: HTMLElement): Stage {
+export function createStage(element: HTMLElement, options: StageOptions = {}): Stage {
   // 크기는 여기서만 정한다. CSS 에도 적으면 두 곳이 갈라진다.
   element.style.width = `${BASE_WIDTH}px`
   element.style.height = `${BASE_HEIGHT}px`
@@ -48,6 +58,7 @@ export function createStage(element: HTMLElement): Stage {
       window.innerHeight / BASE_HEIGHT,
     )
     element.style.transform = `translate(-50%, -50%) scale(${scale})`
+    options.onScaleChanged?.()
   }
 
   apply()

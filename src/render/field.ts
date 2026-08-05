@@ -160,14 +160,31 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
   }
   const ctx = context
 
+  /**
+   * 캔버스 백킹 해상도를 **실제로 화면을 덮는 픽셀 수**에 맞춘다.
+   *
+   * 무대(`render/stage.ts`)가 1920×1080 상자를 통째로 축소하므로 컨테이너 크기는
+   * 언제나 1920×1080 이다. 거기에 `devicePixelRatio` 를 그대로 곱하면 **창보다 훨씬
+   * 큰 해상도로 그린 뒤 브라우저가 다시 줄이게 된다** — 1280×720 창·DPR 1.25 에서
+   * 2400×1350 을 그리고 있었고 프레임이 83ms(12fps)까지 늘어졌다 (8/5 실측).
+   *
+   * 그래서 변환이 반영된 `getBoundingClientRect()` 로 실제 크기를 읽는다. 그리기
+   * 좌표는 계속 1920×1080 이며 배율만 바뀐다.
+   */
   function resize(): void {
-    const ratio = window.devicePixelRatio || 1
+    const dpr = window.devicePixelRatio || 1
     const width = container.clientWidth
     const height = container.clientHeight
-    canvas.width = Math.round(width * ratio)
-    canvas.height = Math.round(height * ratio)
-    // 그리기 좌표를 CSS 픽셀로 통일한다. 안 하면 고해상도 화면에서만 어긋난다.
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+    if (width === 0 || height === 0) return
+
+    const rect = canvas.getBoundingClientRect()
+    // 무대가 아직 배율을 안 걸었으면 rect 가 0 이다. 그때는 DPR 만 쓴다.
+    const scale = rect.width > 0 ? (rect.width * dpr) / width : dpr
+
+    canvas.width = Math.round(width * scale)
+    canvas.height = Math.round(height * scale)
+    // 그리기 좌표를 무대 좌표(1920×1080)로 통일한다.
+    ctx.setTransform(scale, 0, 0, scale, 0, 0)
     camera.resize(width, height)
   }
 
@@ -190,7 +207,6 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     ctx.fillRect(0, 0, width, height)
 
     camera.follow(view.player)
-    drawWorldGrid(width, height)
 
     // 경작지는 플레이어보다 먼저 그린다. 겹칠 때 플레이어가 위로 와야 한다.
     for (const plot of view.plots ?? []) drawPlot(plot)
@@ -400,25 +416,6 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
     }
   }
 
-  /** 월드 격자. 카메라가 실제로 따라오는지 눈으로 확인하기 위한 것이다 */
-  function drawWorldGrid(width: number, height: number): void {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)'
-    ctx.lineWidth = 1
-
-    const startX = -(camera.x % WORLD_TO_PIXEL)
-    const startY = -(camera.y % WORLD_TO_PIXEL)
-
-    ctx.beginPath()
-    for (let x = startX; x < width; x += WORLD_TO_PIXEL) {
-      ctx.moveTo(Math.round(x) + 0.5, 0)
-      ctx.lineTo(Math.round(x) + 0.5, height)
-    }
-    for (let y = startY; y < height; y += WORLD_TO_PIXEL) {
-      ctx.moveTo(0, Math.round(y) + 0.5)
-      ctx.lineTo(width, Math.round(y) + 0.5)
-    }
-    ctx.stroke()
-  }
 
   resize()
   window.addEventListener('resize', resize)
