@@ -171,11 +171,25 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
    * 그래서 변환이 반영된 `getBoundingClientRect()` 로 실제 크기를 읽는다. 그리기
    * 좌표는 계속 1920×1080 이며 배율만 바뀐다.
    */
+  /**
+   * 그리기 좌표계 크기 (무대 기준 1920×1080).
+   *
+   * **캔버스 픽셀 수와 다르다.** 백킹은 화면에 실제로 덮이는 크기라 더 작을 수
+   * 있고, 그 둘을 섞으면 화면 일부만 지워진다 — 8/5에 배경이 왼쪽 위만 칠해지고
+   * 나머지에 이전 프레임이 잔상으로 남았다.
+   */
+  let stageWidth = 0
+  let stageHeight = 0
+
   function resize(): void {
     const dpr = window.devicePixelRatio || 1
     const width = container.clientWidth
     const height = container.clientHeight
     if (width === 0 || height === 0) return
+
+    // 그리기 좌표계 크기. **캔버스 픽셀 수가 아니다.**
+    stageWidth = width
+    stageHeight = height
 
     const rect = canvas.getBoundingClientRect()
     // 무대가 아직 배율을 안 걸었으면 rect 가 0 이다. 그때는 DPR 만 쓴다.
@@ -190,8 +204,8 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
 
   /** 바탕만 남기고 지운다. `draw()` 와 같은 바탕색을 쓴다 */
   function clear(): void {
-    const width = canvas.width / (window.devicePixelRatio || 1)
-    const height = canvas.height / (window.devicePixelRatio || 1)
+    const width = stageWidth
+    const height = stageHeight
 
     ctx.clearRect(0, 0, width, height)
     ctx.fillStyle = BACKDROP
@@ -199,8 +213,8 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
   }
 
   function draw(view: FieldView): void {
-    const width = canvas.width / (window.devicePixelRatio || 1)
-    const height = canvas.height / (window.devicePixelRatio || 1)
+    const width = stageWidth
+    const height = stageHeight
 
     ctx.clearRect(0, 0, width, height)
     ctx.fillStyle = BACKDROP
