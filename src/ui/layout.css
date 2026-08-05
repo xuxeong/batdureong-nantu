@@ -163,11 +163,15 @@
   --hud-sign-bottom-y: 96px;
   --hud-sign-bottom-h: 60px;
 
-  /* 재배 게이지 911×83 — 홈은 왼쪽 613px 뿐이다. 오른쪽은 그림에 박힌 글자다 */
-  --hud-timer-track-x: 45px;
-  --hud-timer-track-y: 28px;
-  --hud-timer-track-w: 613px;
-  --hud-timer-track-h: 30px;
+  /* 재배 게이지 911×83.
+     홈 안쪽 여백은 아트 디렉션 10절이 좌 51 · 우 73 · 상 24 · 하 23 으로 준 값이다.
+     **좌우가 22px 어긋나므로 한 값으로 못 쓴다** — 좌와 폭을 따로 둔다.
+     처음에 홈을 왼쪽 613px 로 읽었는데 틀렸다. 홈은 그림 폭을 거의 다 쓰고
+     `남은 재배 시간` 글자가 그 **위에** 얹혀 있다 (실측: 좌 53 · 폭 789). */
+  --hud-timer-track-x: 51px;
+  --hud-timer-track-y: 24px;
+  --hud-timer-track-w: 787px;
+  --hud-timer-track-h: 36px;
 
   /* 플레이어 카드 585×161 — 초상화 / 이름 / 체력 홈 / 수치 */
   --hud-card-portrait: 13px 20px 147px 127px;
