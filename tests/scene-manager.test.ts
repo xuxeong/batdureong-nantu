@@ -11,6 +11,9 @@ import assert from 'node:assert/strict'
 import { createEventBus } from '../src/core/bus.ts'
 import { createSceneManager } from '../src/scenes/manager.ts'
 import type { GameLoop, PauseCause } from '../src/core/loop.ts'
+import type { SceneManager } from '../src/scenes/manager.ts'
+import type { FlowContext } from '../src/scenes/flow.ts'
+import type { RaidType } from '../src/data/types.ts'
 
 /** GameLoop 중 정지 사유만 흉내 낸다. requestAnimationFrame 은 필요 없다 */
 function fakeLoop(): GameLoop & { causes: Set<PauseCause> } {
@@ -37,9 +40,44 @@ function setup() {
   return { bus, loop, scenes }
 }
 
+/**
+ * 흐름 판단 근거. 일정 수치는 픽스처로 넘긴다 — 코드에도 테스트에도 게임 데이터를
+ * 두지 않는다.
+ */
+function contextOf(raidType: RaidType): FlowContext {
+  return { totalDays: 5, raidTypeOf: () => raidType }
+}
+
+/**
+ * 타이틀에서 1일차 재배까지 **실제 흐름 입력으로** 민다.
+ *
+ * 8/5까지는 `enterFieldPreview()` 로 흐름을 건너뛰고 필드만 띄웠다. 그 통로가
+ * 게임 쪽에서 사라졌고(로드맵 11-2 — 흐름과 런 상태를 갈라놓았다) 여기만 남아
+ * 있었다. 정상 흐름으로 바꾸면 화면 매니저가 실제로 하는 일과 같은 상태에서
+ * 검사하게 된다.
+ */
+function toFarming(scenes: SceneManager, raidType: RaidType = 'none'): void {
+  scenes.setContext(contextOf(raidType))
+  // 타이틀 → 이름 입력 → 튜토리얼 → 일차 시작 → 재배
+  for (let i = 0; i < 4; i++) scenes.send({ type: 'confirm' })
+}
+
+/**
+ * 습격 모드까지 민다.
+ *
+ * **전투 전 대화가 함께 열린다** (`DEC-UI-014` — 습격 모드에 들어가면 곧이어
+ * 오버레이로 열린다). `enterFieldPreview('raid')` 는 그 오버레이 없이 필드만
+ * 띄웠으므로, 이쪽이 실제 상태에 더 가깝다.
+ */
+function toRaid(scenes: SceneManager): void {
+  toFarming(scenes, 'raid')
+  scenes.send({ type: 'farming_time_expired' })
+  scenes.send({ type: 'maintenance_finished', intent: 'scout_field' })
+}
+
 test('오버레이가 열리면 필드가 멈추고 닫히면 재개한다', () => {
   const { loop, scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   assert.equal(loop.paused, false)
 
   scenes.openOverlay('maintenance_hub')
@@ -53,7 +91,7 @@ test('포커스 이탈로 멈춘 뒤 일시정지를 닫으면 재개한다', ()
   // 회귀 방지: 'dialogue' 사유만 지우면 'focus_lost' 가 남아
   // 알트탭 한 번에 필드가 영구히 멈춘다.
   const { loop, scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
 
   // 루프가 포커스 이탈을 감지하고 화면 매니저가 일시정지를 연다 (DEC-INPUT-009).
   loop.pause('focus_lost')
@@ -68,7 +106,7 @@ test('포커스 이탈로 멈춘 뒤 일시정지를 닫으면 재개한다', ()
 
 test('필수 대화는 Esc 로 닫히지 않고 일시정지만 겹친다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('raid')
+  toRaid(scenes)
   scenes.openOverlay('precombat_dialogue')
 
   scenes.handleEscape()
@@ -81,7 +119,7 @@ test('필수 대화는 Esc 로 닫히지 않고 일시정지만 겹친다', () =
 
 test('회복 퀵메뉴는 Esc 로 닫힌다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   scenes.openOverlay('recovery_quickmenu')
 
   scenes.handleEscape()
@@ -96,7 +134,7 @@ test('정비 허브는 Esc 로 닫히지 않고 일시정지만 겹친다', () =
   // 구분되지 않아서 사람 눈으로는 안 잡힌다 — 진행 버튼을 거치지 않았으므로
   // 습격 여부에 따른 분기(DEC-UI-014)를 통째로 건너뛴 상태가 된다.
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   scenes.openOverlay('maintenance_hub')
 
   scenes.handleEscape()
@@ -123,7 +161,7 @@ test('승인 데이터가 없으면 일차로 넘어갈 때 데이터 오류 화
 
 test('화면이 바뀌면 이전 오버레이가 남지 않는다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   scenes.openOverlay('pause')
 
   scenes.send({ type: 'player_died' })
@@ -135,7 +173,7 @@ test('화면이 바뀌면 이전 오버레이가 남지 않는다', () => {
 
 test('일시정지는 나중에 열려도 항상 가장 위에 온다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
 
   scenes.openOverlay('pause')
   scenes.openOverlay('maintenance_hub')
@@ -146,7 +184,7 @@ test('일시정지는 나중에 열려도 항상 가장 위에 온다', () => {
 
 test('기능 오버레이 둘이 동시에 열리지 않는다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('raid')
+  toRaid(scenes)
 
   scenes.openOverlay('precombat_dialogue')
   scenes.openOverlay('maintenance_hub')
@@ -160,14 +198,14 @@ test('기능 오버레이 둘이 동시에 열리지 않는다', () => {
 
 test('오버레이가 없으면 필드가 입력을 갖는다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
 
   assert.equal(scenes.inputOwner(), null)
 })
 
 test('포커스를 잃으면 회복 퀵메뉴를 닫고 일시정지를 연다', () => {
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   scenes.openOverlay('recovery_quickmenu')
 
   scenes.handleFocusLost()
@@ -180,7 +218,7 @@ test('Esc 는 한 번에 한 층만 처리한다', () => {
   // 실제로도 불가능한 조합이다 — 정비 중에는 필드 입력이 잠겨 `Q`를 누를 수 없다
   // (DEC-INPUT-008, DEC-INPUT-009). 규칙이 잘못된 테스트를 먼저 잡았다.
   const { scenes } = setup()
-  scenes.enterFieldPreview('farming')
+  toFarming(scenes)
   scenes.openOverlay('recovery_quickmenu')
 
   // 회복 퀵메뉴가 열려 있으면 그것만 닫는다

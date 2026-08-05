@@ -179,9 +179,6 @@ export interface ResidentRunState {
 // 진행·기록 (DEC-RESIDENT-046, DEC-CRAFT-007, 008, DEC-CONTENT-011)
 // ─────────────────────────────────────────────────────────────
 
-/** 하루 안의 단계 (DEC-RUN-014). `취침` 단계는 없다 */
-export type RunPhase = 'farming' | 'maintenance' | 'raid'
-
 /**
  * 엔딩 판정에 쓰는 누적 기록 (DEC-CONTENT-011).
  *
@@ -272,8 +269,16 @@ export interface RunState {
   /** 적용 중인 습격 일정 ID. total_days·map_id 는 이 데이터에서 읽는다 */
   runScheduleId: string
 
+  /**
+   * 현재 일차. **단일 원본은 흐름이다** (`scenes/flow.ts`) — 런 상태는 그 값을
+   * 따라간다 (`syncRunDay()`).
+   *
+   * 단계(`RunPhase`)는 여기 같이 있었는데 8/5에 지웠다. 원본이 흐름인데 런 상태에도
+   * 두면 두 곳이 갈라지고, 실제로 **아무도 읽지 않은 채 선언만 남아 있었다.**
+   * 계약에 있는 것을 다음 사람이 믿고 짜게 되므로 동기화 대신 제거를 골랐다
+   * (김민주가 8/5에 발견, 로드맵 11-2).
+   */
   dayNumber: number
-  phase: RunPhase
 
   /** 현재 체력. 최대 체력은 player_base_stats 원본에 있다 */
   health: number

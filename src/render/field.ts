@@ -87,6 +87,15 @@ export interface FieldView {
    * 표시가 필요하다고 판단되면 그때 결정 로그에 올린다.
    */
   devSickleCooldown?: number | null
+
+  /**
+   * 회복 사용 게이지 (DEC-UI-017).
+   *
+   * 확정문이 **플레이어 캐릭터 바로 옆**에 표시하라고 정했다. HUD 의 회복 칸과
+   * 다른 요소다 — 그쪽은 "무엇이 선택돼 있나", 이쪽은 "지금 먹는 중이고 얼마나
+   * 남았나" 다. 진행 중이 아니면 null 이고 아무것도 그리지 않는다.
+   */
+  recovery?: { progress: number } | null
 }
 
 /**
@@ -220,6 +229,30 @@ export function createFieldRenderer(container: HTMLElement, camera: Camera): Fie
         -Math.PI / 2 + Math.PI * 2 * view.devSickleCooldown,
       )
       ctx.stroke()
+    }
+
+    // 회복 사용 게이지와 취소 힌트 (DEC-UI-017).
+    //
+    // 확정문이 "진행 중에는 `Q`로 취소할 수 있다는 짧은 힌트 동반" 이라고 정했다.
+    // 힌트가 없으면 취소가 되는지 화면에서 알 수 없다 — 8/5 플레이 테스트에서
+    // 담당자가 그걸 확인하지 못했다.
+    if (view.recovery !== null && view.recovery !== undefined) {
+      const width = radius * 3
+      const height = 6
+      const left = screen.x - width / 2
+      const top = screen.y - radius - 18
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+      ctx.fillRect(left, top, width, height)
+      ctx.fillStyle = '#cfe07a'
+      ctx.fillRect(left, top, width * Math.max(0, Math.min(1, view.recovery.progress)), height)
+
+      // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
+      ctx.font = '12px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = '#f4ecd0'
+      ctx.fillText('Q — 취소', screen.x, top - 4)
+      ctx.textAlign = 'start'
     }
 
     // 조준선 — 마우스 커서 방향 (DEC-INPUT-002)

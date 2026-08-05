@@ -74,7 +74,6 @@ export function createRunState(options: NewRunOptions): RunState {
     runScheduleId: schedule.id,
 
     dayNumber: 1,
-    phase: 'farming',
 
     health: stats.max_health,
     resources: newResources(stats),

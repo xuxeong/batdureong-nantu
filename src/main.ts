@@ -838,9 +838,9 @@ function updateRaid(dt: number): void {
   // 체력 0이면 어떤 경로로 여기 들어왔든 전투가 돌지 않는다 (DEC-RUN-008).
   //
   // 화면 전환만으로 막으면 화면을 우회하는 경로가 생겼을 때 그대로 뚫린다 —
-  // 실제로 개발 통로(`enterFieldPreview()`)가 run_failed 위에 필드를 다시 띄워서,
-  // 체력 0인 플레이어가 주민을 투항 직전까지 때리는 상태가 나왔다 (그 통로는 8/5에
-  // 지웠다). 화면이 아니라 **상태로** 판단하는 이유가 이것이다.
+  // 실제로 개발 통로가 `run_failed` 위에 필드를 다시 띄워서, 체력 0인 플레이어가
+  // 주민을 투항 직전까지 때리는 상태가 나왔다 (그 통로는 8/5에 지웠다).
+  // 화면이 아니라 **상태로** 판단하는 이유가 이것이다.
   if (run.health <= 0) {
     failRunIfDead()
     return
@@ -1028,9 +1028,9 @@ function finishEncounter(residentId: string, outcome: FinalOutcome): boolean {
     scenes.send({ type: 'encounter_finished' })
   } else {
     // **여기 오면 버그다.** 조우는 습격 단계에서만 시작되므로 끝날 때도 습격이어야
-    // 한다. 8/5 까지는 개발 통로(`enterFieldPreview`)가 흐름을 건너뛰고 필드를 띄워
-    // 정상적으로 도달했고 그때는 경고만 남겼는데, 그 통로를 지웠으므로 이제는
-    // 흐름과 조우 상태가 갈라졌다는 뜻이다. 조용히 넘기면 하루가 끝나지 않는다.
+    // 한다. 8/5 까지는 개발 통로가 흐름을 건너뛰고 필드를 띄워 정상적으로 도달했고
+    // 그때는 경고만 남겼는데, 그 통로를 지웠으므로 이제는 흐름과 조우 상태가
+    // 갈라졌다는 뜻이다. 조용히 넘기면 하루가 끝나지 않는다.
     bus.emit('data.error', {
       summary: '조우가 끝났는데 흐름이 습격 단계가 아니다',
       detail: `현재 단계 ${scenes.step().at} · ${residentId} · ${outcome}`,
@@ -2589,6 +2589,16 @@ const loop = createGameLoop(
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
+        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-017). 0~1 로 넘긴다.
+        recovery:
+          run?.recovering == null
+            ? null
+            : {
+                progress:
+                  run.recovering.durationSeconds > 0
+                    ? run.recovering.elapsedSeconds / run.recovering.durationSeconds
+                    : 1,
+              },
         // **플레이어 것과 주민 것을 둘 다 그린다.**
         //
         // 8/5까지 `combat.projectiles`(플레이어 투척)만 넘기고 있었다. 주민

@@ -93,23 +93,6 @@ export interface SceneManager {
   setContext(ctx: FlowContext): void
 
   /**
-   * **테스트 전용.** 흐름을 건너뛰고 필드만 띄운다.
-   *
-   * 원래는 `run_schedules` 승인 전에 필드 렌더·입력·카메라를 눈으로 확인하려고 만든
-   * 개발 통로였다. **게임 쪽 호출부는 8/5에 전부 지웠다** — 승인 데이터가 들어와
-   * 정상 흐름으로 재배까지 갈 수 있고, 이 통로가 흐름과 런 상태를 갈라놓아 5일차
-   * 습격을 1일차로 판정하게 만든 사례가 나왔다 (로드맵 11-2).
-   *
-   * 지금 남은 호출자는 `tests/scene-manager.test.ts` 뿐이다. 거기서는 오버레이와
-   * 정지 사유를 보려고 필드 상태를 만드는 **픽스처**로 쓴다. 정상 흐름으로 바꾸면
-   * 습격 모드가 전투 전 대화를 자동으로 열어(`applyOverlay`) 그 테스트들이 보려는
-   * 것과 다른 상태가 된다. 바꾸는 것은 별도 작업이다 (로드맵 11-2).
-   *
-   * `step`은 건드리지 않는다. 이건 런의 상태가 아니라 화면 미리보기다.
-   */
-  enterFieldPreview(mode: FieldMode): void
-
-  /**
    * 지금 입력을 소유한 오버레이. 없으면 null 이고 그때는 필드가 입력을 갖는다.
    *
    * 가장 위 오버레이가 입력을 독점하고 그 아래 층위는 표시만 한다 (DEC-UI-026).
@@ -302,26 +285,6 @@ export function createSceneManager(bus: EventBus, loop: GameLoop): SceneManager 
       ctx = next
     },
 
-    enterFieldPreview(mode) {
-      // 실패한 런을 되살리지 않는다. 체력 0으로 끝난 런 위에 필드를 다시 띄우면
-      // 죽은 플레이어가 계속 싸우게 된다 (DEC-RUN-008). 개발 통로여도 마찬가지다 —
-      // 흐름이 금지한 상태를 통로가 만들어 내면 그 상태로 관찰한 결과를 믿을 수 없다.
-      if (step.at === 'run_failed') {
-        console.warn(
-          '[개발 전용] 런이 실패한 상태라 필드를 띄우지 않는다. ' +
-            '새 런이 필요하다 (DEC-RUN-008).',
-        )
-        return
-      }
-
-      console.warn(
-        '[테스트 전용] 흐름을 건너뛰고 필드를 띄운다. 게임 쪽 호출부는 없다 — ' +
-          '여기 로그가 보인다면 지운 통로가 되살아난 것이다.',
-      )
-      closeAllOverlays()
-      enterField(mode)
-      syncSimulation()
-    },
   }
 
   // 첫 화면을 실제로 반영한다. 생성만 하고 아무 이벤트도 안 나가면
