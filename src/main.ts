@@ -60,6 +60,12 @@ import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
 import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
 import { createNightResult, selectNightResultText } from './ui/night-result.ts'
 import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
+import { createTitle } from './ui/title.ts'
+import type { TitleScreen } from './ui/title.ts'
+import { createNameInput } from './ui/name-input.ts'
+import type { NameInputScreen } from './ui/name-input.ts'
+import { createTutorial } from './ui/tutorial.ts'
+import type { TutorialScreen } from './ui/tutorial.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
 import { createRunFailed } from './ui/run-failed.ts'
@@ -303,6 +309,101 @@ let dayStartJournal: DayStartJournal = null
  */
 let journalRequestDay: number | null = null
 
+/**
+ * 새 런을 만들 때 필요한 승인 데이터 (로드맵 9-5).
+ *
+ * 부팅에서 한 번 담고 타이틀에서 다시 시작할 때마다 같은 것을 쓴다. 여기 담긴
+ * 것은 전부 승인 데이터이며 런이 바뀌어도 변하지 않는다.
+ */
+let newRunSources: {
+  stats: import('./data/types.ts').PlayerBaseStats
+  schedule: import('./data/types.ts').RunSchedule
+  residents: readonly import('./data/types.ts').Resident[]
+  rewardBundles: readonly RewardBundle[]
+  combatProfiles: readonly import('./data/types.ts').ResidentCombatProfile[]
+  fearIncrements: FearIncrements | null
+  crops: readonly Crop[]
+  materials: readonly import('./data/types.ts').CraftingMaterial[]
+  recipes: readonly Recipe[]
+  plots: readonly import('./data/types.ts').FarmPlot[]
+  interactionRadius: number
+  spawnX: number
+  spawnY: number
+} | null = null
+
+/**
+ * 런을 통째로 새로 만든다 (`DEC-RESOURCE-004`, `DEC-RESIDENT-047`, 로드맵 9-5).
+ *
+ * **부분 초기화하지 않는다.** 상태 객체를 새로 만들어 교체한다 — 남은 값 하나가
+ * 두 번째 런에서만 재현되는 버그가 된다. 그래서 `run` 을 붙들고 있는 것들
+ * (`resolution`·`economy`·`farming`)도 여기서 같이 다시 만든다. 하나만 남겨 두면
+ * 새 런 상태를 옛 시스템이 보게 된다.
+ *
+ * 리셋 대상은 로드맵 9-5 가 열거했다 — 소지금·보관함 4종·퀵슬롯 편성·회복 파우치·
+ * 작물 숙련도·해금 레시피·주민 런 상태와 관계·공포도·경작지·일차·사연 시나리오·
+ * 일지 기록. 앞의 것들은 `createRunState()` 가, 경작지는 `createFarming()` 이,
+ * 화면에 걸린 나머지는 아래에서 지운다.
+ *
+ * **초기값은 데이터에서 읽는다.** 체력·소지금은 `player_base_stats` 승인 행에서
+ * 오며 여기에 숫자를 두지 않는다 (`DEC-CONTENT-019`).
+ */
+function startNewRun(playerName: string): void {
+  if (newRunSources === null) return
+  const src = newRunSources
+
+  run = createRunState({
+    stats: src.stats,
+    schedule: src.schedule,
+    playerName,
+    seed: 1,
+    residents: [...src.residents],
+  })
+
+  // 조우 해결. 런 상태가 만들어진 뒤라야 붙는다 — 주민 런 상태를 직접 고친다.
+  resolution = createResolution(run, {
+    rewardBundles: [...src.rewardBundles],
+    residents: [...src.residents],
+    combatProfiles: [...src.combatProfiles],
+    fearIncrements: src.fearIncrements,
+  })
+
+  economy = createEconomy(
+    {
+      resources: run.resources,
+      cropMastery: run.record.cropMastery,
+      unlockedRecipeIds: run.record.unlockedRecipeIds,
+    },
+    { crops: [...src.crops], materials: [...src.materials], recipes: [...src.recipes] },
+  )
+
+  // 경작지도 런 상태다 (로드맵 9-5). 작물 단계와 남은 성장 시간이 다음 날로
+  // 넘어가는 것은 한 런 안에서만이다 (DEC-FARM-003).
+  farming = createFarming({
+    plots: [...src.plots],
+    crops: [...src.crops],
+    interactionRadius: src.interactionRadius,
+  })
+
+  // 필드 시뮬레이션과 화면에 걸려 있던 것들. 런 상태 밖이라 새 객체로 안 지워진다.
+  combat?.reset()
+  residentCombat?.reset()
+  wildlife?.endFarming()
+  farmingTimer?.reset()
+
+  hostile = null
+  hostileTarget = null
+  dialogue = null
+  pendingEncounter = null
+  encounterResultView = null
+
+  dayStartJournal = null
+  journalRequestDay = null
+  endingRecordPending = false
+
+  player.x = src.spawnX
+  player.y = src.spawnY
+}
+
 const player = { x: 0, y: 0 }
 
 /**
@@ -353,12 +454,6 @@ async function bootData(): Promise<void> {
 
     const crops = data.crops! as Crop[]
     cropsById = new Map(crops.map((crop) => [crop.id, crop]))
-
-    farming = createFarming({
-      plots,
-      crops,
-      interactionRadius: map.farm_interaction_radius,
-    })
 
     // 1차 프로토타입은 승인된 런 일정 하나만 쓴다 (DEC-CONTENT-002)
     const schedule = data.run_schedules![0]
@@ -451,23 +546,22 @@ async function bootData(): Promise<void> {
       storyInfos: data.story_infos ?? [],
     }
 
-    // 런 상태를 새로 만든다. 부분 초기화하지 않는다 (로드맵 9-5).
-    // 이름 입력 화면이 아직 없어 playerName 은 비어 있다.
-    run = createRunState({
+    // 새 런을 만들 재료를 담아 둔다. 타이틀에서 다시 시작할 때 같은 것을 쓴다 (로드맵 9-5)
+    newRunSources = {
       stats: data.player_base_stats![0],
       schedule,
-      playerName: '',
-      seed: 1,
       residents: data.residents ?? [],
-    })
-
-    // 조우 해결. 런 상태가 만들어진 뒤라야 붙는다 — 주민 런 상태를 직접 고친다.
-    resolution = createResolution(run, {
       rewardBundles: data.reward_bundles ?? [],
-      residents: data.residents ?? [],
       combatProfiles: data.resident_combat_profiles ?? [],
       fearIncrements: readFearIncrements(data.fear_increments),
-    })
+      crops,
+      materials: data.crafting_materials ?? [],
+      recipes: data.recipes ?? [],
+      plots,
+      interactionRadius: map.farm_interaction_radius,
+      spawnX: map.world_width / 2,
+      spawnY: map.world_height / 2,
+    }
 
     // 흐름이 일차·습격을 판단할 근거를 승인 데이터로 갈아끼운다.
     // 여기서 일정을 지어내지 않는다 — 없으면 흐름이 데이터 오류로 보고한다.
@@ -492,14 +586,9 @@ async function bootData(): Promise<void> {
       ].map((entry) => [entry.id, entry.display_name]),
     )
 
-    economy = createEconomy(
-      { resources: run.resources, cropMastery: run.record.cropMastery, unlockedRecipeIds: run.record.unlockedRecipeIds },
-      {
-        crops,
-        materials: data.crafting_materials ?? [],
-        recipes: data.recipes ?? [],
-      },
-    )
+    // 이름 입력 전이라 이름이 없는 런이다. 타이틀이 보이는 동안 화면에 닿지 않으며,
+    // 이름을 확정하는 순간 `startNewRun()` 이 통째로 교체한다.
+    startNewRun('')
 
     // 상점·제작 모달이 읽는 것. economy 와 **같은 배열**을 본다 —
     // 목록과 판정이 서로 다른 데이터를 보면 화면에는 있는데 못 만드는 레시피가 생긴다.
@@ -1654,6 +1743,30 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
   onContinue: () => scenes.send({ type: 'confirm' }),
 })
 
+// ── 런이 시작되는 세 화면 (DEC-UI-015) ───────────────────────
+//
+// 8/5까지 셋 다 뼈대여서 개발 통로(`devSkipToFarming()`)가 흐름을 대신 밀었다.
+// 그래서 제출 빌드로 바꾸면 첫 화면에서 못 나갔고, 이름이 없어 일지와 엔딩
+// 기록문에 빈 `player_name` 이 넘어갔다.
+
+const titleScreen: TitleScreen = createTitle(uiRoot, {
+  onStart: () => scenes.send({ type: 'confirm' }),
+})
+
+const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
+  onConfirm: (name) => {
+    // **런은 여기서 시작된다.** 이름이 확정돼야 런 상태가 그 이름을 갖는다.
+    // 타이틀에서 다시 온 경우에도 여기서 통째로 교체되므로 이전 런이 남지 않는다
+    // (로드맵 9-5).
+    startNewRun(name)
+    scenes.send({ type: 'confirm' })
+  },
+})
+
+const tutorialScreen: TutorialScreen = createTutorial(uiRoot, {
+  onSkip: () => scenes.send({ type: 'confirm' }),
+})
+
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
 const dayStartScreen: DayStartScreen = createDayStart(uiRoot, {
@@ -1706,6 +1819,16 @@ function syncScreens(): void {
   // 정비 허브는 반대다 — 셔터가 필드를 덮는 오버레이라 필드 모드가 살아 있고
   // HUD 도 그대로 남는다.
   hud.setVisible(scenes.currentFieldMode() !== null)
+
+  // 런 시작 세 화면. 표시 외에 할 일이 없어 한 줄씩이다.
+  if (screen === 'title') titleScreen.show()
+  else titleScreen.hide()
+
+  if (screen === 'name_input') nameInputScreen.show()
+  else nameInputScreen.hide()
+
+  if (screen === 'tutorial') tutorialScreen.show()
+  else tutorialScreen.hide()
 
   if (screen === 'day_start') {
     const step = scenes.step()
@@ -2676,12 +2799,11 @@ if (isDevBuild) {
 
   // 흐름을 손으로 들여다보기 위한 노출. **상태를 바꾸는 통로는 없다.**
   //
-  // `__dev` 넷(`fillThrowables`·`goToDay`·`startRaid`·`surrender`)은 8/5에 지웠다.
-  // 대신하던 UI 가 전부 도착했고(제작·편성·대화 모달), 특히 `goToDay` 는
-  // `syncRunDay()` 가 들어온 뒤로 **런 상태만 옮기고 흐름은 그대로 둬서** 5일차
-  // 습격을 1일차로 판정하게 만들었다 (로드맵 11-2).
-  //
-  // 남은 `devSkipToFarming()` 은 노출하지 않는다 — 부팅 때 한 번 스스로 돈다.
+  // 개발 통로는 8/5에 전부 지웠다. `__dev` 넷(`fillThrowables`·`goToDay`·
+  // `startRaid`·`surrender`)은 대신하던 UI 가 도착해서, `devSkipToFarming()` 은
+  // 타이틀·이름 입력·튜토리얼 화면이 생겨서다. 특히 `goToDay` 는 `syncRunDay()` 가
+  // 들어온 뒤로 **런 상태만 옮기고 흐름은 그대로 둬서** 5일차 습격을 1일차로
+  // 판정하게 만들었다 (로드맵 11-2).
   Object.assign(window, {
     __scenes: scenes,
     __bus: bus,
@@ -2696,31 +2818,11 @@ if (isDevBuild) {
 
 }
 
-/**
- * **개발 전용.** 타이틀에서 1일차 재배 단계까지 흐름을 밀어 준다.
- *
- * `run_schedules` 가 승인돼 이제 정상 흐름으로 재배까지 갈 수 있다. 다만 타이틀·이름 입력·
- * 튜토리얼·일차 시작 화면이 아직 없어서(로드맵 8/5, 최수정) 손으로 `확인`을 누를 수단이 없다.
- *
- * 가짜 단계를 만들지 않고 **실제 흐름에 실제 입력을 넣는다.** 흐름이 규칙대로 막으면
- * 그대로 데이터 오류가 뜨는 것이 맞다. 네 화면이 생기면 이 함수를 지운다.
- */
-function devSkipToFarming(): void {
-  const confirms = ['title', 'name_input', 'tutorial', 'day_start']
-  for (const from of confirms) {
-    if (scenes.step().at !== from) {
-      console.warn(`[개발 전용] ${from} 에서 멈췄다. 현재 단계: ${scenes.step().at}`)
-      return
-    }
-    scenes.send({ type: 'confirm' })
-  }
-  console.warn('[개발 전용] 타이틀~일차 시작 화면을 건너뛰고 재배 단계로 들어왔다.')
-}
-
 // 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
 // 먼저 부르면 오류 이벤트가 아무 데도 도달하지 않고 화면만 비어 보인다.
 void bootData().then(() => {
-  // 승인 데이터가 없으면 흐름을 밀지 않는다. 데이터 오류 화면이 그대로 남아야 한다.
-  if (isDevBuild && runConfig.loaded) devSkipToFarming()
+  // **흐름을 밀지 않는다.** 타이틀 화면이 생겼으므로 플레이어가 직접 시작한다.
+  // 8/5까지는 `devSkipToFarming()` 이 여기서 네 화면을 건너뛰었다 — 마지막
+  // 개발 통로였고 타이틀·이름 입력·튜토리얼이 들어오면서 지웠다 (로드맵 11-2).
   loop.start()
 })

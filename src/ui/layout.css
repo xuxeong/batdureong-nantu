@@ -1262,3 +1262,131 @@
   opacity: 0.45;
   filter: saturate(0.6);
 }
+
+/* ─────────────────────────────────────────────────
+   타이틀 · 이름 입력 · 튜토리얼 (DEC-UI-015)
+
+   런이 시작되는 세 화면이다. 결과 화면·일차 시작과 클래스를 공유하지 않는다 —
+   이유는 DEC-UI-023 과 같고, 여기 셋은 서로도 나눈다. 이름 입력만 키보드
+   입력이 있고 튜토리얼만 승인 데이터를 기다린다.
+   ───────────────────────────────────────────────── */
+
+.title[hidden],
+.name-input[hidden],
+.tutorial[hidden] {
+  display: none;
+}
+
+.title,
+.name-input,
+.tutorial {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+}
+
+.title__panel,
+.name-input__panel,
+.tutorial__panel {
+  width: var(--screen-panel-width);
+  max-width: 100%;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  text-align: center;
+}
+
+/* ── 타이틀 ────────────────────────────────────── */
+
+/* 로고 에셋(asset.logo.*)으로 바뀔 자리다. 교체는 아트 통합에서 한다 */
+.title__name {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+/* ── 이름 입력 ─────────────────────────────────── */
+
+.name-input__prompt {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+}
+
+/* 이 화면만 키보드 입력이 있다 (DEC-UI-025 의 마우스 전용 규칙 예외) */
+.name-input__field {
+  width: 320px;
+  max-width: 100%;
+  padding: var(--ui-gap-md);
+  box-sizing: border-box;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-slot);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-xl);
+  text-align: center;
+}
+
+.name-input__field:focus {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+/* ── 튜토리얼 ──────────────────────────────────── */
+
+/* 안내 문구가 승인 데이터 대기라는 사실. 임시 안내를 지어 넣지 않는다 */
+.tutorial__pending {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+  font-style: italic;
+}
+
+.tutorial__notice {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+  line-height: 1.7;
+}
+
+/* ── 세 화면의 진행 입력 ───────────────────────── */
+
+.title__start,
+.name-input__confirm,
+.tutorial__skip {
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+  cursor: pointer;
+}
+
+.title__start:hover,
+.name-input__confirm:hover,
+.tutorial__skip:hover {
+  background: var(--ui-bg-slot);
+}
+
+/* 이름이 비어 있으면 진행할 수 없다 (DEC-UI-015) */
+.name-input__confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.name-input__confirm:disabled:hover {
+  background: var(--ui-bg-panel);
+}
