@@ -13,10 +13,11 @@ import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
-import type { HostileView, PlotView } from './render/field.ts'
+import type { FieldAssetIds, HostileView, PlotView } from './render/field.ts'
 import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
 import { createFarming } from './systems/farming.ts'
@@ -37,6 +38,7 @@ import { createEndingJudge } from './systems/ending.ts'
 import type { EndingJudge } from './systems/ending.ts'
 import { buildEndingInput, requestEndingRecord } from './llm/ending.ts'
 import type {
+  ContentAssets,
   CraftingMaterial,
   Crop,
   FearBand,
@@ -121,7 +123,9 @@ if (gameRoot === null) throw new Error('#game 요소가 없다')
 
 const bus = createEventBus()
 const camera = createCamera()
-const renderer = createFieldRenderer(gameRoot, camera)
+// 논리 에셋 ID → 그림. 파일 경로를 아는 곳은 render/assets.ts 하나다 (AGENTS.md 6절)
+const assetImages = createAssetImages()
+const renderer = createFieldRenderer(gameRoot, camera, assetImages)
 
 // 배율이 정해진 뒤에 캔버스 백킹을 다시 잡는다. 순서가 반대면 렌더러가 이전
 // 배율을 보고 창보다 큰 해상도로 그린다 (8/5에 12fps 까지 떨어졌다).
@@ -132,6 +136,18 @@ createStage(stageRoot, { onScaleChanged: () => renderer.resize() })
 let farming: FarmingSystem | null = null
 let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
+
+/**
+ * 필드가 그릴 논리 에셋 ID (DEC-ART-001).
+ *
+ * 승인 데이터가 오기 전에는 비어 있고, 그동안 필드는 플레이스홀더 도형으로 그려진다.
+ * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
+ */
+let fieldAssets: FieldAssetIds = {}
+/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
+let seedAssetId: string | null = null
+/** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
+let cropAssetsById = new Map<string, ContentAssets>()
 let throwablesById = new Map<string, ThrowableWeapon>()
 let run: RunState | null = null
 let economy: Economy | null = null
@@ -591,6 +607,29 @@ async function bootData(): Promise<void> {
     // 1차 프로토타입은 승인된 맵 하나만 쓴다 (DEC-CONTENT-016)
     const map = data.maps![0]
     camera.setWorldSize(map.world_width, map.world_height)
+
+    // ── 논리 에셋 ID (DEC-ART-001) ──────────────────
+    //
+    // 붙어 있는 것만 온다. **없는 역할을 코드가 지어내지 않는다** — 그림이 없으면
+    // 렌더가 플레이스홀더로 그리고, 그 사실이 화면에 보이는 것이 맞다.
+    // 배경·경작지·씨앗은 맵에, 성장·수확 가능은 작물에 붙는다. 씨앗이 작물 쪽에
+    // 없는 것은 누락이 아니라 확정 규칙이다 (씨앗은 종류를 공개하지 않는다).
+    fieldAssets = { background: map.assets?.background, farmPlot: map.assets?.farm_plot }
+    seedAssetId = map.assets?.crop_seed ?? null
+    cropAssetsById = new Map(
+      (data.crops ?? []).map((crop) => [crop.id, crop.assets ?? {}]),
+    )
+
+    // 첫 프레임에 밭이 비어 보이지 않게 미리 받는다. 실패해도 진행을 막지 않는다 —
+    // 아트는 아직 없을 수 있고 그것 때문에 런이 안 시작되면 안 된다.
+    void assetImages.preload([
+      fieldAssets.background,
+      fieldAssets.farmPlot,
+      seedAssetId,
+      UI_ASSET.fieldFrameFront,
+      UI_ASSET.plotHighlight,
+      ...[...cropAssetsById.values()].flatMap((a) => [a.crop_growing, a.crop_ready]),
+    ])
     player.x = map.world_width / 2
     player.y = map.world_height / 2
 
@@ -1610,8 +1649,25 @@ function plotViews(): readonly PlotView[] {
       highlighted: target?.plot.plotId === plot.plotId,
       readyFlash: (readyFlashes.get(plot.plotId) ?? 0) / READY_FLASH_SECONDS,
       eatingProgress: eatingProgressOf(plot.plotId),
+      cropAssetId: cropAssetOf(plot.stage, plot.cropId),
     }
   })
+}
+
+/**
+ * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-001).
+ *
+ * **씨앗은 작물을 보지 않는다.** 씨앗 단계에서 종류를 공개하지 않는 것이 확정
+ * 규칙(`DEC-FARM-001`)이라 그림도 작물별로 두지 않고 맵에 한 장이다. 여기서 작물
+ * 그림을 쓰면 스프라이트만 보고 무엇이 심겼는지 알 수 있게 된다.
+ */
+function cropAssetOf(stage: PlotView['stage'], cropId: string | null): string | null {
+  if (stage === 'empty') return null
+  if (stage === 'seed') return seedAssetId
+  if (cropId === null) return null
+
+  const assets = cropAssetsById.get(cropId)
+  return (stage === 'growing' ? assets?.crop_growing : assets?.crop_ready) ?? null
 }
 
 /**
@@ -2600,6 +2656,7 @@ const loop = createGameLoop(
         player,
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
+        assets: fieldAssets,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({
