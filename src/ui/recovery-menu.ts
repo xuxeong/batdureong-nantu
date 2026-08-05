@@ -84,8 +84,13 @@ export function createRecoveryMenu(
   root.appendChild(panel)
   container.appendChild(root)
 
-  /** 목록이 바뀔 때만 다시 만든다. 매 프레임 새로 만들면 클릭이 발밑에서 사라진다 */
-  let builtSignature = ''
+  /**
+   * 목록이 바뀔 때만 다시 만든다. 매 프레임 새로 만들면 클릭이 발밑에서 사라진다.
+   *
+   * **초기값이 `null` 이다.** 빈 문자열로 두면 목록이 비었을 때(서명도 `''`)
+   * "안 바뀌었다" 로 읽혀 `쓸 수 있는 회복 아이템이 없다` 가 영영 안 그려진다.
+   */
+  let builtSignature: string | null = null
 
   return {
     render(view) {
@@ -131,7 +136,7 @@ export function createRecoveryMenu(
     hide() {
       root.hidden = true
       // 다음에 열릴 때 이전 목록이 한 프레임 비치지 않게 한다
-      builtSignature = ''
+      builtSignature = null
       list.replaceChildren()
     },
 
