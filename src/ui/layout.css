@@ -584,6 +584,106 @@
 }
 
 /* ─────────────────────────────────────────────────
+   부팅 화면 둘 (DEC-UI-024)
+
+   로딩과 데이터 오류. 흐름 밖이고 다른 화면보다 위에 온다 —
+   승인 데이터가 없으면 그 아래에 그릴 것이 애초에 없다.
+   ───────────────────────────────────────────────── */
+
+.loading[hidden],
+.data-error[hidden] {
+  display: none;
+}
+
+.loading,
+.data-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--screen-backdrop);
+  font-family: var(--ui-font);
+  color: var(--ui-text);
+  pointer-events: auto;
+  /*
+    **다른 화면 위에 온다.** 나머지 UI 는 겹칠 일이 없어 DOM 순서로 충분한데,
+    부팅 화면만은 예외다 — `data.error` 구독보다 먼저 만들어야 해서 DOM 상
+    앞쪽에 오고, 그러면 뒤에 만들어지는 타이틀이 위로 올라온다.
+    실제로 그렇게 나서 타이틀의 `시작` 이 오류 화면 위에서 눌렸다 (8/6).
+
+    만드는 순서로 맞추지 않고 여기서 선언한다. 순서로 맞추면 다음에 화면을
+    하나 더 추가할 때 다시 깨지고, 깨진 것이 "오류 화면이 안 뜬다" 로만 보인다.
+  */
+  z-index: 100;
+}
+
+.loading__text {
+  margin: 0;
+  font-size: var(--ui-font-lg);
+  color: var(--ui-text-dim);
+}
+
+/*
+  데이터 오류 (DEC-UI-024).
+
+  진행 입력이 없다. 여기서 할 수 있는 것은 데이터를 고쳐 다시 빌드하는 것뿐이라
+  다시 시도 버튼을 두면 눌러도 같은 실패가 난다.
+*/
+.data-error__panel {
+  width: var(--screen-panel-width);
+  max-height: 86%;
+  overflow-y: auto;
+  padding: var(--screen-pad);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-lg);
+}
+
+.data-error__title {
+  margin: 0;
+  font-size: var(--ui-font-xl);
+  color: var(--ui-danger);
+}
+
+.data-error__text {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  line-height: 1.6;
+}
+
+/* 아래 셋은 **개발 빌드에서만 DOM 에 존재한다** (data-error.ts).
+   제출 빌드에서 숨기기만 하면 개발자 도구로 읽을 수 있다 */
+.data-error__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-md);
+  border-top: 1px solid var(--ui-border);
+  padding-top: var(--ui-gap-lg);
+}
+
+.data-error__summary {
+  font-size: var(--ui-font-md);
+}
+
+.data-error__detail {
+  font-size: var(--ui-font-sm);
+  color: var(--ui-text-dim);
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.data-error__hint {
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: var(--ui-accent);
+}
+
+/* ─────────────────────────────────────────────────
    일시정지 (DEC-UI-027, DEC-UI-022, DEC-UI-026)
 
    필드 위에 겹치는 **오버레이**이며 항상 최상위다.

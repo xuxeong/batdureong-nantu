@@ -22,7 +22,7 @@ import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
 import type { FieldAssetIds, HostileView, PlotView } from './render/field.ts'
-import { runConfig, usePlaceholderStats, setPlayerBaseStats } from './data/run-config.ts'
+import { runConfig, setPlayerBaseStats } from './data/run-config.ts'
 import { loadRuntimeData, requireTables } from './data/loader.ts'
 import { createFarming } from './systems/farming.ts'
 import type { FarmingSystem } from './systems/farming.ts'
@@ -73,6 +73,10 @@ import { createNameInput } from './ui/name-input.ts'
 import type { NameInputScreen } from './ui/name-input.ts'
 import { createPause } from './ui/pause.ts'
 import type { PauseScreen } from './ui/pause.ts'
+import { createLoading } from './ui/loading.ts'
+import type { LoadingScreen } from './ui/loading.ts'
+import { createDataError } from './ui/data-error.ts'
+import type { DataErrorScreen } from './ui/data-error.ts'
 import { createTutorial } from './ui/tutorial.ts'
 import type { TutorialScreen } from './ui/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
@@ -644,10 +648,12 @@ function readFearIncrements(rows: readonly FearIncrement[] | undefined): FearInc
 /**
  * 승인 데이터를 읽어 맵·작물·플레이어 수치를 붙인다.
  *
- * 실패하면 데이터 오류로 올리고(DEC-UI-024) 이동만 확인할 수 있는 임시 값으로 남는다.
- * 임시 값은 폴백이 아니라 **명시적 선언**이며 콘솔에 경고가 남는다 (run-config.ts).
+ * **실패하면 부팅하지 않는다** (DEC-UI-024 — "필수 데이터 누락 또는 검증 실패로
+ * 부팅할 수 없으면 데이터 오류 화면을 표시한다"). 8/5까지는 여기서 임시 수치로
+ * 넘어가 이동만 되는 상태로 계속 갔는데, 그것은 승인 데이터가 아직 없던 시절의
+ * 임시 조치였고 지금은 **데이터가 깨진 것을 화면이 숨기는 셈**이 된다.
  */
-async function bootData(): Promise<void> {
+async function bootData(): Promise<boolean> {
   try {
     const data = await loadRuntimeData()
     requireTables(data, ['maps', 'crops', 'player_base_stats', 'run_schedules'])
@@ -872,20 +878,15 @@ async function bootData(): Promise<void> {
       `[데이터] 맵 ${map.display_name} · 경작지 ${plots.length}칸 · 작물 ${crops.length}종 · ` +
         `${schedule.total_days}일 런 · 재배 ${schedule.farming_duration_seconds}초`,
     )
+    return true
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     bus.emit('data.error', { summary: '승인 데이터를 읽지 못했다', detail })
 
-    // 승인 전에도 이동과 카메라는 확인할 수 있어야 한다. 밭은 뜨지 않는다.
-    usePlaceholderStats({
-      moveSpeed: 210,
-      collisionRadius: 20,
-      worldWidth: 1600,
-      worldHeight: 900,
-    })
-    camera.setWorldSize(1600, 900)
-    player.x = 800
-    player.y = 450
+    // **임시 수치로 넘어가지 않는다.** `usePlaceholderStats()` 로 이동만 되는
+    // 상태를 만들면 화면에는 게임이 도는 것처럼 보이고 밭만 비어 있어서,
+    // "데이터가 깨졌다" 가 "밭이 안 보인다" 로만 드러난다 (AGENTS.md 6절).
+    return false
   }
 }
 
@@ -2110,6 +2111,30 @@ const input = createInput(renderer.canvas, {
 
 const uiRoot = document.getElementById('ui')
 if (uiRoot === null) throw new Error('#ui 요소가 없다')
+
+/**
+ * 부팅 화면 둘 (DEC-UI-024).
+ *
+ * 흐름(`scenes/flow.ts`) 밖이다 — 흐름은 타이틀에서 시작하는데 그 타이틀조차
+ * 승인 데이터가 들어온 뒤라야 의미가 있다. 부팅은 입력으로 오가는 단계가 아니라
+ * 한 번 끝나면 돌아오지 않으므로 상태기계에 넣지 않는다.
+ */
+const loadingScreen: LoadingScreen = createLoading(uiRoot)
+const dataErrorScreen: DataErrorScreen = createDataError(uiRoot)
+
+/**
+ * 부팅 중에 올라온 데이터 오류.
+ *
+ * 화면이 원인을 그리려면 이벤트를 모아 둬야 한다 — `bus` 는 지나간 것을 다시
+ * 주지 않는다. **부팅이 끝난 뒤에는 쌓지 않는다.** 플레이 중 오류는 이 화면의
+ * 몫이 아니고(같은 확정문이 "부팅할 수 없으면" 으로 한정했다) 계속 쌓으면
+ * 메모리에 남기만 한다.
+ */
+const bootErrors: { summary: string; detail: string }[] = []
+let booting = true
+bus.on('data.error', ({ summary, detail }) => {
+  if (booting) bootErrors.push({ summary, detail })
+})
 
 const hud: Hud = createHud(uiRoot, {
   onPause: () => scenes.handleEscape(),
@@ -3352,7 +3377,24 @@ if (isDevBuild) {
 
 // 데이터 적재는 `data.error` 구독이 모두 끝난 뒤에 시작한다.
 // 먼저 부르면 오류 이벤트가 아무 데도 도달하지 않고 화면만 비어 보인다.
-void bootData().then(() => {
+//
+// 부팅 중에는 로딩 표시를 덮는다 (DEC-UI-024). 타이틀은 `INITIAL_STEP` 이라
+// 이미 떠 있는데, 승인 데이터가 없는 타이틀은 눌러도 갈 곳이 없다.
+loadingScreen.show()
+
+void bootData().then((ok) => {
+  booting = false
+  loadingScreen.hide()
+
+  if (!ok) {
+    // 부팅할 수 없으면 데이터 오류 화면이고 여기서 끝이다 (DEC-UI-024).
+    // **루프를 시작하지 않는다** — 돌 것이 없고, 돌리면 빈 필드가 오류 화면
+    // 뒤에서 계속 그려진다.
+    dataErrorScreen.render(bootErrors)
+    dataErrorScreen.show()
+    return
+  }
+
   // **흐름을 밀지 않는다.** 타이틀 화면이 생겼으므로 플레이어가 직접 시작한다.
   // 8/5까지는 `devSkipToFarming()` 이 여기서 네 화면을 건너뛰었다 — 마지막
   // 개발 통로였고 타이틀·이름 입력·튜토리얼이 들어오면서 지웠다 (로드맵 11-2).
