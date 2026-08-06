@@ -46,6 +46,9 @@
 | `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma_v2.png` | 기존 8종을 유지하고 토란 성장·수확 2종을 추가한 통합 시트. 토란은 승인 작물 데이터가 정리되기 전이라 `assets/final/`로 옮기지 않았다 | AI 생성 + 직접 합성 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-004` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | C1 작물 4종·재료 3종 아이콘 최종 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/icon/{chili,tomato,banana,glutinous_rice,cloth_sack,empty_bottle,honey}.png` | C1 최종 원본에서 분리·투명화한 작물·재료 아이콘 7종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/icon/{chili_pouch,banana_peel,tomato_bomb,rice_glue_bottle,honey_tomato,honey_banana,fruit_honey_bowl}.png` | C2 투척 무기 4종·회복 아이템 3종 아이콘 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.2절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | C3 작물 속성 4종 아이콘 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
 
