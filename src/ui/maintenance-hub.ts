@@ -11,6 +11,7 @@
 
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
+import { createIcon } from './icon.ts'
 import './layout.css'
 
 export type HubPopupId = 'sell' | 'buy' | 'craft' | 'quickslots'
@@ -22,14 +23,15 @@ export type HubPopupId = 'sell' | 'buy' | 'craft' | 'quickslots'
  * 것은 **네 분류의 구분 표시**까지다. 설명과 수치는 마우스를 올렸을 때 뜨는 안내로
  * 간다 (아트 디렉션 14.8).
  *
- * 이름은 아직 칸에 남겨 둔다. 14.8 은 "칸에는 아이콘과 수량 배지만" 이지만
- * `icon` 구간이 비어 있어(C단계) 이름까지 빼면 칸이 숫자만 남는다.
- * 아이콘이 오면 이름을 빼는 것은 CSS 한 줄이다.
+ * **아이콘이 있으면 이름을 빼고 없으면 남긴다** (14.8 — 칸에는 아이콘과 수량 배지만).
+ * 그림이 아직 없는 항목까지 이름을 빼면 그 줄이 숫자만 남아 무엇인지 알 수 없다.
  */
 export interface InventoryRow {
   id: string
   name: string
   count: number
+  /** `asset.icon.*`. 없으면 이름을 대신 보여준다 */
+  icon?: string
   /** 승인 데이터의 player_description. 작물처럼 열이 없으면 비운다 */
   description?: string
   /** 승인 데이터에서 읽은 수치. 설명 문장에서 읽지 않는다 */
@@ -198,7 +200,13 @@ export function createMaintenanceHub(
         for (const row of rows) {
           const node = el('div', 'hub__inventory-row')
           const count = el('span', 'hub__count')
-          node.append(el('span', undefined, row.name), count)
+
+          // 아이콘이 있으면 이름을 빼고 수량 배지만 남긴다 (14.8).
+          // 없으면 이름이 그 자리를 대신한다 — 빈 칸을 두지 않는다.
+          const icon = createIcon(row.icon)
+          if (icon === null) node.appendChild(el('span', undefined, row.name))
+          else node.appendChild(icon)
+          node.appendChild(count)
 
           // 이름·설명·수치는 안내로 간다 (아트 디렉션 14.8).
           // 내용은 뜰 때 계산한다 — 수량이 바뀌어도 최신값이 나온다.

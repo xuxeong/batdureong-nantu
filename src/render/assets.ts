@@ -124,7 +124,11 @@ export function hasAssetFile(assetId: string | null | undefined): boolean {
  * 그래서 TS 가 `--...-image` 커스텀 프로퍼티에 URL 만 넣고 CSS 가 그것을 참조한다.
  * 어디에 얼마나 크게 그릴지는 계속 CSS 가 정한다.
  */
-export function assetCssUrl(assetId: string): string | null {
+export function assetCssUrl(assetId: string | null | undefined): string | null {
+  // 붙어 있지 않은 역할은 `undefined` 로 온다 (`crops[].assets?.icon` 등).
+  // 부르는 쪽마다 가드를 두면 그중 하나는 빠지므로 여기서 받는다 — `hasAssetFile()`
+  // 과 같은 규칙이다.
+  if (assetId === null || assetId === undefined) return null
   const url = URL_BY_ID.get(assetId)
   return url === undefined ? null : `url("${url}")`
 }

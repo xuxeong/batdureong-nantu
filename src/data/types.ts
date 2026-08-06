@@ -289,11 +289,21 @@ export interface WorldMap extends CommonEntry {
 // 작물 (DEC-CONTENT-003, DEC-CONTENT-013)
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * 작물 속성 (DEC-CONTENT-013).
+ *
+ * `assets.icon` 은 속성 아이콘이다. 확정문이 "색상·아이콘과 이펙트 파일은 공통 에셋
+ * 연결 CSV 에서 논리 에셋 ID 로 관리한다"로 정했고, 그래서 `crop_attributes.csv` 가
+ * 8/6 에 에셋 연결 CSV 의 부모 후보에 들어갔다.
+ */
 export interface CropAttribute extends CommonEntry {
   kind: 'crop_attribute'
   player_description: string
   combat_mechanic_key: CombatMechanicKey
   ending_prompt_summary: string
+
+  /** 속성 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface Crop extends CommonEntry {
@@ -333,6 +343,9 @@ export interface CraftingMaterial extends CommonEntry {
    * (DEC-CONTENT-004). recipes.csv 가 승인되지 않았으면 속성이 없다.
    */
   used_by?: ResultKind[]
+
+  /** 재료 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface ThrowableWeapon extends CommonEntry {
@@ -356,6 +369,13 @@ export interface ThrowableWeapon extends CommonEntry {
   effect_tick_interval_seconds: number | null
   /** combat_mechanic_key 가 movement_slow 인 속성에서만 채워진다 */
   effect_move_speed_multiplier: number | null
+
+  /**
+   * 투척 무기에 붙은 논리 에셋 (`icon`·`projectile`).
+   *
+   * `projectile` 은 날아가는 동안의 그림이고 `icon` 은 보관함·퀵슬롯·목록의 그림이다.
+   */
+  assets?: ContentAssets
 }
 
 export interface RecoveryItem extends CommonEntry {
@@ -365,6 +385,9 @@ export interface RecoveryItem extends CommonEntry {
   use_duration_seconds: number
   /** 회복 사용 중 이동속도 배율 (DEC-INPUT-008) */
   move_speed_multiplier: number
+
+  /** 회복 아이템 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface RecipeInput extends LinkEntry {
@@ -410,6 +433,9 @@ export interface Wildlife extends CommonEntry {
   attack_cooldown_seconds: number
   crop_eat_duration_seconds: number
   target_mode: TargetMode
+
+  /** 야생동물에 붙은 논리 에셋 (`field_sprite`·`icon`) */
+  assets?: ContentAssets
 }
 
 export interface WildlifeSpawnEntry extends LinkEntry {
@@ -524,6 +550,15 @@ export interface Resident extends CommonEntry {
   personality_profile_id: string
   combat_profile_id: string
   support_attack_profile_id: string
+
+  /**
+   * 주민에게 붙은 논리 에셋 (`field_sprite`·`portrait`·`projectile`).
+   *
+   * `projectile` 은 **이 주민이 쏘는 투사체**다. 전투 프로필이 아니라 주민에 붙는
+   * 이유는 `resident_combat_profiles.csv` 가 에셋 연결 CSV 의 부모 후보가 아니고
+   * 쏘는 주체가 주민이기 때문이다 (만복의 엽전).
+   */
+  assets?: ContentAssets
 
   /**
    * 이 주민의 승인 사연 시나리오 ID 목록. CSV에 역참조를 저장하지 않고
@@ -700,6 +735,15 @@ export interface PlayerBaseStats extends CommonEntry {
   sickle_damage: number
   sickle_range: number
   sickle_cooldown_seconds: number
+
+  /**
+   * 플레이어에게 붙은 논리 에셋 (`field_sprite`·`portrait`).
+   *
+   * 플레이어는 콘텐츠 테이블이 따로 없어서 이 표가 유일한 자리다 —
+   * 그래서 `player_base_stats.csv` 가 에셋 연결 CSV 의 부모 후보에 들어갔다
+   * (아트 디렉션 14.7).
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────

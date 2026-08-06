@@ -30,15 +30,22 @@
 
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
 import { createTooltip } from './tooltip.ts'
+import { createIcon } from './icon.ts'
 import './layout.css'
 
 export type CraftResultKind = 'throwable_weapon' | 'recovery_item'
 
-/** 제작 1회당 입력 하나 (DEC-UI-006 — 필요 수량과 보유 수량을 함께 표시한다) */
+/**
+ * 제작 1회당 입력 하나 (DEC-UI-006 — 필요 수량과 보유 수량을 함께 표시한다).
+ *
+ * 입력 표는 아이콘·이름·필요 수량·보유 수량 넷이다 (아트 디렉션 14.9).
+ */
 export interface CraftInputView {
   name: string
   perCraft: number
   held: number
+  /** `asset.icon.*` */
+  icon?: string
 }
 
 /** 승인 데이터에서 읽은 결과물 수치. 설명 문장에서 읽지 않는다 */
@@ -55,6 +62,8 @@ export interface UnlockedRecipeView {
   base: boolean
 
   resultName: string
+  /** 결과물의 `asset.icon.*` */
+  resultIcon?: string
   resultDescription: string
   resultStats: readonly CraftStatView[]
   inputs: readonly CraftInputView[]
@@ -77,12 +86,13 @@ export interface LockedRecipeView {
   base: boolean
 
   resultName: string
+  /** 잠긴 레시피에도 결과물 아이콘은 보인다 — 이름과 같은 층위다 (DEC-UI-006) */
+  resultIcon?: string
   unlock: {
     cropName: string
     /**
-     * 대상 작물의 논리 에셋 ID (DEC-UI-006, DEC-ART-001).
-     * `content_assets.csv` 가 아직 승인되지 않아 지금은 항상 null 이고
-     * 작물 이름을 플레이스홀더로 쓴다. 실제 파일 경로를 참조하지 않는다.
+     * 대상 작물의 논리 에셋 ID (DEC-UI-006 — 해금 조건에 대상 작물의 논리 에셋).
+     * 그림이 없으면 null 이고 이름이 그 자리를 대신한다.
      */
     cropAssetId: string | null
     currentMastery: number
@@ -183,6 +193,8 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
       for (const recipe of inGroup) {
         const button = el('button', 'hub__row') as HTMLButtonElement
         button.type = 'button'
+        const rowIcon = createIcon(recipe.resultIcon)
+        if (rowIcon !== null) button.appendChild(rowIcon)
         button.append(el('div', 'hub__row-name', recipe.resultName))
         // 잠김을 목록에서도 알 수 있게 한다. 조건은 골랐을 때 상세에 나온다
         if (recipe.locked) button.appendChild(el('div', 'hub__row-sub', '잠김'))
@@ -280,8 +292,14 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
    * 요구하지 않는 것을 제작만 상세창에 두면 셋이 다른 모양이 된다.
    */
   function renderUnlocked(recipe: UnlockedRecipeView, count: number | null): void {
+    // 큰 아이콘과 이름이 상세의 머리다 (14.9 공통 구조)
+    const heading = el('div', 'hub__detail-heading')
+    const bigIcon = createIcon(recipe.resultIcon, 'icon--lg')
+    if (bigIcon !== null) heading.appendChild(bigIcon)
+    heading.appendChild(el('div', 'hub__detail-title', recipe.resultName))
+
     const nodes: HTMLElement[] = [
-      el('div', 'hub__detail-title', recipe.resultName),
+      heading,
       el('div', 'hub__popup-group-title', '제작 1회당 필요'),
     ]
     for (const input of recipe.inputs) {
@@ -294,7 +312,12 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
         lacking ? 'hub__lack' : undefined,
         `${need} / 보유 ${input.held}`,
       )
-      row.append(el('span', undefined, input.name), amount)
+      // 입력 표는 아이콘·이름·필요 수량·보유 수량이다 (14.9)
+      const label = el('span', 'hub__detail-input')
+      const inputIcon = createIcon(input.icon)
+      if (inputIcon !== null) label.appendChild(inputIcon)
+      label.appendChild(el('span', undefined, input.name))
+      row.append(label, amount)
       nodes.push(row)
     }
 
@@ -308,16 +331,25 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
    * 대상 작물과 현재·필요 숙련도, 짧은 안내만 둔다.
    */
   function renderLocked(recipe: LockedRecipeView): void {
-    const { cropName, currentMastery, requiredMastery } = recipe.unlock
+    const { cropName, cropAssetId, currentMastery, requiredMastery } = recipe.unlock
+
+    // 해금 조건은 대상 작물의 논리 에셋과 현재·필요 숙련도다 (DEC-UI-006).
+    // 그림이 없으면 이름이 그 자리를 대신한다.
+    const target = el('span', 'hub__detail-input')
+    const cropIcon = createIcon(cropAssetId)
+    if (cropIcon !== null) target.appendChild(cropIcon)
+    target.appendChild(el('span', undefined, cropName))
+
     const progress = el('div', 'hub__detail-row')
-    progress.append(
-      // 논리 에셋이 승인되면 이 자리에 아이콘이 들어간다. 지금은 이름이 플레이스홀더다
-      el('span', undefined, cropName),
-      el('span', undefined, `${currentMastery} / ${requiredMastery}`),
-    )
+    progress.append(target, el('span', undefined, `${currentMastery} / ${requiredMastery}`))
+
+    const heading = el('div', 'hub__detail-heading')
+    const bigIcon = createIcon(recipe.resultIcon, 'icon--lg')
+    if (bigIcon !== null) heading.appendChild(bigIcon)
+    heading.appendChild(el('div', 'hub__detail-title', recipe.resultName))
 
     detail.replaceChildren(
-      el('div', 'hub__detail-title', recipe.resultName),
+      heading,
       progress,
       el('p', 'hub__detail-text', `${cropName}을(를) 제작에 더 사용하면 해금된다.`),
     )

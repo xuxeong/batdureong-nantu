@@ -22,6 +22,7 @@
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
+import { createIcon } from './icon.ts'
 import './layout.css'
 
 export type ShopMode = 'sell' | 'buy'
@@ -47,6 +48,8 @@ export interface ShopItemView {
    */
   description?: string
   stats?: readonly TooltipStat[]
+  /** `asset.icon.*`. 목록 행과 상세 제목 앞에 붙는다 (14.9) */
+  icon?: string
 }
 
 export interface ShopView {
@@ -151,10 +154,14 @@ export function createShopModal(
       const button = el('button', 'hub__row') as HTMLButtonElement
       button.type = 'button'
 
-      // 거래 대상의 단가와 현재 보유 수량을 함께 표시한다 (DEC-UI-005)
+      // 거래 대상의 단가와 현재 보유 수량을 함께 표시한다 (DEC-UI-005).
+      // 목록에는 아이콘과 이름이 같이 온다 — 상세로 넘어가기 전에 고르는 자리라
+      // 보관함 칸(14.8)과 달리 이름을 뺄 수 없다.
+      const icon = createIcon(item.icon)
       const name = el('div', 'hub__row-name', item.name)
       const price = el('div', 'hub__row-sub', `단가 ${item.unitPrice}`)
       const held = el('div', 'hub__row-sub')
+      if (icon !== null) button.appendChild(icon)
       button.append(name, price, held)
 
       // 고르는 것만으로는 거래가 발생하지 않는다 (DEC-RESOURCE-013)
@@ -278,8 +285,14 @@ export function createShopModal(
                 ],
               ]
 
+        // 큰 아이콘과 이름이 상세의 머리다 (14.9 공통 구조)
+        const heading = el('div', 'hub__detail-heading')
+        const bigIcon = createIcon(selected.icon, 'icon--lg')
+        if (bigIcon !== null) heading.appendChild(bigIcon)
+        heading.appendChild(el('div', 'hub__detail-title', selected.name))
+
         detail.replaceChildren(
-          el('div', 'hub__detail-title', selected.name),
+          heading,
           ...lines.map(([label, value]) => {
             const row = el('div', 'hub__detail-row')
             row.append(el('span', 'hub__row-sub', label), el('span', undefined, value))

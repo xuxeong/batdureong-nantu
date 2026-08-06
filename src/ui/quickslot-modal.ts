@@ -17,6 +17,7 @@
 // 사용 불가로만 구분해 표시한다. 같은 무기를 다시 제작하면 그 칸이 바로 살아난다.
 
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
+import { createIcon } from './icon.ts'
 import './layout.css'
 
 /** 칸 하나. 다섯 칸을 항상 모두 표시한다 (DEC-UI-021) */
@@ -28,6 +29,8 @@ export interface QuickslotSlotView {
   weaponName: string | null
   /** 무기 보관함에서 읽은 수량. 0이면 사용 불가로 구분한다 (DEC-RESOURCE-015) */
   count: number
+  /** 편성된 무기의 `asset.icon.*`. 없으면 이름이 그 자리를 대신한다 */
+  icon?: string
 }
 
 /** 편성할 수 있는 무기 한 줄. 무기 보관함에 있는 것만 온다 */
@@ -40,6 +43,8 @@ export interface QuickslotWeaponView {
    * true 면 목록에 **표시하되 고를 수 없게** 한다 (DEC-UI-021).
    */
   assignedElsewhere: boolean
+  /** `asset.icon.*` */
+  icon?: string
 }
 
 export interface QuickslotView {
@@ -140,6 +145,8 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
     for (const weapon of view.weapons) {
       const button = el('button', 'hub__row') as HTMLButtonElement
       button.type = 'button'
+      const weaponIcon = createIcon(weapon.icon)
+      if (weaponIcon !== null) button.appendChild(weaponIcon)
       button.append(
         el('div', 'hub__row-name', weapon.name),
         el('div', 'hub__row-sub', String(weapon.count)),

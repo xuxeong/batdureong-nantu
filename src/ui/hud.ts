@@ -38,6 +38,13 @@ export interface QuickslotView {
   /** 보유 수량. 편성돼 있어도 0일 수 있다 (DEC-RESOURCE-015) */
   count: number
   selected: boolean
+  /**
+   * 편성된 무기의 `asset.icon.*`.
+   *
+   * `DEC-UI-002` 가 소진 자동 전환 때 "새로 선택된 무기의 **이름과 아이콘**"을
+   * 강조하라고 정했다. 그림이 없으면 이름만 남는다.
+   */
+  icon?: string
 }
 
 export interface HudView {
@@ -223,7 +230,12 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   container.appendChild(root)
 
   /** 퀵슬롯 칸은 개수가 고정이라 매번 만들지 않고 재사용한다 */
-  const slotNodes: { root: HTMLElement; name: HTMLElement; count: HTMLElement }[] = []
+  const slotNodes: {
+    root: HTMLElement
+    icon: HTMLElement
+    name: HTMLElement
+    count: HTMLElement
+  }[] = []
 
   function ensureSlots(n: number): void {
     while (slotNodes.length < n) {
@@ -231,11 +243,13 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       // 선택 강조는 다른 그림 한 장이다. 배경을 두 개 겹치지 않고 클래스로 가른다.
       bindAsset(slot, '--hud-slot-image', UI_ASSET.quickslot)
       bindAsset(slot, '--hud-slot-selected-image', UI_ASSET.quickslotSelected)
+      // 아이콘 자리. 그림이 붙으면 이름을 가리고 아이콘만 남는다 (DEC-UI-002)
+      const slotIcon = el('div', 'hud__slot-icon')
       const slotName = el('div', 'hud__slot-name')
       const count = el('div', 'hud__slot-count')
-      slot.append(slotName, count)
+      slot.append(slotIcon, slotName, count)
       quickslots.appendChild(slot)
-      slotNodes.push({ root: slot, name: slotName, count })
+      slotNodes.push({ root: slot, icon: slotIcon, name: slotName, count })
     }
     while (slotNodes.length > n) {
       const removed = slotNodes.pop()
@@ -276,6 +290,14 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       let anyUsable = false
       view.quickslots.forEach((slot, i) => {
         const node = slotNodes[i]
+
+        // 아이콘이 있으면 그것만, 없으면 이름을 남긴다 (DEC-UI-002).
+        // 매 프레임 요소를 새로 만들지 않고 CSS 변수만 바꾼다.
+        const iconUrl = assetCssUrl(slot.icon)
+        node.icon.hidden = iconUrl === null
+        if (iconUrl !== null) node.icon.style.setProperty('--icon-image', iconUrl)
+        node.name.hidden = iconUrl !== null
+
         node.name.textContent = slot.name ?? ''
         node.count.textContent = slot.name === null ? '' : String(slot.count)
         node.root.classList.toggle('hud__slot--selected', slot.selected)

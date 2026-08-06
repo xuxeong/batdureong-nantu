@@ -159,6 +159,20 @@ let cropsById = new Map<string, Crop>()
  * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
  */
 let fieldAssets: FieldAssetIds = {}
+/**
+ * 필드에 그리는 논리 에셋 ID (`DEC-ART-001`, 아트 디렉션 F·E 단계).
+ *
+ * **주민은 `residents.csv`, 야생동물은 `wildlife.csv`, 투척물은
+ * `throwable_weapons.csv` 의 `assets` 에서 온다.** 적대 주민이 쏘는 투사체만
+ * 쏘는 주민 쪽에 붙는다 — `resident_combat_profiles.csv` 는 에셋 연결 CSV 의
+ * 부모 후보가 아니고 쏘는 주체가 주민이라서다.
+ *
+ * 그림이 없으면 값이 `undefined` 이고 렌더가 도형으로 대신한다.
+ */
+let playerSprite: string | undefined
+let residentSprites = new Map<string, string | undefined>()
+let residentProjectiles = new Map<string, string | undefined>()
+let throwableProjectiles = new Map<string, string | undefined>()
 /** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
 let seedAssetId: string | null = null
 /** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
@@ -213,6 +227,14 @@ let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoi
  */
 let itemDescriptions = new Map<string, string>()
 let itemStats = new Map<string, TooltipStat[]>()
+
+/**
+ * 항목별 아이콘 (`asset.icon.*`).
+ *
+ * 보관함·상점·제작 목록과 입력 표·퀵슬롯 칸·편성 팝업이 **같은 사전을 본다.**
+ * 작물·재료·투척 무기·회복 아이템·작물 속성이 전부 여기 들어간다.
+ */
+let itemIcons = new Map<string, string | undefined>()
 
 /** 상점·제작 모달이 읽는 승인 데이터 */
 let shopMaterials: readonly CraftingMaterial[] = []
@@ -693,6 +715,18 @@ async function bootData(): Promise<boolean> {
       (data.crops ?? []).map((crop) => [crop.id, crop.assets ?? {}]),
     )
 
+    // 필드 위 사람·짐승·투사체 (F·E 단계)
+    playerSprite = data.player_base_stats![0].assets?.field_sprite
+    residentSprites = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.field_sprite]),
+    )
+    residentProjectiles = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.projectile]),
+    )
+    throwableProjectiles = new Map(
+      (data.throwable_weapons ?? []).map((w) => [w.id, w.assets?.projectile]),
+    )
+
     // 첫 프레임에 밭이 비어 보이지 않게 미리 받는다. 실패해도 진행을 막지 않는다 —
     // 아트는 아직 없을 수 있고 그것 때문에 런이 안 시작되면 안 된다.
     void assetImages.preload([
@@ -702,6 +736,13 @@ async function bootData(): Promise<boolean> {
       UI_ASSET.fieldFrameFront,
       UI_ASSET.plotHighlight,
       ...[...cropAssetsById.values()].flatMap((a) => [a.crop_growing, a.crop_ready]),
+      // 사람과 짐승은 첫 프레임부터 보여야 한다. 습격에서 처음 받으면 주민이
+      // 한 박자 늦게 나타난다.
+      playerSprite,
+      ...residentSprites.values(),
+      ...residentProjectiles.values(),
+      ...throwableProjectiles.values(),
+      ...(data.wildlife ?? []).map((w) => w.assets?.field_sprite),
     ])
     player.x = map.world_width / 2
     player.y = map.world_height / 2
@@ -920,6 +961,19 @@ async function bootData(): Promise<boolean> {
         (item) => [item.id, recoveryStats(item)] as [string, TooltipStat[]],
       ),
     ])
+
+    // 아이콘 사전. 다섯 테이블이 한 곳으로 모인다 (C단계 18종)
+    itemIcons = new Map(
+      [
+        ...crops,
+        ...(data.crafting_materials ?? []),
+        ...(data.throwable_weapons ?? []),
+        ...(data.recovery_items ?? []),
+        ...(data.crop_attributes ?? []),
+      ].map((entry) => [entry.id, entry.assets?.icon]),
+    )
+    // 정비 화면은 셔터가 덮은 뒤 열리므로 미리 받아 두지 않으면 첫 프레임이 빈다
+    void assetImages.preload([...itemIcons.values()])
 
     shopMaterials = data.crafting_materials ?? []
     craftRecipes = data.recipes ?? []
@@ -2011,6 +2065,7 @@ function hostileViews(): HostileView[] {
             windup: null,
             slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
             burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+            assetId: residentSprites.get(hostile.entity.residentId),
           },
         ]
 
@@ -2026,6 +2081,7 @@ function hostileViews(): HostileView[] {
         : runtime.windupSeconds / runtime.species.attack_windup_seconds,
     slowed: runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
     burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+    assetId: runtime.species.assets?.field_sprite,
   })))
 }
 
@@ -2574,6 +2630,7 @@ function shopItems(mode: ShopMode): ShopItemView[] {
       held: run?.resources.crops[crop.id] ?? 0,
       description: itemDescriptions.get(crop.id),
       stats: itemStats.get(crop.id),
+      icon: itemIcons.get(crop.id),
     }))
   }
 
@@ -2586,6 +2643,7 @@ function shopItems(mode: ShopMode): ShopItemView[] {
     held: run?.resources.materials[material.id] ?? 0,
     description: itemDescriptions.get(material.id),
     stats: itemStats.get(material.id),
+    icon: itemIcons.get(material.id),
   }))
 }
 
@@ -2676,6 +2734,7 @@ function craftRecipeViews(): CraftRecipeView[] {
         resultKind: recipe.result_kind,
         base,
         resultName: name,
+        resultIcon: itemIcons.get(recipe.result_id),
         resultDescription: description,
         resultStats: resultStatsOf(recipe),
         inputs: (recipe.inputs ?? []).map((input) => ({
@@ -2685,6 +2744,7 @@ function craftRecipeViews(): CraftRecipeView[] {
             (input.input_kind === 'crop'
               ? run?.resources.crops[input.input_id]
               : run?.resources.materials[input.input_id]) ?? 0,
+          icon: itemIcons.get(input.input_id),
         })),
         resultQuantity: recipe.result_quantity,
         maxTimes: economy.maxCraftTimes(recipe.id),
@@ -2712,10 +2772,11 @@ function craftRecipeViews(): CraftRecipeView[] {
       resultKind: recipe.result_kind,
       base,
       resultName: name,
+      resultIcon: itemIcons.get(recipe.result_id),
       unlock: {
         cropName: cropsById.get(unlock.crop_id)?.display_name ?? unlock.crop_id,
-        // content_assets.csv 가 아직 승인되지 않았다. 이름이 플레이스홀더다
-        cropAssetId: null,
+        // 해금 조건에 대상 작물의 논리 에셋을 함께 보인다 (DEC-UI-006)
+        cropAssetId: itemIcons.get(unlock.crop_id) ?? null,
         currentMastery: run?.record.cropMastery[unlock.crop_id] ?? 0,
         requiredMastery: unlock.required_mastery,
       },
@@ -2830,6 +2891,7 @@ function quickslotView(): QuickslotView {
       // 수량은 퀵슬롯이 아니라 **무기 보관함**에서 읽는다 (DEC-RESOURCE-002).
       // 편성된 채 수량이 0이 되면 키가 지워지므로 0으로 떨어진다 (DEC-RESOURCE-015).
       count: weaponId === null ? 0 : (held[weaponId] ?? 0),
+      icon: weaponId === null ? undefined : itemIcons.get(weaponId),
     })),
 
     // 편성 목록은 무기 보관함에 실제로 있는 것뿐이다. 없는 무기를 지어내지 않는다.
@@ -2838,6 +2900,7 @@ function quickslotView(): QuickslotView {
       name: throwablesById.get(id)?.display_name ?? id,
       count,
       assignedElsewhere: slots.includes(id),
+      icon: itemIcons.get(id),
     })),
   }
 }
@@ -2881,6 +2944,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
       // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-021, 아트 디렉션 14.8)
       description: itemDescriptions.get(id),
       stats: itemStats.get(id),
+      icon: itemIcons.get(id),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
@@ -2939,6 +3003,8 @@ function hudView() {
     name: id === null ? null : (throwablesById.get(id)?.display_name ?? id),
     count: id === null ? 0 : (run?.resources.throwables[id] ?? 0),
     selected: index === (run?.quickslots.selectedIndex ?? 0),
+    // 소진 자동 전환 강조가 이름과 아이콘을 함께 쓴다 (DEC-UI-002)
+    icon: id === null ? undefined : itemIcons.get(id),
   }))
 
   // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
@@ -3090,6 +3156,7 @@ const loop = createGameLoop(
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
+        playerAsset: playerSprite,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({
@@ -3103,7 +3170,12 @@ const loop = createGameLoop(
         ally:
           allySupport === null
             ? null
-            : { x: allySupport.x, y: allySupport.y, attackFlash: allySupport.attackFlash },
+            : {
+                x: allySupport.x,
+                y: allySupport.y,
+                attackFlash: allySupport.attackFlash,
+                assetId: residentSprites.get(allySupport.residentId),
+              },
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
@@ -3133,12 +3205,19 @@ const loop = createGameLoop(
             y: p.y,
             radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
             hostile: false,
+            assetId: throwableProjectiles.get(p.sourceId),
           })),
           ...(residentCombat?.projectiles ?? []).map((p) => ({
             x: p.x,
             y: p.y,
             radius: hostileProjectileRadius(p.sourceId),
             hostile: true,
+            // 적대 주민 투사체는 쏜 주민에게 붙는다. `sourceId` 는 전투 프로필이라
+            // 지금 습격 중인 주민에게서 찾는다 — 습격은 한 번에 한 명이다.
+            assetId:
+              hostile === null
+                ? undefined
+                : residentProjectiles.get(hostile.entity.residentId),
           })),
         ],
       })

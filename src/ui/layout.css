@@ -112,6 +112,12 @@
   /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
   --dialogue-width: 760px;
 
+  /* ── 항목 아이콘 (C단계, 아트 디렉션 14.8·14.9) ────
+     칸 크기는 표현이라 여기가 원본이다. 그림 자체는 정사각형이므로
+     한 변만 정하면 된다. */
+  --ui-icon-size: 28px;
+  --ui-icon-size-lg: 40px;
+
   /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
      습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
      DEC-ART-001 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
@@ -1129,6 +1135,67 @@
 /* 필요 수량이 보유를 넘는 입력. 부족한 것을 따로 안내하지 않고 표에서 보인다 */
 .hub__lack {
   color: var(--ui-danger);
+}
+
+/* ── 항목 아이콘 (C단계) ──────────────────────────
+   보관함·상점·제작·퀵슬롯이 같이 쓴다. 그림이 없으면 요소 자체가 안 만들어지므로
+   빈 칸 규칙이 필요 없다 (ui/icon.ts). */
+
+.icon {
+  width: var(--ui-icon-size);
+  height: var(--ui-icon-size);
+  flex: 0 0 auto;
+  background-image: var(--icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.icon--lg {
+  width: var(--ui-icon-size-lg);
+  height: var(--ui-icon-size-lg);
+}
+
+/* 퀵슬롯 칸을 꽉 채운다. 칸 그림 위에 얹히므로 여백을 조금 둔다 */
+.icon--slot {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+/* HUD 퀵슬롯 칸 안의 아이콘. 그림이 없으면 숨고 이름이 대신 나온다 (DEC-UI-002) */
+.hud__slot-icon {
+  width: 70%;
+  height: 70%;
+  background-image: var(--icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hud__slot-icon[hidden],
+.hud__slot-name[hidden] {
+  display: none;
+}
+
+/* 목록 행과 입력 표에서 아이콘과 이름을 붙여 놓는다 */
+.hub__detail-input {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+/* 상세의 머리 — 큰 아이콘과 이름 (14.9 공통 구조) */
+.hub__detail-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  margin-bottom: var(--ui-gap-sm);
+}
+
+.hub__detail-heading .hub__detail-title {
+  margin-bottom: 0;
 }
 
 /* ─────────────────────────────────────────────────

@@ -140,6 +140,16 @@ export interface FieldView {
 
   /** 승인 데이터에서 온 논리 에셋 ID. 없으면 전부 플레이스홀더로 그린다 */
   assets?: FieldAssetIds
+
+  /**
+   * 플레이어의 `field_sprite` (`player_base_stats.csv` 의 `assets`).
+   *
+   * 없으면 사각형으로 그린다. 좌우 반전은 아직 없다 — `DEC-ART-001` 이
+   * 프레임 애니메이션과 스프라이트 시트를 금지하면서 *"움직임은 코드가 위치·크기·
+   * 투명도로 표현한다"* 로 허용 범위를 정했고, 반전이 그 안인지가 인계 문서 3-2 의
+   * 미결이다. 정해지면 여기서 `scale(-1, 1)` 한 줄이다.
+   */
+  playerAsset?: string | null
 }
 
 /**
@@ -160,6 +170,14 @@ export interface HostileView {
   slowed: boolean
   /** 지속 피해가 걸려 있는가 */
   burning: boolean
+  /**
+   * `field_sprite` 논리 에셋 ID. 그림이 없으면 도형으로 그린다.
+   *
+   * 야생동물은 `wildlife.csv`, 적대 주민은 `residents.csv` 의 `assets` 에서 온다.
+   * **상태 표시는 그림 위에 그대로 그린다** — 체력 막대·예고·둔화·지속 피해는
+   * 확정 규칙이라(`DEC-CONTENT-007`, `DEC-CONTENT-013`) 그림이 왔다고 빠지지 않는다.
+   */
+  assetId?: string | null
 }
 
 export interface ProjectileView {
@@ -168,6 +186,13 @@ export interface ProjectileView {
   radius: number
   /** 플레이어 것인지 적 것인지 — 색을 가른다 */
   hostile: boolean
+  /**
+   * `projectile` 논리 에셋 ID. 없으면 원으로 그린다.
+   *
+   * 플레이어 투척물은 `throwable_weapons.csv`, 적대 주민이 쏜 것은 쏜 주민의
+   * `residents.csv` 에서 온다.
+   */
+  assetId?: string | null
 }
 
 /**
@@ -186,6 +211,13 @@ export interface AllyView {
   y: number
   /** 공격이 방금 일어났다는 표시가 남은 정도 1~0 */
   attackFlash: number
+  /**
+   * 지원하는 주민의 `field_sprite`. 없으면 도형으로 그린다.
+   *
+   * 그림이 와도 **밝은 테두리는 남긴다** — 적대 주민과 시각적으로 구분하라는 것이
+   * `DEC-UI-012` 확정이고, 같은 사람의 같은 그림이라 그림만으로는 안 갈린다.
+   */
+  assetId?: string | null
 }
 
 export interface FieldRenderer {
@@ -336,9 +368,12 @@ export function createFieldRenderer(
     const screen = camera.worldToScreen(view.player)
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
-    // 플레이어 — 플레이스홀더 사각형
-    ctx.fillStyle = '#e8d9a0'
-    ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
+    // 플레이어 — 그림이 있으면 그것을, 없으면 사각형을 그린다.
+    // 기준점은 스프라이트 중심이고 논리 좌표를 그 중심에 맞춘다 (DEC-ART-001).
+    if (!drawWorldSprite(view.playerAsset, view.player)) {
+      ctx.fillStyle = '#e8d9a0'
+      ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
+    }
 
     // 낫 재사용 대기 — 개발 빌드에서만 온다. 플레이어 발밑에 호를 그린다.
     // 확정 UI 규칙이 없어 HUD 에 자리를 만들지 않는다 (FieldView 주석 참고).
@@ -444,15 +479,34 @@ export function createFieldRenderer(
     const at = camera.worldToScreen(hostile)
     const radius = hostile.radius * WORLD_TO_PIXEL
 
-    // 상태 효과는 테두리 색으로 구분한다. 실제 아트가 오면 교체한다.
-    ctx.fillStyle = hostile.slowed ? '#6a7f9c' : '#9c5b4a'
-    ctx.beginPath()
-    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
-    ctx.fill()
+    // 몸통 — 그림이 있으면 그것을, 없으면 원을 그린다.
+    const drawn = drawWorldSprite(hostile.assetId, hostile)
+    if (!drawn) {
+      ctx.fillStyle = hostile.slowed ? '#6a7f9c' : '#9c5b4a'
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // 상태 효과는 **그림이 있어도 그린다** (DEC-CONTENT-013).
+    // 도형일 때는 채움색으로 둔화를 구분했는데 그림에는 그 자리가 없어서,
+    // 그림이 있으면 테두리 링으로 대신한다 — 둘 다 없으면 효과가 안 보인다.
+    if (drawn && hostile.slowed) {
+      ctx.strokeStyle = '#6a7f9c'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+      ctx.stroke()
+    }
 
     if (hostile.burning) {
       ctx.strokeStyle = '#e07b39'
       ctx.lineWidth = 3
+      // 그림일 때는 위 `arc` 가 없어 새로 경로를 잡아야 한다
+      if (drawn) {
+        ctx.beginPath()
+        ctx.arc(at.x, at.y, radius + 3, 0, Math.PI * 2)
+      }
       ctx.stroke()
     }
 
@@ -497,10 +551,12 @@ export function createFieldRenderer(
     // 표시하는 것은 같은 확정문이 금지했다.
     const flash = ally.attackFlash
 
-    ctx.fillStyle = flash > 0 ? '#9fc0cf' : '#5f7a8a'
-    ctx.beginPath()
-    ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
-    ctx.fill()
+    if (!drawWorldSprite(ally.assetId, ally)) {
+      ctx.fillStyle = flash > 0 ? '#9fc0cf' : '#5f7a8a'
+      ctx.beginPath()
+      ctx.arc(at.x, at.y, radius, 0, Math.PI * 2)
+      ctx.fill()
+    }
 
     // 지원 주민은 밝은 테두리로 구분한다 (아트 디렉션 4.3). 적대 표시에 붉은색을
     // 쓸 수 없어(4.2) 색만으로는 갈리지 않으므로 테두리가 구분의 본체다.
@@ -523,6 +579,8 @@ export function createFieldRenderer(
   }
 
   function drawProjectile(projectile: ProjectileView): void {
+    if (drawWorldSprite(projectile.assetId, projectile)) return
+
     const at = camera.worldToScreen(projectile)
     ctx.fillStyle = projectile.hostile ? '#d4622f' : '#cfe07a'
     ctx.beginPath()
