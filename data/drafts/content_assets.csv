@@ -8,3 +8,5 @@ crop.tomato,crop_growing,asset.crop_growing.tomato
 crop.tomato,crop_ready,asset.crop_ready.tomato
 crop.glutinous_rice,crop_growing,asset.crop_growing.glutinous_rice
 crop.glutinous_rice,crop_ready,asset.crop_ready.glutinous_rice
+crop.banana,crop_growing,asset.crop_growing.banana
+crop.banana,crop_ready,asset.crop_ready.banana
