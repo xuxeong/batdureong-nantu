@@ -94,7 +94,8 @@
       "asset.ui.plot_highlight",
       "asset.ui.settings_button",
       "asset.ui.close_button",
-      "asset.ui.resident_hp_gauge"
+      "asset.ui.resident_hp_gauge",
+      "asset.ui.choice_balloon"
     ]
   },
 

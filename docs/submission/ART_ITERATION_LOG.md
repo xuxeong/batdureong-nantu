@@ -4,7 +4,7 @@
 
 - **총 생성 횟수**: 최초 생성까지 포함해 이미지 생성 도구를 호출한 횟수
 - **다시 뽑은 횟수**: 최초 생성을 제외한 재생성·AI 보정 횟수
-- 중간 시도는 `assets/source/**/iterations/`에 보존한다.
+- 채택하지 않은 중간 시도는 파일을 저장소에 누적하지 않고, 이 문서에 사유만 남긴다.
 - 최종 채택 전인 파일은 상태를 `검토 대기`로 표시한다.
 - **재생성 원칙**: 결과에 문제가 보여도 임의로 다시 생성하지 않는다. 요구사항과 어긋난 근거를 먼저 사용자에게 제시하고, 명시적 승인을 받은 뒤에만 재생성한다.
 
@@ -24,6 +24,14 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | A1-v5 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | 2 | 1 | **확정** | 2026-08-05 사용자 확정. 숲 테두리는 필드 안쪽 약 5%만 침범 |
 | A2 | `assets/source/phase-a/A2_maintenance_hub_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
 | A3 | `assets/source/phase-a/A3_dialogue_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
+| C1 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | 3 | 2 | **확정** | 2026-08-06 사용자 채택. 작물 4종은 단일 수확물, 재료 3종은 기존 형태 유지 |
+| C2 | `assets/source/phase-c/sheets/c2_throwable_recovery_icon_sheet_chroma.png` | 1 | 0 | **확정** | 2026-08-06 사용자 채택. C1 작물 4종과 C2 아이콘 7종을 함께 담은 통합 시트 |
+| C3 | `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | 1 | 0 | **확정** | 2026-08-06 사용자 채택. 작물 속성 기호 4종 |
+| A4 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 1 | 0 | **확정** | GPT 크로마키 v1을 구버전으로 남기고 프로젝트 책임자가 Figma에서 실제 배치로 v2 제작 |
+| B6 | `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | 1 | 0 | **확정** | A4에서 새로 필요한 UI는 선택지 외곽 말풍선 한 장뿐. 대사창·이름판·버튼은 기존 부품 재사용 |
+| E1 | `assets/source/phase-e/e1_topview_wildlife_sprite_sheet.png` | 3 | 2 | **확정** | 까마귀를 비행 탑뷰로 고치고 야생동물 3종의 시점을 통일 |
+| E2 | `assets/source/phase-e/e2_projectile_sprite_sheet_chroma_v2.png` | 1 | 0 | **확정** | 투사체 5종 생성 뒤 배경만 순수 크로마키로 정규화 |
+| F-1 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 3 | 2 | **확정** | 5인 통합 시트 v2의 얼룩을 폐기하고 깨끗한 원본에서 선만 보강한 v3 채택 |
 
 ## 상세 이력
 
@@ -77,3 +85,53 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | 회차 | 파일 | 결과·변경 내용 |
 |---:|---|---|
 | 1 | `assets/source/phase-a/A3_dialogue_mockup.png` | 사용자의 화면별 세부 프롬프트를 받기 전에 아트 디렉션 문서만 바탕으로 최초 생성. 재생성 없음. |
+
+### C1 — 작물과 재료 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma.png` | 아트 디렉션 12.1·12.4·12.4.1절과 `a1_farm_plots_sheet_chroma_v2.png` 한 장을 기준으로 7종을 생성. 고추·토마토·토란·찹쌀·천 자루·빈 옹기병·꿀단지가 순서와 개수에 맞게 나왔다. 배경에 미세한 밝기 변화가 있고 일부 오브젝트에 매끈한 하이라이트가 보여 평면 2단 명암 규칙과 약간 어긋난다. |
+| 2 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v2.png` | 사용자가 다시 제공한 `IMG-C-002` 프롬프트를 그대로 사용. 토마토·찹쌀·고추·토란을 참조 시트의 식물 형태로 분리하고 재료 3종을 새로 그렸다. 7종의 순서와 개수는 맞지만 참조 작물의 정확한 실루엣 복제에는 차이가 있고, 배경 표본이 RGB(4~22, 241~249, 18~31)로 완전한 `#00ff00` 단색은 아니다. |
+| 3 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | v2를 유일한 편집 대상으로 사용한 `IMG-C-003` 정밀 편집. 토마토 한 알·찹쌀 이삭 하나·고추 하나·잎 없는 토란 알줄기 하나로 축소하고 하단 재료 3종과 전체 배치를 유지했다. 배경은 기존 녹색 계열을 보존했으나 표본이 RGB(8~23, 229~236, 36~47)로 완전한 `#00ff00` 단색은 아니다. **2026-08-06 사용자 최종 채택.** |
+
+### C2 — 투척 무기와 회복 아이템 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c2_throwable_recovery_icon_sheet_chroma.png` | C1 v3 한 장과 아트 디렉션 12.4.2절의 `IMG-C-004` 프롬프트를 사용했다. C1 작물 4종이 상단에 함께 나오고 C2의 투척 무기 4종·회복 아이템 3종이 아래에 배치된 총 11종 통합 시트다. 고춧가루·으깬 토란 용기는 열린 자루 형태다. **2026-08-06 사용자 판단으로 최종 채택.** |
+
+### C3 — 작물 속성 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | C1 v3 한 장과 아트 디렉션 12.4.3절의 `IMG-C-005` 프롬프트를 사용했다. 불타는 열기·곪음·미끄러움·끈적함의 네 기호가 순서와 개수에 맞게 생성됐다. **2026-08-06 사용자 최종 채택.** |
+
+### A4 — 전투 전 대화 목업과 선택지 말풍선
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v1 (구).png` | A3 최종 목업과 B1 공용 부품을 참조해 GPT Image로 UI 전용 크로마키 목업을 생성하고 배경을 순수 `#00ff00`으로 보정했다. 실제 배치와 달라 구버전으로 전환했다. |
+| 직접 편집 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 프로젝트 책임자가 Figma에서 구현 배치에 맞춰 최종 목업을 제작했다. LD 일러스트와 필드 딤은 이후 합성을 위해 생략했다. |
+| 부품 | `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | 선택지 외곽 말풍선만 별도 생성했다. 최종 파일은 `assets/final/ui/choice_balloon.png`이며, 대사창은 패널 9-slice, 이름판과 선택지 버튼은 기존 버튼 부품을 재사용한다. |
+
+### E1 — 야생동물 3종 필드 스프라이트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | 기록만 보존 | 까마귀·고라니·멧돼지 3종을 생성했으나 필드 카메라와 시점이 맞지 않았다. |
+| 2 | 기록만 보존 | 세 동물을 탑다운 계열로 통일했으나 까마귀 자세가 지상 동작처럼 보여 수정했다. |
+| 3 | `assets/source/phase-e/e1_topview_wildlife_sprite_sheet.png` | 까마귀를 비행 탑뷰로 고치고 배경을 순수 `#00ff00`으로 정규화했다. 최종 3종은 `assets/final/field_sprite/`에 분리·투명화했다. |
+
+### E2 — 투사체 5종 필드 스프라이트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-e/e2_projectile_sprite_sheet_chroma_v2.png` | C2 디자인, E1 필드 화풍, 소지금 틀의 엽전 형태를 분리 참조해 5종을 생성했다. AI 재생성 없이 녹색 배경만 순수 `#00ff00`으로 정규화한 v2를 채택했다. 최종 5종은 `assets/final/projectile/`에 분리·투명화했다. |
+
+### F-1 — 플레이어·주민 4인 필드 SD
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | 기록만 보존 | 개별 캐릭터 생성 대신 5인을 한 시트에 생성해 2등신·선 굵기·색 단계를 한 번에 맞췄다. |
+| 2 | 기록만 보존 | 필드 화풍을 맞추려 스케치 질감을 더했으나 얼룩과 종이 질감이 누적돼 폐기했다. |
+| 3 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 깨끗한 통합본에서 형태·비율·포즈·소품·배치를 유지하고 불규칙한 먹선만 보강했다. 5종 최종 PNG는 `assets/final/field_sprite/`에 분리·투명화했다. 컨셉 수정 v2·v3 대화와 파일은 채택 디자인에 반영하지 않았다. |
