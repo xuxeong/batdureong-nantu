@@ -111,6 +111,11 @@
 
   /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
   --dialogue-width: 760px;
+  /* 초상화 자리. A4 목업의 왼쪽 칸이다 */
+  --dialogue-portrait-width: 180px;
+  /* 말풍선 위에 얹는 글자색. 패널 위(--ui-text)와 밝기가 반대다 */
+  --dialogue-text-on-balloon: #2b2418;
+  --dialogue-subtext-on-balloon: rgba(43, 36, 24, 0.65);
 
   /* ── 항목 아이콘 (C단계, 아트 디렉션 14.8·14.9) ────
      칸 크기는 표현이라 여기가 원본이다. 그림 자체는 정사각형이므로
@@ -1370,6 +1375,55 @@
   pointer-events: auto;
 }
 
+/*
+  주민 · 말풍선 패널 · 플레이어가 한 줄이다 (A4).
+
+  **두 사람이 마주 보는 화면이다.** 말하는 주민이 왼쪽, 플레이어가 오른쪽이고
+  말풍선 꼬리가 오른쪽(플레이어 쪽)을 향한다. 그림이 없는 쪽은 칸이 통째로
+  숨으므로 한 사람만 있어도 줄이 무너지지 않는다.
+*/
+.dialogue__layout {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--ui-gap-md);
+  width: 100%;
+}
+
+/*
+  말하는 주민의 그림.
+
+  `portrait` 이 아직 없어 `field_sprite` 를 대신 쓴다. 세로로 긴 그림이라
+  높이를 맞추고 폭은 비율로 따라오게 둔다 — 폭을 맞추면 사람이 눌린다.
+  바닥을 패널과 맞춰 서 있는 것처럼 보이게 한다.
+*/
+.dialogue__portrait {
+  width: var(--dialogue-portrait-width);
+  height: calc(var(--dialogue-portrait-width) * 1.6);
+  flex: 0 0 auto;
+  align-self: flex-end;
+  background-image: var(--portrait-image);
+  background-size: contain;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
+.dialogue__portrait[hidden] {
+  display: none;
+}
+
+/*
+  플레이어는 오른쪽에 선다.
+
+  **좌우 반전을 걸지 않았다.** `DEC-ART-001` 이 "움직임은 코드가 위치·크기·투명도로
+  표현한다" 로 범위를 정했고 반전이 그 안인지가 인계 문서 3-2 의 미결이다.
+  손에 든 것이 있는 그림이면 뒤집었을 때 어색해지는 것도 확인해야 한다.
+  마주 보게 하려면 `transform: scaleX(-1)` 한 줄이다.
+*/
+.dialogue__portrait--player {
+  background-position: bottom center;
+}
+
 .dialogue__panel {
   width: var(--dialogue-width);
   max-width: 100%;
@@ -1442,6 +1496,22 @@
   border-width: 44px;
   border-left-width: 44px;
   background: none;
+  /*
+    **말풍선 위에서는 글자색이 뒤집힌다.** 기본 `--ui-text` 는 어두운 패널 위에
+    쓰는 크림색이라 밝은 말풍선에 얹으면 안 읽힌다 (8/6 플레이 테스트).
+    패널과 말풍선은 배경 밝기가 반대이므로 색도 반대여야 한다.
+  */
+  color: var(--dialogue-text-on-balloon);
+}
+
+.dialogue--has-art .dialogue__choice-offer {
+  /* 보조 줄도 같이 뒤집는다. 안 하면 수량 안내만 안 보인다 */
+  color: var(--dialogue-subtext-on-balloon);
+}
+
+/* 고를 수 없는 자원 협상은 흐리게만 한다 — 색을 또 바꾸지 않는다 (DEC-UI-008) */
+.dialogue--has-art .dialogue__choice:disabled {
+  color: var(--dialogue-text-on-balloon);
 }
 
 /* 그림이 붙으면 자리 순서 구분을 테두리가 아니라 글자 쪽에 준다 —

@@ -170,7 +170,10 @@ let fieldAssets: FieldAssetIds = {}
  * 그림이 없으면 값이 `undefined` 이고 렌더가 도형으로 대신한다.
  */
 let playerSprite: string | undefined
+/** 대화 화면의 플레이어 그림. `portrait` 이 없으면 `field_sprite` 로 떨어진다 */
+let playerPortrait: string | undefined
 let residentSprites = new Map<string, string | undefined>()
+let residentPortraits = new Map<string, string | undefined>()
 let residentProjectiles = new Map<string, string | undefined>()
 let throwableProjectiles = new Map<string, string | undefined>()
 /** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
@@ -717,8 +720,16 @@ async function bootData(): Promise<boolean> {
 
     // 필드 위 사람·짐승·투사체 (F·E 단계)
     playerSprite = data.player_base_stats![0].assets?.field_sprite
+    playerPortrait =
+      data.player_base_stats![0].assets?.portrait ??
+      data.player_base_stats![0].assets?.field_sprite
     residentSprites = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.field_sprite]),
+    )
+    // 대화 화면의 초상화 (A4). `portrait` 이 아직 없어 `field_sprite` 로 떨어진다 —
+    // 같은 인물의 그림이라 누가 말하는지는 전달된다. 파일이 오면 이 줄이 알아서 바뀐다.
+    residentPortraits = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.portrait ?? r.assets?.field_sprite]),
     )
     residentProjectiles = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.projectile]),
@@ -3270,6 +3281,10 @@ const loop = createGameLoop(
         dialogueModal.render({
           phase: dialogue.phase,
           residentName: dialogue.residentName,
+          portraitAsset: residentPortraits.get(dialogue.residentId),
+          // A4 는 두 사람이 마주 보는 화면이다 (아트 디렉션 12.2·14.7).
+          // 주민과 같은 이유로 `portrait` 이 없으면 `field_sprite` 로 떨어진다.
+          playerPortraitAsset: playerPortrait,
           openingText: dialogue.openingText,
           choices: dialogue.choices,
           reaction: dialogue.reaction,

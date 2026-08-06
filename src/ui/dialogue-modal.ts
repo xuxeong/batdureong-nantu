@@ -60,6 +60,24 @@ export interface DialogueChoiceView {
 export interface DialogueView {
   phase: DialoguePhase
   residentName: string
+  /**
+   * 말하는 주민의 그림 (아트 디렉션 12.2 A4 — 왼쪽 초상화 칸).
+   *
+   * **`portrait` 이 아직 없어 `field_sprite` 를 대신 쓴다.** 같은 인물의 그림이라
+   * 누가 말하는지는 전달되고, `portrait` 이 오면 부르는 쪽이 그것을 넘긴다 —
+   * 이 파일은 어느 구간인지 알 필요가 없다. 없으면 칸 자체를 만들지 않는다.
+   */
+  portraitAsset?: string | null
+
+  /**
+   * 플레이어 그림. 주민 반대쪽에 선다 (아트 디렉션 12.2 A4).
+   *
+   * **A4 는 두 사람이 마주 보는 화면이다.** `portrait` 이 5종(주민 4 + 플레이어)인
+   * 이유가 이것이고, `player_base_stats.csv` 가 에셋 연결 CSV 의 부모 후보에 들어간
+   * 이유도 같다 (아트 디렉션 14.7). 말풍선 꼬리가 오른쪽을 향하므로 플레이어가
+   * 오른쪽이다.
+   */
+  playerPortraitAsset?: string | null
   /** 주민의 시작 대사. 선택지보다 먼저 나온다 (DEC-UI-008) */
   openingText: string
   choices: readonly DialogueChoiceView[]
@@ -131,6 +149,13 @@ export function createDialogueModal(
     root.classList.add('dialogue--has-art')
   }
 
+  // 초상화 칸은 패널 **바깥** 양옆이다 (A4). 말풍선이 인물에서 나오는 것처럼
+  // 보여야 하므로 패널 안에 넣으면 꼬리 방향과 어긋난다.
+  //
+  // 말하는 주민이 왼쪽, 플레이어가 오른쪽이다 — 꼬리가 오른쪽을 향한다.
+  const portrait = el('div', 'dialogue__portrait')
+  const playerPortrait = el('div', 'dialogue__portrait dialogue__portrait--player')
+
   const panel = el('div', 'dialogue__panel')
   const speaker = el('div', 'dialogue__speaker')
   const text = el('p', 'dialogue__text')
@@ -141,7 +166,10 @@ export function createDialogueModal(
   proceed.addEventListener('click', () => handlers.proceed())
 
   panel.append(speaker, text, choiceList, proceed)
-  root.appendChild(panel)
+
+  const layout = el('div', 'dialogue__layout')
+  layout.append(portrait, panel, playerPortrait)
+  root.appendChild(layout)
   container.appendChild(root)
 
   /** 지금 그려진 내용의 서명. 같으면 다시 만들지 않는다 */
@@ -151,6 +179,8 @@ export function createDialogueModal(
     return [
       view.phase,
       view.residentName,
+      view.portraitAsset ?? '',
+      view.playerPortraitAsset ?? '',
       view.openingText,
       view.reaction ?? '',
       ...view.choices.map((c) => `${c.id}:${c.usable ? 'o' : 'x'}:${c.offer?.heldTotal ?? ''}`),
@@ -165,6 +195,15 @@ export function createDialogueModal(
       builtSignature = signature
 
       speaker.textContent = view.residentName
+
+      // 그림이 없으면 칸을 통째로 숨긴다. 빈 사각형은 "그림이 깨졌나" 로 읽힌다.
+      const portraitUrl = assetCssUrl(view.portraitAsset)
+      portrait.hidden = portraitUrl === null
+      if (portraitUrl !== null) portrait.style.setProperty('--portrait-image', portraitUrl)
+
+      const playerUrl = assetCssUrl(view.playerPortraitAsset)
+      playerPortrait.hidden = playerUrl === null
+      if (playerUrl !== null) playerPortrait.style.setProperty('--portrait-image', playerUrl)
 
       // 반응 대사가 오면 선택지를 지우고 그것만 남긴다 (DEC-UI-008).
       // 순차 출력 연출은 확정문이 "사용할 수 있으며"로 열어 둔 선택 사항이라
