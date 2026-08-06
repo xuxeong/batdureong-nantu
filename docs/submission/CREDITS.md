@@ -44,10 +44,11 @@
 | `assets/final/background/prototype_field.png` | A1 낮 필드 바닥과 바깥 숲을 합친 배경 한 장 | AI 생성 + 직접 분리·리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma.png` | A1 경작지 상태 8종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-003` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma_v2.png` | 기존 8종을 유지하고 토란 성장·수확 2종을 추가한 통합 시트. 토란은 승인 작물 데이터가 정리되기 전이라 `assets/final/`로 옮기지 않았다 | AI 생성 + 직접 합성 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-004` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | C1 작물 4종·재료 3종 아이콘 최종 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | C1 작물 4종을 단일 수확물로 축소한 최종 편집본 | AI 보정 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-C-003` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/icon/{chili,tomato,banana,glutinous_rice,cloth_sack,empty_bottle,honey}.png` | C1 최종 원본에서 분리·투명화한 작물·재료 아이콘 7종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-c/sheets/c2_throwable_recovery_icon_sheet_chroma.png` | C2 투척 무기·회복 아이템 아이콘 최종 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-C-004` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/icon/{chili_pouch,banana_peel,tomato_bomb,rice_glue_bottle,honey_tomato,honey_banana,fruit_honey_bowl}.png` | C2 투척 무기 4종·회복 아이템 3종 아이콘 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.2절 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | C3 작물 속성 4종 아이콘 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | C3 작물 속성 4종 아이콘 최종 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-C-005` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
@@ -1106,4 +1107,203 @@ Place the new badge-free item cell in available chroma-green space with generous
 Preserve all five existing components unchanged: the original item cell with quantity badge, normal list row, selected list row, money plate with coin, and lock pictogram. Preserve the selected row highlight and the flat solid #00ff00 background.
 
 Exactly six components total. Do not remove, duplicate, redesign, recolor, resize, or alter any existing component. No icons inside either item cell, no crop, tool, item, label, text, number, logo, watermark, shadow, scenery, or extra object.
+```
+
+### IMG-C-001 — C1 작물·재료 아이콘 시트
+
+`밭두렁난투_아트_디렉션.md` 12.1절 고정 블록 전문과 12.4절 아이콘 출력 블록을 그대로
+넣고, 아래 C1 전용 프롬프트를 이어 붙였다. 참조 이미지는
+`assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma_v2.png` 한 장만 사용했다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified C1 inventory icon sheet for later manual slicing
+Input images: Image 1 is the approved farm-plot sprite sheet and the sole visual authority for crop
+color, outline weight, flat shading, clean interior fills, and slight handmade asymmetry. It is a
+style reference only, not an edit target. Do not include soil plots or copy its sheet layout.
+
+C1 icon color override: the field-only saturation restriction in the fixed block does not apply to
+these inventory icons. The four crops may use saturated warm colors. The three materials must
+remain muted and earthy so the crops read as the brighter group.
+
+Draw seven inventory icons together on one asset sheet. Every icon must look as if it was drawn by
+the same artist who drew Image 1. Match its black outline thickness, flat two-step shading, muted
+palette, clean interior fills, and slight handmade asymmetry.
+
+Each icon is a single object centered inside its own implied square cell, drawn at the same visual
+scale so the seven read as one coherent set. Simplify each silhouette so it remains immediately
+legible at about 90 pixels wide. Arrange the seven as a clean balanced 4-over-3 grid with generous
+separation and no overlap. Do not draw cell boundaries.
+
+Use one perfectly flat solid #00ff00 chroma-key background, uniform edge to edge. No shadow,
+gradient, texture, vignette, floor plane, reflection, or lighting variation in the background.
+Do not use #00ff00 inside any icon.
+
+Include exactly seven icons once each, in this order, read left-to-right and top-to-bottom:
+1. a single curved red chili pepper;
+2. a single ripe red tomato with a small leafy crown;
+3. a taro corm with one or two heart-shaped leaves;
+4. a compact bundle of golden glutinous rice stalks with visible grain heads;
+5. one coarse cloth sack tied at the neck;
+6. one empty traditional Korean earthenware bottle, clearly hollow and unsealed;
+7. one small traditional Korean earthenware jar of honey, with a modest visible honey cue but no
+   text or label.
+
+Critical count and identity constraints:
+- Exactly seven separate icons total, one copy of each listed subject.
+- No duplicate variants and no missing icon.
+- The taro must read as taro, not banana, potato, radish, or turnip.
+- The rice must be a tied grain-stalk bundle, not a bowl of cooked rice.
+- The empty bottle and honey jar must have clearly different silhouettes.
+- No soil, farm plot, leaves floating separately, or extra decorative objects.
+- Keep every subject fully inside the canvas with generous padding and crisp uninterrupted edges.
+
+No wooden frames, slots, borders, plates, UI panels, cell outlines, or labels around the icons. No
+beveled 3D, glossy highlights, smooth gradients, realistic texture, hatching, scratches, cast
+shadows, contact shadows, reflections, text, letters, numbers, duplicate variants, characters,
+scenery, logo, or watermark.
+
+[하지 않을 것]
+파일을 저장하거나 폴더에 넣지 않는다. 이름을 짓지 않는다.
+배경을 투명하게 만들지 않는다. 단색 배경 그대로 둔다.
+시트를 잘라 개별 파일로 나누지 않는다.
+결과는 이미지 한 장으로만 준다.
+```
+
+### IMG-C-002 — C1 작물·재료 아이콘 시트 재생성
+
+참조 이미지는 `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma_v2.png` 한 장만 사용했다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified icon sheet for later slicing
+Input images: Image 1 is the approved farm-plot sprite sheet and the sole visual authority.
+
+Draw seven inventory icons on one asset sheet. Four of them already exist in Image 1 — lift them
+out rather than inventing new designs. Every icon must look as if it was drawn by the same artist
+who drew Image 1. Match its outline weight, flat two-step shading, palette, and slight handmade
+asymmetry exactly.
+
+Use one perfectly flat solid #00ff00 chroma-key background. Each icon is a single object centered
+in its own square, all seven at the same scale, isolated with generous space and no overlap.
+Simplify each shape so it stays legible at about 90 pixels wide.
+
+The first four are lifted from Image 1. Take the plants themselves out of their soil plots and
+draw them alone, keeping their exact shapes, colors, and proportions:
+first, the ripe red fruit from the tomato harvest-ready plot in the top row;
+second, the golden bent grain heads from the glutinous-rice harvest-ready plot in the middle row;
+third, the long curved red peppers from the chili harvest-ready plot in the middle row;
+fourth, the taro plant with its heart-shaped leaves and exposed corm from the taro harvest-ready
+plot in the bottom row.
+Do not redesign them. Do not change their color, silhouette, or leaf shape. Draw no soil, no plot
+frame, and no ground beneath them.
+
+The last three do not appear in Image 1. Draw them new, in the same hand as the four above:
+a coarse cloth sack tied at the neck; an empty earthenware bottle; a small earthenware jar of honey.
+Keep these three muted and earthy so the four crops read as the brighter group.
+
+No wooden frames, slots, borders, plates, or UI panels around the icons. No soil, plots, or ground.
+No beveled 3D, glossy highlights, smooth gradients, realistic texture, hatching, scratches, cast
+shadows, reflections, labels, text, numbers, duplicate variants, characters, scenery, logo, or
+watermark.
+```
+
+### IMG-C-003 — C1 작물 아이콘 단일 단위 축소
+
+편집 대상은 `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v2.png` 한 장이다.
+
+```text
+Use case: precise-object-edit
+Input images: Image 1 is the sole edit target — the crop and material icon sheet.
+
+Primary request: Reduce each of the four crop icons to a single unit. Keep everything else
+untouched.
+
+The four crops currently show whole plants with stems and foliage. Redraw each as one harvested
+unit alone, as it would sit in an inventory slot:
+the tomato icon becomes one single ripe tomato fruit with only its small green calyx on top;
+the chili icon becomes one single long curved red pepper with only its short stem;
+the taro icon becomes one single taro corm with no leaves and no stalk;
+the glutinous rice icon becomes one single bent grain head on a short stub of stalk.
+
+Keep each unit's exact color, outline weight, shading steps, and drawing hand from Image 1. This
+is a reduction, not a redesign — the tomato must be the same tomato, the pepper the same pepper.
+
+Enlarge each reduced unit to fill the same square area the previous whole plant occupied, so all
+seven icons stay at the same visual scale.
+
+Preserve the three material icons — the cloth sack, the earthenware bottle, and the honey jar —
+completely unchanged in shape, color, size, and position. Preserve the flat solid #00ff00
+background, the spacing between icons, and the overall sheet layout.
+
+No stems beyond what is listed, no leaves on the tomato, chili, or taro, no soil, no plot, no
+ground, no shadow, no labels, text, numbers, or watermark.
+```
+
+### IMG-C-004 — C2 투척 무기·회복 아이템 아이콘 시트
+
+참조 이미지는 확정된
+`assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` 한 장만 사용했다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified icon sheet for later slicing
+Input images: Image 1 is the crop and material icon sheet and the sole visual authority.
+
+Draw seven more inventory icons together on one asset sheet, in the same set as Image 1. Every
+icon must look as if it was drawn by the same artist. Match its black outline thickness, flat
+two-step shading, palette, icon scale, and slight handmade asymmetry.
+
+Each icon is a single object centered inside its own square, drawn at the same scale as Image 1 so
+all fourteen read as one set. Simplify each shape so it stays legible at about 90 pixels wide. Use
+one perfectly flat solid #00ff00 chroma-key background with generous separation and no overlap.
+
+Include exactly seven icons once each, in this order:
+a small cloth pouch packed with red chili powder, tied shut;
+a cloth pouch packed with mashed taro, slightly slumped and damp;
+an earthenware bottle packed with ripe tomatoes;
+an earthenware bottle of thick glutinous rice paste;
+a tomato glazed and dripping with honey;
+a taro corm glazed and dripping with honey;
+a shallow bowl holding tomato and taro tossed together in honey.
+
+The first four are thrown weapons and the last three are food. Keep the two groups distinguishable
+at a glance — weapons are containers, food is exposed and glazed.
+
+No wooden frames, slots, borders, plates, or UI panels around the icons. No beveled 3D, glossy
+highlights, smooth gradients, realistic texture, hatching, scratches, cast shadows, reflections,
+labels, text, numbers, duplicate variants, characters, scenery, logo, or watermark.
+```
+
+### IMG-C-005 — C3 작물 속성 아이콘 시트
+
+참조 이미지는 확정된
+`assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` 한 장만 사용했다.
+
+```text
+Use case: ui-mockup
+Asset type: one unified status-symbol icon sheet for later slicing
+Input images: Image 1 is the crop and material icon sheet and the sole visual authority for
+outline weight, shading, and palette.
+
+Draw four abstract status symbols together on one asset sheet. Match Image 1's black outline
+thickness, flat two-step shading, and muted palette, but these are not objects — they are simple
+pictograms standing for a condition.
+
+Each symbol is centered inside its own square at the same scale as Image 1's icons and stays
+legible at about 60 pixels wide. Use one perfectly flat solid #00ff00 chroma-key background with
+generous separation and no overlap.
+
+Include exactly four symbols once each, in this order:
+burning heat — a short sharp flame licking upward;
+festering — a spreading soft blot seeping outward at its edge;
+slipperiness — a foot skidding sideways with two short motion lines;
+stickiness — a foot caught in a thick clinging strand, straining upward.
+
+Keep all four readable as a set of the same kind. Use no more than two colors per symbol beyond
+the black outline.
+
+No wooden frames, slots, borders, plates, or UI panels. No crops, tools, weapons, or food objects.
+No beveled 3D, glossy highlights, smooth gradients, realistic texture, hatching, scratches, cast
+shadows, labels, text, numbers, duplicate variants, characters, scenery, logo, or watermark.
 ```

@@ -24,6 +24,9 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | A1-v5 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | 2 | 1 | **확정** | 2026-08-05 사용자 확정. 숲 테두리는 필드 안쪽 약 5%만 침범 |
 | A2 | `assets/source/phase-a/A2_maintenance_hub_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
 | A3 | `assets/source/phase-a/A3_dialogue_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
+| C1 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | 3 | 2 | **확정** | 2026-08-06 사용자 채택. 작물 4종은 단일 수확물, 재료 3종은 기존 형태 유지 |
+| C2 | `assets/source/phase-c/sheets/c2_throwable_recovery_icon_sheet_chroma.png` | 1 | 0 | **확정** | 2026-08-06 사용자 채택. C1 작물 4종과 C2 아이콘 7종을 함께 담은 통합 시트 |
+| C3 | `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | 1 | 0 | **확정** | 2026-08-06 사용자 채택. 작물 속성 기호 4종 |
 
 ## 상세 이력
 
@@ -77,3 +80,23 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | 회차 | 파일 | 결과·변경 내용 |
 |---:|---|---|
 | 1 | `assets/source/phase-a/A3_dialogue_mockup.png` | 사용자의 화면별 세부 프롬프트를 받기 전에 아트 디렉션 문서만 바탕으로 최초 생성. 재생성 없음. |
+
+### C1 — 작물과 재료 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma.png` | 아트 디렉션 12.1·12.4·12.4.1절과 `a1_farm_plots_sheet_chroma_v2.png` 한 장을 기준으로 7종을 생성. 고추·토마토·토란·찹쌀·천 자루·빈 옹기병·꿀단지가 순서와 개수에 맞게 나왔다. 배경에 미세한 밝기 변화가 있고 일부 오브젝트에 매끈한 하이라이트가 보여 평면 2단 명암 규칙과 약간 어긋난다. |
+| 2 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v2.png` | 사용자가 다시 제공한 `IMG-C-002` 프롬프트를 그대로 사용. 토마토·찹쌀·고추·토란을 참조 시트의 식물 형태로 분리하고 재료 3종을 새로 그렸다. 7종의 순서와 개수는 맞지만 참조 작물의 정확한 실루엣 복제에는 차이가 있고, 배경 표본이 RGB(4~22, 241~249, 18~31)로 완전한 `#00ff00` 단색은 아니다. |
+| 3 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | v2를 유일한 편집 대상으로 사용한 `IMG-C-003` 정밀 편집. 토마토 한 알·찹쌀 이삭 하나·고추 하나·잎 없는 토란 알줄기 하나로 축소하고 하단 재료 3종과 전체 배치를 유지했다. 배경은 기존 녹색 계열을 보존했으나 표본이 RGB(8~23, 229~236, 36~47)로 완전한 `#00ff00` 단색은 아니다. **2026-08-06 사용자 최종 채택.** |
+
+### C2 — 투척 무기와 회복 아이템 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c2_throwable_recovery_icon_sheet_chroma.png` | C1 v3 한 장과 아트 디렉션 12.4.2절의 `IMG-C-004` 프롬프트를 사용했다. C1 작물 4종이 상단에 함께 나오고 C2의 투척 무기 4종·회복 아이템 3종이 아래에 배치된 총 11종 통합 시트다. 고춧가루·으깬 토란 용기는 열린 자루 형태다. **2026-08-06 사용자 판단으로 최종 채택.** |
+
+### C3 — 작물 속성 아이콘 시트
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/source/phase-c/sheets/c3_crop_attribute_icon_sheet_chroma.png` | C1 v3 한 장과 아트 디렉션 12.4.3절의 `IMG-C-005` 프롬프트를 사용했다. 불타는 열기·곪음·미끄러움·끈적함의 네 기호가 순서와 개수에 맞게 생성됐다. **2026-08-06 사용자 최종 채택.** |
