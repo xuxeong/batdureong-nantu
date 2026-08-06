@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 6,
+  "schema_version": 7,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -54,6 +54,14 @@
       "csv_migration": "신규 테이블 추가이므로 기존 승인 CSV의 변환은 필요 없다",
       "affected": "data:validate/data:build는 schema/tables/ 디렉터리를 스캔해 자동으로 인식한다. 승인 행은 threat_selected·surrender_retreat_reward·resident_killed 세 cause 마다 정확히 하나여야 한다. 공포도를 변화시키지 않는 선택(공감·협상·영입)은 행을 두지 않는다. 승인 전에는 src/systems/resolution.ts 가 공포도만 누적하지 않고 관계·보상·중요 행동은 정상 처리하며 개발 빌드에 경고를 남긴다. 승인되면 엔딩 판정이 공포도 구간을 실제로 가른다",
       "decisions": ["DEC-RESIDENT-048", "DEC-RESIDENT-046", "DEC-CONTENT-011"]
+    },
+    {
+      "schema_version": { "from": 6, "to": 7 },
+      "date": "2026-08-06",
+      "change": "completion_key 고정 목록에 assign_quickslot 추가 — 여덟 번째 값. 투척 퀵슬롯 편성은 플레이어가 배워야 하는 조작인데 튜토리얼에 없었다. 게다가 투척 안내(use_throwable)가 편성을 전제로 하는데 편성은 DEC-RESOURCE-015 상 정비에서만 되고, 승인 CSV 의 정비 블록이 craft_item 에서 끝나 제작을 누르는 순간 정비가 닫혔다 — 튜토리얼이 여기서 막혔다",
+      "csv_migration": "기존 승인 행의 변환은 필요 없다. tutorial_steps.csv 에 편성 안내 한 행을 더하고 step_order 를 다시 매긴다",
+      "affected": "completion_key 는 코드가 판정하는 고정 시스템 키라 콘텐츠 담당자가 새로 만들 수 없고 추가는 스키마와 구현 변경으로 처리한다(DEC-CONTENT-025). 그래서 DEC 폐기·대체 없이 이 변경으로 끝난다. src/data/types.ts 의 TutorialCompletionKey 와 편성을 알리는 이벤트가 함께 필요하다. DEC-CONTENT-025 3번(같은 stage 연속)을 지키려면 편성 안내가 정비 블록 안에 있어야 한다",
+      "decisions": ["DEC-CONTENT-025", "DEC-UI-030", "DEC-RESOURCE-015", "DEC-INPUT-006"]
     }
   ]
 }

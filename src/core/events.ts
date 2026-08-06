@@ -188,6 +188,14 @@ export interface SystemEvents {
   'quickslot.autoSwitched': { fromIndex: number; toIndex: number | null }
   /** 모든 투척 무기가 소진됐다. 낫은 계속 쓸 수 있다 */
   'quickslot.allEmpty': Record<string, never>
+  /**
+   * 퀵슬롯 편성이 실제로 바뀌었다 (DEC-RESOURCE-014, DEC-INPUT-006).
+   *
+   * **요청(`quickslot.assign`)이 아니라 확정이다.** 중복 편성처럼 거절되는 요청이
+   * 있어서 요청만 듣고 튜토리얼을 넘기면 아무것도 안 바뀐 채로 다음 안내로 간다.
+   * 칸을 비우는 것도 편성 변경이므로 `throwableId` 가 null 일 수 있다.
+   */
+  'quickslot.assigned': { slotIndex: number; throwableId: string | null }
   'recovery.started': { itemId: string; durationSeconds: number }
   /** 공격받거나 대화로 전환되면 취소된다. 아이템은 소비하지 않는다 */
   'recovery.cancelled': { itemId: string }

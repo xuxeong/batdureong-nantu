@@ -2267,7 +2267,7 @@ function syncTutorial(): void {
  * 조작 성공을 튜토리얼에 알린다.
  *
  * 튜토리얼 밖에서는 아무 일도 하지 않는다 — 본 런에서 심었다고 진행도가 움직이면
- * 안 된다. `completion_key` 는 고정 일곱 개이고 코드가 판정한다 (DEC-CONTENT-025).
+ * 안 된다. `completion_key` 는 고정 여덟 개이고 코드가 판정한다 (DEC-CONTENT-025).
  */
 function completeTutorialStep(key: TutorialCompletionKey): void {
   if (tutorial === null || !inTutorial()) return
@@ -2800,6 +2800,10 @@ function assignQuickslot(slotIndex: number, weaponId: string | null): void {
   }
 
   slots[slotIndex] = weaponId
+
+  // 편성이 **실제로 바뀐 뒤에만** 알린다. 위 거절 경로를 지나온 호출은 여기 못 온다.
+  // 튜토리얼의 `assign_quickslot` 안내가 이 이벤트로 완료된다 (DEC-CONTENT-025).
+  bus.emit('quickslot.assigned', { slotIndex, throwableId: weaponId })
 }
 
 /** 보관함 한 분류를 표시용 줄로 바꾼다. 수량 0인 키는 애초에 없다 */
@@ -3409,6 +3413,9 @@ bus.on('farm.harvested', () => completeTutorialStep('harvest_crop'))
 bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
 bus.on('shop.bought', () => completeTutorialStep('buy_material'))
 bus.on('craft.made', () => completeTutorialStep('craft_item'))
+// 편성 확정만 듣는다. 요청(`quickslot.assign`)은 중복 편성으로 거절될 수 있어
+// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-014).
+bus.on('quickslot.assigned', () => completeTutorialStep('assign_quickslot'))
 bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
 bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
 /**

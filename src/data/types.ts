@@ -187,6 +187,7 @@ export type TutorialCompletionKey =
   | 'sell_crop'
   | 'buy_material'
   | 'craft_item'
+  | 'assign_quickslot'
 
 /**
  * DEC-ART-001 — 콘텐츠에 붙는 논리 에셋의 역할.

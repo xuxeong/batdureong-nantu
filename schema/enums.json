@@ -54,7 +54,8 @@
       "use_throwable",
       "sell_crop",
       "buy_material",
-      "craft_item"
+      "craft_item",
+      "assign_quickslot"
     ]
   },
 
