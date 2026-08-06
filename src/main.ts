@@ -116,6 +116,7 @@ import { createShopModal } from './ui/shop-modal.ts'
 import type { ShopItemView, ShopMode } from './ui/shop-modal.ts'
 import { createCraftModal } from './ui/craft-modal.ts'
 import type { CraftRecipeView, CraftStatView } from './ui/craft-modal.ts'
+import type { TooltipStat } from './ui/tooltip.ts'
 import { createQuickslotModal } from './ui/quickslot-modal.ts'
 import type { QuickslotView } from './ui/quickslot-modal.ts'
 import { createDialogueModal } from './ui/dialogue-modal.ts'
@@ -200,6 +201,18 @@ let dialogue: {
 
 /** 선택지 문장을 찾기 위한 사전. 판정은 encounter.ts 가 하고 문장은 여기서 읽는다 */
 let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoice>()
+
+/**
+ * 항목별 설명과 수치 (`DEC-UI-021`, 아트 디렉션 14.8·14.9).
+ *
+ * 보관함·상점·제작 목록이 **같은 사전을 본다.** 세 화면이 각자 만들면 같은 아이템이
+ * 화면마다 다른 수치를 보여줄 수 있다. 값은 전부 승인 데이터에서 오고 설명 문장에서
+ * 읽지 않는다.
+ *
+ * 작물에는 `player_description` 열이 없어 설명이 비고 수치만 들어간다.
+ */
+let itemDescriptions = new Map<string, string>()
+let itemStats = new Map<string, TooltipStat[]>()
 
 /** 상점·제작 모달이 읽는 승인 데이터 */
 let shopMaterials: readonly CraftingMaterial[] = []
@@ -869,6 +882,44 @@ async function bootData(): Promise<boolean> {
     // 상점·제작 모달이 읽는 것. economy 와 **같은 배열**을 본다 —
     // 목록과 판정이 서로 다른 데이터를 보면 화면에는 있는데 못 만드는 레시피가 생긴다.
     dialogueChoicesById = new Map((data.dialogue_choices ?? []).map((c) => [c.id, c]))
+
+    // 항목별 설명·수치 사전. 네 분류를 한 곳에 모은다 (아트 디렉션 14.8)
+    itemDescriptions = new Map(
+      [
+        ...(data.crafting_materials ?? []),
+        ...(data.throwable_weapons ?? []),
+        ...(data.recovery_items ?? []),
+      ].map((entry) => [entry.id, entry.player_description]),
+    )
+    itemStats = new Map([
+      // 작물은 player_description 열이 없다. 수치만 넣는다
+      ...crops.map(
+        (crop) =>
+          [
+            crop.id,
+            [
+              { label: '판매가', value: String(crop.sell_price) },
+              { label: '수확량', value: String(crop.base_yield) },
+              ...(crop.is_raw_edible && crop.raw_heal_amount !== null
+                ? [{ label: '생식 회복', value: String(crop.raw_heal_amount) }]
+                : []),
+            ],
+          ] as [string, TooltipStat[]],
+      ),
+      ...(data.crafting_materials ?? []).map(
+        (material) =>
+          [material.id, [{ label: '구매가', value: String(material.buy_price) }]] as [
+            string,
+            TooltipStat[],
+          ],
+      ),
+      ...(data.throwable_weapons ?? []).map(
+        (weapon) => [weapon.id, throwableStats(weapon)] as [string, TooltipStat[]],
+      ),
+      ...(data.recovery_items ?? []).map(
+        (item) => [item.id, recoveryStats(item)] as [string, TooltipStat[]],
+      ),
+    ])
 
     shopMaterials = data.crafting_materials ?? []
     craftRecipes = data.recipes ?? []
@@ -2521,6 +2572,8 @@ function shopItems(mode: ShopMode): ShopItemView[] {
       name: crop.display_name,
       unitPrice: crop.sell_price,
       held: run?.resources.crops[crop.id] ?? 0,
+      description: itemDescriptions.get(crop.id),
+      stats: itemStats.get(crop.id),
     }))
   }
 
@@ -2531,52 +2584,64 @@ function shopItems(mode: ShopMode): ShopItemView[] {
     name: material.display_name,
     unitPrice: material.buy_price,
     held: run?.resources.materials[material.id] ?? 0,
+    description: itemDescriptions.get(material.id),
+    stats: itemStats.get(material.id),
   }))
 }
 
 /**
- * 제작 결과물의 실제 수치 (DEC-UI-006).
+ * 투척 무기의 수치 (DEC-UI-006).
  *
  * **설명 문장에서 읽지 않고 승인 데이터에서 읽는다.** `player_description` 은
  * 따로 표시하며 이 목록과 섞지 않는다.
+ *
+ * 보관함 안내·상점 안내·제작 안내가 **이 함수 하나를 같이 쓴다.** 화면마다 따로
+ * 만들면 같은 무기가 자리에 따라 다른 수치를 보여줄 수 있다.
  */
-function resultStatsOf(recipe: Recipe): CraftStatView[] {
-  if (recipe.result_kind === 'throwable_weapon') {
-    const weapon = throwablesById.get(recipe.result_id)
-    if (weapon === undefined) return []
-
-    const stats: CraftStatView[] = [
-      { label: '피해', value: String(weapon.base_damage) },
-      { label: '사거리', value: String(weapon.max_range) },
-      { label: '재사용 대기', value: `${weapon.cooldown_seconds}초` },
-    ]
-    // 범위 무기만 반경이 있다 (DEC-CONTENT-005)
-    if (weapon.impact_mode === 'area' && weapon.area_radius !== null) {
-      stats.push({ label: '범위 반경', value: String(weapon.area_radius) })
-    }
-    // 전투 효과는 작물 속성이 정한다. 둘 중 하나만 채워진다 (DEC-CONTENT-013)
-    if (weapon.effect_damage_per_tick !== null) {
-      stats.push({
-        label: '지속 피해',
-        value: `${weapon.effect_damage_per_tick} · ${weapon.effect_duration_seconds}초`,
-      })
-    }
-    if (weapon.effect_move_speed_multiplier !== null) {
-      stats.push({
-        label: '이동 둔화',
-        value: `×${weapon.effect_move_speed_multiplier} · ${weapon.effect_duration_seconds}초`,
-      })
-    }
-    return stats
+function throwableStats(weapon: ThrowableWeapon): TooltipStat[] {
+  const stats: TooltipStat[] = [
+    { label: '피해', value: String(weapon.base_damage) },
+    { label: '사거리', value: String(weapon.max_range) },
+    { label: '재사용 대기', value: `${weapon.cooldown_seconds}초` },
+  ]
+  // 범위 무기만 반경이 있다 (DEC-CONTENT-005)
+  if (weapon.impact_mode === 'area' && weapon.area_radius !== null) {
+    stats.push({ label: '범위 반경', value: String(weapon.area_radius) })
   }
+  // 전투 효과는 작물 속성이 정한다. 둘 중 하나만 채워진다 (DEC-CONTENT-013)
+  if (weapon.effect_damage_per_tick !== null) {
+    stats.push({
+      label: '지속 피해',
+      value: `${weapon.effect_damage_per_tick} · ${weapon.effect_duration_seconds}초`,
+    })
+  }
+  if (weapon.effect_move_speed_multiplier !== null) {
+    stats.push({
+      label: '이동 둔화',
+      value: `×${weapon.effect_move_speed_multiplier} · ${weapon.effect_duration_seconds}초`,
+    })
+  }
+  return stats
+}
 
-  const item = recoveryItemsById.get(recipe.result_id)
-  if (item === undefined) return []
+/** 회복 아이템의 수치 (DEC-UI-006). 위와 같은 이유로 한 곳에 둔다 */
+function recoveryStats(item: RecoveryItem): TooltipStat[] {
   return [
     { label: '회복량', value: String(item.heal_amount) },
     { label: '사용 시간', value: `${item.use_duration_seconds}초` },
     { label: '사용 중 이동속도', value: `×${item.move_speed_multiplier}` },
   ]
+}
+
+/** 제작 결과물의 수치. 분류에 따라 위 둘 중 하나를 고른다 (DEC-CRAFT-005) */
+function resultStatsOf(recipe: Recipe): CraftStatView[] {
+  if (recipe.result_kind === 'throwable_weapon') {
+    const weapon = throwablesById.get(recipe.result_id)
+    return weapon === undefined ? [] : throwableStats(weapon)
+  }
+
+  const item = recoveryItemsById.get(recipe.result_id)
+  return item === undefined ? [] : recoveryStats(item)
 }
 
 /** 결과물의 표시 이름과 설명. 분류에 따라 다른 테이블에서 온다 (DEC-CRAFT-005) */
@@ -2809,7 +2874,14 @@ function assignQuickslot(slotIndex: number, weaponId: string | null): void {
 /** 보관함 한 분류를 표시용 줄로 바꾼다. 수량 0인 키는 애초에 없다 */
 function rowsOf(store: ItemStore): InventoryRow[] {
   return Object.entries(store)
-    .map(([id, count]) => ({ id, name: displayNames.get(id) ?? id, count }))
+    .map(([id, count]) => ({
+      id,
+      name: displayNames.get(id) ?? id,
+      count,
+      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-021, 아트 디렉션 14.8)
+      description: itemDescriptions.get(id),
+      stats: itemStats.get(id),
+    }))
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
 

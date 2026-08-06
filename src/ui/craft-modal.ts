@@ -12,12 +12,24 @@
 // **결과물 수치는 설명 문장이 아니라 승인 데이터에서 읽는다** (DEC-UI-006).
 // `player_description` 은 설명이고 `resultStats` 는 데이터에서 온 수치다. 둘을 섞지 않는다.
 //
+// ── 설명과 수치는 상세창이 아니라 목록 안내에 있다 (14.9) ──
+//
+// `DEC-UI-005` 는 판매·구매에 보유 수량·단가·총액·거래 후 남는 값만 요구하고
+// 설명과 수치는 요구하지 않는다. `DEC-UI-006` 만 제작에 그것을 요구해서 상세창이
+// 혼자 다른 모양이 됐다. 셋을 맞추려고 설명과 수치를 **왼쪽 목록에 마우스를
+// 올렸을 때 뜨는 안내**로 옮겼다. 상세창에는 입력 표만 남는다.
+//
+// 잠긴 레시피의 안내에는 수치가 가지 않는다 — 뷰 타입에 필드가 아예 없다.
+// 안내를 만드는 함수를 하나로 합치면 잠긴 것에도 다 보여주기 쉬운 지점이라
+// 타입으로 갈라 둔 것이 그대로 방벽이 된다 (DEC-UI-006).
+//
 // **부족한 입력을 따로 안내하지 않는다** (DEC-UI-006). 필요 수량과 보유 수량이 이미
 // 표에 나란히 있으므로 실행 버튼만 끈다.
 //
 // 목록 정렬 규칙도 확정문이 정해 두었다 — 아래 `sortRecipes()` 가 그 순서 그대로다.
 
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
+import { createTooltip } from './tooltip.ts'
 import './layout.css'
 
 export type CraftResultKind = 'throwable_weapon' | 'recovery_item'
@@ -141,7 +153,10 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   const detail = el('div', 'hub__detail')
   body.append(list, detail)
 
+  const tooltip = createTooltip(root)
   const rowButtons = new Map<string, HTMLButtonElement>()
+  /** 안내가 뜰 때 최신 뷰에서 다시 읽는다 — 보유 수량과 해금 진행도가 바뀐다 */
+  let latest: readonly CraftRecipeView[] = []
   let builtSignature = ''
 
   /**
@@ -176,6 +191,26 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
           selectedId = recipe.id
           notice = null
           times.value = '1'
+        })
+
+        // 설명과 수치는 여기로 온다 (14.9). 잠긴 레시피는 이름과 해금 조건뿐이다 —
+        // 그 뷰 타입에 수치 필드가 없어서 실수로도 넣을 수 없다 (DEC-UI-006).
+        tooltip.bind(button, () => {
+          const now = latest.find((r) => r.id === recipe.id)
+          if (now === undefined) return null
+
+          if (now.locked) {
+            const { cropName, currentMastery, requiredMastery } = now.unlock
+            return {
+              name: now.resultName,
+              note: `${cropName} 숙련도 ${currentMastery} / ${requiredMastery}`,
+            }
+          }
+          return {
+            name: now.resultName,
+            description: now.resultDescription,
+            stats: now.resultStats,
+          }
         })
 
         wrap.appendChild(button)
@@ -238,20 +273,17 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     }
   })
 
-  /** 해금된 레시피의 상세 — 결과물·수치·입력표 (DEC-UI-006) */
+  /**
+   * 해금된 레시피의 상세 — 이름과 **입력 표만** (DEC-UI-006, 14.9).
+   *
+   * 설명과 결과물 수치는 여기 없다. 왼쪽 목록의 안내로 갔다 — 판매·구매 상세창이
+   * 요구하지 않는 것을 제작만 상세창에 두면 셋이 다른 모양이 된다.
+   */
   function renderUnlocked(recipe: UnlockedRecipeView, count: number | null): void {
     const nodes: HTMLElement[] = [
       el('div', 'hub__detail-title', recipe.resultName),
-      el('p', 'hub__detail-text', recipe.resultDescription),
+      el('div', 'hub__popup-group-title', '제작 1회당 필요'),
     ]
-
-    for (const stat of recipe.resultStats) {
-      const row = el('div', 'hub__detail-row')
-      row.append(el('span', 'hub__row-sub', stat.label), el('span', undefined, stat.value))
-      nodes.push(row)
-    }
-
-    nodes.push(el('div', 'hub__popup-group-title', '제작 1회당 필요'))
     for (const input of recipe.inputs) {
       const row = el('div', 'hub__detail-row')
       const need = count === null ? input.perCraft : input.perCraft * count
@@ -295,6 +327,7 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     root,
 
     render(view) {
+      latest = view.recipes
       buildList(view.recipes)
 
       const selected = view.recipes.find((r) => r.id === selectedId) ?? null

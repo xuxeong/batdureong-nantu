@@ -9,15 +9,31 @@
 //
 // 이 파일은 화면만 만든다. 판정과 자원 변경은 economy.ts 가 한다.
 
+import { createTooltip } from './tooltip.ts'
+import type { TooltipStat } from './tooltip.ts'
 import './layout.css'
 
 export type HubPopupId = 'sell' | 'buy' | 'craft' | 'quickslots'
 
-/** 보관함 한 줄 */
+/**
+ * 보관함 한 줄.
+ *
+ * `DEC-UI-021` 이 항목마다 이름·수량과 함께 설명·수치를 요구하는데, 상시로 요구하는
+ * 것은 **네 분류의 구분 표시**까지다. 설명과 수치는 마우스를 올렸을 때 뜨는 안내로
+ * 간다 (아트 디렉션 14.8).
+ *
+ * 이름은 아직 칸에 남겨 둔다. 14.8 은 "칸에는 아이콘과 수량 배지만" 이지만
+ * `icon` 구간이 비어 있어(C단계) 이름까지 빼면 칸이 숫자만 남는다.
+ * 아이콘이 오면 이름을 빼는 것은 CSS 한 줄이다.
+ */
 export interface InventoryRow {
   id: string
   name: string
   count: number
+  /** 승인 데이터의 player_description. 작물처럼 열이 없으면 비운다 */
+  description?: string
+  /** 승인 데이터에서 읽은 수치. 설명 문장에서 읽지 않는다 */
+  stats?: readonly TooltipStat[]
 }
 
 /** 보관함 네 분류 (DEC-UI-021) */
@@ -140,19 +156,75 @@ export function createMaintenanceHub(
   root.append(inventory, main, finish, popupLayer)
   container.appendChild(root)
 
-  function renderGroup(key: keyof InventoryView, rows: readonly InventoryRow[]): void {
-    const list = groupNodes.get(key)
-    if (list === undefined) return
-    list.replaceChildren()
+  const tooltip = createTooltip(root)
 
-    if (rows.length === 0) {
-      list.appendChild(el('div', 'hub__inventory-row hub__inventory-row--empty', '없음'))
-      return
+  /**
+   * 지금 화면에 있는 줄. 안내가 뜰 때 **여기서 다시 읽는다** — 붙일 때 값으로
+   * 굳히면 사고 판 뒤에도 옛 수량이 나온다.
+   */
+  const latestRows = new Map<string, InventoryRow>()
+  const countNodes = new Map<string, HTMLElement>()
+  /** 목록 구성이 바뀔 때만 다시 만든다 */
+  let builtSignature = ''
+
+  /**
+   * 보관함을 그린다.
+   *
+   * **줄을 매 프레임 다시 만들지 않는다.** 커서 아래에서 노드가 갈리면
+   * `mouseleave` 가 오지 않아 안내가 떠 있는 채로 남고, 수량이 바뀔 때마다
+   * 안내가 깜빡인다. 구성이 바뀔 때만 새로 만들고 평소에는 수량만 고친다.
+   */
+  function renderInventory(inventory: InventoryView): void {
+    const signature = GROUPS.map(
+      (g) => `${g.key}:${inventory[g.key].map((r) => r.id).join(',')}`,
+    ).join('|')
+
+    if (signature !== builtSignature) {
+      builtSignature = signature
+      countNodes.clear()
+      tooltip.hide()
+
+      for (const group of GROUPS) {
+        const list = groupNodes.get(group.key)
+        if (list === undefined) continue
+        list.replaceChildren()
+
+        const rows = inventory[group.key]
+        if (rows.length === 0) {
+          list.appendChild(el('div', 'hub__inventory-row hub__inventory-row--empty', '없음'))
+          continue
+        }
+
+        for (const row of rows) {
+          const node = el('div', 'hub__inventory-row')
+          const count = el('span', 'hub__count')
+          node.append(el('span', undefined, row.name), count)
+
+          // 이름·설명·수치는 안내로 간다 (아트 디렉션 14.8).
+          // 내용은 뜰 때 계산한다 — 수량이 바뀌어도 최신값이 나온다.
+          tooltip.bind(node, () => {
+            const latest = latestRows.get(row.id)
+            if (latest === undefined) return null
+            return {
+              name: latest.name,
+              description: latest.description,
+              stats: [{ label: '보유', value: String(latest.count) }, ...(latest.stats ?? [])],
+            }
+          })
+
+          list.appendChild(node)
+          countNodes.set(row.id, count)
+        }
+      }
     }
-    for (const row of rows) {
-      const node = el('div', 'hub__inventory-row')
-      node.append(el('span', undefined, row.name), el('span', 'hub__count', String(row.count)))
-      list.appendChild(node)
+
+    latestRows.clear()
+    for (const group of GROUPS) {
+      for (const row of inventory[group.key]) {
+        latestRows.set(row.id, row)
+        const count = countNodes.get(row.id)
+        if (count !== undefined) count.textContent = String(row.count)
+      }
     }
   }
 
@@ -164,10 +236,12 @@ export function createMaintenanceHub(
       moneyValue.textContent = String(view.money)
       finish.textContent = view.finishLabel
 
-      for (const group of GROUPS) renderGroup(group.key, view.inventory[group.key])
+      renderInventory(view.inventory)
     },
 
     setPopup(node) {
+      // 팝업이 열리고 닫힐 때 보관함 위에 떠 있던 안내를 지운다
+      tooltip.hide()
       popupLayer.replaceChildren()
       if (node === null) {
         popupLayer.hidden = true
@@ -183,6 +257,7 @@ export function createMaintenanceHub(
 
     hide() {
       root.hidden = true
+      tooltip.hide()
       popupLayer.replaceChildren()
       popupLayer.hidden = true
     },
