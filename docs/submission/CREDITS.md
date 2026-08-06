@@ -52,6 +52,16 @@
 | `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A4_precombat_dialogue_mockup_v1 (구).png` | A4 전투 전 대화 UI의 폐기된 크로마키 배치 원본 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-A-013` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 실제 구현 배치에 맞춘 A4 최종 목업. LD 일러스트와 필드 딤은 합성 전이라 생략 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | Figma | A4 v1과 기존 B단계 UI 부품을 참고해 직접 제작 | 해당 없음 (내부 제작) |
+| `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | A4 선택지 말풍선 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-014` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/choice_balloon.png` | A4 선택지 외곽 말풍선. 대사창·이름판·버튼은 기존 공용 UI를 재사용 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-B-014` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-e/e1_topview_wildlife_sprite_sheet.png` | 까마귀·고라니·멧돼지 필드 스프라이트 원본 시트 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-E-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/field_sprite/{crow,water_deer,boar}.png` | E1 원본에서 분리·투명화한 야생동물 3종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-E-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-e/e2_projectile_sprite_sheet_chroma_v2.png` | 플레이어 투척물 4종과 만복의 엽전 투사체 원본 시트 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-E-002` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/projectile/{chili_pouch,banana_peel,tomato_bomb,rice_glue_bottle,manbok_coin}.png` | E2 원본에서 분리·투명화한 필드 투사체 5종. `banana_peel`은 기존 내부 ID를 유지한 으깬 토란 주머니 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-E-002` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 플레이어·영순·만복·이장·금례 5인의 최종 필드 SD 원본 시트 | AI 생성·수정 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-F-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/field_sprite/{player,yeongsun,manbok,village_head,geumrye}.png` | F-1 최종 원본에서 분리·투명화한 필드 SD 5종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-F-001` 전문 참조 | 해당 없음 (AI 생성) |
 
 ## 사운드 · BGM
 
@@ -1307,3 +1317,95 @@ No wooden frames, slots, borders, plates, or UI panels. No crops, tools, weapons
 No beveled 3D, glossy highlights, smooth gradients, realistic texture, hatching, scratches, cast
 shadows, labels, text, numbers, duplicate variants, characters, scenery, logo, or watermark.
 ```
+
+### IMG-A-013 — A4 전투 전 대화 UI 목업
+
+참조 역할을 분리해 `A3_maintenance_hub_mockup_v7.png`에서는 전체 UI 화풍과 재질만,
+`b1_common_ui_frame_components_sheet_chroma.png`에서는 패널·한지·버튼 구조만 가져왔다.
+
+```text
+Create one 1920x1080 chroma-key UI-only mockup for the pre-combat dialogue screen.
+Use the first reference only for the dark aged wood, clean hanji, outline weight, and flat muted
+shading. Use the second reference only for panel joinery, paper inset, and solid-wood button
+construction. Do not copy the maintenance-screen layout.
+
+Place one wide lower dialogue panel, one central choice balloon with its tail pointing toward the
+player side, and exactly three horizontal choice buttons inside it; the middle choice is taller
+and visually disabled. Leave every surface blank. Use a flat pure #00ff00 background. No field,
+characters, portraits, text, numbers, icons, close button, timer, gauge, warning, logo, or shadow.
+```
+
+생성기의 녹색 배경을 순수 `#00ff00`으로 보정했다. 이후 프로젝트 책임자가 Figma에서 실제
+배치에 맞춰 v2를 직접 만들었고, 이 v1은 `(구)` 원본으로만 남겼다.
+
+### IMG-B-014 — A4 선택지 말풍선
+
+```text
+Create exactly one empty choice-balloon frame for the A4 dialogue UI. Preserve the A4 mockup's
+dark aged-wood border, clean pale hanji interior, irregular hand-drawn outline, and player-facing
+tail. Remove all buttons, text, icons, labels, and internal marks. Keep generous clean interior
+space and one continuous silhouette on a flat pure #00ff00 background. No cast shadow, scenery,
+characters, extra frames, duplicate variants, glossy gradients, logo, watermark, or signature.
+```
+
+대사창은 `panel_border`·`panel_texture`, 이름판과 선택지 버튼은 기존 `button_normal`·
+`button_disabled`를 재사용하므로 새로 채택한 A4 고정 UI 그림은 말풍선 한 장뿐이다.
+
+### IMG-E-001 — 탑다운 야생동물 필드 스프라이트 시트
+
+```text
+Create one unified sprite sheet with exactly three isolated wildlife field assets: one flying
+crow viewed from above, one water deer viewed from a high top-down three-quarter angle, and one
+wild boar viewed from the same field camera. Use compact readable silhouettes, thick irregular
+dark outlines, muted low-saturation colors, two or three broad flat shading planes, and minimal
+internal detail. Keep the three animals separate and fully inside a flat pure #00ff00 background.
+No ground, cast shadows, scenery, plants, characters, labels, motion streaks, duplicate animals,
+photorealism, 3D rendering, glossy gradients, logo, watermark, or signature.
+```
+
+초기 까마귀의 지상 자세를 비행 탑뷰로 수정한 채택본이며, 배경을 순수 `#00ff00`으로
+정규화했다.
+
+### IMG-E-002 — 투사체 5종 필드 스프라이트 시트
+
+참조 역할은 C2 시트=앞의 네 무기 디자인, E1=필드 에셋 화풍, `money_plate.png`=엽전 형태로
+분리했다.
+
+```text
+Create one unified projectile sprite sheet containing exactly five isolated intact projectiles:
+chili powder pouch, slippery mashed-taro pouch, tomato bomb bottle, rice-glue bottle, and one
+Manbok yeopjeon coin. Arrange them in a clean 3-over-2 grid on flat pure #00ff00. Preserve the C2
+container types, materials, closures, and identifying contents for the first four; match E1's
+thick clean outline, simplified silhouette, muted palette, flat shading, and small-scale
+readability; use the UI coin only for the fifth object's round shape and clear square hole.
+
+Every object appears exactly once, intact and slightly angled in flight. No recovery foods,
+banana or banana peel, extra coins, UI frames, characters, impact effects, powder clouds,
+splashes, flames, speed lines, cast shadows, text, logo, watermark, or signature.
+```
+
+생성기의 녹색 배경을 순수 `#00ff00`으로 정규화한 v2가 최종 원본이다.
+
+### IMG-F-001 — 5인 필드 SD 통합 시트
+
+디자인 기준은 채택된 `concept_lineup.png`다. 이후의 컨셉 수정 대화와
+`concept_lineup_v2.png`·`concept_lineup_v3.png`는 최종 디자인에 반영하지 않았다.
+
+```text
+Create one unified field-character sprite sheet containing exactly five full-body characters:
+player, Yeongsun, Manbok, village head, and Geumrye, in that order. Preserve each identity,
+Joseon-era clothing, body shape, and key prop from the approved concept lineup.
+
+Use exact two-head-tall proportions: head and body below it are the same height. Keep dot eyes,
+minimal facial features, short limbs, separated silhouettes, simplified muted colors, and only
+one restrained shading step. Preserve only the major props: the player's sickle in the
+character's left hand, Yeongsun's small throwing stone, Manbok's backpack and coins, the village
+head's gat and long robe, and Geumrye's bent posture and walking stick.
+
+Use dry irregular ink/pencil outlines with slightly uneven line weight, but keep color fills
+clean. No paper grain, mottled stains, repeated sketch lines, dense texture, glossy gradients,
+cast shadows, labels, or extra people. Equal baseline and spacing, flat pure #00ff00 background.
+```
+
+v2의 얼룩·종이 질감이 누적된 결과는 폐기했다. v3는 깨끗한 통합본에서 형태·비율·포즈·
+소품·배치를 유지하고 선의 불규칙함만 보강한 최종 채택 원본이다.
