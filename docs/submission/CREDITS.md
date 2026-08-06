@@ -25,7 +25,8 @@
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v3.png` | A3 조선시대 창호 배경·제작 상세 UI 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-009` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v4.png` | A3 소지품 정렬·소지금 HUD·상세 여백 보정본 | AI 보정 2회 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-010` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v5.png` | A3 독립 소지금 HUD·소지품 제목판·기능 버튼 선택 표시 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-011` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/source/phase-a/A3_maintenance_hub_mockup_v6.png` | A3 소지금 HUD 축소·기능 버튼 선택선 정돈본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-012` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v6(구).png` | A3 소지금 HUD 축소·기능 버튼 선택선 정돈 구버전 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-012` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v7.png` | 실제 구현 배치에 맞춘 A3 정비 허브 최종 목업 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(편집 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 5 (7).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-b/sheets/a1_hud_components_sheet_chroma.png` | A1 HUD 10종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-001` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b1_common_ui_frame_components_sheet_chroma.png` | B1 공용 패널·한지·버튼 상태·닫기 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-005` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma.png` | B2 정비 화면 소형 부품 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-006` 전문 참조 | 해당 없음 (AI 생성) |
@@ -43,6 +44,10 @@
 | `assets/final/background/prototype_field.png` | A1 낮 필드 바닥과 바깥 숲을 합친 배경 한 장 | AI 생성 + 직접 분리·리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma.png` | A1 경작지 상태 8종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-003` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_farm_plots_sheet_chroma_v2.png` | 기존 8종을 유지하고 토란 성장·수확 2종을 추가한 통합 시트. 토란은 승인 작물 데이터가 정리되기 전이라 `assets/final/`로 옮기지 않았다 | AI 생성 + 직접 합성 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-004` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | C1 작물 4종·재료 3종 아이콘 최종 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/icon/{chili,tomato,banana,glutinous_rice,cloth_sack,empty_bottle,honey}.png` | C1 최종 원본에서 분리·투명화한 작물·재료 아이콘 7종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.1절 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
 
 ## 사운드 · BGM
 
