@@ -5,4 +5,4 @@ recipe.tomato_bomb,recipe,approved,1,토마토 폭탄 제작,토마토 기본 �
 recipe.rice_glue_bottle,recipe,approved,1,찹쌀풀 병 제작,찹쌀 기본 무기. 희귀 작물 1개로 결정적 제압 1발.,throwable_weapon,throwable_weapon.rice_glue_bottle,1,base
 recipe.honey_tomato,recipe,approved,1,꿀 토마토 제작,토마토 기본 회복. 응급 회복의 진입점.,recovery_item,recovery_item.honey_tomato,1,base
 recipe.honey_banana,recipe,approved,2,꿀토란 제작,토란 기본 회복. 묵직한 회복의 기본형.,recovery_item,recovery_item.honey_banana,1,base
-recipe.fruit_honey_bowl,recipe,approved,2,과일 꿀범벅 제작,토란 숙련도 해금 상위 회복. 토마토와 토란과 꿀을 모두 요구하는 사치품.,recovery_item,recovery_item.fruit_honey_bowl,1,crop_mastery
+recipe.fruit_honey_bowl,recipe,approved,3,밭두렁 새참 제작,토란 숙련도 해금 상위 회복. 토마토와 토란과 꿀을 모두 요구하는 사치품.,recovery_item,recovery_item.fruit_honey_bowl,1,crop_mastery
