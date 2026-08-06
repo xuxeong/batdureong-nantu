@@ -20,6 +20,8 @@
 // 이 파일은 그 결과를 그린다.
 
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
+import { createTooltip } from './tooltip.ts'
+import type { TooltipStat } from './tooltip.ts'
 import './layout.css'
 
 export type ShopMode = 'sell' | 'buy'
@@ -36,6 +38,15 @@ export interface ShopItemView {
    * 재고가 아니라 소지금이 정한다 — 상점 재고는 무제한이다 (DEC-RESOURCE-009).
    */
   held: number
+
+  /**
+   * 설명과 수치. **상세창이 아니라 목록 안내로 간다** (아트 디렉션 14.9).
+   *
+   * `DEC-UI-005` 는 판매·구매에 보유 수량·단가·총액·거래 후 남는 값만 요구한다.
+   * 설명과 수치는 요구하지 않지만 보관함·제작과 같은 자리에 두는 편이 일관된다.
+   */
+  description?: string
+  stats?: readonly TooltipStat[]
 }
 
 export interface ShopView {
@@ -112,9 +123,17 @@ export function createShopModal(
   /** 실패했을 때만 한 줄. 성공하면 지운다 */
   let notice: string | null = null
 
-  // ── 목록 ─────────────────────────────────────────
+  // ── 목록 + 상세 ──────────────────────────────────
+  //
+  // 제작과 같은 구조다 — 목록에서 하나를 고르면 아래에 이름과 줄 몇 개가 뜨고
+  // 바닥에서 수량을 정해 실행한다 (아트 디렉션 14.9).
   const list = el('div')
-  body.appendChild(list)
+  const detail = el('div', 'hub__detail')
+  body.append(list, detail)
+
+  const tooltip = createTooltip(root)
+  /** 안내가 뜰 때 최신 뷰에서 다시 읽는다 — 보유 수량이 거래마다 바뀐다 */
+  let latest: readonly ShopItemView[] = []
 
   /** 행은 목록이 바뀔 때만 다시 만든다. 매 프레임 새로 만들면 클릭이 씹힌다 */
   const rows = new Map<string, { button: HTMLButtonElement; held: HTMLElement }>()
@@ -145,6 +164,13 @@ export function createShopModal(
         // 품목이 바뀌면 수량을 1로 되돌린다. 앞 품목에 맞춰 넣은 큰 수가
         // 그대로 남아 있으면 다음 품목에서 곧바로 비활성 상태가 된다.
         quantity.value = '1'
+      })
+
+      // 설명과 수치는 여기로 간다 (14.9). 뜰 때 최신 뷰에서 읽는다.
+      tooltip.bind(button, () => {
+        const now = latest.find((i) => i.id === item.id)
+        if (now === undefined) return null
+        return { name: now.name, description: now.description, stats: now.stats }
       })
 
       list.appendChild(button)
@@ -199,6 +225,7 @@ export function createShopModal(
     root,
 
     render(view) {
+      latest = view.items
       buildRows(view.items)
 
       const selected = view.items.find((item) => item.id === selectedId) ?? null
@@ -226,17 +253,41 @@ export function createShopModal(
 
       action.disabled = !allowed || busy
 
+      // ── 상세: 이름과 줄 몇 개 (DEC-UI-005, 14.9) ──
+      //
+      // 판매는 보유 수량·단가·총액·거래 후 남는 수확물,
+      // 구매는 단가·총액·거래 후 남는 소지금이다. 설명과 수치는 여기 없다.
       if (selected === null) {
+        detail.replaceChildren()
         preview.textContent = '품목을 고른다'
-      } else if (amount === null) {
-        preview.textContent = '수량은 1 이상의 정수여야 한다'
       } else {
-        // 총액과 거래 후 남는 것을 실행 전에 보여준다 (DEC-UI-005)
-        const remainder =
-          mode === 'sell' ? selected.held - amount : view.money - (total ?? 0)
-        preview.textContent =
-          `${selected.name} ${amount}개 · 총액 ${total} · ` +
-          `${spec.remainderLabel} ${remainder}`
+        const lines: [string, string][] =
+          mode === 'sell'
+            ? [
+                ['보유 수량', String(selected.held)],
+                ['단가', String(selected.unitPrice)],
+                ['총액', total === null ? '—' : String(total)],
+                [spec.remainderLabel, amount === null ? '—' : String(selected.held - amount)],
+              ]
+            : [
+                ['단가', String(selected.unitPrice)],
+                ['총액', total === null ? '—' : String(total)],
+                [
+                  spec.remainderLabel,
+                  total === null ? '—' : String(view.money - total),
+                ],
+              ]
+
+        detail.replaceChildren(
+          el('div', 'hub__detail-title', selected.name),
+          ...lines.map(([label, value]) => {
+            const row = el('div', 'hub__detail-row')
+            row.append(el('span', 'hub__row-sub', label), el('span', undefined, value))
+            return row
+          }),
+        )
+
+        preview.textContent = amount === null ? '수량은 1 이상의 정수여야 한다' : ''
       }
 
       if (notice !== null) preview.textContent = notice
