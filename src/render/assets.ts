@@ -90,6 +90,14 @@ export const UI_ASSET = {
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',
+  /**
+   * 전투 전·투항 대화의 선택지 말풍선 (아트 디렉션 12.2 A4).
+   *
+   * 세 선택지가 같은 그림을 쓴다. **기능별로 다른 그림을 주지 않는다** —
+   * `DEC-UI-007` 이 "구분이 기능 이름을 드러내지 않게" 로 확정했고, 그림이 갈리면
+   * 그것이 곧 기능 태그가 된다. 구분은 자리 순서로만 준다 (ui/dialogue-modal.ts).
+   */
+  choiceBalloon: 'asset.ui.choice_balloon',
 } as const
 
 for (const id of Object.values(UI_ASSET)) {

@@ -1358,6 +1358,43 @@
 }
 
 /*
+  말풍선 그림이 있을 때 (아트 디렉션 12.2 A4).
+
+  9-slice 로 늘린다 — 선택지 문장 길이가 콘텐츠마다 다르고 자원 협상은 수량 줄이
+  하나 더 붙어 높이도 갈린다. 고정 크기로 두면 긴 문장이 넘친다.
+  꼬리가 왼쪽 아래에 있어 좌하단 조각은 늘리지 않는다.
+
+  **세 선택지가 같은 그림을 쓴다.** 기능별로 다른 그림을 주면 그것이 곧
+  DEC-UI-007 이 금지한 기능 태그가 된다. 구분은 자리 순서 색으로만 준다.
+*/
+.dialogue--has-art .dialogue__choice {
+  border-image-source: var(--dialogue-choice-image);
+  border-image-slice: 44 fill;
+  border-image-width: 44px;
+  border-style: solid;
+  border-width: 44px;
+  border-left-width: 44px;
+  background: none;
+}
+
+/* 그림이 붙으면 자리 순서 구분을 테두리가 아니라 글자 쪽에 준다 —
+   9-slice 가 테두리를 그림으로 덮어 border-left-color 가 보이지 않는다. */
+.dialogue--has-art .dialogue__choice[data-slot='0'] .dialogue__choice-text {
+  border-left: 3px solid var(--ui-accent);
+  padding-left: var(--ui-gap-sm);
+}
+
+.dialogue--has-art .dialogue__choice[data-slot='1'] .dialogue__choice-text {
+  border-left: 3px solid var(--ui-border-strong);
+  padding-left: var(--ui-gap-sm);
+}
+
+.dialogue--has-art .dialogue__choice[data-slot='2'] .dialogue__choice-text {
+  border-left: 3px solid var(--ui-text-dim);
+  padding-left: var(--ui-gap-sm);
+}
+
+/*
   세 선택지를 시각적으로 구분한다 (DEC-UI-007).
 
   **자리 순서로만 구분한다.** 기능(공감·설득 / 자원 협상 / 위협·대립)은 뷰에 오지도

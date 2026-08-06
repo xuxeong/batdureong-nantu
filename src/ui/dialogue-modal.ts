@@ -28,6 +28,7 @@
 //   투항 기준값과 남은 체력의 비율 — DEC-UI-010
 //   이번이 마지막 투항 기회라는 사실 — DEC-UI-010
 
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import './layout.css'
 
 export type DialoguePhase = 'precombat' | 'surrender'
@@ -121,6 +122,14 @@ export function createDialogueModal(
 ): DialogueModal {
   const root = el('div', 'dialogue')
   root.hidden = true
+
+  // 선택지 말풍선 그림 (A4). 파일이 없으면 아무것도 설정하지 않고
+  // `layout.css` 의 테두리·배경이 그대로 플레이스홀더로 남는다.
+  const balloonUrl = assetCssUrl(UI_ASSET.choiceBalloon)
+  if (balloonUrl !== null) {
+    root.style.setProperty('--dialogue-choice-image', balloonUrl)
+    root.classList.add('dialogue--has-art')
+  }
 
   const panel = el('div', 'dialogue__panel')
   const speaker = el('div', 'dialogue__speaker')
