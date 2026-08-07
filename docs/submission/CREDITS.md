@@ -52,6 +52,7 @@
 | `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
+| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | A4 대화·조우 결과에 공용하는 플레이어·주민 초상화 5종. 공통 1080px 높이와 투명 여백으로 인물간 상대 크기를 유지 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 직접 상반신 크롭·투명화 | 프로젝트 책임자 작업(편집 도구 미기재) | `assets/source/phase-f/crops/` 5종에서 파생 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v1 (구).png` | A4 전투 전 대화 UI의 폐기된 크로마키 배치 원본 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-A-013` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 실제 구현 배치에 맞춘 A4 최종 목업. LD 일러스트와 필드 딤은 합성 전이라 생략 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | Figma | A4 v1과 기존 B단계 UI 부품을 참고해 직접 제작 | 해당 없음 (내부 제작) |
 | `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | A4 선택지 말풍선 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-014` 전문 참조 | 해당 없음 (AI 생성) |
