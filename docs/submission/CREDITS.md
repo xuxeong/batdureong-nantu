@@ -72,9 +72,54 @@
 
 ## 사운드 · BGM
 
+`assets/final/bgm/`·`assets/final/sfx/`의 실제 상태와 게임 내 트리거는
+`docs/submission/SOUND_ASSET_INDEX.md`에서 관리한다. 이 표는 크레딧 기록 전용이다.
+
+### BGM
+
 | 파일 | 용도 | 제작 방법 | 도구 | 프롬프트 / 출처 | 라이선스 |
 |---|---|---|---|---|---|
-| 사용하지 않음 | 현재 빌드에는 사운드·BGM이 없다 | — | — | — | — |
+| `assets/final/bgm/title.mp3` | 타이틀 화면 | AI 생성 | VARCO Sound | `SND-BGM-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/bgm/farm.mp3` | 재배·정비 단계 공용 | AI 생성 | VARCO Sound | `SND-BGM-001`과 동일 프롬프트의 다른 생성분(2026-08-08) | 해당 없음 (AI 생성) |
+| `assets/final/bgm/raid.mp3` | 습격 전투(일반) 앰비언스 | AI 생성 | VARCO Sound | `SND-BGM-003` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/bgm/boss.mp3` | 마지막 습격(이장 결투) | AI 생성 | VARCO Sound | `SND-BGM-004` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/bgm/defeat.mp3` | 런 실패 화면 | AI 생성 | VARCO Sound | `SND-BGM-005` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/bgm/ending.mp3` | 엔딩 화면 공용 | AI 생성 | VARCO Sound | `SND-BGM-006` 전문 참조 | 해당 없음 (AI 생성) |
+
+### SFX
+
+**프롬프트 칸은 직접 채워주세요** — VARCO Sound로 만드신 건 확인했지만 각 파일의 실제
+프롬프트 텍스트는 제가 갖고 있지 않습니다.
+
+| 파일 | 용도 | 제작 방법 | 도구 | 프롬프트 / 출처 | 라이선스 |
+|---|---|---|---|---|---|
+| `assets/final/sfx/button_click.wav` | 버튼 클릭 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/button_reject.wav` | 버튼 클릭 거절·비활성 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/modal_open.wav` | 모달·오버레이 열기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/screen_transition.wav` | 화면 전환 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/plant_seed.wav` | 파종 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/harvest_ready.wav` | 수확 가능 전환 (DEC-UI-004) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/harvest.wav` | 수확 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/trade_confirm.wav` | 판매·구매·보상 획득 공용 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/quickslot_switch.wav` | 퀵슬롯 선택·자동 전환 공용 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/quickslot_empty.wav` | 퀵슬롯 전부 소진(빈 발사음) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/sickle_swing.wav` | 낫 휘두르기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/sickle_hit.wav` | 낫 명중 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/throw.wav` | 투척 던지기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/impact_direct.wav` | 투척 명중 — direct(고춧가루·미끈 토란) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/impact_area.wav` | 투척 명중 — area(토마토·찹쌀풀) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/burn_tick.wav` | 화상 상태 틱(화끈함·짓무름 공용) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/slow_tick.wav` | 감속 상태 걸림(미끄러움·끈적함 공용) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/player_hit.wav` | 플레이어 피격 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/recovery_start.wav` | 회복 시작 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/recovery_complete.wav` | 회복 완료 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_crow_cry.wav` | 까마귀 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_deer_cry.wav` | 고라니 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_boar_cry.wav` | 멧돼지 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_defeat.wav` | 야생동물 처치(공통) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/dialogue_open.wav` | 대화 열림 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/resident_defeat.wav` | 주민 처치 막타 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/record_typing.wav` | 엔딩 기록문 타이핑 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
 
 ## 폰트
 
@@ -1453,3 +1498,69 @@ village head: a forward bare-fist punch with the other hand guarding
 
 최종 채택본은 캐릭터별 원본 시트 5장이다. 정면은 기존 승인본 대조용, 후면은 원본 보존용이며,
 프로젝트 책임자가 Figma에서 좌·우·공격 칸만 분리·투명화해 최종 에셋 15장으로 만든다.
+
+### SND-BGM-001 — 타이틀 (`farm.mp3`와 프롬프트 공유)
+
+국악풍으로 확정하기 전 인디 어쿠스틱 버전을 먼저 시도했으나 채택하지 않았다. 아래가 채택
+프롬프트다. `farm.mp3`(재배·정비 공용)는 같은 프롬프트의 다른 생성분을 그대로 썼다 — 두 상황이
+같은 "낮의 평화" 톤을 공유해도 되는지 확인 없이 재사용했으므로, 실제 플레이 테스트에서
+타이틀과 재배 BGM이 구분이 안 된다는 문제가 나오면 재생성이 필요하다.
+
+```text
+조선 시대 분위기의 국악 기반 타이틀 테마. 해금과 대금을 주 선율로, 가야금 아르페지오와
+가벼운 장구 리듬을 받쳐 밝고 경쾌한 장조 멜로디를 낸다. 템포는 무난한 중간 빠르기
+(약 95~105 BPM), 언뜻 들으면 명랑한 민속풍 인트로.
+
+다만 해금 선율에 미분음적인 떨림(시김새)과 살짝 어긋나는 화성을 옅게 섞어서, 반복해
+들을수록 어딘가 불길하고 싸한 느낌이 스며나오게 한다. 대놓고 어둡거나 긴장되지 않고,
+표면의 밝음은 끝까지 유지하되 그 아래 이질감만 은은하게 깔린다. 축제 같은데 뭔가
+잘못됐다는 느낌의 이중적인 정서.
+```
+
+### SND-BGM-003 — 습격 전투(일반) 앰비언스
+
+멜로디가 있는 초안(낮은 드론·귀뚜라미 촘촘한 합창)을 먼저 시도했으나, 귀뚜라미가 너무
+자주 울어 앰비언스보다 리듬처럼 들린다는 피드백으로 아래로 교체했다.
+
+```text
+멜로디 없는 밤 앰비언스. 귀뚜라미는 촘촘한 합창이 아니라 드문드문, 띄엄띄엄 한 마리씩만
+우는 정도로 성기게. 울음 사이사이 정적이 길게 남아야 한다. 낮은 드론이나 먼 바람 소리를
+아주 옅게만 깔아 은은한 긴장감 유지. 시골 밤의 고요함과 그 아래 깔린 불안, 폭력이 오기
+직전의 정적. 루프 이음매 티 안 나게.
+```
+
+### SND-BGM-004 — 마지막 습격(보스전)
+
+첫 시도(사물놀이 타악 전체 편성 서술)가 의도와 다르게 뽕짝(트로트)에 가까운 흥겨운 결과로
+나와서, 흥겨운 리듬을 명시적으로 배제하고 길이를 줄인 아래 프롬프트로 교체했다.
+
+```text
+태평소와 북 중심의 무겁고 위협적인 전투 테마. 흥겹고 경쾌한 리듬(풍물 잔치·뽕짝 느낌)
+배제. 느리고 육중한 타격 위주로 긴장감 조성. 태평소는 날카롭되 흥겹지 않게 낮고 무겁게.
+어둡고 절박한 결전의 분위기. 약 110~120 BPM.
+```
+
+### SND-BGM-005 — 런 실패
+
+```text
+차분하게 가라앉은 패배 테마. 느린 템포(약 60~70 BPM), 단조 피아노 또는 단선율 현악기
+중심, 여백 많은 편곡. 과장된 비극이 아니라 조용한 체념. 짧은 루프 또는 페이드아웃용
+원샷.
+```
+
+### SND-BGM-006 — 엔딩(공용)
+
+기타·피아노 중심의 인디 발라드풍 초안을 먼저 시도했으나, 타이틀·재배가 국악으로
+확정되면서 팔레트를 맞추기 위해 대금 중심 국악풍으로 교체했다.
+
+```text
+대금 독주를 중심 선율로 한 국악풍 엔딩 테마. 대금 특유의 숨소리 섞인 음색으로 여백이
+많고 느린 가락을 낸다. 가야금은 화려한 아르페지오 대신 드문드문 끊어 짚는 정도로만
+받치고, 장구·타악기는 거의 쓰지 않거나 아주 여린 터치만 남긴다. 템포는 느림
+(약 65~75 BPM).
+
+타이틀의 밝고 이질적인 느낌과 대비되게, 여기는 그 긴장이 다 지나간 뒤의 차분한
+회고다. 따뜻함과 씁쓸함이 같이 있어야 한다 — 지나치게 슬프거나 지나치게 밝지 않은
+중간 톤을 끝까지 유지한다. 계절 하나가 저물고 다음 계절을 기다리는 듯한, 결론을
+짓기보다는 가만히 돌아보는 정서.
+```
