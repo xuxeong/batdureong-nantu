@@ -1469,7 +1469,9 @@ export const RULES = {
         }
       }
       // specific_resident_relationship 은 관계 키 목록이 결정로그에 없어 검사하지 않는다.
-      // schema/enums.json 의 open_questions 참조.
+      // **어디에도 적혀 있지 않다** — 2026-08-07 기준 enums.json 의 open_questions 는
+      // 비어 있고 이 항목이 올라간 적이 없다. 목록을 만들려면 관계 키를 무엇으로 둘지가
+      // 기획 결정이라 여기서 채우지 않는다 (AGENTS.md 2절 — 문서에 답이 없으면 보고한다).
     }
   },
 
