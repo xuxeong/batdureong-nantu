@@ -14,8 +14,14 @@
 //
 // ── 파일이 없는 구간이 아직 있다 ───────────────────────────
 //
-// `portrait`·`logo`·`cutscene`·`sfx`·`bgm` 은 `assets/final/` 에 아직 비어 있다
-// (2026-08-07). `field_sprite`·`icon`·`projectile` 은 8/6 에 채워졌다.
+// `cutscene` 은 `assets/final/` 에 아직 비어 있다 (2026-08-08). `field_sprite`·`icon`·
+// `projectile` 은 8/6 에, `portrait` 은 8/7 에, `logo`·`field_sprite_left/right/attack` 과
+// `bgm`·`sfx` 는 8/8 에 채워졌다.
+//
+// **`bgm`·`sfx` 는 파일만 있고 아직 아무도 부르지 않는다.** 이 파일의 glob 이 이미지
+// 확장자만 잡으므로 `URL_BY_ID` 에도 없다 — 소리는 `Image` 가 아니라 `Audio` 라
+// 적재 방식이 다르고, 무엇보다 시스템 레벨 사운드를 가리킬 자리가 없다
+// (`docs/submission/SOUND_ASSET_INDEX.md` 의 "막혀 있는 것").
 // `effect` 는 빈 구간이 아니라 **Canvas 2D 코드 구현 대상**이라 PNG 가 오지 않고,
 // `font` 는 시스템 폰트를 쓰기로 해 파일을 만들지 않는다 (전성민 8/7).
 // 그래서 **없는 것은 오류가 아니라 null 이고**
@@ -94,6 +100,13 @@ export const UI_ASSET = {
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',
   /**
+   * 정비 팝업 닫기 (DEC-UI-020).
+   *
+   * 고정 목록에는 8/6부터 있었는데 여기만 빠져 있어 파일이 와 있는데도 글자
+   * 버튼으로 남아 있었다 (8/8 확인).
+   */
+  closeButton: 'asset.ui.close_button',
+  /**
    * 전투 전·투항 대화의 선택지 말풍선 (아트 디렉션 12.2 A4).
    *
    * 세 선택지가 같은 그림을 쓴다. **기능별로 다른 그림을 주지 않는다** —
@@ -118,6 +131,54 @@ export const UI_ASSET = {
    */
   buttonNormal: 'asset.ui.button_normal',
   buttonDisabled: 'asset.ui.button_disabled',
+  /**
+   * 타이틀 화면 배경과 로고 (아트 디렉션 A0, 전성민 8/8).
+   *
+   * 배경은 1672×941 로 16:9 라 1920×1080 무대에 그대로 늘어난다. 오른쪽 기둥은
+   * **배경 그림의 일부**다 — 팻말만 `buttonNormal` 로 얹는다.
+   */
+  bgTitle: 'asset.ui.bg_title',
+  logoTitle: 'asset.logo.title',
+
+  /**
+   * 정비 화면 배경 (아트 디렉션 12.5.5 B5, A3 목업).
+   *
+   * 닫힌 미닫이문 한 장을 가운데서 자른 것이라 각 960×1080 이고 붙이면 1920×1080 이
+   * 된다. **두 장으로 나뉜 이유는 나중에 좌우로 여는 연출을 위해서다** — 지금은
+   * 닫힌 채로만 쓴다. 가운데 세로 기둥은 이 그림에 이미 있다.
+   */
+  shutterLeft: 'asset.ui.shutter_left',
+  shutterRight: 'asset.ui.shutter_right',
+
+  /**
+   * 보관함 칸 (아트 디렉션 12.5.2 B2).
+   *
+   * **퀵슬롯과 다른 물건이다.** 둘 다 나무 정사각형이지만 보관함 칸은 수량 배지가
+   * 모서리에 물려 있다. `quickslot` 으로 대신하지 않는다고 아트 디렉션이 못 박았다.
+   * 수량이 있으면 `itemSlotBadge`, 없으면 `itemSlot` 이고 크기가 미세하게 다르다
+   * (105×107 대 111×113 — 배지가 칸 밖으로 물려 나온 만큼이다).
+   */
+  itemSlot: 'asset.ui.item_slot',
+  itemSlotBadge: 'asset.ui.item_slot_badge',
+  /** 소지금 틀. 엽전 그림이 판 안에 이미 있어 숫자만 얹는다 (B2) */
+  moneyPlate: 'asset.ui.money_plate',
+  /** 잠긴 레시피 표시 (B2, DEC-UI-006) */
+  lockIcon: 'asset.ui.lock_icon',
+  /** 수량 증감 버튼 (B4). 79×58 과 79×61 로 높이가 다르다 */
+  stepPlus: 'asset.ui.step_plus',
+  stepMinus: 'asset.ui.step_minus',
+
+  /**
+   * 정비 화면의 습격 예고 표지 세 종 (아트 디렉션 12.5.3 B3, DEC-RUN-011).
+   *
+   * **재배 HUD 는 이 판을 쓰지 않는다.** 거기서는 `signboard` 아래칸에 문구만 들어가고
+   * 세 종류의 구분은 `layout.css` 의 색이 한다. 여기서는 판이 그림 자리와 문구 자리로
+   * 나뉘어 있어 `moneyPlate` 와 같은 구조다 — 그림은 판에 있고 `hud_label` 문구를
+   * 코드가 옆칸에 얹는다.
+   */
+  raidNoticeNone: 'asset.ui.raid_notice_none',
+  raidNoticeRaid: 'asset.ui.raid_notice_raid',
+  raidNoticeFinal: 'asset.ui.raid_notice_final',
 } as const
 
 for (const id of Object.values(UI_ASSET)) {

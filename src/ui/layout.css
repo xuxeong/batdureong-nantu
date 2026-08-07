@@ -9,11 +9,11 @@
   화면 표현이라 CSV 로 빼지 않는다. 반대로 작물 성장 시간·가격·확률은 여기 두지 않는다.
 
   기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3). 창 크기가 다르면 전체를
-  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-003 이 월드 1단위 = 화면
+  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-004 이 월드 1단위 = 화면
   1픽셀로 확정해서 배율은 1.0 고정이다. 맵이 1600×900 이라 좌우 160·상하 90 의 여백이
   남고 그 여백을 필드 HUD 가 쓴다.
 
-  색·여백·그림자는 DEC-ART-003 이 "layout.css 의 값으로 관리하고 이미지로 만들지
+  색·여백·그림자는 DEC-ART-004 이 "layout.css 의 값으로 관리하고 이미지로 만들지
   않는다"로 확정했다 (8/4). **여기가 임시가 아니라 원본이다.**
 */
 
@@ -29,7 +29,7 @@
   --ui-base-width: 1920px;
   --ui-base-height: 1080px;
 
-  /* ── 색 — 여기가 원본이다 (DEC-ART-003) ──────── */
+  /* ── 색 — 여기가 원본이다 (DEC-ART-004) ──────── */
   --ui-bg-panel: rgba(17, 23, 15, 0.82);
   --ui-bg-slot: rgba(0, 0, 0, 0.45);
   --ui-border: rgba(232, 217, 160, 0.35);
@@ -62,7 +62,7 @@
   --ui-font-xl: 38px;
 
   /* ── HUD (DEC-UI-017, A1 확정 배치) ─────────────
-     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-003 이 월드
+     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-004 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
@@ -100,6 +100,10 @@
      `소지금` 위에 `1일차` 가 겹쳐 읽혔다 — 아트 디렉션 3절 판독 우선에 걸린다.
      필드가 아주 옅게 남아 "덮였을 뿐 사라지지 않았다" 는 인상은 유지된다. */
   --hub-shutter: rgba(10, 8, 6, 0.985);
+  /* 나무·한지 위에서는 크림색 글자가 묻힌다. A3 목업의 진한 갈색을 쓴다 */
+  --hub-text-on-art: #3a2b1c;
+  /* 보관함 칸 그림 111×113 (배지 포함). 한 줄에 넷 */
+  --hub-slot-size: 111px;
   --hub-pad: 28px;
   --hub-inventory-width: 340px;
   --hub-popup-width: 560px;
@@ -145,7 +149,7 @@
 
   /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
      습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
-     DEC-ART-003 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
+     DEC-ART-004 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
      그래서 아래 셋은 **플레이스홀더**이며 기존 토큰을 가리키기만 한다 —
      새 색을 여기서 만들지 않는다. 4.5 가 채워지면 이 세 줄만 바꾼다.
 
@@ -183,7 +187,7 @@
 
   A1 부품은 테두리·홈·크림색 판이 그림 안에 이미 그려져 있다. 글자와 게이지가
   그 안에 정확히 앉아야 하므로 아래 값들은 **에셋에서 잰 실측 좌표**다.
-  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-003) 배율이 없으므로
+  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-004) 배율이 없으므로
   픽셀이 그대로 맞는다. 에셋이 다시 오면 이 값들을 같이 고친다.
 */
 :root {
@@ -865,6 +869,32 @@
   pointer-events: auto;
 }
 
+/*
+  ── A3 목업 배치 (아트 디렉션 12.5.2·12.5.5) ────────────────
+
+  배경은 닫힌 미닫이문 두 짝이다. 각 960×1080 이라 왼쪽·오른쪽에 하나씩 깔면
+  1920 을 정확히 채운다. **가운데 세로 기둥은 그림에 이미 있다** — 코드가 그리지
+  않는다.
+
+  나무·한지 배경 위라 어두운 패널용 크림색 글자가 묻힌다. 아트가 붙은 동안에는
+  글자를 진한 갈색으로 뒤집는다.
+*/
+.hub--has-art {
+  background:
+    var(--hub-shutter-left) left center / 50% 100% no-repeat,
+    var(--hub-shutter-right) right center / 50% 100% no-repeat;
+  color: var(--hub-text-on-art);
+
+  /*
+    칸 넷이 한 줄이라 보관함이 넓어져야 한다 — 111×4 = 444 에 칸 사이 여백,
+    9-slice 테두리 44 양쪽, 안쪽 여백까지 더한 값이다. 아트 없는 340px 로는
+    셋째 칸부터 다음 줄로 넘어간다.
+
+    팝업 층의 `left` 도 이 변수를 쓰므로 팝업이 함께 오른쪽으로 밀린다.
+  */
+  --hub-inventory-width: 580px;
+}
+
 /* 보관함은 상시 표시 영역이다. 팝업이 열려 있어도 계속 보여야 한다 (DEC-UI-020) */
 .hub__inventory {
   grid-row: 1 / 3;
@@ -873,6 +903,19 @@
   background: var(--ui-bg-slot);
   padding: var(--ui-gap-md);
   overflow-y: auto;
+}
+
+/* 대사창과 같은 9-slice 두 장이다 (panel_border 559×562 · panel_texture 563×622) */
+.hub--has-art .hub__inventory {
+  border: 44px solid transparent;
+  border-radius: 0;
+  border-image-source: var(--hub-panel-border);
+  border-image-slice: 44;
+  border-image-width: 44px;
+  background-image: var(--hub-panel-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
 }
 
 .hub__inventory-group + .hub__inventory-group {
@@ -901,6 +944,75 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  아트가 붙으면 줄 목록이 아니라 **격자 칸**이 된다 (A3 목업).
+
+  칸 그림이 111×113 이고 한 줄에 넷이라 목록 너비가 이 값을 정한다. 수량은
+  칸 그림에 이미 그려진 오른쪽 아래 배지 자리에 앉힌다 — 배지를 코드가 따로
+  그리지 않는다.
+*/
+.hub--has-art .hub__inventory-list {
+  display: grid;
+  grid-template-columns: repeat(4, var(--hub-slot-size));
+  gap: var(--ui-gap-xs);
+}
+
+.hub--has-art .hub__inventory-row {
+  position: relative;
+  display: block;
+  width: var(--hub-slot-size);
+  height: var(--hub-slot-size);
+  padding: 0;
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+/* 빈 분류는 칸을 만들지 않는다. 격자 안에 글자만 남긴다 */
+.hub--has-art .hub__inventory-row--empty {
+  grid-column: 1 / -1;
+  width: auto;
+  height: auto;
+  background: none;
+  font-size: var(--ui-font-sm);
+}
+
+/* 칸 가운데 아이콘. 배지 자리를 비우려고 살짝 위로 올린다 */
+.hub--has-art .hub__inventory-row .icon {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  height: 62%;
+}
+
+/* 그림이 없는 항목만 이름이 대신 선다 (14.8). 칸이 좁아 두 줄까지만 */
+.hub__slot-name {
+  display: none;
+}
+
+.hub--has-art .hub__slot-name {
+  display: block;
+  position: absolute;
+  inset: 12% 12% 26%;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--hub-text-on-art);
+}
+
+/* 수량은 칸 그림의 배지 홈 안이다 (오른쪽 아래) */
+.hub--has-art .hub__inventory-row .hub__count {
+  position: absolute;
+  right: 4%;
+  bottom: 3%;
+  width: 30%;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+}
+
 /* 소지금은 정비 단계에서만 표시한다 (DEC-UI-017) */
 .hub__money {
   display: flex;
@@ -909,6 +1021,34 @@
   padding-bottom: var(--ui-gap-sm);
   margin-bottom: var(--ui-gap-sm);
   border-bottom: 1px solid var(--ui-border);
+}
+
+/*
+  소지금 틀 269×113. **엽전 그림이 판 안에 이미 있다** (B2) — 그래서 `소지금`
+  글자를 숨기고 숫자만 얹는다. 판 왼쪽 3분의 1이 엽전 자리라 숫자를 오른쪽으로
+  민다.
+
+  목업에서는 이 판이 보관함 안이 아니라 화면 오른쪽 위에 있다. 지금은 보관함
+  머리에 둔 채 그림만 입힌다 — 옮기려면 `.hub` 격자를 다시 짜야 하고, 그건
+  보관함·팝업 위치까지 함께 움직이는 변경이라 따로 본다.
+*/
+.hub--has-art .hub__money {
+  width: 269px;
+  height: 113px;
+  box-sizing: border-box;
+  border-bottom: none;
+  padding: 0 22px 0 0;
+  margin: 0 auto var(--ui-gap-xs);
+  background: var(--hub-money-plate) center / contain no-repeat;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+}
+
+.hub--has-art .hub__money-label {
+  display: none;
 }
 
 .hub__main {
@@ -932,6 +1072,29 @@
 .hub__raid-notice {
   font-size: var(--ui-font-md);
   color: var(--ui-text-dim);
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+/*
+  표지는 그림 자리와 문구 자리로 나뉜다 (B3). 판이 그림을 들고 문구는 옆칸이다 —
+  `DEC-RUN-011` 이 `hud_label` 을 승인 데이터에 두었는데 목업의 판은 그림이 꽉
+  차 문구 자리가 없어서, 아트 디렉션 12.5.3 이 둘을 나누기로 정했다.
+*/
+.hub__raid-plate[hidden] {
+  display: none;
+}
+
+.hub--has-art .hub__raid-plate {
+  width: 168px;
+  height: 96px;
+  background: var(--hub-raid-plate) center / contain no-repeat;
+}
+
+.hub--has-art .hub__raid-text {
+  color: var(--hub-text-on-art);
+  font-size: var(--ui-font-md);
 }
 
 .hub__buttons {
@@ -958,6 +1121,34 @@
 .hub__button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/*
+  기능 버튼과 진행 버튼 모두 `button_normal`(350×116) 한 장이다.
+
+  목업은 넷을 세로로 쌓아 팝업 왼쪽에 붙였는데, 여기서는 가로 한 줄을 유지한다 —
+  세로로 옮기면 팝업 층의 `left` 계산과 보관함 폭이 함께 움직인다. 그림만 먼저
+  입히고 배치는 팝업 자리와 같이 본다.
+*/
+.hub--has-art .hub__button,
+.hub--has-art .hub__finish {
+  border: none;
+  border-radius: 0;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  min-height: 64px;
+}
+
+.hub--has-art .hub__button:hover:not(:disabled),
+.hub--has-art .hub__finish:hover {
+  filter: brightness(1.08);
+}
+
+.hub--has-art .hub__button:active:not(:disabled),
+.hub--has-art .hub__finish:active {
+  filter: brightness(0.94);
 }
 
 /* 하단 진행 버튼. 문구는 DEC-RUN-006 이 정한 두 가지다 */
@@ -1019,6 +1210,20 @@
   padding: var(--ui-gap-lg);
   box-sizing: border-box;
   gap: var(--ui-gap-md);
+}
+
+/* 보관함과 같은 9-slice 두 장이다 */
+.hub__popup--has-art {
+  border: 44px solid transparent;
+  border-radius: 0;
+  border-image-source: var(--hub-panel-border);
+  border-image-slice: 44;
+  border-image-width: 44px;
+  background-image: var(--hub-panel-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  color: var(--hub-text-on-art);
 }
 
 .hub__popup-header {
@@ -1328,9 +1533,8 @@
   margin-bottom: var(--ui-gap-md);
 }
 
-/* 팝업 닫기 버튼 (DEC-UI-020).
-   `asset.ui.close_button` 은 8/6 에 파일이 왔다. 아직 글자 버튼인 것은
-   붙이는 작업이 남아서다 — 파일이 없어서가 아니다 (2026-08-07 확인) */
+/* 팝업 닫기 버튼 (DEC-UI-020). 그림은 8/8 에 붙였다 — 파일은 8/6 에 왔는데
+   `UI_ASSET` 에 등록이 빠져 있어 두 이틀 글자 버튼으로 남아 있었다 */
 .hub__close {
   pointer-events: auto;
   cursor: pointer;
@@ -1345,6 +1549,112 @@
 
 .hub__close:hover {
   border-color: var(--ui-border-strong);
+}
+
+/* 그림 98×93. 글자는 지우지 않고 화면 밖으로 밀어 둔다 — 읽는 사람에게 이름이
+   남아야 하고, 그림이 안 왔을 때 되돌릴 자리이기도 하다 */
+.hub__close--has-art {
+  width: 98px;
+  height: 93px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--hub-close-image) center / contain no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+.hub__close--has-art:hover {
+  filter: brightness(1.1);
+}
+
+/*
+  수량 증감 (A3 목업, B4). `step_minus` 79×61 · `step_plus` 79×58 로 높이가
+  미세하게 다르지만 같은 칸에 `contain` 으로 넣어 가운데를 맞춘다.
+
+  8/8까지 이 자리가 `<input type="number">` 였다 — `DEC-UI-025` 의 마우스 전용
+  규칙 위반이었고, 예외는 `DEC-UI-030` 이 정한 이름 입력 하나뿐이다.
+*/
+.hub__qty {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+.hub__step {
+  width: 79px;
+  height: 61px;
+  padding: 0;
+  border: none;
+  background: var(--hub-step-image) center / contain no-repeat;
+  cursor: pointer;
+}
+
+/* 그림이 없으면 글자로 대신한다 — 빈 칸이면 무엇을 누르는지 알 수 없다 */
+.hub__step:not([style*='--hub-step-image']) {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-size: var(--ui-font-lg);
+}
+
+.hub__step--minus:not([style*='--hub-step-image'])::after {
+  content: '−';
+}
+
+.hub__step--plus:not([style*='--hub-step-image'])::after {
+  content: '+';
+}
+
+.hub__step:hover {
+  filter: brightness(1.1);
+}
+
+.hub__step:active {
+  filter: brightness(0.92);
+}
+
+.hub__qty-value {
+  min-width: 56px;
+  text-align: center;
+  font-size: 38px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub__popup--has-art .hub__qty-value {
+  color: var(--hub-text-on-art);
+}
+
+/* 잠긴 레시피 표시 (B2, DEC-UI-006). 자물쇠 86×105 */
+.hub__lock--has-art {
+  width: 30px;
+  height: 36px;
+  background: var(--hub-lock-image) center / contain no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+/* 팝업 안쪽 글자도 한지 위라 뒤집는다 */
+.hub__popup--has-art .hub__row-sub,
+.hub__popup--has-art .hub__popup-group-title,
+.hub__popup--has-art .hub__popup-title,
+.hub__popup--has-art .hub__detail-title,
+.hub__popup--has-art .hub__row-name,
+.hub__popup--has-art .hub__preview {
+  color: var(--hub-text-on-art);
+}
+
+/* 실행 버튼은 팻말 한 장이다 (A3 목업의 `판매한다`) */
+.hub__popup--has-art .hub__action {
+  border: none;
+  border-radius: 0;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  min-height: 64px;
 }
 
 .hub__slot {
@@ -1471,12 +1781,12 @@
 /*
   플레이어는 오른쪽에 선다.
 
-  **좌우 반전을 걸지 않는다. 앞으로도 걸지 않는다.** `DEC-ART-003` 가 좌우를 실제
+  **좌우 반전을 걸지 않는다. 앞으로도 걸지 않는다.** `DEC-ART-004` 가 좌우를 실제
   그림 두 장으로 확정해서 캔버스·CSS 반전은 쓰지 않는다. 마주 보는 방향은
   `portrait` 를 그릴 때 맞춰서 나온다 (전성민 8/7 회신).
 
   8/6까지 여기 "반전이 DEC-ART-001 의 허용 범위인지 미결" 이라고 적혀 있었다.
-  그 DEC 는 폐기됐고(001 → 002 → 003) 미결도 아니다.
+  그 DEC 는 폐기됐고(001 → 002 → 003 → 004) 미결도 아니다.
 */
 .dialogue__portrait--player {
   background-position: bottom center;
@@ -2174,12 +2484,110 @@
 
 /* ── 타이틀 ────────────────────────────────────── */
 
-/* 로고 에셋(asset.logo.*)으로 바뀔 자리다. 교체는 아트 통합에서 한다 */
+/* 로고 그림이 없을 때만 보이는 플레이스홀더 제목 */
 .title__name {
   margin: 0;
   font-size: 44px;
   font-weight: 700;
   letter-spacing: 0.12em;
+}
+
+/*
+  ── A0 배치 (전성민 8/8 목업) ──────────────────────────────
+
+  아래 좌표는 `assets/source/phase-a/A0_title_screen_mockup.png` 에서 잰 **실측값**
+  이다. 무대가 1920×1080 고정이고 배율이 없어(DEC-ART-004) 픽셀이 그대로 맞는다.
+
+  배경 `bg_title` 은 1672×941 로 16:9 라 무대에 정확히 늘어난다. **오른쪽 기둥은
+  배경 그림에 이미 들어 있다** — 코드가 그리는 것은 그 받침 위에 얹는 팻말뿐이다.
+*/
+.title--has-art {
+  background: var(--title-background) center / cover no-repeat;
+  /* 가운데 정렬 판을 쓰지 않는다. 로고와 팻말이 각자 실측 좌표에 앉는다 */
+  display: block;
+}
+
+.title__logo {
+  position: absolute;
+  left: 165px;
+  top: 248px;
+  width: 1052px;
+  height: 214px;
+  background: var(--title-logo-image) center / contain no-repeat;
+}
+
+/*
+  팻말은 `button_normal`(350×116) 을 그대로 얹는다. 기둥 중심이 x 1590 이라
+  왼쪽이 1590 - 175 = 1415 다.
+
+  `--title-sign-bottom-y` 는 두 번째 받침이다. 지금은 아무것도 앉지 않는다 —
+  `DEC-UI-030` 이 타이틀 입력을 하나로 못 박아 `게임 종료` 팻말을 넣지 못했다
+  (`ui/title.ts` 머리말). 값을 남겨 두는 이유는 그 결정이 바뀌면 좌표를 다시
+  재지 않기 위해서다.
+*/
+:root {
+  --title-sign-x: 1415px;
+  --title-sign-top-y: 402px;
+  --title-sign-bottom-y: 626px;
+}
+
+.title--has-art .title__start {
+  position: absolute;
+  left: var(--title-sign-x);
+  top: var(--title-sign-top-y);
+  width: 350px;
+  height: 116px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--title-sign-image) center / contain no-repeat;
+  /* 나무 팻말 위라 패널용 크림색은 묻힌다. 목업의 흰 글자를 따른다 */
+  color: #fdf6e3;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.title--has-art .title__start:hover {
+  /* 팻말 그림을 바꾸지 않고 밝기만 올린다 — `button_pressed` 는 :active 로 쓰지
+     않기로 8/6 에 정했고, 여기도 같은 이유로 그림을 늘리지 않는다 */
+  filter: brightness(1.08);
+}
+
+.title--has-art .title__start:active {
+  filter: brightness(0.94);
+}
+
+/*
+  누르면 짧게 흔들린 뒤 진입한다 (전성민 8/8).
+
+  기둥에 못 하나로 매달린 팻말이라 좌우가 아니라 **회전**으로 흔든다. 시간은
+  `ui/title.ts` 의 `SHAKE_MS` 와 같아야 한다 — 그쪽이 이 시간이 지나면 무조건
+  진행하는 안전망을 걸어 둔다.
+*/
+@keyframes title-sign-shake {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-3.5deg); }
+  35% { transform: rotate(2.6deg); }
+  55% { transform: rotate(-1.8deg); }
+  75% { transform: rotate(1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.title__start--shaking {
+  animation: title-sign-shake 360ms ease-in-out;
+  /* 못 자리를 축으로 돈다. 가운데를 축으로 하면 팻말이 통째로 기운다 */
+  transform-origin: 50% 8%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 코드에서도 걸러내지만, 여기서도 막아 둔다 */
+  .title__start--shaking {
+    animation: none;
+  }
 }
 
 /* ── 이름 입력 ─────────────────────────────────── */
