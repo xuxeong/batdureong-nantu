@@ -1,7 +1,7 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
 
-  "schema_version": 8,
+  "schema_version": 9,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -70,6 +70,14 @@
       "csv_migration": "추가뿐이라 기존 승인 CSV 행의 변환은 필요 없다. 새 역할을 쓰는 행이 생기면 content_assets.csv 에 추가하면 된다",
       "affected": "data:validate/data:build 는 schema/tables/content_assets.json 의 asset_role enum 을 그대로 읽으므로 코드 변경 없이 새 값을 승인한다. schema/enums.json 의 asset_role 목록도 함께 갱신했다 — 두 파일이 같은 값을 따로 들고 있어 하나만 고치면 어긋난다. 세 역할 모두 field_sprite 부모(플레이어·주민)에만 쓰고 야생동물에는 쓰지 않는다",
       "decisions": ["DEC-ART-002"]
+    },
+    {
+      "schema_version": { "from": 8, "to": 9 },
+      "date": "2026-08-08",
+      "change": "enums.json 의 ui_system_asset_id 고정 목록에 정비 화면 부품 11 종 추가 — item_slot·item_slot_badge·money_plate·lock_icon·step_plus·step_minus·shutter_left·shutter_right·raid_notice_none·raid_notice_raid·raid_notice_final. 파일은 8/6~8/7 에 assets/final/ui/ 에 들어와 있었지만 목록에 없어 src/render/assets.ts 가 그 ID 를 쓰는 코드를 거부했고, 그래서 정비·상점·제작·편성 네 화면이 아트 없이 남아 있었다",
+      "csv_migration": "고정 목록은 콘텐츠 CSV 가 아니라 코드가 참조하는 값이라 승인 CSV 의 변환이 없다. content_assets.csv 도 건드리지 않는다 — 이 열한 개는 어떤 콘텐츠에도 속하지 않아 연결 CSV 로 관리할 수 없는 UI·시스템 에셋이다",
+      "affected": "src/render/assets.ts 의 UI_ASSET 에 같은 ID 를 더해야 코드가 실제로 부를 수 있다. 등록만으로는 화면이 바뀌지 않는다. shutter_left·shutter_right 는 각 960×1080 이고 합치면 A3 목업의 배경인 닫힌 미닫이문 1920×1080 이 된다 — 두 장으로 나뉜 이유는 나중에 좌우로 열리는 연출을 위해서다(아트 디렉션 12.5.5). raid_notice 세 종은 재배 HUD 가 아니라 정비 화면 전용이다 — 재배 쪽은 signboard 아래칸에 문구만 넣고 구분은 layout.css 의 색이 한다",
+      "decisions": ["DEC-ART-004", "DEC-UI-020", "DEC-RUN-011"]
     }
   ]
 }
