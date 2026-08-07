@@ -1155,6 +1155,15 @@ function advanceBob(
   return { phase: prev.phase, facing }
 }
 
+/**
+ * 필드가 입력을 갖고 있던 마지막 조준 각도.
+ *
+ * 그리는 시점의 `input.aimAngle()` 을 그대로 쓰면 일시정지·대화·정비가 열려
+ * 있어도 조준선이 커서를 따라다닌다. 낫·투척은 계속 `input.aimAngle()` 을
+ * 직접 읽는다 — 그쪽은 필드가 입력을 가질 때만 불리므로 굳힐 이유가 없다.
+ */
+let fieldAimAngle = 0
+
 /** 이번 프레임의 걷기 위상과 방향. 뷰를 만들 때 읽는다 */
 let playerBob: number | null = null
 let playerFacing: Facing = null
@@ -1172,6 +1181,20 @@ let hostileAttackRemaining = 0
 /** 교체 스프라이트가 보이는 시간. 표현이라 승인 데이터가 아니다 */
 const ATTACK_SPRITE_SECONDS = 0.2
 
+/**
+ * 방금 맞은 적대 개체의 명중 표시. 인스턴스 ID → 남은 초.
+ *
+ * `combat.ts` 의 `damaged` 이벤트가 `overTime` 구분자를 **"화면 표시를 가르는 데
+ * 쓴다"** 는 주석과 함께 갖고 있었는데 듣는 쪽이 없었다. 지속 피해 틱에는 켜지
+ * 않는다 — 틱마다 켜면 불타는 내내 충격선이 깜빡여 지속 피해 링과 뜻이 겹친다.
+ */
+const hitFlashes = new Map<string, number>()
+const IMPACT_FLASH_SECONDS = 0.22
+
+/** 플레이어가 방금 맞았다는 표시가 남은 초 */
+let playerHitRemaining = 0
+const PLAYER_HIT_SECONDS = 0.45
+
 /** 런이 바뀌면 개체 키가 재사용되므로 위상을 버린다 */
 function resetBob(): void {
   bobStates.clear()
@@ -1180,6 +1203,9 @@ function resetBob(): void {
   hostileBob = null
   hostileFacing = null
   hostileAttackRemaining = 0
+  // 인스턴스 ID 로 들고 있어서 새 런이 같은 키를 다시 쓴다
+  hitFlashes.clear()
+  playerHitRemaining = 0
 }
 
 /**
@@ -1219,6 +1245,14 @@ function advanceCombatFeedback(dt: number): void {
   }
   if (hostileAttackRemaining > 0) {
     hostileAttackRemaining = Math.max(0, hostileAttackRemaining - dt)
+  }
+  if (playerHitRemaining > 0) {
+    playerHitRemaining = Math.max(0, playerHitRemaining - dt)
+  }
+  for (const [id, remaining] of hitFlashes) {
+    const next = remaining - dt
+    if (next <= 0) hitFlashes.delete(id)
+    else hitFlashes.set(id, next)
   }
 }
 
@@ -1287,6 +1321,11 @@ function updateRaid(dt: number): void {
   // 플레이어 → 주민. 야생동물과 같은 시스템을 쓰되 대상만 바뀐다.
   combat.setTargets(currentTargets())
   for (const event of combat.update(dt)) {
+    // 명중 순간 충격선 (아트 디렉션 12.2). 지속 피해 틱은 뺀다 — `overTime` 이
+    // 정확히 그것을 가르라고 있는 구분자인데 8/4부터 아무도 안 읽고 있었다.
+    if (event.type === 'damaged' && event.overTime !== true && event.targetId !== undefined) {
+      hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
+    }
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
       onTargetKilled(event.targetId ?? '')
@@ -2267,6 +2306,7 @@ function hostileViews(): HostileView[] {
             // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-002 가 야생동물에
             // bob 을 적용할지는 정하지 않았다 (field.ts HostileView.bob 주석).
             bob: hostileBob,
+            hitFlash: flashRatio(hostile.entity.instanceId),
           },
         ]
 
@@ -2283,7 +2323,15 @@ function hostileViews(): HostileView[] {
     slowed: runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
     burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
     assetId: runtime.species.assets?.field_sprite,
+    // 명중 표시는 야생동물에도 준다. bob 과 달리 이건 DEC-CONTENT-013 이 요구한
+    // 효과 구분이지 DEC-ART-002 의 스프라이트 예외가 아니다.
+    hitFlash: flashRatio(runtime.entity.instanceId),
   })))
+}
+
+/** 명중 표시 남은 정도 1~0. 렌더는 초가 아니라 비율을 받는다 */
+function flashRatio(instanceId: string): number {
+  return (hitFlashes.get(instanceId) ?? 0) / IMPACT_FLASH_SECONDS
 }
 
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
@@ -2363,6 +2411,9 @@ function onSickle(): void {
   bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
 
   for (const hit of result.hits) {
+    // 낫은 `swingSickle()` 이 명중을 그 자리에서 돌려주므로 `combat.update()` 의
+    // `damaged` 를 타지 않는다. 충격선을 여기서 따로 켠다.
+    hitFlashes.set(hit.targetId, IMPACT_FLASH_SECONDS)
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
     wildlife?.notifyDamagedByPlayer(hit.targetId)
@@ -3257,6 +3308,13 @@ const loop = createGameLoop(
       // 임시 수치로 움직여 보는 상태이고 밭도 그려지지 않는다.
       if (worldBounds !== null) clampToWorld(player, worldBounds)
 
+      // 조준선은 **필드가 입력을 갖고 있을 때만** 따라간다 (DEC-UI-026).
+      //
+      // 캔버스는 화면 층위와 무관하게 매 프레임 그려서(위 `renderer.draw` 주석),
+      // 일시정지나 대화가 열려 있어도 조준선이 커서를 쫓아다녔다. 멈춘 화면에서
+      // 선만 움직이면 조작이 살아 있는 것처럼 보인다. 마지막 각도로 굳힌다.
+      if (scenes.inputOwner() === null) fieldAimAngle = input.aimAngle()
+
       // 걷는 흔들림 (DEC-ART-002). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
       // 좌표가 안 바뀌는 것이 그대로 "멈춤" 으로 읽힌다.
       const playerStep = advanceBob('player', player.x, player.y, dt)
@@ -3372,13 +3430,14 @@ const loop = createGameLoop(
       if (scenes.currentFieldMode() === null) renderer.clear()
       else renderer.draw({
         player,
-        aimAngle: input.aimAngle(),
+        aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
         // 방향·공격 교체 스프라이트 (DEC-ART-002). 낫을 휘두르는 동안은
         // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.
         playerAsset: characterSprite(playerAssets, playerFacing, sickleSwing !== null),
         playerBob,
+        playerHit: playerHitRemaining / PLAYER_HIT_SECONDS,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({
@@ -3813,6 +3872,11 @@ bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
  * 반드시 하나를 빠뜨린다.
  */
 bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
+// 맞았다는 것을 화면으로도 알린다 (8/7 플레이 테스트). 때리는 쪽 표시는 있었는데
+// 맞는 쪽이 없어서 체력 숫자 말고는 신호가 없었다.
+bus.on('combat.playerDamaged', () => {
+  playerHitRemaining = PLAYER_HIT_SECONDS
+})
 
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)

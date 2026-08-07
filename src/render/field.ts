@@ -176,6 +176,14 @@ export interface FieldView {
    * 그리기와 상태가 섞인다.
    */
   playerBob?: number | null
+  /**
+   * 플레이어가 방금 맞았다는 표시가 남은 정도 1~0.
+   *
+   * 8/7 플레이 테스트의 *"야생동물한테 얻어맞는 느낌을 표현하면 좋을 듯"* 이다.
+   * 때리는 쪽 표시는 있었는데 **맞는 쪽이 없어서**, 체력 숫자가 줄어드는 것
+   * 말고는 맞았다는 신호가 없었다. `DEC-ART-002` 가 허용한 투명도로 깜빡인다.
+   */
+  playerHit?: number
 }
 
 /**
@@ -212,6 +220,14 @@ export interface HostileView {
    * 부르는 쪽이 주민 자리에서만 채운다 (main.ts `hostileViews()`).
    */
   bob?: number | null
+  /**
+   * 방금 맞았다는 표시가 남은 정도 1~0 (아트 디렉션 12.2 — 이펙트 넷 중 "명중 순간").
+   *
+   * **지속 피해 틱에는 켜지 않는다.** `CombatEvent.overTime` 이 그것을 가르라고
+   * 이미 있었다 — 틱마다 켜면 불타는 내내 충격선이 깜빡여 지속 피해 링과
+   * 뜻이 겹친다.
+   */
+  hitFlash?: number
 }
 
 export interface ProjectileView {
@@ -307,6 +323,16 @@ const TRAIL = 0.45
  */
 const BOB_LIFT = 0.06
 const BOB_SQUASH = 0.06
+
+/**
+ * 명중 순간 충격선. 개수·퍼지는 거리·길이 모두 표현이라 승인 데이터가 아니다.
+ *
+ * 여섯 개면 어느 방향에서 맞았는지 묻지 않고 "맞았다" 로만 읽힌다. 실제 피해는
+ * 방향이 없으므로(사거리·반경 판정) 방향을 그리면 없는 정보를 지어내는 것이 된다.
+ */
+const IMPACT_LINES = 6
+const IMPACT_SPREAD = 10
+const IMPACT_LENGTH = 7
 
 export function createFieldRenderer(
   container: HTMLElement,
@@ -468,10 +494,18 @@ export function createFieldRenderer(
 
     // 플레이어 — 그림이 있으면 그것을, 없으면 사각형을 그린다.
     // 기준점은 스프라이트 중심이고 논리 좌표를 그 중심에 맞춘다 (DEC-ART-002).
+    //
+    // 맞은 직후에는 빠르게 깜빡인다. **한 번 흐려졌다 돌아오는 것이 아니라
+    // 여러 번 껌뻑여야** 맞았다는 신호로 읽힌다 — 한 번이면 그리기가 튄 것처럼
+    // 보인다. 투명도는 `DEC-ART-002` 가 허용한 표현이다.
+    const hit = view.playerHit ?? 0
+    ctx.save()
+    if (hit > 0) ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.cos(hit * Math.PI * 5))
     if (!drawWorldSprite(view.playerAsset, view.player, view.playerBob)) {
       ctx.fillStyle = '#e8d9a0'
       ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
     }
+    ctx.restore()
 
     // 낫 휘두름 (아트 디렉션 12.2 — 이펙트 넷 중 하나).
     //
@@ -643,6 +677,30 @@ export function createFieldRenderer(
       ctx.beginPath()
       ctx.arc(at.x, at.y, radius + 6 + hostile.windup * 14, 0, Math.PI * 2)
       ctx.stroke()
+    }
+
+    // 명중 순간 — 짧은 방사형 충격선 (아트 디렉션 12.2 이펙트 넷 중 하나).
+    //
+    // 선이 바깥으로 퍼지면서 사라진다. 링이 아니라 **끊긴 선 여러 개**인 이유는
+    // 둔화·지속 피해가 이미 링을 쓰고 있어서다 — 같은 모양이면 무엇이 일어났는지
+    // 안 갈린다 (`DEC-CONTENT-013` 이 효과 구분을 요구한다).
+    const hitFlash = hostile.hitFlash ?? 0
+    if (hitFlash > 0) {
+      ctx.save()
+      ctx.globalAlpha = hitFlash
+      ctx.strokeStyle = '#f4ecd0'
+      ctx.lineWidth = 2
+      const spread = radius + (1 - hitFlash) * IMPACT_SPREAD
+      for (let i = 0; i < IMPACT_LINES; i += 1) {
+        const angle = (Math.PI * 2 * i) / IMPACT_LINES
+        const cos = Math.cos(angle)
+        const sin = Math.sin(angle)
+        ctx.beginPath()
+        ctx.moveTo(at.x + cos * spread, at.y + sin * spread)
+        ctx.lineTo(at.x + cos * (spread + IMPACT_LENGTH), at.y + sin * (spread + IMPACT_LENGTH))
+        ctx.stroke()
+      }
+      ctx.restore()
     }
 
     // 체력 막대
