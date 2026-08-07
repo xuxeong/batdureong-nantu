@@ -352,6 +352,24 @@ export function createFieldRenderer(
   const ctx = context
 
   /**
+   * `layout.css` 의 색을 캔버스로 가져온다.
+   *
+   * **색의 원본은 `layout.css` 다** — 그 파일 32행이 8/4 부터 그렇게 선언하고
+   * 있었는데 캔버스 색은 여기 하드코딩돼 있어 둘이 갈려 있었다. 2026-08-07 에
+   * 전성민이 조준선 색을 *"layout.css 에서 관리한다"* 로 정하면서 통로를 낸다.
+   * **아직 조준선만 이 통로를 쓴다.** 나머지 캔버스 색을 옮기는 것은 별도 작업이다.
+   *
+   * 한 번만 읽는다. 커스텀 프로퍼티는 런타임에 바뀌지 않고, 매 프레임
+   * `getComputedStyle` 을 부르면 레이아웃을 강제로 다시 계산한다.
+   */
+  function cssColor(name: string, fallback: string): string {
+    const value = getComputedStyle(canvas).getPropertyValue(name).trim()
+    return value === '' ? fallback : value
+  }
+  const aimOutline = cssColor('--field-aim-outline', '#2a1c16')
+  const aimLine = cssColor('--field-aim-line', '#f2ead1')
+
+  /**
    * 캔버스 백킹 해상도를 **실제로 화면을 덮는 픽셀 수**에 맞춘다.
    *
    * 무대(`render/stage.ts`)가 1920×1080 상자를 통째로 축소하므로 컨테이너 크기는
@@ -604,18 +622,30 @@ export function createFieldRenderer(
     }
 
     // 조준선 — 마우스 커서 방향. DEC-INPUT-002 는 판정 기준(커서 방향)만 정했고
-    // 이 선을 그리라는 규칙은 없다. 길이·색은 2026-08-07 아트 디렉션 14.1 로 정했다 —
-    // 제출 빌드에서도 계속 그릴지는 아직 미정이라 지금은 조건 없이 그린다.
+    // 이 선을 그리라는 규칙은 없다. 길이·색은 아트 디렉션 14.1 로 정했다.
+    //
+    // **제출 빌드에도 남긴다** (2026-08-07 전성민). 붉은색을 쓰던 것을 어두운
+    // 갈색 외곽선 + 한지색 안쪽 선으로 바꿨다 — 4.2 절이 *"고추와 토마토가 붉은
+    // 계열이라 밭 안에서 붉은색을 쓰면 익은 작물과 같은 색으로 읽힌다"* 로 정했고
+    // 조준선은 띠 위가 아니라 밭 안이라 그 판독에 끼어든다. 두 겹으로 그리는 것은
+    // 밝은 흙과 어두운 수풀 양쪽에서 다 보이게 하기 위해서다.
     const aimLength = radius * 4.5
-    ctx.strokeStyle = '#ff4d4d'
+    const aimToX = screen.x + Math.cos(view.aimAngle) * aimLength
+    const aimToY = screen.y + Math.sin(view.aimAngle) * aimLength
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = aimOutline
+    ctx.lineWidth = 5
+    ctx.beginPath()
+    ctx.moveTo(screen.x, screen.y)
+    ctx.lineTo(aimToX, aimToY)
+    ctx.stroke()
+    ctx.strokeStyle = aimLine
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(screen.x, screen.y)
-    ctx.lineTo(
-      screen.x + Math.cos(view.aimAngle) * aimLength,
-      screen.y + Math.sin(view.aimAngle) * aimLength,
-    )
+    ctx.lineTo(aimToX, aimToY)
     ctx.stroke()
+    ctx.lineCap = 'butt'
 
     // 상호작용 안내 (DEC-INPUT-003). 실제 HUD 는 8/3 에 DOM 으로 올라온다.
     if (view.actionPrompt) {
