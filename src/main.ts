@@ -1195,6 +1195,20 @@ const IMPACT_FLASH_SECONDS = 0.22
 let playerHitRemaining = 0
 const PLAYER_HIT_SECONDS = 0.45
 
+/**
+ * 튜토리얼 `use_throwable` 완료까지 남은 초. 대기 중이 아니면 null.
+ *
+ * **던지는 것을 보고 나서 넘어가게 하려는 지연이다.** 8/7 플레이 테스트에서
+ * *"투척 무기를 던지는 걸 못 보고 좌클릭 누르자마자 넘어간다"* 가 나왔다.
+ * 마지막 단계라 완료되는 즉시 종료 화면이 필드를 덮어서, 자기가 뭘 했는지
+ * 못 본 채로 튜토리얼이 끝난다.
+ *
+ * **`DEC-UI-030` 의 "실제로 성공하면 다음으로 넘어간다" 를 바꾸지 않는다** —
+ * 성공 여부가 아니라 알리는 시점만 미룬다. 실패하면 애초에 이벤트가 안 온다.
+ */
+let throwableStepDelay: number | null = null
+const THROWABLE_STEP_DELAY_SECONDS = 0.9
+
 /** 런이 바뀌면 개체 키가 재사용되므로 위상을 버린다 */
 function resetBob(): void {
   bobStates.clear()
@@ -1206,6 +1220,9 @@ function resetBob(): void {
   // 인스턴스 ID 로 들고 있어서 새 런이 같은 키를 다시 쓴다
   hitFlashes.clear()
   playerHitRemaining = 0
+  // 튜토리얼을 건너뛰거나 런이 끝나면 대기 중인 완료 알림을 버린다.
+  // 안 버리면 본 런 1일차에서 뒤늦게 튜토리얼 단계가 완료된다.
+  throwableStepDelay = null
 }
 
 /**
@@ -1253,6 +1270,13 @@ function advanceCombatFeedback(dt: number): void {
     const next = remaining - dt
     if (next <= 0) hitFlashes.delete(id)
     else hitFlashes.set(id, next)
+  }
+  if (throwableStepDelay !== null) {
+    throwableStepDelay -= dt
+    if (throwableStepDelay <= 0) {
+      throwableStepDelay = null
+      completeTutorialStep('use_throwable')
+    }
   }
 }
 
@@ -3862,7 +3886,13 @@ bus.on('craft.made', () => completeTutorialStep('craft_item'))
 // 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-014).
 bus.on('quickslot.assigned', () => completeTutorialStep('assign_quickslot'))
 bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
-bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
+// 투척만 곧바로 알리지 않는다. 마지막 단계라 완료되는 순간 종료 화면이 필드를
+// 덮어서, 던진 것이 날아가는 것을 못 본 채 튜토리얼이 끝난다 (8/7 플레이 테스트).
+// 대기 중에 또 던져도 시계를 새로 감지 않는다 — 처음 던진 것을 기준으로 센다.
+bus.on('combat.throwableSpent', () => {
+  if (tutorial === null || !inTutorial()) return
+  if (throwableStepDelay === null) throwableStepDelay = THROWABLE_STEP_DELAY_SECONDS
+})
 /**
  * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
  *
