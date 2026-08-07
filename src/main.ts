@@ -525,6 +525,9 @@ function startNewRun(playerName: string): void {
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
+  // 걷기 위상은 개체 키로 들고 있어서 새 런이 같은 키를 다시 쓴다 (DEC-ART-002).
+  // 안 지우면 직전 런의 마지막 좌표와 비교해 첫 프레임에 순간이동으로 읽힌다.
+  resetBob()
 
   dayStartJournal = null
   journalRequestDay = null
@@ -1052,6 +1055,68 @@ let emptyFireRemaining = 0
  * 가리킨다. 판정은 `swingSickle()` 이 그 순간의 각도로 이미 끝냈다.
  */
 let sickleSwing: { angle: number; remaining: number } | null = null
+
+/**
+ * 걷는 흔들림(bob)의 위상. 개체 키 → 위상 0~1 과 직전 좌표 (`DEC-ART-002`).
+ *
+ * **확정문이 걷기를 스프라이트 예외에서 빼고 코드 bob 으로 못박았다** —
+ * *"이동 중 흔들림은 예외가 아니라 코드가 위치를 오르내리는 방식(bob)으로
+ * 표현하며 새 스프라이트를 만들지 않는다."*
+ *
+ * 위상을 렌더가 아니라 여기서 들고 있는 이유는 **실제로 움직였는지를 좌표
+ * 변화로만 알 수 있어서다.** 플레이어는 입력으로, 적대 주민은 자기 AI 로
+ * 움직이므로 속도를 한곳에서 읽을 수 없다. 직전 좌표와 비교하면 어느 쪽이든
+ * 같은 방법으로 판정된다.
+ */
+const bobStates = new Map<string, { phase: number; x: number; y: number }>()
+
+/** 한 걸음에 걸리는 시간. 표현이라 승인 데이터가 아니다 */
+const BOB_STEP_SECONDS = 0.42
+/**
+ * 이 속도 아래면 멈춘 것으로 본다 (월드 단위/초).
+ *
+ * 0 으로 두면 밀림·반올림 같은 미세한 좌표 변화에도 계속 튄다.
+ */
+const BOB_MOVING_SPEED = 4
+
+/**
+ * 좌표 변화로 이동을 판정해 위상을 진행시킨다. 멈췄으면 null.
+ *
+ * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
+ * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
+ */
+function advanceBob(key: string, x: number, y: number, dt: number): number | null {
+  const prev = bobStates.get(key)
+  if (prev === undefined) {
+    bobStates.set(key, { phase: 0, x, y })
+    return null
+  }
+
+  const speed = dt > 0 ? Math.hypot(x - prev.x, y - prev.y) / dt : 0
+  prev.x = x
+  prev.y = y
+
+  if (speed < BOB_MOVING_SPEED) {
+    // 멈추면 착지 자세로 되돌린다. 공중에서 굳으면 떠 있는 것처럼 보인다.
+    prev.phase = 0
+    return null
+  }
+
+  const rate = speed / runConfig.moveSpeed / BOB_STEP_SECONDS
+  prev.phase = (prev.phase + dt * rate) % 1
+  return prev.phase
+}
+
+/** 이번 프레임의 걷기 위상. 뷰를 만들 때 읽는다 */
+let playerBob: number | null = null
+let hostileBob: number | null = null
+
+/** 런이 바뀌면 개체 키가 재사용되므로 위상을 버린다 */
+function resetBob(): void {
+  bobStates.clear()
+  playerBob = null
+  hostileBob = null
+}
 
 function advanceCombatFeedback(dt: number): void {
   if (autoSwitchFlash !== null) {
@@ -2098,6 +2163,9 @@ function hostileViews(): HostileView[] {
             slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
             burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
             assetId: residentSprites.get(hostile.entity.residentId),
+            // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-002 가 야생동물에
+            // bob 을 적용할지는 정하지 않았다 (field.ts HostileView.bob 주석).
+            bob: hostileBob,
           },
         ]
 
@@ -3088,6 +3156,14 @@ const loop = createGameLoop(
       // 임시 수치로 움직여 보는 상태이고 밭도 그려지지 않는다.
       if (worldBounds !== null) clampToWorld(player, worldBounds)
 
+      // 걷는 흔들림 (DEC-ART-002). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
+      // 좌표가 안 바뀌는 것이 그대로 "멈춤" 으로 읽힌다.
+      playerBob = advanceBob('player', player.x, player.y, dt)
+      hostileBob =
+        hostile === null
+          ? null
+          : advanceBob('hostile', hostile.entity.x, hostile.entity.y, dt)
+
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
       advanceCombatFeedback(dt)
 
@@ -3194,6 +3270,7 @@ const loop = createGameLoop(
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
         playerAsset: playerSprite,
+        playerBob,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({

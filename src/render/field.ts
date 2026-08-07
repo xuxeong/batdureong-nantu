@@ -168,6 +168,14 @@ export interface FieldView {
    * `DEC-ART-001` 폐기·`DEC-ART-002` 대체로 그 길이 없어졌다.
    */
   playerAsset?: string | null
+  /**
+   * 걷는 흔들림의 위상 0~1. 멈춰 있으면 null (`DEC-ART-002`).
+   *
+   * 위상을 렌더가 아니라 부르는 쪽이 들고 있는다 — 실제로 움직였는지는
+   * 상태를 가진 쪽만 알고, 렌더가 좌표를 프레임마다 기억하기 시작하면
+   * 그리기와 상태가 섞인다.
+   */
+  playerBob?: number | null
 }
 
 /**
@@ -196,6 +204,14 @@ export interface HostileView {
    * 확정 규칙이라(`DEC-CONTENT-007`, `DEC-CONTENT-013`) 그림이 왔다고 빠지지 않는다.
    */
   assetId?: string | null
+  /**
+   * 걷는 흔들림의 위상 0~1. 멈춰 있거나 대상이 아니면 null (`DEC-ART-002`).
+   *
+   * **적대 주민에게만 온다.** `DEC-ART-002` 는 bob 을 야생동물에 적용할지
+   * 정하지 않았고, 까마귀가 통통 튀는 것이 맞는지도 판단이 필요하다.
+   * 부르는 쪽이 주민 자리에서만 채운다 (main.ts `hostileViews()`).
+   */
+  bob?: number | null
 }
 
 export interface ProjectileView {
@@ -276,6 +292,21 @@ const BACKDROP = '#1d2b1a'
  * 읽히면서도 사거리 전체를 상시 표시하는 것처럼 보이지 않는다.
  */
 const TRAIL = 0.45
+
+/**
+ * 이동 중 상하 흔들림(bob)의 크기. 전부 스프라이트 높이 대비 비율이고
+ * **표현이라 승인 데이터가 아니다.**
+ *
+ * `DEC-ART-002` 가 *"걷기 동작은 예외에 넣지 않는다. 이동 중 흔들림은 예외가
+ * 아니라 코드가 위치를 오르내리는 방식(bob)으로 표현하며 새 스프라이트를 만들지
+ * 않는다"* 로 확정했다. 그림은 정면 한 장 그대로다.
+ *
+ * `SQUASH` 는 착지에서 세로로 눌리는 정도다. 같은 값만큼 가로로 퍼뜨려
+ * 부피가 유지되는 것처럼 보이게 한다 — 세로만 줄이면 고무공이 아니라
+ * 찌그러진 그림이 된다.
+ */
+const BOB_LIFT = 0.06
+const BOB_SQUASH = 0.06
 
 export function createFieldRenderer(
   container: HTMLElement,
@@ -364,16 +395,47 @@ export function createFieldRenderer(
     return true
   }
 
-  /** 월드 좌표를 중심으로 원래 크기로 그린다. 경작지·작물·강조 틀이 쓴다 */
-  function drawWorldSprite(assetId: string | null | undefined, at: Vec2): boolean {
+  /**
+   * 월드 좌표를 중심으로 원래 크기로 그린다. 경작지·작물·강조 틀이 쓴다.
+   *
+   * `bob` 이 0~1 위상으로 오면 걷는 흔들림을 얹는다 (`DEC-ART-002`). null 이면
+   * 원래 크기 그대로다 — **크기를 바꾸는 것이 "에셋 크기가 곧 화면 크기" 와
+   * 부딪히지 않는 이유는 이것이 데이터에서 읽는 고정 배율이 아니라 시간에 따라
+   * 변하는 표현이기 때문이다.** 기준 크기는 여전히 파일이 정한다.
+   */
+  function drawWorldSprite(
+    assetId: string | null | undefined,
+    at: Vec2,
+    bob?: number | null,
+  ): boolean {
     const image = images.get(assetId)
     if (image === null) return false
 
     const center = camera.worldToScreen(at)
+    const width = image.naturalWidth
+    const height = image.naturalHeight
+
+    if (bob === null || bob === undefined) {
+      ctx.drawImage(image, center.x - width / 2, center.y - height / 2)
+      return true
+    }
+
+    // 위상 0~1 이 한 걸음이다. 0 과 1 이 착지, 0.5 가 정점이다.
+    const lift = Math.sin(Math.PI * bob)
+    // 정점에서 늘어나고 착지에서 눌린다. 발이 뜨지 않게 **아래 끝을 고정**한다 —
+    // 중심을 기준으로 줄이면 눌릴 때 발이 같이 올라와 땅에서 떨어진 것처럼 보인다.
+    const scaleY = 1 + (lift - 0.5) * 2 * BOB_SQUASH
+    const scaleX = 1 - (scaleY - 1)
+    const drawWidth = width * scaleX
+    const drawHeight = height * scaleY
+    const bottom = center.y + height / 2 - lift * height * BOB_LIFT
+
     ctx.drawImage(
       image,
-      center.x - image.naturalWidth / 2,
-      center.y - image.naturalHeight / 2,
+      center.x - drawWidth / 2,
+      bottom - drawHeight,
+      drawWidth,
+      drawHeight,
     )
     return true
   }
@@ -406,7 +468,7 @@ export function createFieldRenderer(
 
     // 플레이어 — 그림이 있으면 그것을, 없으면 사각형을 그린다.
     // 기준점은 스프라이트 중심이고 논리 좌표를 그 중심에 맞춘다 (DEC-ART-002).
-    if (!drawWorldSprite(view.playerAsset, view.player)) {
+    if (!drawWorldSprite(view.playerAsset, view.player, view.playerBob)) {
       ctx.fillStyle = '#e8d9a0'
       ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
     }
@@ -544,7 +606,7 @@ export function createFieldRenderer(
     const radius = hostile.radius * WORLD_TO_PIXEL
 
     // 몸통 — 그림이 있으면 그것을, 없으면 원을 그린다.
-    const drawn = drawWorldSprite(hostile.assetId, hostile)
+    const drawn = drawWorldSprite(hostile.assetId, hostile, hostile.bob)
     if (!drawn) {
       ctx.fillStyle = hostile.slowed ? '#6a7f9c' : '#9c5b4a'
       ctx.beginPath()
