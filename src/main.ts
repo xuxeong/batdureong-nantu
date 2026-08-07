@@ -1366,6 +1366,12 @@ function updateRaid(dt: number): void {
     const damage = allySupport.update(dt)
     if (damage !== null) {
       for (const event of combat.applySupportDamage(hostileTarget.entity.instanceId, damage)) {
+        // 지원 공격은 투사체가 없으므로(DEC-CONTENT-008) **명중 표시가 유일한
+        // 흔적이다.** 확정문이 "필요한 것은 시각적인 발사·명중 효과뿐" 이라고
+        // 정했는데 발사 쪽(attackFlash)만 있고 명중 쪽이 비어 있었다.
+        if (event.type === 'damaged' && event.targetId !== undefined) {
+          hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
+        }
         if (event.type === 'surrenderOffered') onSurrenderOffered()
       }
     }
