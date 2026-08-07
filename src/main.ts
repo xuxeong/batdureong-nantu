@@ -153,14 +153,14 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 
 /**
- * 필드가 그릴 논리 에셋 ID (DEC-ART-001).
+ * 필드가 그릴 논리 에셋 ID (DEC-ART-002).
  *
  * 승인 데이터가 오기 전에는 비어 있고, 그동안 필드는 플레이스홀더 도형으로 그려진다.
  * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
  */
 let fieldAssets: FieldAssetIds = {}
 /**
- * 필드에 그리는 논리 에셋 ID (`DEC-ART-001`, 아트 디렉션 F·E 단계).
+ * 필드에 그리는 논리 에셋 ID (`DEC-ART-002`, 아트 디렉션 F·E 단계).
  *
  * **주민은 `residents.csv`, 야생동물은 `wildlife.csv`, 투척물은
  * `throwable_weapons.csv` 의 `assets` 에서 온다.** 적대 주민이 쏘는 투사체만
@@ -176,7 +176,7 @@ let residentSprites = new Map<string, string | undefined>()
 let residentPortraits = new Map<string, string | undefined>()
 let residentProjectiles = new Map<string, string | undefined>()
 let throwableProjectiles = new Map<string, string | undefined>()
-/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
+/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-002) */
 let seedAssetId: string | null = null
 /** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
 let cropAssetsById = new Map<string, ContentAssets>()
@@ -706,7 +706,7 @@ async function bootData(): Promise<boolean> {
     const map = data.maps![0]
     camera.setWorldSize(map.world_width, map.world_height)
 
-    // ── 논리 에셋 ID (DEC-ART-001) ──────────────────
+    // ── 논리 에셋 ID (DEC-ART-002) ──────────────────
     //
     // 붙어 있는 것만 온다. **없는 역할을 코드가 지어내지 않는다** — 그림이 없으면
     // 렌더가 플레이스홀더로 그리고, 그 사실이 화면에 보이는 것이 맞다.
@@ -1905,7 +1905,7 @@ function plotViews(): readonly PlotView[] {
 }
 
 /**
- * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-001).
+ * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-002).
  *
  * **씨앗은 작물을 보지 않는다.** 씨앗 단계에서 종류를 공개하지 않는 것이 확정
  * 규칙(`DEC-FARM-001`)이라 그림도 작물별로 두지 않고 맵에 한 장이다. 여기서 작물

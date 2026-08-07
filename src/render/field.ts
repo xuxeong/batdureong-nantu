@@ -62,7 +62,7 @@ export interface PlotView {
    * 이 칸 위에 그릴 작물의 논리 에셋 ID. 빈 칸이거나 그림이 없으면 null.
    *
    * **단계에 맞는 역할을 고르는 것은 부르는 쪽이다.** 씨앗은 맵의 `crop_seed`
-   * 한 장이고(작물별로 두지 않는다 — `DEC-ART-001`) 성장·수확 가능은 작물 행의
+   * 한 장이고(작물별로 두지 않는다 — `DEC-ART-002`) 성장·수확 가능은 작물 행의
    * `crop_growing`·`crop_ready` 다. 렌더가 그 규칙을 알면 데이터 구조가 두 곳에 생긴다.
    */
   cropAssetId?: string | null
@@ -73,7 +73,7 @@ export interface PlotView {
  *
  * 콘텐츠 쪽(`maps`·`crops` 의 `assets`)에서 오는 것만 여기 있다. UI·시스템 에셋은
  * 어떤 콘텐츠에도 속하지 않아 `schema/enums.json` 고정 목록에서 오고 `assets.ts` 의
- * `UI_ASSET` 이 그 자리다 (`DEC-ART-001`).
+ * `UI_ASSET` 이 그 자리다 (`DEC-ART-002`).
  */
 export interface FieldAssetIds {
   /** 밭 바닥 + 밭 바깥 숲이 한 장 (map 의 background) */
@@ -96,7 +96,7 @@ export interface HarvestPopupView {
  *
  * `farm_plots.csv` 에는 좌표만 있고 크기가 없다. 크기는 콘텐츠 값이 아니라 표현이라
  * 여기 둔다 (개발 로드맵 2절). 실제 스프라이트가 있으면 그림의 자연 크기를 쓴다 —
- * `DEC-ART-001` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다.**
+ * `DEC-ART-002` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다.**
  * 여기서 다시 배율을 곱하면 아트가 정한 크기를 코드가 뒤집는 것이 된다.
  */
 const PLOT_HALF_SIZE = 45
@@ -157,7 +157,7 @@ export interface FieldView {
   /**
    * 플레이어의 `field_sprite` (`player_base_stats.csv` 의 `assets`).
    *
-   * 없으면 사각형으로 그린다. 좌우 반전은 아직 없다 — `DEC-ART-001` 이
+   * 없으면 사각형으로 그린다. 좌우 반전은 아직 없다 — `DEC-ART-002` 이
    * 프레임 애니메이션과 스프라이트 시트를 금지하면서 *"움직임은 코드가 위치·크기·
    * 투명도로 표현한다"* 로 허용 범위를 정했고, 반전이 그 안인지가 인계 문서 3-2 의
    * 미결이다. 정해지면 여기서 `scale(-1, 1)` 한 줄이다.
@@ -400,7 +400,7 @@ export function createFieldRenderer(
     const radius = view.collisionRadius * WORLD_TO_PIXEL
 
     // 플레이어 — 그림이 있으면 그것을, 없으면 사각형을 그린다.
-    // 기준점은 스프라이트 중심이고 논리 좌표를 그 중심에 맞춘다 (DEC-ART-001).
+    // 기준점은 스프라이트 중심이고 논리 좌표를 그 중심에 맞춘다 (DEC-ART-002).
     if (!drawWorldSprite(view.playerAsset, view.player)) {
       ctx.fillStyle = '#e8d9a0'
       ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
@@ -502,9 +502,11 @@ export function createFieldRenderer(
       ctx.textAlign = 'start'
     }
 
-    // 조준선 — 마우스 커서 방향 (DEC-INPUT-002)
-    const aimLength = radius * 2.5
-    ctx.strokeStyle = '#e8d9a0'
+    // 조준선 — 마우스 커서 방향. DEC-INPUT-002 는 판정 기준(커서 방향)만 정했고
+    // 이 선을 그리라는 규칙은 없다. 길이·색은 2026-08-07 아트 디렉션 14.1 로 정했다 —
+    // 제출 빌드에서도 계속 그릴지는 아직 미정이라 지금은 조건 없이 그린다.
+    const aimLength = radius * 4.5
+    ctx.strokeStyle = '#ff4d4d'
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(screen.x, screen.y)
@@ -649,7 +651,7 @@ export function createFieldRenderer(
    * 경작지와 작물.
    *
    * 스프라이트가 있으면 그것을 원래 크기로 그리고, 없으면 도형으로 대신한다.
-   * `DEC-ART-001` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다** —
+   * `DEC-ART-002` 이 월드 1단위 = 화면 1픽셀로 정해서 **에셋 크기가 곧 화면 크기다** —
    * 여기서 배율을 다시 곱하면 아트가 정한 크기를 코드가 뒤집는 것이 된다.
    *
    * 겹치는지는 승인 좌표가 정한다. 8/5 승인분이 간격 200×180 이고 스프라이트가
@@ -688,7 +690,7 @@ export function createFieldRenderer(
     // 작물 — 스프라이트가 있으면 단계별 그림, 없으면 커지고 밝아지는 사각형.
     //
     // 어느 그림을 쓸지는 부르는 쪽이 이미 골라 넘겼다 (PlotView.cropAssetId).
-    // 씨앗은 작물별로 두지 않고 맵에 한 장이라(DEC-ART-001) 여기서 작물 ID 로
+    // 씨앗은 작물별로 두지 않고 맵에 한 장이라(DEC-ART-002) 여기서 작물 ID 로
     // 되찾을 수 없다 — 그 규칙이 렌더에 있으면 데이터 구조가 두 곳에 생긴다.
     if (!drawWorldSprite(plot.cropAssetId, plot)) {
       const sizeByStage = { seed: 0.25, growing: 0.55, ready: 0.85 } as const

@@ -190,7 +190,7 @@ export type TutorialCompletionKey =
   | 'assign_quickslot'
 
 /**
- * DEC-ART-001 — 콘텐츠에 붙는 논리 에셋의 역할.
+ * DEC-ART-002 — 콘텐츠에 붙는 논리 에셋의 역할.
  *
  * `content_assets.csv` 의 `asset_role` 이자 논리 에셋 ID `asset.<구간>.<이름>` 의
  * 구간이다. 둘은 같은 값을 쓴다. UI·시스템 에셋은 어떤 콘텐츠에도 속하지 않아
@@ -278,7 +278,7 @@ export interface WorldMap extends CommonEntry {
   /**
    * 맵에 붙은 논리 에셋 (`background`·`farm_plot`·`crop_seed`).
    *
-   * **씨앗은 작물이 아니라 맵에 하나만 있다.** `DEC-ART-001` 이 "씨앗은 종류를
+   * **씨앗은 작물이 아니라 맵에 하나만 있다.** `DEC-ART-002` 이 "씨앗은 종류를
    * 공개하지 않으므로 작물별로 두지 않는다"로 확정해서, 네 작물이 전부 이 한 장을
    * 가리킨다. `crops[].assets` 에는 `crop_growing`·`crop_ready` 둘뿐이다.
    */
@@ -324,7 +324,7 @@ export interface Crop extends CommonEntry {
   /**
    * 작물에 붙은 논리 에셋 (`crop_growing`·`crop_ready`).
    *
-   * 씨앗 단계는 여기 없다 — 맵 쪽 `crop_seed` 한 장을 공용으로 쓴다 (DEC-ART-001).
+   * 씨앗 단계는 여기 없다 — 맵 쪽 `crop_seed` 한 장을 공용으로 쓴다 (DEC-ART-002).
    */
   assets?: ContentAssets
 }
