@@ -1176,8 +1176,13 @@ let fieldAimAngle = 0
  */
 const wildlifeHeadings = new Map<string, { angle: number; x: number; y: number }>()
 
-/** 아직 안 움직인 개체의 방향. 그림이 위를 보고 있으므로 회전 0 이 되는 각도다 */
-const HEADING_UP = -Math.PI / 2
+/**
+ * 아직 안 움직인 개체의 방향. **회전 0 이 되는 각도다.**
+ *
+ * 그림이 화면 아래쪽(+Y)을 보고 있어서 `field.ts` 가 `heading - 90도` 로 돌린다.
+ * 그래서 여기가 `+90도` 여야 처음 그림이 그려진 그대로 선다.
+ */
+const HEADING_REST = Math.PI / 2
 
 function advanceWildlifeHeadings(dt: number): void {
   const alive = new Set<string>()
@@ -1187,7 +1192,7 @@ function advanceWildlifeHeadings(dt: number): void {
 
     const prev = wildlifeHeadings.get(id)
     if (prev === undefined) {
-      wildlifeHeadings.set(id, { angle: HEADING_UP, x: runtime.entity.x, y: runtime.entity.y })
+      wildlifeHeadings.set(id, { angle: HEADING_REST, x: runtime.entity.x, y: runtime.entity.y })
       continue
     }
 

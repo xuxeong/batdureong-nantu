@@ -475,12 +475,14 @@ export function createFieldRenderer(
     // 야생동물의 진행 방향 회전 (`DEC-ART-003`). **bob 과 같이 오지 않는다** —
     // 확정문이 사람에게 bob, 야생동물에 회전으로 갈랐다.
     //
-    // 그림이 **위를 보고 있다고 본다.** 탑뷰 스프라이트의 머리가 캔버스 위쪽을
-    // 향하므로, 각도 0(오른쪽)인 진행 방향에 맞추려면 90도를 더해야 한다.
+    // **그림은 화면 아래쪽을 보고 있다.** 사람 SD 와 같은 정면 그림이라 머리가
+    // 위, 몸이 아래이고 시선이 보는 사람 쪽(+Y)이다. 진행 방향 각도 0 은
+    // 오른쪽(+X)이므로 **90도를 뺀다.** 처음엔 그림이 위를 본다고 보고 더했다가
+    // 머리가 진행 방향의 정확히 반대를 가리켰다 (담당자 확인, 8/8).
     if (heading !== null && heading !== undefined) {
       ctx.save()
       ctx.translate(center.x, center.y)
-      ctx.rotate(heading + Math.PI / 2)
+      ctx.rotate(heading - Math.PI / 2)
       ctx.drawImage(image, -width / 2, -height / 2)
       ctx.restore()
       return true
