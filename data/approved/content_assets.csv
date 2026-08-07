@@ -41,3 +41,8 @@ crop_attribute.fiery,icon,asset.icon.fiery
 crop_attribute.mushy,icon,asset.icon.mushy
 crop_attribute.slippery,icon,asset.icon.slippery
 crop_attribute.sticky,icon,asset.icon.sticky
+player_base_stats.prototype,portrait,asset.portrait.player
+resident.yeongsun,portrait,asset.portrait.yeongsun
+resident.manbok,portrait,asset.portrait.manbok
+resident.geumrye,portrait,asset.portrait.geumrye
+resident.village_head,portrait,asset.portrait.village_head
