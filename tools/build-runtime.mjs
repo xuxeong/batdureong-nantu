@@ -129,7 +129,7 @@ function main() {
   for (const [name, list] of links) {
     const def = schema.tables.get(name)
     // 부모가 한 테이블이 아닐 수 있다. content_assets.csv 는 에셋을 쓰는 콘텐츠
-    // 전체가 부모라 parent.table 이 `a.csv | b.csv` 후보 목록이다 (DEC-ART-002).
+    // 전체가 부모라 parent.table 이 `a.csv | b.csv` 후보 목록이다 (DEC-ART-003).
     const parentTables = refTargets(def.parent).map((f) => independent.get(f)).filter(Boolean)
     if (parentTables.length === 0) continue
 
