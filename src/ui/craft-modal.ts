@@ -28,6 +28,7 @@
 //
 // 목록 정렬 규칙도 확정문이 정해 두었다 — 아래 `sortRecipes()` 가 그 순서 그대로다.
 
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
 import { createTooltip } from './tooltip.ts'
 import { createIcon } from './icon.ts'
@@ -196,8 +197,18 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
         const rowIcon = createIcon(recipe.resultIcon)
         if (rowIcon !== null) button.appendChild(rowIcon)
         button.append(el('div', 'hub__row-name', recipe.resultName))
-        // 잠김을 목록에서도 알 수 있게 한다. 조건은 골랐을 때 상세에 나온다
-        if (recipe.locked) button.appendChild(el('div', 'hub__row-sub', '잠김'))
+        // 잠김을 목록에서도 알 수 있게 한다. 조건은 골랐을 때 상세에 나온다.
+        // 자물쇠 그림(B2)이 있으면 그것이 서고 없으면 글자가 남는다 — 어느 쪽이든
+        // 해금 조건은 여기 오지 않는다 (DEC-UI-006).
+        if (recipe.locked) {
+          const lock = el('div', 'hub__row-sub hub__lock', '잠김')
+          const lockUrl = assetCssUrl(UI_ASSET.lockIcon)
+          if (lockUrl !== null) {
+            lock.style.setProperty('--hub-lock-image', lockUrl)
+            lock.classList.add('hub__lock--has-art')
+          }
+          button.appendChild(lock)
+        }
 
         button.addEventListener('click', () => {
           selectedId = recipe.id
@@ -251,6 +262,8 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
 
   const action = el('button', 'hub__action', '제작') as HTMLButtonElement
   action.type = 'button'
+  const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
+  if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
   footer.append(timesWrap, preview, action)
 

@@ -16,6 +16,7 @@
 // **수량이 0이어도 편성을 풀지 않는다** (DEC-RESOURCE-015). 편성은 유지한 채
 // 사용 불가로만 구분해 표시한다. 같은 무기를 다시 제작하면 그 칸이 바로 살아난다.
 
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
 import { createIcon } from './icon.ts'
 import './layout.css'
@@ -82,6 +83,8 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
 
   const clearButton = el('button', 'hub__action', '칸 비우기') as HTMLButtonElement
   clearButton.type = 'button'
+  const clearUrl = assetCssUrl(UI_ASSET.buttonNormal)
+  if (clearUrl !== null) clearButton.style.setProperty('--hub-button-image', clearUrl)
   clearButton.addEventListener('click', () => {
     if (selectedIndex === null) return
     handlers.assign(selectedIndex, null)

@@ -20,6 +20,7 @@
 // 이 파일은 그 결과를 그린다.
 
 import { createPopupShell, createElement as el } from './maintenance-hub.ts'
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
 import { createIcon } from './icon.ts'
@@ -170,7 +171,7 @@ export function createShopModal(
         notice = null
         // 품목이 바뀌면 수량을 1로 되돌린다. 앞 품목에 맞춰 넣은 큰 수가
         // 그대로 남아 있으면 다음 품목에서 곧바로 비활성 상태가 된다.
-        quantity.value = '1'
+        setAmount(1)
       })
 
       // 설명과 수치는 여기로 간다 (14.9). 뜰 때 최신 뷰에서 읽는다.
@@ -186,52 +187,91 @@ export function createShopModal(
   }
 
   // ── 바닥: 수량 · 미리보기 · 실행 ─────────────────
+  //
+  // **입력칸이 아니라 증감 버튼이다** (A3 목업, `asset.ui.step_plus`·`step_minus`).
+  //
+  // 8/8까지 `<input type="number">` 였는데 그것은 `DEC-UI-025` 위반이었다 —
+  // *"1차 프로토타입의 화면 조작은 마우스로만 한다"* 이고, `DEC-UI-030` 이 예외로
+  // 둔 것은 이름 입력 하나뿐이다. 숫자를 치려면 키보드가 있어야 하므로 마우스만으로는
+  // 1 말고 다른 수량을 고를 수 없었다.
+  let amount = 1
+
   const qtyWrap = el('div', 'hub__qty')
-  const quantity = el('input') as HTMLInputElement
-  quantity.type = 'number'
-  quantity.min = '1'
-  quantity.step = '1'
-  quantity.value = '1'
-  qtyWrap.append(el('span', 'hub__row-sub', '수량'), quantity)
+  const minus = el('button', 'hub__step hub__step--minus') as HTMLButtonElement
+  minus.type = 'button'
+  minus.ariaLabel = '수량 줄이기'
+  const qtyValue = el('span', 'hub__qty-value', '1')
+  const plus = el('button', 'hub__step hub__step--plus') as HTMLButtonElement
+  plus.type = 'button'
+  plus.ariaLabel = '수량 늘리기'
+
+  const minusUrl = assetCssUrl(UI_ASSET.stepMinus)
+  if (minusUrl !== null) minus.style.setProperty('--hub-step-image', minusUrl)
+  const plusUrl = assetCssUrl(UI_ASSET.stepPlus)
+  if (plusUrl !== null) plus.style.setProperty('--hub-step-image', plusUrl)
+
+  qtyWrap.append(minus, qtyValue, plus)
+
+  /**
+   * 수량을 고쳐 쓴다.
+   *
+   * **위쪽 한계를 두지 않는다.** 보유량이나 소지금으로 막으면 그 한계가 곧
+   * "얼마까지 살 수 있나" 를 화면에 알려주게 되는데, `DEC-UI-005` 는 거래 후
+   * 남는 값을 보여 주라고만 했지 미리 막으라고 하지 않았다. 확정은 `submit` 이
+   * 다시 검증한다.
+   */
+  function setAmount(next: number): void {
+    amount = Math.max(1, next)
+    qtyValue.textContent = String(amount)
+    // 총액과 거래 후 남는 값이 바로 따라와야 한다. 다음 프레임을 기다리면
+    // 버튼을 눌렀는데 숫자만 바뀌고 미리보기가 늦게 오는 것처럼 보인다.
+    if (latestView !== null) draw(latestView)
+  }
+
+  minus.addEventListener('click', () => setAmount(amount - 1))
+  plus.addEventListener('click', () => setAmount(amount + 1))
 
   const preview = el('div', 'hub__preview')
 
   const action = el('button', 'hub__action', spec.action) as HTMLButtonElement
   action.type = 'button'
+  const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
+  if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
   footer.append(qtyWrap, preview, action)
-
-  /** 입력칸의 현재 값. 1 이상의 정수가 아니면 null */
-  function requestedQuantity(): number | null {
-    const parsed = Number(quantity.value)
-    if (!Number.isInteger(parsed) || parsed < 1) return null
-    return parsed
-  }
 
   action.addEventListener('click', () => {
     if (busy) return
     const id = selectedId
-    const amount = requestedQuantity()
-    if (id === null || amount === null) return
+    if (id === null) return
 
     busy = true
     action.disabled = true
     try {
       const result = handlers.submit(id, amount)
       // 성공하면 자원이 이미 바뀌었고 다음 render 가 새 수량을 그린다.
-      // 수량 입력은 1로 되돌린다 — 방금 판 만큼이 그대로 남아 있으면
+      // 수량은 1로 되돌린다 — 방금 판 만큼이 그대로 남아 있으면
       // 다음 거래에서 실수로 같은 양을 한 번 더 확정하기 쉽다.
       notice = result.ok ? null : '거래를 확정하지 못했다'
-      if (result.ok) quantity.value = '1'
+      if (result.ok) setAmount(1)
     } finally {
       busy = false
     }
   })
 
+  /** 마지막으로 받은 뷰. 증감 버튼이 이것으로 미리보기를 다시 그린다 */
+  let latestView: ShopView | null = null
+
   return {
     root,
 
     render(view) {
+      latestView = view
+      draw(view)
+    },
+  }
+
+  function draw(view: ShopView): void {
       latest = view.items
       buildRows(view.items)
 
@@ -246,15 +286,14 @@ export function createShopModal(
         row.button.classList.toggle('hub__row--selected', item.id === selectedId)
       }
 
-      const amount = requestedQuantity()
-      const total = selected === null || amount === null ? null : selected.unitPrice * amount
+      // 수량은 증감 버튼이 1 이상으로 지켜 준다. 더 이상 "정수인가" 를 묻지 않는다.
+      const total = selected === null ? null : selected.unitPrice * amount
 
       // 거래를 실행할 수 있는가 (DEC-UI-005).
       // 판매는 보유 수량이, 구매는 소지금이 상한이다.
       // 재고는 상한이 아니다 — 조합 재료 재고는 무제한이다 (DEC-RESOURCE-009).
       const allowed =
         selected !== null &&
-        amount !== null &&
         total !== null &&
         (mode === 'sell' ? amount <= selected.held : total <= view.money)
 
@@ -274,7 +313,7 @@ export function createShopModal(
                 ['보유 수량', String(selected.held)],
                 ['단가', String(selected.unitPrice)],
                 ['총액', total === null ? '—' : String(total)],
-                [spec.remainderLabel, amount === null ? '—' : String(selected.held - amount)],
+                [spec.remainderLabel, String(selected.held - amount)],
               ]
             : [
                 ['단가', String(selected.unitPrice)],
@@ -300,10 +339,9 @@ export function createShopModal(
           }),
         )
 
-        preview.textContent = amount === null ? '수량은 1 이상의 정수여야 한다' : ''
+        preview.textContent = ''
       }
 
-      if (notice !== null) preview.textContent = notice
-    },
+    if (notice !== null) preview.textContent = notice
   }
 }
