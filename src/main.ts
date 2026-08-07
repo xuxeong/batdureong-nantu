@@ -2716,6 +2716,8 @@ function syncTutorial(): void {
     guideText: step.guide_text,
     position: tutorial.position,
     total: tutorial.total,
+    // 안내가 설 자리를 가른다 — 정비면 허브 기능 버튼을 덮지 않게 아래로 내린다
+    stage: step.stage,
   })
 }
 

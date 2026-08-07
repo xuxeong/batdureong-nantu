@@ -63,9 +63,9 @@ export interface DialogueView {
   /**
    * 말하는 주민의 그림 (아트 디렉션 12.2 A4 — 왼쪽 초상화 칸).
    *
-   * **`portrait` 이 아직 없어 `field_sprite` 를 대신 쓴다.** 같은 인물의 그림이라
-   * 누가 말하는지는 전달되고, `portrait` 이 오면 부르는 쪽이 그것을 넘긴다 —
-   * 이 파일은 어느 구간인지 알 필요가 없다. 없으면 칸 자체를 만들지 않는다.
+   * 8/7 에 `portrait` 5종이 들어와 이제 그것이 온다. 부르는 쪽이 `portrait` →
+   * `field_sprite` 순으로 골라 넘기므로 이 파일은 어느 구간인지 알 필요가 없다.
+   * 없으면 칸 자체를 만들지 않는다.
    */
   portraitAsset?: string | null
 
@@ -141,35 +141,48 @@ export function createDialogueModal(
   const root = el('div', 'dialogue')
   root.hidden = true
 
-  // 선택지 말풍선 그림 (A4). 파일이 없으면 아무것도 설정하지 않고
-  // `layout.css` 의 테두리·배경이 그대로 플레이스홀더로 남는다.
-  const balloonUrl = assetCssUrl(UI_ASSET.choiceBalloon)
-  if (balloonUrl !== null) {
-    root.style.setProperty('--dialogue-choice-image', balloonUrl)
+  /**
+   * UI 에셋을 CSS 변수로 넘긴다.
+   *
+   * 파일이 없으면 아무것도 설정하지 않는다 — `layout.css` 의 테두리·배경이 그대로
+   * 플레이스홀더로 남는다. 여기서 경로를 지어내지 않는다 (AGENTS.md 6절).
+   * 하나라도 붙으면 `dialogue--has-art` 를 켜서 글자색 같은 대비를 뒤집는다.
+   */
+  function bindUi(node: HTMLElement, property: string, assetId: string): void {
+    const url = assetCssUrl(assetId)
+    if (url === null) return
+    node.style.setProperty(property, url)
     root.classList.add('dialogue--has-art')
   }
 
-  // 초상화 칸은 패널 **바깥** 양옆이다 (A4). 말풍선이 인물에서 나오는 것처럼
-  // 보여야 하므로 패널 안에 넣으면 꼬리 방향과 어긋난다.
+  // ── 무대: 두 인물과 그 사이의 선택지 말풍선 (A4) ──
   //
-  // 말하는 주민이 왼쪽, 플레이어가 오른쪽이다 — 꼬리가 오른쪽을 향한다.
+  // 말하는 주민이 왼쪽, 플레이어가 오른쪽이고 **선택지는 둘 사이**에 뜬다.
+  // 선택지를 대사창 안 목록으로 두지 않는다 — 목업이 말풍선 하나에 버튼 셋을
+  // 담는 모양이고, 그림 크기(506×441)가 버튼 350×116 세 개에 맞춰 나왔다.
+  const stage = el('div', 'dialogue__stage')
   const portrait = el('div', 'dialogue__portrait')
   const playerPortrait = el('div', 'dialogue__portrait dialogue__portrait--player')
+  const choiceList = el('div', 'dialogue__choices')
+  bindUi(choiceList, '--dialogue-balloon-image', UI_ASSET.choiceBalloon)
+  stage.append(portrait, choiceList, playerPortrait)
 
+  // ── 대사창: 화면 하단 전폭. 두 인물의 하단을 덮는다 (A4) ──
   const panel = el('div', 'dialogue__panel')
+  bindUi(panel, '--dialogue-panel-border', UI_ASSET.panelBorder)
+  bindUi(panel, '--dialogue-panel-texture', UI_ASSET.panelTexture)
+
   const speaker = el('div', 'dialogue__speaker')
   const text = el('p', 'dialogue__text')
-  const choiceList = el('div', 'dialogue__choices')
 
   const proceed = el('button', 'dialogue__proceed', PROCEED_LABEL)
   proceed.type = 'button'
+  bindUi(proceed, '--dialogue-button-image', UI_ASSET.buttonNormal)
   proceed.addEventListener('click', () => handlers.proceed())
 
-  panel.append(speaker, text, choiceList, proceed)
+  panel.append(speaker, text, proceed)
 
-  const layout = el('div', 'dialogue__layout')
-  layout.append(portrait, panel, playerPortrait)
-  root.appendChild(layout)
+  root.append(stage, panel)
   container.appendChild(root)
 
   /** 지금 그려진 내용의 서명. 같으면 다시 만들지 않는다 */
@@ -210,7 +223,10 @@ export function createDialogueModal(
       // 1차 빌드에서는 쓰지 않고 전체를 즉시 표시한다.
       if (view.reaction !== null) {
         text.textContent = view.reaction
+        // 말풍선을 통째로 숨긴다. 빈 말풍선이 인물 사이에 남으면
+        // 아직 고를 것이 있는 것처럼 보인다.
         choiceList.replaceChildren()
+        choiceList.hidden = true
         proceed.hidden = false
         return
       }
@@ -219,6 +235,7 @@ export function createDialogueModal(
       proceed.hidden = true
 
       choiceList.replaceChildren()
+      choiceList.hidden = false
       view.choices.forEach((choice, index) => {
         const button = el('button', 'dialogue__choice') as HTMLButtonElement
         button.type = 'button'
@@ -241,9 +258,12 @@ export function createDialogueModal(
         }
 
         if (choice.usable) {
+          bindUi(button, '--dialogue-button-image', UI_ASSET.buttonNormal)
           button.addEventListener('click', () => handlers.choose(choice.id))
         } else {
-          // 흐리게 처리해 고를 수 없음을 나타내며 별도의 안내를 덧붙이지 않는다
+          // 흐리게 처리해 고를 수 없음을 나타내며 별도의 안내를 덧붙이지 않는다.
+          // 그림도 비활성 한 장으로 갈린다 — 투명도만으로는 눈에 덜 띈다.
+          bindUi(button, '--dialogue-button-image', UI_ASSET.buttonDisabled)
           button.disabled = true
         }
 

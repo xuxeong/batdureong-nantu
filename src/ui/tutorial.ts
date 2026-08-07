@@ -33,6 +33,14 @@ export interface TutorialView {
   /** 1부터 */
   position: number
   total: number
+  /**
+   * 이 안내가 속한 단계. **안내가 설 자리를 가른다.**
+   *
+   * 정비 안내 차례에는 허브가 열리는데, 안내가 화면 위쪽 가운데에 있으면
+   * 기능 버튼(판매·구매·제작·편성)을 덮어 그 조작을 할 수 없다 (8/7 플레이 테스트).
+   * 정비일 때만 아래로 내린다 — 허브 하단은 진행 버튼이 오른쪽 끝에만 있어 비어 있다.
+   */
+  stage: 'farming' | 'combat' | 'maintenance'
 }
 
 export interface TutorialHandlers {
@@ -123,6 +131,9 @@ export function createTutorial(
       // 진행도는 몇 번째인지까지만 (DEC-UI-030). 막대나 남은 개수를 그리지 않는다.
       progress.textContent = `${view.position} / ${view.total}`
       text.textContent = view.guideText
+
+      // 정비 안내는 아래로 내린다. 위쪽 가운데면 허브 기능 버튼을 덮는다.
+      guide.classList.toggle('tutorial__guide--low', view.stage === 'maintenance')
 
       guide.hidden = false
       finished.hidden = true

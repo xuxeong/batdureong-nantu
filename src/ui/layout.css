@@ -9,11 +9,11 @@
   화면 표현이라 CSV 로 빼지 않는다. 반대로 작물 성장 시간·가격·확률은 여기 두지 않는다.
 
   기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3). 창 크기가 다르면 전체를
-  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-001 이 월드 1단위 = 화면
+  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-003 이 월드 1단위 = 화면
   1픽셀로 확정해서 배율은 1.0 고정이다. 맵이 1600×900 이라 좌우 160·상하 90 의 여백이
   남고 그 여백을 필드 HUD 가 쓴다.
 
-  색·여백·그림자는 DEC-ART-001 이 "layout.css 의 값으로 관리하고 이미지로 만들지
+  색·여백·그림자는 DEC-ART-003 이 "layout.css 의 값으로 관리하고 이미지로 만들지
   않는다"로 확정했다 (8/4). **여기가 임시가 아니라 원본이다.**
 */
 
@@ -62,7 +62,7 @@
   --ui-font-xl: 38px;
 
   /* ── HUD (DEC-UI-017, A1 확정 배치) ─────────────
-     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-001 이 월드
+     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-003 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
@@ -117,13 +117,25 @@
   --screen-panel-width: 620px;
   --screen-pad: 36px;
 
-  /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
-  --dialogue-width: 760px;
-  /* 초상화 자리. A4 목업의 왼쪽 칸이다 */
-  --dialogue-portrait-width: 180px;
-  /* 말풍선 위에 얹는 글자색. 패널 위(--ui-text)와 밝기가 반대다 */
+  /* ── 대화 오버레이 (DEC-UI-007~010, 아트 디렉션 12.2 A4) ──
+     인물은 크게, 대사창은 하단 전폭으로 인물의 하단을 덮는다.
+     선택지는 대사창 안 목록이 아니라 두 인물 사이 말풍선 안이다. */
+  /* 초상화 원본이 1080px 높이다. 이 값이 곧 다섯 인물 공통 배율이다 */
+  --dialogue-portrait-height: 780px;
+  --dialogue-box-width: 88%;
+  --dialogue-box-height: 210px;
+  /* 아래 셋은 assets/final/ui/ 실측값이다. 늘리면 꼬리가 뭉개진다 */
+  --dialogue-balloon-width: 506px;
+  --dialogue-balloon-height: 441px;
+  --dialogue-choice-width: 350px;
+  --dialogue-choice-height: 116px;
+  /* 말풍선을 대사창 위로 띄우는 높이 */
+  --dialogue-balloon-lift: 220px;
+  /* 그림 위에 얹는 글자색. 어두운 패널 위(--ui-text)와 밝기가 반대다 */
   --dialogue-text-on-balloon: #2b2418;
   --dialogue-subtext-on-balloon: rgba(43, 36, 24, 0.65);
+  --dialogue-text-on-panel: #2b2418;
+  --dialogue-name-on-panel: #6b4a21;
 
   /* ── 항목 아이콘 (C단계, 아트 디렉션 14.8·14.9) ────
      칸 크기는 표현이라 여기가 원본이다. 그림 자체는 정사각형이므로
@@ -133,7 +145,7 @@
 
   /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
      습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
-     DEC-ART-001 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
+     DEC-ART-003 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
      그래서 아래 셋은 **플레이스홀더**이며 기존 토큰을 가리키기만 한다 —
      새 색을 여기서 만들지 않는다. 4.5 가 채워지면 이 세 줄만 바꾼다.
 
@@ -171,7 +183,7 @@
 
   A1 부품은 테두리·홈·크림색 판이 그림 안에 이미 그려져 있다. 글자와 게이지가
   그 안에 정확히 앉아야 하므로 아래 값들은 **에셋에서 잰 실측 좌표**다.
-  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-001) 배율이 없으므로
+  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-003) 배율이 없으므로
   픽셀이 그대로 맞는다. 에셋이 다시 오면 이 값들을 같이 고친다.
 */
 :root {
@@ -574,16 +586,24 @@
   칸 안이 아니라 칸 **위**에 쌓는다. 칸이 154×145 라 안에 넣으면 무기 이름과
   겹치고, `투척 무기 없음` 은 어느 한 칸이 아니라 전체 상태다.
 */
+/*
+  퀵슬롯 상태 알림 두 줄 (DEC-UI-002).
+
+  **화면 위쪽 가운데로 옮겼다.** 8/7까지 퀵슬롯 바로 위(우하단)에 있었는데,
+  던지려고 좌클릭할 때 커서와 눈은 화면 가운데 적을 보고 있어서 오른쪽 아래에
+  뜬 안내를 아무도 못 봤다 (플레이 테스트). 재배 게이지 아래에 두어 시선 안에
+  들어오게 한다.
+*/
 .hud__notices {
   position: absolute;
-  right: 0;
-  bottom: var(--hud-recovery-height);
+  top: calc(var(--hud-edge) + var(--hud-timer-height) + var(--ui-gap-md));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--ui-gap-xs);
-  padding: 0 var(--ui-gap-lg) var(--ui-gap-sm);
-  text-align: right;
+  text-align: center;
 }
 
 /* 수풀 위에 글자만 얹히면 안 읽힌다. 문구가 있을 때만 판을 깐다 */
@@ -959,12 +979,33 @@
    한 번에 하나만, 항상 같은 자리에 연다.
    닫기 버튼으로만 닫힌다 — 바깥 클릭도 Esc 도 안 된다. */
 
+/*
+  팝업 층.
+
+  **클릭을 가로채지 않는다.** `inset: 0` 이라 허브 전체를 덮는데, 여기가 클릭을
+  받으면 뒤의 기능 버튼이 눌리지 않는다 — 판매를 열어 둔 채 구매를 누르면 아무
+  일도 안 일어났다 (전성민 8/7 지적). 층은 자리만 잡고 실제 팝업만 입력을 받는다.
+
+  **바깥 클릭으로 닫히는 것과는 다르다.** `DEC-UI-020` 이 금지한 것은 닫는 경로를
+  더 만드는 것이고, 여기는 닫기 버튼 하나 그대로다. 다른 기능 버튼을 누르면
+  `openPopup` 이 팝업을 갈아 끼운다.
+
+  팝업은 보관함(왼쪽 열)을 가리지 않고 오른쪽 창에만 뜬다 (전성민 8/6).
+*/
 .hub__popup-layer {
   position: absolute;
-  inset: 0;
+  left: calc(var(--hub-inventory-width) + var(--hub-pad) + var(--ui-gap-lg));
+  right: var(--hub-pad);
+  top: var(--hub-pad);
+  bottom: var(--hub-pad);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+.hub__popup {
+  pointer-events: auto;
 }
 
 .hub__popup {
@@ -1372,11 +1413,6 @@
 .dialogue {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: var(--ui-gap-lg);
-  box-sizing: border-box;
   /* 필드가 비치는 정지 표시 (DEC-UI-010) */
   background: rgba(8, 10, 7, 0.55);
   font-family: var(--ui-font);
@@ -1385,34 +1421,45 @@
 }
 
 /*
-  주민 · 말풍선 패널 · 플레이어가 한 줄이다 (A4).
+  무대 — 두 인물과 그 사이의 선택지 말풍선 (A4).
 
-  **두 사람이 마주 보는 화면이다.** 말하는 주민이 왼쪽, 플레이어가 오른쪽이고
-  말풍선 꼬리가 오른쪽(플레이어 쪽)을 향한다. 그림이 없는 쪽은 칸이 통째로
-  숨으므로 한 사람만 있어도 줄이 무너지지 않는다.
+  **대사창보다 아래 층이다.** 목업이 하단 대사창으로 두 인물의 하단을 덮는 모양이라
+  무대를 화면 전체 높이로 두고 대사창을 그 위에 얹는다. 무대 바닥을 화면 바닥에
+  붙여야 인물이 대사창 뒤에서 서 있는 것처럼 보인다.
+
+  그림이 없는 쪽은 칸이 통째로 숨으므로 한 사람만 있어도 줄이 무너지지 않는다.
 */
-.dialogue__layout {
+.dialogue__stage {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
-  gap: var(--ui-gap-md);
-  width: 100%;
+  justify-content: space-evenly;
+  padding: 0 var(--ui-gap-lg);
+  box-sizing: border-box;
 }
 
 /*
-  말하는 주민의 그림.
+  말하는 주민과 플레이어.
 
-  `portrait` 이 아직 없어 `field_sprite` 를 대신 쓴다. 세로로 긴 그림이라
-  높이를 맞추고 폭은 비율로 따라오게 둔다 — 폭을 맞추면 사람이 눌린다.
-  바닥을 패널과 맞춰 서 있는 것처럼 보이게 한다.
+  **`contain` 이 아니라 `auto 100%` 다.** 초상화 다섯 장은 전부 높이 1080px 이고
+  폭만 493~727 로 다른데(투명 여백이 키·체격의 정렬 정보다), `contain` 은 칸에
+  맞춰 넣느라 **폭이 넓은 만복과 플레이어를 더 작게** 만든다. 높이를 기준으로
+  같은 배율을 걸어야 다섯이 같은 키 비율로 선다 (전성민 8/7).
+
+  같은 이유로 투명 여백을 트림하지 않는다 — 그 여백이 정렬 정보다.
+
+  칸 폭은 가장 넓은 만복(727/1080 = 0.673)이 잘리지 않게 잡는다. `auto 100%` 는
+  칸보다 넓으면 좌우가 잘리므로 여유를 둔다.
+
+  바닥을 화면 바닥에 붙여 대사창이 하단을 덮게 한다.
 */
 .dialogue__portrait {
-  width: var(--dialogue-portrait-width);
-  height: calc(var(--dialogue-portrait-width) * 1.6);
+  width: calc(var(--dialogue-portrait-height) * 0.72);
+  height: var(--dialogue-portrait-height);
   flex: 0 0 auto;
-  align-self: flex-end;
   background-image: var(--portrait-image);
-  background-size: contain;
+  background-size: auto 100%;
   background-position: bottom center;
   background-repeat: no-repeat;
 }
@@ -1424,26 +1471,55 @@
 /*
   플레이어는 오른쪽에 선다.
 
-  **좌우 반전을 걸지 않았다.** `DEC-ART-001` 이 "움직임은 코드가 위치·크기·투명도로
-  표현한다" 로 범위를 정했고 반전이 그 안인지가 인계 문서 3-2 의 미결이다.
-  손에 든 것이 있는 그림이면 뒤집었을 때 어색해지는 것도 확인해야 한다.
-  마주 보게 하려면 `transform: scaleX(-1)` 한 줄이다.
+  **좌우 반전을 걸지 않는다. 앞으로도 걸지 않는다.** `DEC-ART-003` 가 좌우를 실제
+  그림 두 장으로 확정해서 캔버스·CSS 반전은 쓰지 않는다. 마주 보는 방향은
+  `portrait` 를 그릴 때 맞춰서 나온다 (전성민 8/7 회신).
+
+  8/6까지 여기 "반전이 DEC-ART-001 의 허용 범위인지 미결" 이라고 적혀 있었다.
+  그 DEC 는 폐기됐고(001 → 002 → 003) 미결도 아니다.
 */
 .dialogue__portrait--player {
   background-position: bottom center;
 }
 
+/*
+  대사창 — 화면 하단 전폭. **두 인물의 하단을 덮는다** (A4).
+
+  무대(`.dialogue__stage`)보다 위 층이다. 목업이 그 겹침으로 인물이 대사창 뒤에
+  서 있는 모양을 만든다.
+
+  `panel_border` 는 9-slice 로 늘리고 `panel_texture` 는 늘려서 깐다 —
+  타일링하면 위아래 끝 색차(674)가 가로줄로 드러난다 (최수정 8/7).
+*/
 .dialogue__panel {
-  width: var(--dialogue-width);
-  max-width: 100%;
-  padding: var(--ui-gap-lg);
+  position: absolute;
+  left: 50%;
+  bottom: var(--ui-gap-lg);
+  transform: translateX(-50%);
+  width: var(--dialogue-box-width);
+  min-height: var(--dialogue-box-height);
   box-sizing: border-box;
+  padding: var(--ui-gap-lg) var(--ui-gap-lg) var(--ui-gap-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  /* 그림이 없을 때의 플레이스홀더 */
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius);
   background: var(--ui-bg-panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-md);
+}
+
+.dialogue--has-art .dialogue__panel {
+  border: 44px solid transparent;
+  border-radius: 0;
+  border-image-source: var(--dialogue-panel-border);
+  border-image-slice: 44;
+  border-image-width: 44px;
+  background-image: var(--dialogue-panel-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  color: var(--dialogue-text-on-panel);
 }
 
 .dialogue__speaker {
@@ -1451,66 +1527,94 @@
   color: var(--ui-accent);
 }
 
-/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 선택지가 사라진다 */
+.dialogue--has-art .dialogue__speaker {
+  color: var(--dialogue-name-on-panel);
+}
+
+/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 말풍선이 사라진다 */
 .dialogue__text {
   margin: 0;
-  font-size: var(--ui-font-lg);
+  font-size: var(--ui-font-xl);
   line-height: 1.7;
-  min-height: 3.4em;
+  min-height: 2.6em;
 }
 
+/*
+  선택지 말풍선 — 두 인물 **사이**에 뜬다 (A4).
+
+  **말풍선 하나에 버튼 셋이다.** 8/6까지는 선택지마다 말풍선을 하나씩 9-slice 로
+  늘려 썼는데 목업과 다르다. 그림 크기(506×441)가 버튼 350×116 세 개에 맞춰
+  나왔으므로 늘리지 않고 원래 크기로 둔다 — 늘리면 꼬리가 뭉개진다.
+*/
 .dialogue__choices {
+  width: var(--dialogue-balloon-width);
+  height: var(--dialogue-balloon-height);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: var(--ui-gap-sm);
+  box-sizing: border-box;
+  background-image: var(--dialogue-balloon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* 말풍선이 인물보다 위에 떠 있어야 꼬리가 가려지지 않는다 */
+  margin-bottom: var(--dialogue-balloon-lift);
 }
 
-/* 선택지는 마우스 클릭으로 고른다 (DEC-UI-008) */
+.dialogue__choices[hidden] {
+  display: none;
+}
+
+/*
+  선택지 버튼 (DEC-UI-008 — 마우스 클릭으로 고른다).
+
+  그림 크기 그대로 둔다. 문장이 길면 글자가 줄어드는 대신 두 줄로 접힌다 —
+  버튼을 늘리면 말풍선 안에서 셋이 안 맞는다.
+*/
 .dialogue__choice {
+  width: var(--dialogue-choice-width);
+  min-height: var(--dialogue-choice-height);
   display: flex;
   flex-direction: column;
-  gap: var(--ui-gap-xs);
-  padding: var(--ui-gap-md);
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--ui-gap-xs) var(--ui-gap-lg);
+  box-sizing: border-box;
   border: 1px solid var(--ui-border);
-  border-left-width: 4px;
   border-radius: var(--ui-radius);
   background: var(--ui-bg-slot);
   color: var(--ui-text);
   font-family: var(--ui-font);
   font-size: var(--ui-font-md);
-  text-align: left;
-  line-height: 1.6;
+  text-align: center;
+  line-height: 1.4;
   cursor: pointer;
+}
+
+.dialogue--has-art .dialogue__choice {
+  border: none;
+  border-radius: 0;
+  background-image: var(--dialogue-button-image);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  /*
+    **말풍선 위에서는 글자색이 뒤집힌다.** 기본 `--ui-text` 는 어두운 패널 위에
+    쓰는 크림색이라 밝은 버튼에 얹으면 안 읽힌다 (8/6 플레이 테스트).
+  */
+  color: var(--dialogue-text-on-balloon);
 }
 
 .dialogue__choice:hover:not(:disabled) {
   border-color: var(--ui-border-strong);
 }
 
-/*
-  말풍선 그림이 있을 때 (아트 디렉션 12.2 A4).
-
-  9-slice 로 늘린다 — 선택지 문장 길이가 콘텐츠마다 다르고 자원 협상은 수량 줄이
-  하나 더 붙어 높이도 갈린다. 고정 크기로 두면 긴 문장이 넘친다.
-  꼬리가 왼쪽 아래에 있어 좌하단 조각은 늘리지 않는다.
-
-  **세 선택지가 같은 그림을 쓴다.** 기능별로 다른 그림을 주면 그것이 곧
-  DEC-UI-007 이 금지한 기능 태그가 된다. 구분은 자리 순서 색으로만 준다.
-*/
-.dialogue--has-art .dialogue__choice {
-  border-image-source: var(--dialogue-choice-image);
-  border-image-slice: 44 fill;
-  border-image-width: 44px;
-  border-style: solid;
-  border-width: 44px;
-  border-left-width: 44px;
-  background: none;
-  /*
-    **말풍선 위에서는 글자색이 뒤집힌다.** 기본 `--ui-text` 는 어두운 패널 위에
-    쓰는 크림색이라 밝은 말풍선에 얹으면 안 읽힌다 (8/6 플레이 테스트).
-    패널과 말풍선은 배경 밝기가 반대이므로 색도 반대여야 한다.
-  */
-  color: var(--dialogue-text-on-balloon);
+/* 눌림은 그림이 아니라 CSS 로 낸다 — button_pressed 는 고정 목록에 없다 (8/6) */
+.dialogue__choice:active:not(:disabled) {
+  transform: translateY(2px);
 }
 
 .dialogue--has-art .dialogue__choice-offer {
@@ -1518,43 +1622,20 @@
   color: var(--dialogue-subtext-on-balloon);
 }
 
-/* 고를 수 없는 자원 협상은 흐리게만 한다 — 색을 또 바꾸지 않는다 (DEC-UI-008) */
-.dialogue--has-art .dialogue__choice:disabled {
-  color: var(--dialogue-text-on-balloon);
-}
-
-/* 그림이 붙으면 자리 순서 구분을 테두리가 아니라 글자 쪽에 준다 —
-   9-slice 가 테두리를 그림으로 덮어 border-left-color 가 보이지 않는다. */
-.dialogue--has-art .dialogue__choice[data-slot='0'] .dialogue__choice-text {
-  border-left: 3px solid var(--ui-accent);
-  padding-left: var(--ui-gap-sm);
-}
-
-.dialogue--has-art .dialogue__choice[data-slot='1'] .dialogue__choice-text {
-  border-left: 3px solid var(--ui-border-strong);
-  padding-left: var(--ui-gap-sm);
-}
-
-.dialogue--has-art .dialogue__choice[data-slot='2'] .dialogue__choice-text {
-  border-left: 3px solid var(--ui-text-dim);
-  padding-left: var(--ui-gap-sm);
-}
-
 /*
-  세 선택지를 시각적으로 구분한다 (DEC-UI-007).
+  총수량이 모자란 자원 협상 (DEC-UI-008 — 흐리게만 하고 안내를 덧붙이지 않는다).
 
-  **자리 순서로만 구분한다.** 기능(공감·설득 / 자원 협상 / 위협·대립)은 뷰에 오지도
-  않으므로 이 색이 기능 이름을 드러내지 않는다. 색을 기능에 묶으면 그 순간
-  "빨간 게 위협"이라는 태그가 되어 확정문이 금지한 것과 같아진다.
+  그림이 있으면 `button_disabled` 한 장으로 갈린다. 투명도만으로는 말풍선 위에서
+  덜 드러나서 비활성 그림을 따로 받았다.
 */
-.dialogue__choice[data-slot='0'] { border-left-color: var(--ui-accent); }
-.dialogue__choice[data-slot='1'] { border-left-color: var(--ui-border-strong); }
-.dialogue__choice[data-slot='2'] { border-left-color: var(--ui-text-dim); }
-
-/* 총수량이 모자란 자원 협상. 흐리게만 하고 안내 문구를 덧붙이지 않는다 (DEC-UI-008) */
 .dialogue__choice:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.dialogue--has-art .dialogue__choice:disabled {
+  opacity: 1;
+  color: var(--dialogue-subtext-on-balloon);
 }
 
 /* 제안 수량·현재 총수량·무작위 소비 사실 한 줄 (DEC-UI-008) */
@@ -1563,6 +1644,7 @@
   color: var(--ui-text-dim);
 }
 
+/* 반응 대사를 읽고 넘어가는 버튼. 선택지와 같은 그림을 쓴다 */
 .dialogue__proceed {
   align-self: flex-end;
   padding: var(--ui-gap-sm) var(--ui-gap-lg);
@@ -1573,6 +1655,21 @@
   font-family: var(--ui-font);
   font-size: var(--ui-font-md);
   cursor: pointer;
+}
+
+.dialogue--has-art .dialogue__proceed {
+  min-width: calc(var(--dialogue-choice-width) * 0.6);
+  min-height: calc(var(--dialogue-choice-height) * 0.7);
+  border: none;
+  border-radius: 0;
+  background-image: var(--dialogue-button-image);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: var(--dialogue-text-on-balloon);
+}
+
+.dialogue--has-art .dialogue__proceed:active {
+  transform: translateY(2px);
 }
 
 .dialogue__proceed[hidden] {
@@ -2146,6 +2243,19 @@
   align-items: center;
   gap: var(--ui-gap-md);
   text-align: center;
+}
+
+/*
+  정비 안내는 아래로 내린다.
+
+  허브가 열린 채 안내가 위쪽 가운데에 있으면 기능 버튼(판매·구매·제작·편성)을
+  덮어 그 조작 자체를 할 수 없다 — 안내가 시키는 일을 안내가 막고 있었다
+  (8/7 플레이 테스트). 허브 하단은 진행 버튼이 오른쪽 끝에만 있어 비어 있고,
+  팝업은 세로 가운데에 뜨므로 겹치지 않는다.
+*/
+.tutorial__guide--low {
+  top: auto;
+  bottom: var(--hud-edge);
 }
 
 .tutorial__guide[hidden],
