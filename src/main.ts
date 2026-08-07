@@ -29,7 +29,7 @@ import type { FarmingSystem } from './systems/farming.ts'
 import { createStageTimer } from './systems/stage-timer.ts'
 import type { StageTimer } from './systems/stage-timer.ts'
 import { createCombat } from './systems/combat.ts'
-import type { CombatSystem, CombatTarget } from './systems/combat.ts'
+import type { CombatEvent, CombatSystem, CombatTarget } from './systems/combat.ts'
 import { createWildlife } from './systems/wildlife.ts'
 import type { WildlifeSystem } from './systems/wildlife.ts'
 import { createResidentCombat } from './systems/resident-combat.ts'
@@ -1191,6 +1191,25 @@ const ATTACK_SPRITE_SECONDS = 0.2
 const hitFlashes = new Map<string, number>()
 const IMPACT_FLASH_SECONDS = 0.22
 
+/**
+ * 명중 표시를 켠다. **`combat` 의 이벤트를 받는 곳은 전부 이걸 부른다.**
+ *
+ * 받는 곳이 넷이다 — 재배와 습격의 `combat.update()` 가 각각, 지원 공격의
+ * `applySupportDamage()`, 그리고 낫은 `swingSickle()` 반환값이라 이벤트가
+ * 아니다. 8/7 에 습격 쪽만 연결하고 완료로 적었다가 재배에서 안 뜨는 것을
+ * 담당자가 잡았고, 그 직전에는 지원 공격을 빠뜨렸다. **판단을 한 곳에 모아야
+ * 다음 호출자가 생겨도 같은 규칙을 쓴다.**
+ *
+ * 지속 피해 틱은 뺀다 — `overTime` 이 정확히 그것을 가르라고 있는 구분자다.
+ * 틱마다 켜면 불타는 내내 충격선이 깜빡여 지속 피해 링과 뜻이 겹친다.
+ */
+function noteHitFlash(event: CombatEvent): void {
+  if (event.type !== 'damaged') return
+  if (event.overTime === true) return
+  if (event.targetId === undefined) return
+  hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
+}
+
 /** 플레이어가 방금 맞았다는 표시가 남은 초 */
 let playerHitRemaining = 0
 const PLAYER_HIT_SECONDS = 0.45
@@ -1345,11 +1364,7 @@ function updateRaid(dt: number): void {
   // 플레이어 → 주민. 야생동물과 같은 시스템을 쓰되 대상만 바뀐다.
   combat.setTargets(currentTargets())
   for (const event of combat.update(dt)) {
-    // 명중 순간 충격선 (아트 디렉션 12.2). 지속 피해 틱은 뺀다 — `overTime` 이
-    // 정확히 그것을 가르라고 있는 구분자인데 8/4부터 아무도 안 읽고 있었다.
-    if (event.type === 'damaged' && event.overTime !== true && event.targetId !== undefined) {
-      hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
-    }
+    noteHitFlash(event)
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
       onTargetKilled(event.targetId ?? '')
@@ -1369,9 +1384,7 @@ function updateRaid(dt: number): void {
         // 지원 공격은 투사체가 없으므로(DEC-CONTENT-008) **명중 표시가 유일한
         // 흔적이다.** 확정문이 "필요한 것은 시각적인 발사·명중 효과뿐" 이라고
         // 정했는데 발사 쪽(attackFlash)만 있고 명중 쪽이 비어 있었다.
-        if (event.type === 'damaged' && event.targetId !== undefined) {
-          hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
-        }
+        noteHitFlash(event)
         if (event.type === 'surrenderOffered') onSurrenderOffered()
       }
     }
@@ -3415,6 +3428,10 @@ const loop = createGameLoop(
       if (combat !== null) {
         combat.setTargets(currentTargets())
         for (const event of combat.update(dt)) {
+          // 재배에서 던진 것도 명중 표시가 뜬다. **여기가 빠져 있었다** —
+          // 습격 쪽만 연결하고 완료로 적었는데 야생동물에 던지는 것이 훨씬
+          // 자주 일어난다.
+          noteHitFlash(event)
           if (event.type === 'killed' && event.targetId !== undefined) {
             wildlife?.remove(event.targetId)
           }

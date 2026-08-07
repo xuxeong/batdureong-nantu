@@ -331,8 +331,8 @@ const BOB_SQUASH = 0.06
  * 방향이 없으므로(사거리·반경 판정) 방향을 그리면 없는 정보를 지어내는 것이 된다.
  */
 const IMPACT_LINES = 6
-const IMPACT_SPREAD = 10
-const IMPACT_LENGTH = 7
+const IMPACT_SPREAD = 14
+const IMPACT_LENGTH = 14
 
 export function createFieldRenderer(
   container: HTMLElement,
@@ -639,6 +639,22 @@ export function createFieldRenderer(
     const at = camera.worldToScreen(hostile)
     const radius = hostile.radius * WORLD_TO_PIXEL
 
+    /**
+     * 그림 바깥까지 나가야 하는 표시가 쓰는 반지름.
+     *
+     * **판정 반경이 아니라 그림 크기다.** 승인 충돌 반경은 14~30 인데 8/7
+     * 리사이즈 뒤 스프라이트는 99~121px 폭이라, 반경 기준으로 그리면 캐릭터
+     * 몸통 한가운데에 묻힌다. 담당자가 *"충격선이 안 보인다"* 로 잡았다.
+     *
+     * **쓰는 곳은 명중 충격선과 체력 막대뿐이다.** 둔화·지속 피해·공격 예고
+     * 링은 판정 반경 그대로 둔다 — 상태 표시라 인물에 걸쳐 있어도 읽힌다.
+     *
+     * 그림이 없으면 도형으로 그리므로 그때는 판정 반경이 맞다.
+     */
+    const image = images.get(hostile.assetId)
+    const shown =
+      image === null ? radius : Math.max(image.naturalWidth, image.naturalHeight) / 2
+
     // 몸통 — 그림이 있으면 그것을, 없으면 원을 그린다.
     const drawn = drawWorldSprite(hostile.assetId, hostile, hostile.bob)
     if (!drawn) {
@@ -651,6 +667,10 @@ export function createFieldRenderer(
     // 상태 효과는 **그림이 있어도 그린다** (DEC-CONTENT-013).
     // 도형일 때는 채움색으로 둔화를 구분했는데 그림에는 그 자리가 없어서,
     // 그림이 있으면 테두리 링으로 대신한다 — 둘 다 없으면 효과가 안 보인다.
+    // **링 셋은 판정 반경 그대로다.** 8/7 에 그림 크기로 키워 봤는데 담당자가
+    // 몸통 안에 있는 쪽이 자연스럽다고 판단했다. 상태를 나타내는 표시라 인물에
+    // 걸쳐 있어도 읽히고, 밖으로 빼면 발밑 고리가 아니라 후광처럼 보인다.
+    // 명중 충격선만 밖으로 낸다 — 그건 상태가 아니라 순간이라 눈에 띄어야 한다.
     if (drawn && hostile.slowed) {
       ctx.strokeStyle = '#6a7f9c'
       ctx.lineWidth = 3
@@ -688,27 +708,42 @@ export function createFieldRenderer(
     if (hitFlash > 0) {
       ctx.save()
       ctx.globalAlpha = hitFlash
-      ctx.strokeStyle = '#f4ecd0'
-      ctx.lineWidth = 2
-      const spread = radius + (1 - hitFlash) * IMPACT_SPREAD
+      ctx.lineCap = 'round'
+      const spread = shown + (1 - hitFlash) * IMPACT_SPREAD
       for (let i = 0; i < IMPACT_LINES; i += 1) {
         const angle = (Math.PI * 2 * i) / IMPACT_LINES
         const cos = Math.cos(angle)
         const sin = Math.sin(angle)
+        const fromX = at.x + cos * spread
+        const fromY = at.y + sin * spread
+        const toX = at.x + cos * (spread + IMPACT_LENGTH)
+        const toY = at.y + sin * (spread + IMPACT_LENGTH)
+        // 어두운 선을 깔고 그 위에 밝은 선을 얹는다. 배경이 밝은 흙일 때
+        // 크림색 한 겹만으로는 묻힌다.
+        ctx.strokeStyle = '#2a1c16'
+        ctx.lineWidth = 5
         ctx.beginPath()
-        ctx.moveTo(at.x + cos * spread, at.y + sin * spread)
-        ctx.lineTo(at.x + cos * (spread + IMPACT_LENGTH), at.y + sin * (spread + IMPACT_LENGTH))
+        ctx.moveTo(fromX, fromY)
+        ctx.lineTo(toX, toY)
+        ctx.stroke()
+        ctx.strokeStyle = '#f4ecd0'
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(fromX, fromY)
+        ctx.lineTo(toX, toY)
         ctx.stroke()
       }
       ctx.restore()
     }
 
-    // 체력 막대
-    const barWidth = radius * 2
+    // 체력 막대 — **머리 위**다. 판정 반경으로 올리면 사람 스프라이트가 143px 인데
+    // 반경이 18~24 라 막대가 가슴팍에 얹힌다. 그림이 있으면 그림 위로 올린다.
+    const barTop = at.y - (image === null ? radius : image.naturalHeight / 2) - 10
+    const barWidth = shown
     ctx.fillStyle = '#2a1c16'
-    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth, 4)
+    ctx.fillRect(at.x - barWidth / 2, barTop, barWidth, 4)
     ctx.fillStyle = '#c94b3f'
-    ctx.fillRect(at.x - radius, at.y - radius - 10, barWidth * hostile.healthRatio, 4)
+    ctx.fillRect(at.x - barWidth / 2, barTop, barWidth * hostile.healthRatio, 4)
   }
 
   /**
