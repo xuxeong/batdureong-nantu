@@ -1025,23 +1025,44 @@ const HARVEST_POPUP_SECONDS = 1.2
 /** 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002 — "짧게"만 정해져 있다) */
 const AUTO_SWITCH_FLASH_SECONDS = 1
 const EMPTY_FIRE_NOTICE_SECONDS = 1.2
+/**
+ * 낫 휘두름 호가 보이는 시간.
+ *
+ * 전성민이 이펙트 넷을 코드 도형과 시간값으로 하라고 정하면서 지속시간은
+ * 주지 않았다 (8/6). 낫 재사용 대기가 승인 데이터로 0.5초라 그보다 짧아야
+ * 다음 휘두름과 겹치지 않는다.
+ */
+const SICKLE_SWING_SECONDS = 0.18
 
 /**
- * 투척 퀵슬롯 피드백 (DEC-UI-002).
+ * 투척 퀵슬롯 피드백 (DEC-UI-002)과 낫 휘두름 표시.
  *
  * **재배·습격 양쪽에서 흐른다.** 아래 `advanceFeedback()` 은 재배 단계에서만
- * 불리는데 투척은 습격에서도 쓴다. 그래서 이 둘만 따로 두고 단계와 무관하게 줄인다 —
- * 습격에서 소진 전환이 일어나면 강조가 영영 안 사라지는 것을 막는다.
+ * 불리는데 투척과 낫은 습격에서도 쓴다. 그래서 이것들만 따로 두고 단계와 무관하게
+ * 줄인다 — 습격에서 소진 전환이 일어나면 강조가 영영 안 사라지는 것을 막는다.
  */
 let autoSwitchFlash: { index: number; remaining: number } | null = null
 let emptyFireRemaining = 0
 
-function advanceThrowFeedback(dt: number): void {
+/**
+ * 방금 휘두른 낫의 조준 방향과 남은 표시 시간.
+ *
+ * **각도를 휘두른 순간에 붙잡는다.** 그리는 시점의 `input.aimAngle()` 을 쓰면
+ * 호가 커서를 따라다녀서, 판정이 이미 끝난 방향이 아니라 지금 커서 방향을
+ * 가리킨다. 판정은 `swingSickle()` 이 그 순간의 각도로 이미 끝냈다.
+ */
+let sickleSwing: { angle: number; remaining: number } | null = null
+
+function advanceCombatFeedback(dt: number): void {
   if (autoSwitchFlash !== null) {
     autoSwitchFlash.remaining -= dt
     if (autoSwitchFlash.remaining <= 0) autoSwitchFlash = null
   }
   if (emptyFireRemaining > 0) emptyFireRemaining = Math.max(0, emptyFireRemaining - dt)
+  if (sickleSwing !== null) {
+    sickleSwing.remaining -= dt
+    if (sickleSwing.remaining <= 0) sickleSwing = null
+  }
 }
 
 /** 전환 강조가 남은 경작지. plot_id → 남은 초 */
@@ -2160,8 +2181,13 @@ function onSickle(): void {
   if (combat === null) return
 
   combat.setTargets(currentTargets())
-  const result = combat.swingSickle(player, input.aimAngle())
+  const aimAngle = input.aimAngle()
+  const result = combat.swingSickle(player, aimAngle)
   if (!result.swung) return // 재사용 대기 중
+
+  // 휘두른 방향을 그 순간의 각도로 붙잡는다. 명중과 무관하게 그린다 —
+  // 빗나간 휘두름이 안 보이면 사거리를 배울 수가 없다.
+  sickleSwing = { angle: aimAngle, remaining: SICKLE_SWING_SECONDS }
 
   // 휘두른 것 자체가 조작 성공이다 — 명중과 무관하다 (DEC-RUN-003).
   // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
@@ -3063,7 +3089,7 @@ const loop = createGameLoop(
       if (worldBounds !== null) clampToWorld(player, worldBounds)
 
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
-      advanceThrowFeedback(dt)
+      advanceCombatFeedback(dt)
 
       // 회복 게이지도 양쪽에서 흐른다. 완료되면 소비와 회복이 한 처리로 끝난다.
       advanceRecoveryGauge(dt)
@@ -3190,6 +3216,15 @@ const loop = createGameLoop(
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
+        // 낫 휘두름 호. 사거리는 승인 데이터에서 오고 남은 시간만 0~1 로 넘긴다.
+        sickleSwing:
+          sickleSwing === null
+            ? null
+            : {
+                angle: sickleSwing.angle,
+                range: runConfig.sickleRange,
+                life: sickleSwing.remaining / SICKLE_SWING_SECONDS,
+              },
         // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-017). 0~1 로 넘긴다.
         recovery:
           run?.recovering == null

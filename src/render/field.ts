@@ -130,6 +130,19 @@ export interface FieldView {
   devSickleCooldown?: number | null
 
   /**
+   * 방금 휘두른 낫의 호 (아트 디렉션 12.2 — 이펙트 넷 중 "낫 휘두름").
+   *
+   * 전성민이 8/6 에 이펙트를 **별도 PNG 나 CSS 오버레이가 아니라 Canvas 2D 의
+   * 코드 도형과 시간값**으로 구현하라고 정했다. `assets/final/effect/` 도
+   * `content_assets.csv` 의 `effect` 행도 만들지 않는다.
+   *
+   * **호의 모양이 판정 모양 그대로다.** `swingSickle()` 이 사거리 안이면서
+   * 조준 방향 ±90도 인 대상을 치므로 정확히 반원이다. 그리는 것과 맞는 것이
+   * 갈리면 플레이어가 사거리를 잘못 배운다.
+   */
+  sickleSwing?: SickleSwingView | null
+
+  /**
    * 회복 사용 게이지 (DEC-UI-017).
    *
    * 확정문이 **플레이어 캐릭터 바로 옆**에 표시하라고 정했다. HUD 의 회복 칸과
@@ -195,6 +208,16 @@ export interface ProjectileView {
   assetId?: string | null
 }
 
+/** 방금 휘두른 낫의 호. `FieldView.sickleSwing` 주석 참고 */
+export interface SickleSwingView {
+  /** 휘두른 순간의 조준 각도(라디안). 그리는 시점의 커서 방향이 아니다 */
+  angle: number
+  /** 낫 사거리. `player_base_stats.csv` 의 `sickle_range` 에서 온다 */
+  range: number
+  /** 남은 표시 시간 1~0 */
+  life: number
+}
+
 /**
  * 지원하는 영입 주민 (DEC-UI-012).
  *
@@ -240,6 +263,14 @@ export interface FieldRenderer {
 
 /** 필드 바탕색. `draw()` 와 `clear()` 가 같은 값을 써야 전환할 때 색이 튀지 않는다 */
 const BACKDROP = '#1d2b1a'
+
+/**
+ * 낫 휘두름 호에서 날 뒤로 남는 꼬리 길이 (반원 대비 비율).
+ *
+ * 표현이라 승인 데이터가 아니다. 0.45 면 반원의 절반 못 미치게 남아 방향이
+ * 읽히면서도 사거리 전체를 상시 표시하는 것처럼 보이지 않는다.
+ */
+const TRAIL = 0.45
 
 export function createFieldRenderer(
   container: HTMLElement,
@@ -373,6 +404,32 @@ export function createFieldRenderer(
     if (!drawWorldSprite(view.playerAsset, view.player)) {
       ctx.fillStyle = '#e8d9a0'
       ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
+    }
+
+    // 낫 휘두름 (아트 디렉션 12.2 — 이펙트 넷 중 하나).
+    //
+    // 반원 전체를 한 번에 띄우지 않고 **날이 지나간 것처럼 쓸고 지나간다.**
+    // 전체를 띄우면 사거리 표시로 읽히고, 쓸면 그 동작이 공격이라는 것이 읽힌다.
+    // `swingSickle()` 의 판정이 조준 방향 ±90도 라 시작과 끝이 그 둘이다.
+    if (view.sickleSwing !== null && view.sickleSwing !== undefined) {
+      const swing = view.sickleSwing
+      const reach = swing.range * WORLD_TO_PIXEL
+      const from = swing.angle - Math.PI / 2
+      // 남은 시간 1→0 이 진행 0→1 이다. 머리가 앞서고 꼬리가 따라온다.
+      const progress = 1 - swing.life
+      const head = from + Math.PI * progress
+      const tail = from + Math.PI * Math.max(0, progress - TRAIL)
+
+      ctx.save()
+      // 끝의 40% 에서만 사라진다. 처음부터 옅으면 휘두른 것이 안 보인다.
+      ctx.globalAlpha = Math.min(1, swing.life / 0.4)
+      ctx.strokeStyle = '#f2e3a8'
+      ctx.lineWidth = 6
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.arc(screen.x, screen.y, reach, tail, head)
+      ctx.stroke()
+      ctx.restore()
     }
 
     // 낫 재사용 대기 — 개발 빌드에서만 온다. 플레이어 발밑에 호를 그린다.
