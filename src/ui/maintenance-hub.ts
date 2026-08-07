@@ -9,10 +9,24 @@
 //
 // 이 파일은 화면만 만든다. 판정과 자원 변경은 economy.ts 가 한다.
 
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
 import { createIcon } from './icon.ts'
 import './layout.css'
+
+/**
+ * 습격 예고 표지 세 종 (아트 디렉션 12.5.3 B3, DEC-RUN-011).
+ *
+ * 판이 그림 자리와 문구 자리로 나뉘어 있어 그림은 종류마다 다르고 문구는
+ * `hud_label` 을 코드가 옆칸에 얹는다. **재배 HUD 는 이 판을 쓰지 않는다** —
+ * 거기는 `signboard` 아래칸에 문구만 넣고 구분은 색이 한다.
+ */
+const RAID_NOTICE_ASSET: Record<string, string> = {
+  none: UI_ASSET.raidNoticeNone,
+  raid: UI_ASSET.raidNoticeRaid,
+  final_raid: UI_ASSET.raidNoticeFinal,
+}
 
 export type HubPopupId = 'sell' | 'buy' | 'craft' | 'quickslots'
 
@@ -52,6 +66,13 @@ export interface HubView {
   inventory: InventoryView
   /** raid_notices.hud_label. 데이터가 없으면 null (DEC-RUN-011) */
   raidNoticeLabel: string | null
+  /**
+   * 그날 밤의 습격 종류. 표지 판의 **그림**을 고른다 (DEC-RUN-011).
+   *
+   * `raidNoticeLabel` 과 따로 받는다 — 문구는 승인 데이터에서 오고 그림은 세 종의
+   * 고정 UI 에셋이라 출처가 다르다. 문구가 없어도 그림은 나올 수 있다.
+   */
+  raidType: string
   /** 하단 진행 버튼 문구는 DEC-RUN-006 이 정한 두 가지다 */
   finishLabel: string
 }
@@ -112,10 +133,33 @@ export function createMaintenanceHub(
   const root = el('div', 'hub')
   root.hidden = true
 
+  // 배경은 닫힌 미닫이문 두 짝이다 (A3 목업, 아트 디렉션 12.5.5). 둘 다 있어야
+  // 화면이 채워지므로 한 장만 와 있으면 아트 없는 쪽으로 떨어진다.
+  const shutterLeft = assetCssUrl(UI_ASSET.shutterLeft)
+  const shutterRight = assetCssUrl(UI_ASSET.shutterRight)
+  const hasArt = shutterLeft !== null && shutterRight !== null
+  if (hasArt) {
+    root.classList.add('hub--has-art')
+    root.style.setProperty('--hub-shutter-left', shutterLeft)
+    root.style.setProperty('--hub-shutter-right', shutterRight)
+  }
+
+  /** 있으면 CSS 변수로 걸어 준다. 없으면 `layout.css` 의 플레이스홀더가 남는다 */
+  function paint(node: HTMLElement, variable: string, assetId: string): void {
+    const url = assetCssUrl(assetId)
+    if (url !== null) node.style.setProperty(variable, url)
+  }
+
   // ── 좌측: 보관함 상시 영역 + 소지금 ──────────────
   const inventory = el('div', 'hub__inventory')
+  paint(inventory, '--hub-panel-border', UI_ASSET.panelBorder)
+  paint(inventory, '--hub-panel-texture', UI_ASSET.panelTexture)
+
+  // 소지금 틀에는 엽전 그림이 이미 들어 있다 (B2). 그래서 `소지금` 글자를 빼고
+  // 숫자만 얹는다 — 그림이 없을 때만 글자가 무엇인지 알려준다.
   const money = el('div', 'hub__money')
-  const moneyLabel = el('span', undefined, '소지금')
+  paint(money, '--hub-money-plate', UI_ASSET.moneyPlate)
+  const moneyLabel = el('span', 'hub__money-label', '소지금')
   const moneyValue = el('span', 'hub__count')
   money.append(moneyLabel, moneyValue)
   const groupNodes = new Map<keyof InventoryView, HTMLElement>()
@@ -123,7 +167,8 @@ export function createMaintenanceHub(
   for (const group of GROUPS) {
     const wrap = el('div', 'hub__inventory-group')
     wrap.appendChild(el('div', 'hub__inventory-title', group.title))
-    const list = el('div')
+    // 클래스를 준다. 아트가 붙으면 이 목록만 격자가 되고 분류 제목은 아니다
+    const list = el('div', 'hub__inventory-list')
     wrap.appendChild(list)
     inventory.appendChild(wrap)
     groupNodes.set(group.key, list)
@@ -133,13 +178,18 @@ export function createMaintenanceHub(
   const main = el('div', 'hub__main')
   const header = el('div', 'hub__header')
   const title = el('div', 'hub__title')
+  // 표지의 그림 자리와 문구 자리를 나눈다 (B3). 그림은 판이 들고 문구만 얹는다.
   const raidNotice = el('div', 'hub__raid-notice')
+  const raidNoticePlate = el('div', 'hub__raid-plate')
+  const raidNoticeText = el('div', 'hub__raid-text')
+  raidNotice.append(raidNoticePlate, raidNoticeText)
   header.append(title, raidNotice)
 
   const buttons = el('div', 'hub__buttons')
   for (const spec of BUTTONS) {
     const button = el('button', 'hub__button', spec.label)
     button.type = 'button'
+    paint(button, '--hub-button-image', UI_ASSET.buttonNormal)
     button.addEventListener('click', () => handlers.openPopup(spec.id))
     buttons.appendChild(button)
   }
@@ -149,6 +199,7 @@ export function createMaintenanceHub(
   // 별도의 확인 창을 두지 않는다. 문구가 다음에 일어날 일을 이미 알린다 (DEC-UI-020).
   const finish = el('button', 'hub__finish')
   finish.type = 'button'
+  paint(finish, '--hub-button-image', UI_ASSET.buttonNormal)
   finish.addEventListener('click', () => handlers.finish())
 
   // ── 팝업 층 ─────────────────────────────────────
@@ -201,10 +252,16 @@ export function createMaintenanceHub(
           const node = el('div', 'hub__inventory-row')
           const count = el('span', 'hub__count')
 
+          // 칸 그림은 배지가 붙은 것과 아닌 것 두 장이다 (B2). 아트 디렉션이
+          // "두 아이템 칸은 배지 말고는 완전히 같다" 로 못 박았으므로 배지를
+          // 따로 얹지 않고 **그림을 바꾼다**. 크기가 105×107 대 111×113 으로
+          // 다른 것은 배지가 칸 밖으로 물려 나온 만큼이다.
+          paint(node, '--hub-slot-image', UI_ASSET.itemSlotBadge)
+
           // 아이콘이 있으면 이름을 빼고 수량 배지만 남긴다 (14.8).
           // 없으면 이름이 그 자리를 대신한다 — 빈 칸을 두지 않는다.
           const icon = createIcon(row.icon)
-          if (icon === null) node.appendChild(el('span', undefined, row.name))
+          if (icon === null) node.appendChild(el('span', 'hub__slot-name', row.name))
           else node.appendChild(icon)
           node.appendChild(count)
 
@@ -240,7 +297,13 @@ export function createMaintenanceHub(
     render(view) {
       title.textContent = `${view.dayNumber}일차 정비`
       // 문구가 없으면 비워 둔다. 임시 문구를 채우지 않는다 (DEC-RUN-011)
-      raidNotice.textContent = view.raidNoticeLabel ?? ''
+      raidNoticeText.textContent = view.raidNoticeLabel ?? ''
+
+      // 판 그림은 세 종 중 하나다. 알 수 없는 종류면 판을 그리지 않는다 —
+      // 틀린 그림은 없는 그림보다 나쁘다 (조용한 밤인데 불이 보이면 안 된다).
+      const plate = assetCssUrl(RAID_NOTICE_ASSET[view.raidType])
+      raidNoticePlate.hidden = plate === null
+      if (plate !== null) raidNoticePlate.style.setProperty('--hub-raid-plate', plate)
       moneyValue.textContent = String(view.money)
       finish.textContent = view.finishLabel
 
@@ -291,13 +354,26 @@ export function createPopupShell(
   onClose: () => void,
 ): { root: HTMLElement; body: HTMLElement; footer: HTMLElement } {
   const root = el('div', 'hub__popup')
+  const borderUrl = assetCssUrl(UI_ASSET.panelBorder)
+  if (borderUrl !== null) {
+    root.style.setProperty('--hub-panel-border', borderUrl)
+    root.classList.add('hub__popup--has-art')
+  }
+  const textureUrl = assetCssUrl(UI_ASSET.panelTexture)
+  if (textureUrl !== null) root.style.setProperty('--hub-panel-texture', textureUrl)
+
   const header = el('div', 'hub__popup-header')
   // 팝업 닫기는 정비 허브 안의 버튼이다. 8/5까지 필드 HUD 의 아이콘 버튼 클래스를
   // 빌려 썼는데, A1 에서 HUD 쪽이 톱니바퀴 그림 한 장으로 바뀌면서 규칙이 갈렸다.
-  // `asset.ui.close_button` 은 8/6 에 파일이 왔고 고정 목록에도 있다. 글자 버튼인
-  // 것은 붙이는 작업이 남아서다 — 파일이 없어서가 아니다 (2026-08-07 확인).
+  // 8/8 에 `asset.ui.close_button` 을 붙였다 — 글자가 남아 있는 것은 그림이 없을
+  // 때의 플레이스홀더이자 읽는 사람을 위한 이름이고, 그림이 있으면 CSS 가 숨긴다.
   const closeButton = el('button', 'hub__close', '닫기')
   closeButton.type = 'button'
+  const closeUrl = assetCssUrl(UI_ASSET.closeButton)
+  if (closeUrl !== null) {
+    closeButton.style.setProperty('--hub-close-image', closeUrl)
+    closeButton.classList.add('hub__close--has-art')
+  }
   closeButton.addEventListener('click', onClose)
   header.append(el('div', 'hub__popup-title', titleText), closeButton)
 

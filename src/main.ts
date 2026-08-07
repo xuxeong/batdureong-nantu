@@ -3343,6 +3343,8 @@ function hubView() {
       recoveries: rowsOf(run?.resources.recoveries ?? {}),
     },
     raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
+    // 표지 판의 그림을 고른다. 문구와 출처가 달라 따로 넘긴다 (DEC-RUN-011)
+    raidType,
     // 문구는 DEC-RUN-006 이 정한 두 가지다
     finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
   }
