@@ -64,6 +64,11 @@
 | `assets/final/projectile/{chili_pouch,banana_peel,tomato_bomb,rice_glue_bottle,manbok_coin}.png` | E2 원본에서 분리·투명화한 필드 투사체 5종. `banana_peel`은 기존 내부 ID를 유지한 으깬 토란 주머니 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-E-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 플레이어·영순·만복·이장·금례 5인의 최종 필드 SD 원본 시트 | AI 생성·수정 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-F-001` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/field_sprite/{player,yeongsun,manbok,village_head,geumrye}.png` | F-1 최종 원본에서 분리·투명화한 필드 SD 5종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | `IMG-F-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-f/character/{player,yeongsun,manbok,geumrye,village_head}_field_five_pose_sheet_chroma.png` | 플레이어·주민 4명의 정면·후면·좌·우·공격 포즈 원본 시트 5장 | AI 생성·반복 보정·프로젝트 책임자 선별 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-F-002` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/field_sprite_{left,right,attack}/{player,yeongsun,manbok,geumrye,village_head}.png` | 5포즈 원본 시트에서 분리한 좌·우 이동 및 공격 교체 스프라이트 15장 | AI 생성 + 프로젝트 책임자 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-F-002` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-d/bg_title_v3.png`, `assets/final/ui/bg_title.png` | 누런 하늘·언덕 너머 시골 마을·우측 팻말 기둥으로 구성한 타이틀 화면 배경 원본과 최종본 | AI 생성·반복 보정·프로젝트 책임자 선별·최종 저장 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 14.3.1절 및 제작 대화 참조 | 해당 없음 (AI 생성) |
+| `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
 
 ## 사운드 · BGM
 
@@ -1411,3 +1416,40 @@ cast shadows, labels, or extra people. Equal baseline and spacing, flat pure #00
 
 v2의 얼룩·종이 질감이 누적된 결과는 폐기했다. v3는 깨끗한 통합본에서 형태·비율·포즈·
 소품·배치를 유지하고 선의 불규칙함만 보강한 최종 채택 원본이다.
+
+### IMG-F-002 — 캐릭터별 방향·공격 5포즈 시트
+
+각 캐릭터의 기존 `assets/final/field_sprite/<name>.png`를 비율·화풍의 고정 기준으로,
+`assets/source/phase-f/crops/<name>.png`를 의상·소품 기준으로 사용했다. 공통 생성 프롬프트는
+아래와 같고, 생성 뒤 공격 손·소품과 스윙 자세만 반복 보정했다.
+
+```text
+Create exactly five full-body versions of this character in one horizontal row, ordered left to
+right: front neutral, back neutral, facing screen-left neutral, facing screen-right neutral, and
+attack pose. Treat the approved front field sprite as the strict identity, proportion, head-size,
+linework, color, and rendering anchor. Keep the same compact SD body, clothing, props, baseline,
+and visual scale in every view. Rotate asymmetric clothing and props logically; do not create the
+side views by simple mirroring.
+
+The attack pose faces forward with feet apart, knees bent, the whole body lowered, torso pitched
+forward, and the head bowed deeply so the crown or top of the hat is dominant. Preserve body-part
+sizes; compress the pose only through crouching and bending. Use one attack pose only, with no
+extra animation frames or motion effects.
+
+Use a perfectly flat bright-green chroma background, equal spacing, and generous padding. No
+shadows, gradients, floor, dividers, labels, text, scenery, extra characters, extra limbs, or
+duplicated props.
+```
+
+캐릭터별 공격 지시는 다음과 같다.
+
+```text
+player: a two-handed sweeping sickle strike with torso rotation and asymmetric arms
+Yeongsun: a forward bare-fist punch; no stone in the attack hand
+Manbok: a forward yeopjeon coin throw
+Geumrye: a two-handed sweeping wooden-cane strike with torso rotation and asymmetric arms
+village head: a forward bare-fist punch with the other hand guarding
+```
+
+최종 채택본은 캐릭터별 원본 시트 5장이다. 정면은 기존 승인본 대조용, 후면은 원본 보존용이며,
+프로젝트 책임자가 Figma에서 좌·우·공격 칸만 분리·투명화해 최종 에셋 15장으로 만든다.
