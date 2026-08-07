@@ -21,6 +21,7 @@
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v3.png` | A1 v1 필드와 v2 HUD 합성 목업 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-005` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v4.png` | 최신 아트 디렉션 기반 A1 낮 플레이 화면 목업 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-006` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | A1 숲 테두리 침범 깊이 축소본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-007` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-a/A2_nighttime_gameplay_mockup.png` | A2 밤 습격 필드 최종 목업. 적대 주민 체력은 장식 이미지 없이 얇은 붉은 막대로 표시 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v2.png` | A3 정비 허브 UI 목업 재제작본 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-008` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v3.png` | A3 조선시대 창호 배경·제작 상세 UI 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-009` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v4.png` | A3 소지품 정렬·소지금 HUD·상세 여백 보정본 | AI 보정 2회 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-010` 전문 참조 | 해당 없음 (AI 생성) |
