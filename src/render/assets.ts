@@ -14,8 +14,11 @@
 //
 // ── 파일이 없는 구간이 아직 있다 ───────────────────────────
 //
-// `field_sprite`·`portrait`·`icon`·`projectile`·`effect`·`logo`·`font` 는
-// `assets/final/` 에 아직 비어 있다. 그래서 **없는 것은 오류가 아니라 null 이고**
+// `portrait`·`logo`·`cutscene`·`sfx`·`bgm` 은 `assets/final/` 에 아직 비어 있다
+// (2026-08-07). `field_sprite`·`icon`·`projectile` 은 8/6 에 채워졌다.
+// `effect` 는 빈 구간이 아니라 **Canvas 2D 코드 구현 대상**이라 PNG 가 오지 않고,
+// `font` 는 시스템 폰트를 쓰기로 해 파일을 만들지 않는다 (전성민 8/7).
+// 그래서 **없는 것은 오류가 아니라 null 이고**
 // 부르는 쪽이 플레이스홀더로 그린다 (`AGENTS.md` 6절 — 실제 아트가 없으면 명확한
 // 플레이스홀더를 쓴다).
 //
@@ -98,6 +101,23 @@ export const UI_ASSET = {
    * 그것이 곧 기능 태그가 된다. 구분은 자리 순서로만 준다 (ui/dialogue-modal.ts).
    */
   choiceBalloon: 'asset.ui.choice_balloon',
+  /**
+   * 대사창 9-slice 두 장 (아트 디렉션 12.2 A4).
+   *
+   * `panel_border` 가 테두리, `panel_texture` 가 안쪽 바탕이다.
+   * **`panel_texture` 는 타일링하지 않는다** — 위아래 끝 색차가 674 라 세로로
+   * 반복하면 가로줄이 규칙적으로 생긴다. `background-size: 100% 100%` 로 늘린다.
+   */
+  panelBorder: 'asset.ui.panel_border',
+  panelTexture: 'asset.ui.panel_texture',
+  /**
+   * 발화자 이름판과 선택지 버튼 (아트 디렉션 12.2 A4).
+   *
+   * 눌림 상태는 `button_pressed` 파일이 있지만 쓰지 않는다 — CSS `:active` 로
+   * 처리하는 것이 8/6 에 정해졌다. 그래서 고정 목록에도 넣지 않았다.
+   */
+  buttonNormal: 'asset.ui.button_normal',
+  buttonDisabled: 'asset.ui.button_disabled',
 } as const
 
 for (const id of Object.values(UI_ASSET)) {

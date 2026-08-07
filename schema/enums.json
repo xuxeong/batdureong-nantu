@@ -81,7 +81,7 @@
 
   "ui_system_asset_id": {
     "source": "DEC-ART-001",
-    "$comment": "어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋의 논리 에셋 ID 고정 목록. 콘텐츠 연결 CSV(content_assets.csv)의 asset_role 로는 관리할 수 없다 — ui 구간이 asset_role 목록에 없기 때문이다. 반대로 asset.background.prototype_field 는 background 가 asset_role 에 있고 maps.csv 가 부모라서 이 목록이 아니라 content_assets.csv 행으로 간다. 새 ID 추가는 데이터 행 추가가 아니라 스키마 변경으로 처리한다. close_button 과 resident_hp_gauge 는 B단계라 assets/final/ui/ 에 파일이 아직 없다 — 목록은 허용되는 ID 를 정하는 것이지 파일 존재를 뜻하지 않는다.",
+    "$comment": "어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋의 논리 에셋 ID 고정 목록. 콘텐츠 연결 CSV(content_assets.csv)의 asset_role 로는 관리할 수 없다 — ui 구간이 asset_role 목록에 없기 때문이다. 반대로 asset.background.prototype_field 는 background 가 asset_role 에 있고 maps.csv 가 부모라서 이 목록이 아니라 content_assets.csv 행으로 간다. 새 ID 추가는 데이터 행 추가가 아니라 스키마 변경으로 처리한다. 목록은 허용되는 ID 를 정하는 것이지 파일 존재를 뜻하지 않는다 — resident_hp_gauge 는 아직 assets/final/ui/ 에 파일이 없다. 반대 방향도 마찬가지다: assets/final/ui/ 에 파일이 있어도 이 목록에 없으면 src/render/assets.ts 가 그 ID 를 쓰는 코드를 거부한다. 2026-08-07 에 panel_border·panel_texture·button_normal·button_disabled 를 더했다 — A4 대화 화면을 목업대로 조립하려면 대사창이 panel_border+panel_texture 9-slice 이고 발화자 이름판·선택지가 button_normal, 비활성 선택지가 button_disabled 이기 때문이다. 넷 다 DEC-ART-001 이 ui 구간에 허용한 범주(패널·버튼) 안이라 DEC 변경 없이 스키마 수정으로 끝난다. button_pressed 는 파일이 있지만 넣지 않았다 — 눌림 상태는 CSS :active 로 처리한다.",
     "values": [
       "asset.ui.field_frame_front",
       "asset.ui.player_status_card",
@@ -95,7 +95,11 @@
       "asset.ui.settings_button",
       "asset.ui.close_button",
       "asset.ui.resident_hp_gauge",
-      "asset.ui.choice_balloon"
+      "asset.ui.choice_balloon",
+      "asset.ui.panel_border",
+      "asset.ui.panel_texture",
+      "asset.ui.button_normal",
+      "asset.ui.button_disabled"
     ]
   },
 

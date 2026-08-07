@@ -1280,7 +1280,8 @@
 }
 
 /* 팝업 닫기 버튼 (DEC-UI-020).
-   `asset.ui.close_button` 이 B단계라 파일이 없어 아직 글자 버튼이다 */
+   `asset.ui.close_button` 은 8/6 에 파일이 왔다. 아직 글자 버튼인 것은
+   붙이는 작업이 남아서다 — 파일이 없어서가 아니다 (2026-08-07 확인) */
 .hub__close {
   pointer-events: auto;
   cursor: pointer;
