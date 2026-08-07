@@ -210,6 +210,17 @@ export type AssetRole =
   | 'cutscene'
   | 'sfx'
   | 'bgm'
+  /**
+   * `DEC-ART-002` 가 프레임 교체를 허용한 세 예외를 담는 구간 (2026-08-07).
+   *
+   * **`field_sprite` 를 쓰는 전투 참여 캐릭터(플레이어·주민 4명)에만 붙는다.**
+   * 야생동물은 예외 대상이 아니다. 좌·우는 이동 방향에 따라, `attack` 은 낫을
+   * 휘두르거나 주민이 공격하는 순간에 교체한다. 상하 이동과 정지는 기존 정면
+   * 스프라이트를 그대로 쓰고, 걷기는 예외가 아니라 코드 bob 이다.
+   */
+  | 'field_sprite_left'
+  | 'field_sprite_right'
+  | 'field_sprite_attack'
 
 /**
  * 콘텐츠 행에 중첩되는 논리 에셋 ID 묶음.

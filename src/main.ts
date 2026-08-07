@@ -170,6 +170,16 @@ let fieldAssets: FieldAssetIds = {}
  * 그림이 없으면 값이 `undefined` 이고 렌더가 도형으로 대신한다.
  */
 let playerSprite: string | undefined
+/**
+ * 플레이어·주민의 에셋 묶음 전체.
+ *
+ * `DEC-ART-002` 가 좌·우·공격 교체 스프라이트를 허용하면서 `field_sprite` 한 장만
+ * 들고 있어서는 고를 수 없게 됐다. `characterSprite()` 가 여기서 방향과 공격
+ * 상태에 맞는 것을 꺼낸다. 위 `playerSprite` 는 정면 한 장이 필요한 자리
+ * (지원 주민·미리 받기)가 계속 쓴다.
+ */
+let playerAssets: ContentAssets | undefined
+let residentAssets = new Map<string, ContentAssets>()
 /** 대화 화면의 플레이어 그림. `portrait` 이 없으면 `field_sprite` 로 떨어진다 */
 let playerPortrait: string | undefined
 let residentSprites = new Map<string, string | undefined>()
@@ -723,6 +733,10 @@ async function bootData(): Promise<boolean> {
 
     // 필드 위 사람·짐승·투사체 (F·E 단계)
     playerSprite = data.player_base_stats![0].assets?.field_sprite
+    playerAssets = data.player_base_stats![0].assets
+    residentAssets = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets ?? {}]),
+    )
     playerPortrait =
       data.player_base_stats![0].assets?.portrait ??
       data.player_base_stats![0].assets?.field_sprite
@@ -757,6 +771,13 @@ async function bootData(): Promise<boolean> {
       ...residentProjectiles.values(),
       ...throwableProjectiles.values(),
       ...(data.wildlife ?? []).map((w) => w.assets?.field_sprite),
+      // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-002). 미리 안 받으면
+      // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
+      ...[playerAssets, ...residentAssets.values()].flatMap((a) => [
+        a?.field_sprite_left,
+        a?.field_sprite_right,
+        a?.field_sprite_attack,
+      ]),
     ])
     player.x = map.world_width / 2
     player.y = map.world_height / 2
@@ -1085,37 +1106,105 @@ const BOB_MOVING_SPEED = 4
  * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
  * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
  */
-function advanceBob(key: string, x: number, y: number, dt: number): number | null {
+/**
+ * 좌·우 교체 스프라이트를 쓸 방향. 정면이면 null (`DEC-ART-002`).
+ *
+ * 확정문이 *"좌·우 이동 방향에 따라 교체하는 스프라이트"* 와
+ * *"상하 이동과 정지 상태는 기존 정면 스프라이트를 그대로 쓴다"* 로 나눠서,
+ * 가로 이동이 세로보다 클 때만 방향이 생긴다.
+ */
+type Facing = 'left' | 'right' | null
+
+/**
+ * 좌표 변화로 이동을 판정해 위상과 방향을 낸다. 멈췄으면 위상이 null 이다.
+ *
+ * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
+ * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
+ */
+function advanceBob(
+  key: string,
+  x: number,
+  y: number,
+  dt: number,
+): { phase: number | null; facing: Facing } {
   const prev = bobStates.get(key)
   if (prev === undefined) {
     bobStates.set(key, { phase: 0, x, y })
-    return null
+    return { phase: null, facing: null }
   }
 
-  const speed = dt > 0 ? Math.hypot(x - prev.x, y - prev.y) / dt : 0
+  const dx = x - prev.x
+  const dy = y - prev.y
+  const speed = dt > 0 ? Math.hypot(dx, dy) / dt : 0
   prev.x = x
   prev.y = y
 
   if (speed < BOB_MOVING_SPEED) {
     // 멈추면 착지 자세로 되돌린다. 공중에서 굳으면 떠 있는 것처럼 보인다.
     prev.phase = 0
-    return null
+    return { phase: null, facing: null }
   }
 
   const rate = speed / runConfig.moveSpeed / BOB_STEP_SECONDS
   prev.phase = (prev.phase + dt * rate) % 1
-  return prev.phase
+  // 세로가 더 크면 정면이다. 방향을 남겨 두지 않는 이유는 확정문이 정지와
+  // 상하를 정면으로 묶었기 때문이다 — 마지막 방향을 기억하면 위로 걸을 때
+  // 직전 좌우 그림이 남는다.
+  const facing: Facing =
+    Math.abs(dx) <= Math.abs(dy) ? null : dx < 0 ? 'left' : 'right'
+  return { phase: prev.phase, facing }
 }
 
-/** 이번 프레임의 걷기 위상. 뷰를 만들 때 읽는다 */
+/** 이번 프레임의 걷기 위상과 방향. 뷰를 만들 때 읽는다 */
 let playerBob: number | null = null
+let playerFacing: Facing = null
 let hostileBob: number | null = null
+let hostileFacing: Facing = null
+
+/**
+ * 적대 주민이 방금 공격했다는 표시가 남은 초 (`DEC-ART-002` 교체 스프라이트).
+ *
+ * `resident-combat.ts` 가 `attacked` 이벤트를 이미 내고 있었는데 **듣는 쪽이
+ * 없었다.** 공격 순간이 화면에 아무 흔적도 남기지 않던 자리다.
+ */
+let hostileAttackRemaining = 0
+
+/** 교체 스프라이트가 보이는 시간. 표현이라 승인 데이터가 아니다 */
+const ATTACK_SPRITE_SECONDS = 0.2
 
 /** 런이 바뀌면 개체 키가 재사용되므로 위상을 버린다 */
 function resetBob(): void {
   bobStates.clear()
   playerBob = null
+  playerFacing = null
   hostileBob = null
+  hostileFacing = null
+  hostileAttackRemaining = 0
+}
+
+/**
+ * 방향과 공격 상태에 맞는 `field_sprite` 를 고른다 (`DEC-ART-002`).
+ *
+ * **없으면 정면으로 떨어진다.** 교체 스프라이트 15장이 아직 제작 전이라
+ * 지금은 전부 정면이 나오고, 파일이 와서 `content_assets.csv` 에 행이 붙으면
+ * 코드 수정 없이 바뀐다. 공격이 방향보다 우선이다 — 휘두르는 중에 좌우로
+ * 움직여도 공격 그림이 유지돼야 한다.
+ */
+function characterSprite(
+  assets: ContentAssets | undefined,
+  facing: Facing,
+  attacking: boolean,
+): string | undefined {
+  if (attacking && assets?.field_sprite_attack !== undefined) {
+    return assets.field_sprite_attack
+  }
+  if (facing === 'left' && assets?.field_sprite_left !== undefined) {
+    return assets.field_sprite_left
+  }
+  if (facing === 'right' && assets?.field_sprite_right !== undefined) {
+    return assets.field_sprite_right
+  }
+  return assets?.field_sprite
 }
 
 function advanceCombatFeedback(dt: number): void {
@@ -1127,6 +1216,9 @@ function advanceCombatFeedback(dt: number): void {
   if (sickleSwing !== null) {
     sickleSwing.remaining -= dt
     if (sickleSwing.remaining <= 0) sickleSwing = null
+  }
+  if (hostileAttackRemaining > 0) {
+    hostileAttackRemaining = Math.max(0, hostileAttackRemaining - dt)
   }
 }
 
@@ -1184,6 +1276,9 @@ function updateRaid(dt: number): void {
   }
 
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
+    // 공격 순간 교체 스프라이트 (DEC-ART-002). 이 이벤트는 8/3부터 나오고 있었는데
+    // 듣는 쪽이 없어서 공격이 화면에 아무 흔적도 남기지 않았다.
+    if (event.type === 'attacked') hostileAttackRemaining = ATTACK_SPRITE_SECONDS
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
@@ -2162,7 +2257,13 @@ function hostileViews(): HostileView[] {
             windup: null,
             slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
             burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
-            assetId: residentSprites.get(hostile.entity.residentId),
+            // 방향·공격 교체 스프라이트 (DEC-ART-002). 파일이 아직 없어서
+            // 지금은 전부 정면으로 떨어진다.
+            assetId: characterSprite(
+              residentAssets.get(hostile.entity.residentId),
+              hostileFacing,
+              hostileAttackRemaining > 0,
+            ),
             // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-002 가 야생동물에
             // bob 을 적용할지는 정하지 않았다 (field.ts HostileView.bob 주석).
             bob: hostileBob,
@@ -3158,11 +3259,16 @@ const loop = createGameLoop(
 
       // 걷는 흔들림 (DEC-ART-002). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
       // 좌표가 안 바뀌는 것이 그대로 "멈춤" 으로 읽힌다.
-      playerBob = advanceBob('player', player.x, player.y, dt)
-      hostileBob =
+      const playerStep = advanceBob('player', player.x, player.y, dt)
+      playerBob = playerStep.phase
+      playerFacing = playerStep.facing
+
+      const hostileStep =
         hostile === null
           ? null
           : advanceBob('hostile', hostile.entity.x, hostile.entity.y, dt)
+      hostileBob = hostileStep?.phase ?? null
+      hostileFacing = hostileStep?.facing ?? null
 
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
       advanceCombatFeedback(dt)
@@ -3269,7 +3375,9 @@ const loop = createGameLoop(
         aimAngle: input.aimAngle(),
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
-        playerAsset: playerSprite,
+        // 방향·공격 교체 스프라이트 (DEC-ART-002). 낫을 휘두르는 동안은
+        // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.
+        playerAsset: characterSprite(playerAssets, playerFacing, sickleSwing !== null),
         playerBob,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
