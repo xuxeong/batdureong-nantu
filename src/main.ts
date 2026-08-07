@@ -153,14 +153,14 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 
 /**
- * 필드가 그릴 논리 에셋 ID (DEC-ART-003).
+ * 필드가 그릴 논리 에셋 ID (DEC-ART-004).
  *
  * 승인 데이터가 오기 전에는 비어 있고, 그동안 필드는 플레이스홀더 도형으로 그려진다.
  * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
  */
 let fieldAssets: FieldAssetIds = {}
 /**
- * 필드에 그리는 논리 에셋 ID (`DEC-ART-003`, 아트 디렉션 F·E 단계).
+ * 필드에 그리는 논리 에셋 ID (`DEC-ART-004`, 아트 디렉션 F·E 단계).
  *
  * **주민은 `residents.csv`, 야생동물은 `wildlife.csv`, 투척물은
  * `throwable_weapons.csv` 의 `assets` 에서 온다.** 적대 주민이 쏘는 투사체만
@@ -173,7 +173,7 @@ let playerSprite: string | undefined
 /**
  * 플레이어·주민의 에셋 묶음 전체.
  *
- * `DEC-ART-003` 가 좌·우·공격 교체 스프라이트를 허용하면서 `field_sprite` 한 장만
+ * `DEC-ART-004` 가 좌·우·공격 교체 스프라이트를 허용하면서 `field_sprite` 한 장만
  * 들고 있어서는 고를 수 없게 됐다. `characterSprite()` 가 여기서 방향과 공격
  * 상태에 맞는 것을 꺼낸다. 위 `playerSprite` 는 정면 한 장이 필요한 자리
  * (지원 주민·미리 받기)가 계속 쓴다.
@@ -186,7 +186,7 @@ let residentSprites = new Map<string, string | undefined>()
 let residentPortraits = new Map<string, string | undefined>()
 let residentProjectiles = new Map<string, string | undefined>()
 let throwableProjectiles = new Map<string, string | undefined>()
-/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-003) */
+/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-004) */
 let seedAssetId: string | null = null
 /** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
 let cropAssetsById = new Map<string, ContentAssets>()
@@ -535,7 +535,7 @@ function startNewRun(playerName: string): void {
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
-  // 걷기 위상은 개체 키로 들고 있어서 새 런이 같은 키를 다시 쓴다 (DEC-ART-003).
+  // 걷기 위상은 개체 키로 들고 있어서 새 런이 같은 키를 다시 쓴다 (DEC-ART-004).
   // 안 지우면 직전 런의 마지막 좌표와 비교해 첫 프레임에 순간이동으로 읽힌다.
   resetBob()
 
@@ -719,7 +719,7 @@ async function bootData(): Promise<boolean> {
     const map = data.maps![0]
     camera.setWorldSize(map.world_width, map.world_height)
 
-    // ── 논리 에셋 ID (DEC-ART-003) ──────────────────
+    // ── 논리 에셋 ID (DEC-ART-004) ──────────────────
     //
     // 붙어 있는 것만 온다. **없는 역할을 코드가 지어내지 않는다** — 그림이 없으면
     // 렌더가 플레이스홀더로 그리고, 그 사실이 화면에 보이는 것이 맞다.
@@ -771,7 +771,7 @@ async function bootData(): Promise<boolean> {
       ...residentProjectiles.values(),
       ...throwableProjectiles.values(),
       ...(data.wildlife ?? []).map((w) => w.assets?.field_sprite),
-      // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-003). 미리 안 받으면
+      // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
       ...[playerAssets, ...residentAssets.values()].flatMap((a) => [
         a?.field_sprite_left,
@@ -1078,7 +1078,7 @@ let emptyFireRemaining = 0
 let sickleSwing: { angle: number; remaining: number } | null = null
 
 /**
- * 걷는 흔들림(bob)의 위상. 개체 키 → 위상 0~1 과 직전 좌표 (`DEC-ART-003`).
+ * 걷는 흔들림(bob)의 위상. 개체 키 → 위상 0~1 과 직전 좌표 (`DEC-ART-004`).
  *
  * **확정문이 걷기를 스프라이트 예외에서 빼고 코드 bob 으로 못박았다** —
  * *"이동 중 흔들림은 예외가 아니라 코드가 위치를 오르내리는 방식(bob)으로
@@ -1107,7 +1107,7 @@ const BOB_MOVING_SPEED = 4
  * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
  */
 /**
- * 좌·우 교체 스프라이트를 쓸 방향. 정면이면 null (`DEC-ART-003`).
+ * 좌·우 교체 스프라이트를 쓸 방향. 정면이면 null (`DEC-ART-004`).
  *
  * 확정문이 *"좌·우 이동 방향에 따라 교체하는 스프라이트"* 와
  * *"상하 이동과 정지 상태는 기존 정면 스프라이트를 그대로 쓴다"* 로 나눠서,
@@ -1165,7 +1165,7 @@ function advanceBob(
 let fieldAimAngle = 0
 
 /**
- * 야생동물의 진행 방향. 인스턴스 ID → 각도와 직전 좌표 (`DEC-ART-003`).
+ * 야생동물의 진행 방향. 인스턴스 ID → 각도와 직전 좌표 (`DEC-ART-004`).
  *
  * 확정문이 사람과 야생동물을 갈랐다 — 사람은 bob, **야생동물은 회전**이다.
  * *"탑뷰에서 머리가 진행 방향을 향하도록 이동 중인 야생동물의 기존 한 장짜리
@@ -1217,7 +1217,7 @@ let hostileBob: number | null = null
 let hostileFacing: Facing = null
 
 /**
- * 적대 주민이 방금 공격했다는 표시가 남은 초 (`DEC-ART-003` 교체 스프라이트).
+ * 적대 주민이 방금 공격했다는 표시가 남은 초 (`DEC-ART-004` 교체 스프라이트).
  *
  * `resident-combat.ts` 가 `attacked` 이벤트를 이미 내고 있었는데 **듣는 쪽이
  * 없었다.** 공격 순간이 화면에 아무 흔적도 남기지 않던 자리다.
@@ -1292,7 +1292,7 @@ function resetBob(): void {
 }
 
 /**
- * 방향과 공격 상태에 맞는 `field_sprite` 를 고른다 (`DEC-ART-003`).
+ * 방향과 공격 상태에 맞는 `field_sprite` 를 고른다 (`DEC-ART-004`).
  *
  * **없으면 정면으로 떨어진다.** 교체 스프라이트 15장이 아직 제작 전이라
  * 지금은 전부 정면이 나오고, 파일이 와서 `content_assets.csv` 에 행이 붙으면
@@ -1400,7 +1400,7 @@ function updateRaid(dt: number): void {
   }
 
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
-    // 공격 순간 교체 스프라이트 (DEC-ART-003). 이 이벤트는 8/3부터 나오고 있었는데
+    // 공격 순간 교체 스프라이트 (DEC-ART-004). 이 이벤트는 8/3부터 나오고 있었는데
     // 듣는 쪽이 없어서 공격이 화면에 아무 흔적도 남기지 않았다.
     if (event.type === 'attacked') hostileAttackRemaining = ATTACK_SPRITE_SECONDS
     if (event.type !== 'playerDamaged') continue
@@ -2194,7 +2194,7 @@ function plotViews(): readonly PlotView[] {
 }
 
 /**
- * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-003).
+ * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-004).
  *
  * **씨앗은 작물을 보지 않는다.** 씨앗 단계에서 종류를 공개하지 않는 것이 확정
  * 규칙(`DEC-FARM-001`)이라 그림도 작물별로 두지 않고 맵에 한 장이다. 여기서 작물
@@ -2386,14 +2386,14 @@ function hostileViews(): HostileView[] {
             windup: null,
             slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
             burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
-            // 방향·공격 교체 스프라이트 (DEC-ART-003). 파일이 아직 없어서
+            // 방향·공격 교체 스프라이트 (DEC-ART-004). 파일이 아직 없어서
             // 지금은 전부 정면으로 떨어진다.
             assetId: characterSprite(
               residentAssets.get(hostile.entity.residentId),
               hostileFacing,
               hostileAttackRemaining > 0,
             ),
-            // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-003 가 야생동물에
+            // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-004 가 야생동물에
             // bob 을 적용할지는 정하지 않았다 (field.ts HostileView.bob 주석).
             bob: hostileBob,
             hitFlash: flashRatio(hostile.entity.instanceId),
@@ -2414,9 +2414,9 @@ function hostileViews(): HostileView[] {
     burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
     assetId: runtime.species.assets?.field_sprite,
     // 명중 표시는 야생동물에도 준다. 이건 DEC-CONTENT-013 이 요구한 효과 구분이지
-    // DEC-ART-003 의 스프라이트 예외가 아니다.
+    // DEC-ART-004 의 스프라이트 예외가 아니다.
     hitFlash: flashRatio(runtime.entity.instanceId),
-    // 야생동물은 bob 을 안 쓰고 진행 방향으로 회전한다 (DEC-ART-003).
+    // 야생동물은 bob 을 안 쓰고 진행 방향으로 회전한다 (DEC-ART-004).
     heading: wildlifeHeadings.get(runtime.entity.instanceId)?.angle ?? null,
   })))
 }
@@ -3409,7 +3409,7 @@ const loop = createGameLoop(
       // 선만 움직이면 조작이 살아 있는 것처럼 보인다. 마지막 각도로 굳힌다.
       if (scenes.inputOwner() === null) fieldAimAngle = input.aimAngle()
 
-      // 걷는 흔들림 (DEC-ART-003). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
+      // 걷는 흔들림 (DEC-ART-004). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
       // 좌표가 안 바뀌는 것이 그대로 "멈춤" 으로 읽힌다.
       const playerStep = advanceBob('player', player.x, player.y, dt)
       playerBob = playerStep.phase
@@ -3422,7 +3422,7 @@ const loop = createGameLoop(
       hostileBob = hostileStep?.phase ?? null
       hostileFacing = hostileStep?.facing ?? null
 
-      // 야생동물은 bob 대신 진행 방향으로 회전한다 (DEC-ART-003).
+      // 야생동물은 bob 대신 진행 방향으로 회전한다 (DEC-ART-004).
       // 재배 밖에서는 개체가 없어 아무 일도 하지 않는다.
       advanceWildlifeHeadings(dt)
 
@@ -3535,7 +3535,7 @@ const loop = createGameLoop(
         aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
-        // 방향·공격 교체 스프라이트 (DEC-ART-003). 낫을 휘두르는 동안은
+        // 방향·공격 교체 스프라이트 (DEC-ART-004). 낫을 휘두르는 동안은
         // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.
         playerAsset: characterSprite(playerAssets, playerFacing, sickleSwing !== null),
         playerBob,

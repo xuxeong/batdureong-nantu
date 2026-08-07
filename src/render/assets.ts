@@ -1,4 +1,4 @@
-// 논리 에셋 ID 해석과 이미지 적재 (DEC-ART-003, AGENTS.md 6절)
+// 논리 에셋 ID 해석과 이미지 적재 (DEC-ART-004, AGENTS.md 6절)
 //
 // ── 경로를 아는 곳은 여기 하나다 ───────────────────────────
 //
@@ -63,7 +63,7 @@ for (const [path, url] of Object.entries(FILES)) {
  * UI·시스템 에셋의 고정 허용 목록 (`schema/enums.json` 의 `ui_system_asset_id`).
  *
  * 이 구간은 어떤 콘텐츠에도 속하지 않아 `content_assets.csv` 로 관리할 수 없고
- * 고정 목록이 유일한 자리다 (`DEC-ART-003`, 아트 디렉션 14.3). 코드가 쓰는 ID 를
+ * 고정 목록이 유일한 자리다 (`DEC-ART-004`, 아트 디렉션 14.3). 코드가 쓰는 ID 를
  * 그 목록과 대조해서, 목록에서 빠졌는데 코드는 계속 부르는 상태를 막는다.
  */
 const UI_ASSET_IDS: readonly string[] = enums.ui_system_asset_id.values
@@ -72,7 +72,7 @@ const UI_ASSET_IDS: readonly string[] = enums.ui_system_asset_id.values
  * 필드가 쓰는 UI 에셋 ID.
  *
  * **문자열을 여기 두는 것은 하드코딩이 아니다.** `DEC-PIPELINE-016` 이 막는 것은
- * 변경 가능한 게임 데이터이고, 이 ID 는 `DEC-ART-003` 이 확정한 고정 목록의 값이라
+ * 변경 가능한 게임 데이터이고, 이 ID 는 `DEC-ART-004` 이 확정한 고정 목록의 값이라
  * 승인 CSV 에 넣을 자리가 없다. 대신 아래에서 그 목록에 실제로 있는지 확인한다.
  */
 export const UI_ASSET = {
@@ -125,7 +125,7 @@ for (const id of Object.values(UI_ASSET)) {
   // 목록에서 빠진 ID 는 스키마 변경으로 다시 넣어야 한다. 코드가 임의로 쓰지 않는다.
   throw new Error(
     `${id} 가 schema/enums.json 의 ui_system_asset_id 고정 목록에 없다. ` +
-      '새 ID 추가는 데이터 행 추가가 아니라 스키마 변경이다 (DEC-ART-003)',
+      '새 ID 추가는 데이터 행 추가가 아니라 스키마 변경이다 (DEC-ART-004)',
   )
 }
 
@@ -138,7 +138,7 @@ export function hasAssetFile(assetId: string | null | undefined): boolean {
  * DOM 이 배경 이미지로 쓸 URL. 파일이 없으면 null.
  *
  * **CSS 파일에 경로를 적지 않기 위한 통로다.** `layout.css` 는 위치·크기·색의
- * 원본이지만(`DEC-ART-003`, 8/4) 파일 경로까지 갖게 하면 경로를 아는 곳이 둘이 되고,
+ * 원본이지만(`DEC-ART-004`, 8/4) 파일 경로까지 갖게 하면 경로를 아는 곳이 둘이 되고,
  * 번들러가 해시를 붙이므로 CSS 에 적은 이름은 빌드에서 깨진다.
  *
  * 그래서 TS 가 `--...-image` 커스텀 프로퍼티에 URL 만 넣고 CSS 가 그것을 참조한다.
