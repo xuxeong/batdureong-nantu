@@ -9,18 +9,124 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 226개 · 2026-07-31 ~ 2026-08-06
+커밋 373개 · 2026-07-31 ~ 2026-08-09
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 133 | Docs 42 · Feat 35 · Fix 30 · Chore 13 · (태그 없음) 9 · Refactor 2 · Test 1 · Art 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| gamome44 | 45 | Docs 37 · (태그 없음) 7 · Art 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 33 | Data 15 · Feat 7 · Docs 6 · (태그 없음) 4 · Fix 1 | data/approved, data/drafts, docs/progress, src, tests |
-| github-actions[bot] | 15 | Docs 15 | docs/progress |
+| SUJEONG CHOI | 194 | Feat 62 · Docs 49 · Fix 47 · Chore 19 · (태그 없음) 12 · Refactor 3 · Test 1 · Art 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| gamome44 | 104 | Docs 72 · Art 17 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
+| ming9 | 59 | Data 21 · Feat 16 · Docs 10 · (태그 없음) 7 · Fix 3 · Chore 2 | data/approved, data/drafts, docs/progress, schema, src, tests |
+| github-actions[bot] | 16 | Docs 16 | docs/progress |
 
 ## 날짜별 기록
+
+### 2026-08-09
+
+- `[Feat]` 새 SFX 5종 배선 — 일차 시작 예고 3 · 런 실패 · 엔딩 확정 (schema_version 12) — SUJEONG CHOI · `c4be008`
+- `[Feat]` 대화 진행 방식 넷 (DEC-UI-025 폐기 → DEC-UI-035 대체) — SUJEONG CHOI · `07623c9`
+- `[Art]` QA 반영 습격 예고 표지 3종 정리 — gamome44 · `6bce7ba`
+- Merge remote-tracking branch 'origin/develop' into develop — gamome44 · `5fd588d`
+- `[Fix]` 한지 판 나무 테두리를 얇게 — 44 → 28px — SUJEONG CHOI · `5fd4d25`
+- `[Feat]` 대화 등장 연출 — 주민 → 플레이어 → 대사창 — SUJEONG CHOI · `ad21b78`
+- `[Fix]` 대화 등장 연출이 너무 빨랐다 — 620 → 980ms · 대사창은 화면 아래에서 — SUJEONG CHOI · `e6cf01a`
+- `[Fix]` 대화창이 오른쪽에서 올라왔다 왼쪽으로 미끄러졌다 — SUJEONG CHOI · `3fc2a67`
+- `[Art]` QA 퀵슬롯 배지 및 습격 표지 보정 — gamome44 · `2fc97c9`
+- `[Art]` 재배 타이머 문구 폰트 보정 — gamome44 · `34a5c29`
+- `[Feat]` 지원 주민 공격 자세 · 만복 투척음 · 야생동물 먹는 소리 — SUJEONG CHOI · `5d1a683`
+- `[Fix]` 챱 간격 · E 안내 위치 · 회복 칸 아이콘 · 조준선 레이어 — SUJEONG CHOI · `33e9cd6`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `a7f6cbe`
+- `[Feat]` 퀵슬롯 배지 — 칸 위 번호판 · 오른쪽 아래 수량 · 회복 칸 수량 (A1 목업) — SUJEONG CHOI · `9822133`
+- `[Refactor]` 빈 퀵슬롯 배지를 명시적으로 숨긴다 — SUJEONG CHOI · `042c167`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `815629f`
+- `[Feat]` 퀵슬롯·회복 수량 배지를 실제 그림으로 (schema_version 13) — SUJEONG CHOI · `7becfbb`
+- `[Feat]` 수확 가능 표식을 강조 틀로 · 경작지 아래 레이어로 (9·10번) — SUJEONG CHOI · `f3f314b`
+- `[Feat]` 회복 사용 게이지를 에셋으로 — 플레이어 옆 세로 (8번) — SUJEONG CHOI · `4bba85d`
+- `[Fix]` 일시정지하면 뒤 화면이 반투명해진다 (2번) — SUJEONG CHOI · `4d0ae8b`
+- `[Fix]` 대화 중 일시정지가 대화창 아래에 깔린다 (2번 후속) — SUJEONG CHOI · `91c9e15`
+- `[Feat]` 습격 예고 판을 목업 배치로 (16번, DEC-UI-036 대체) — SUJEONG CHOI · `41d6f06`
+- `[Feat]` 엔딩 요약에 플레이어 이름 (22번) — SUJEONG CHOI · `22504e6`
+- `[Art]` QA 목업 12종과 엽전 에셋 추가 — gamome44 · `099ee20`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `882b053`
+- `[Feat]` 대사 순차 출력과 타자 소리 (21번, schema_version 14) — SUJEONG CHOI · `51085a1`
+- `[Fix]` 회복 퀵메뉴를 회복 칸 바로 위로 (E) — SUJEONG CHOI · `40ed740`
+- `[Data]` 8/6 에셋 연결분의 부모 content_version 반영 (DEC-PIPELINE-011) — ming9 · `c93a2cc`
+- `[Data]` 미끈 토란 주머니를 제작 1회당 2개에서 1개로 (recipes v2 → v3) — ming9 · `e06274b`
+- `[Chore]` 고정 목록에 asset.ui.coin 선등록 (schema_version 12 → 13) — ming9 · `b7b64ab`
+- `[Feat]` 정비 화면을 A3 목업 v7 배치로 다시 짠다 — ming9 · `d831075`
+- `[Feat]` 튜토리얼 8단계 재구성 — 낫을 맨 앞으로, 구매 창 열기 신설 (schema_version 16) — SUJEONG CHOI · `8119526`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `21b6621`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `ae633a3`
+- `[Feat]` 퀵슬롯·회복 칸을 눌러 고르고 연다 (C·D, DEC-UI-001 폐기 → DEC-UI-037) — SUJEONG CHOI · `2b156ed`
+- [Merge] develop → main — 8/8~8/9 아트·소리·폴리싱 반영 — SUJEONG CHOI · `5b296d5`
+
+### 2026-08-08
+
+- `[Feat]` 조준선 색을 갈색 외곽 + 한지색으로 — 캔버스가 layout.css 를 읽는다 — SUJEONG CHOI · `7fd8d74`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — SUJEONG CHOI · `60e1187`
+- `[Art]` A2 밤 습격 목업과 적 체력바 예외 반영 — gamome44 · `017b870`
+- `[Feat]` 야생동물 진행 방향 회전 · DEC-ART-002 폐기 반영 (003) — SUJEONG CHOI · `3c22a29`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `42fbeee`
+- `[Fix]` 야생동물 회전 보정 부호 — 머리가 진행 방향의 반대를 보고 있었다 — SUJEONG CHOI · `caaad81`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — SUJEONG CHOI · `846fb14`
+- `[Chore]` resident_hp_gauge 를 고정 목록에서 뺀다 — 적 체력바 기준 확정 반영 — SUJEONG CHOI · `721964b`
+- `[Feat]` A4 대화 화면 초상화 2인 배치 · 튜토리얼 안내 위치 · 허브 팝업층 클릭 통과 — ming9 · `59b2de1`
+- `[Data]` 초상화 5종 에셋 연결 · 부모 content_version 반영 — ming9 · `f51a18c`
+- feat(art): add title screen and character pose assets — gamome44 · `1445732`
+- `[Art]` BGM 6종·SFX 27종 최초 반입 (VARCO Sound) — gamome44 · `99bc78a`
+- `[Docs]` 사운드 CREDITS 기록 + SOUND_ASSET_INDEX.md 신설 — gamome44 · `1c12dc2`
+- `[Docs]` DEC-ART-003 폐기 → DEC-ART-004 대체 — SFX는 WAV, BGM은 MP3 — gamome44 · `0283d1d`
+- `[Data]` 최종 아트에 맞춰 영순·만복 문구 정정 + 좌·우·공격 스프라이트 15행 연결 — ming9 · `a48a76c`
+- `[Feat]` 타이틀 화면을 A0 목업 배치로 — 배경·로고·팻말과 진입 연출 — ming9 · `e2766f2`
+- `[Docs]` 세션 로그 — pull 복구, 최종 아트 정합, 타이틀 A0, 막힌 것 4건 — ming9 · `b2f7614`
+- `[Chore]` UI 고정 목록에 정비 화면 부품 11종 등록 (schema_version 8→9) — ming9 · `a425eda`
+- `[Feat]` 정비·상점·제작·편성 화면에 A3 목업 아트를 붙인다 — ming9 · `0e573cc`
+- `[Fix]` 상점 수량을 입력창에서 증감 버튼으로 — DEC-UI-025 마우스 전용 위반 — ming9 · `84d9fba`
+- `[Chore]` tools/ 의 DEC-ART-003 인용을 004 로 — 검증 오류가 폐기된 DEC 를 근거로 댔다 — SUJEONG CHOI · `827bcce`
+- `[Fix]` 초상화·UI 부품도 미리 받는다 — 늦게 뜨는 것과 창호지 순차 표시가 같은 원인 — SUJEONG CHOI · `bb4e714`
+- `[Fix]` 튜토리얼 재배 표시가 1일차로 새어 나온다 — 리셋에서 버린다 — SUJEONG CHOI · `9fc01d3`
+- `[Fix]` 퀵슬롯이 안 눌리던 이유 — 슬롯 이름이 팝업 전체로 펼쳐져 있었다 — SUJEONG CHOI · `1588488`
+- `[Fix]` 튜토리얼 정비 — 종료 버튼을 숨기고 판매를 잠근다 — SUJEONG CHOI · `96eca51`
+- `[Feat]` A4 대화 화면을 목업 배치로 — 인물·대사창·말풍선 — SUJEONG CHOI · `11e23b3`
+- `[Feat]` 선택지를 목업대로 밑줄 글자로 · 발화자 이름판 · 걷기 계산 테스트 — SUJEONG CHOI · `dd6bada`
+- `[Fix]` 타이틀 hover 회색 판 · 정비 선택 표시 셋 — SUJEONG CHOI · `810773e`
+- `[Feat]` 효과음 재생과 sfx 7행 연결 — 나머지는 DEC-ART-005 대기 — SUJEONG CHOI · `ce3ec36`
+- `[Docs]` 효과음 재생 확인 — 세션 로그의 "못 들었다" 를 바로잡는다 — SUJEONG CHOI · `4b5959b`
+- `[Feat]` 배경음 재생 계층과 음량 세 갈래 — DEC-ART-005 와 무관한 부분 — SUJEONG CHOI · `9f3e443`
+- `[Docs]` DEC-ART-005 적용분을 미리 확정 · CREDITS SFX 27종 구멍 — SUJEONG CHOI · `dc9a0e4`
+- `[Art]` bg_title.png 색감 조정 — gamome44 · `fd56ee1`
+- `[Docs]` DEC-UI-030 폐기 → DEC-UI-032 대체 — 타이틀에 설정(음량) 입력 추가 — gamome44 · `8c1a328`
+- `[Docs]` DEC-ART-004 폐기 → DEC-ART-005 대체 — 고정 목록에 sfx·bgm 구간 추가 — gamome44 · `2126592`
+- `[Art]` SFX 마지막 5종 반입 — day_start 3종·run_failed·ending_decided (SFX 32/32) — gamome44 · `be79b60`
+- `[Feat]` 한지 판 공통 클래스 — CSS 로 뜨는 창 열 개에 적용 — SUJEONG CHOI · `b5e1d74`
+- `[Fix]` 한지 판에서 별칭 토큰이 안 따라온다 — 일차 시작 습격 예고 문구 — SUJEONG CHOI · `a0172db`
+- `[Feat]` 투척 퀵슬롯 5칸 → 4칸 (DEC-INPUT-013 외 3건 폐기·대체) — SUJEONG CHOI · `f366a35`
+- `[Feat]` BGM 6종 연결과 낫 소리 3종 (DEC-ART-005, schema_version 10) — SUJEONG CHOI · `0a36b82`
+- `[Feat]` 타이틀 BGM 누락 수정 · 효과음 18종 배선 (schema_version 11) — SUJEONG CHOI · `ea58268`
+
+### 2026-08-07
+
+- `[Feat]` F·E·C 에셋을 화면에 붙인다 — 필드 스프라이트·투사체·아이콘 18종 — ming9 · `7120798`
+- `[Docs]` 8/6 에셋 반영과 튜토리얼 P0 완료 기록 — ming9 · `ac7d841`
+- `[Fix]` 대화창 글씨·초상화와 수확 거리 — 아트 반영 뒤 플레이 테스트에서 나온 셋 — ming9 · `b4c4ba2`
+- `[Docs]` 디스코드에 흩어진 확정 8건을 회수 — UI 에셋 16장이 못 붙는 이유를 찾았다 — SUJEONG CHOI · `0559d14`
+- `[Chore]` A4 대사창·버튼 에셋 ID 넷을 고정 목록에 등록한다 — SUJEONG CHOI · `85adac0`
+- `[Feat]` 낫 휘두름 호 — 이펙트 넷 중 마지막 — SUJEONG CHOI · `9cb4231`
+- `[Chore]` 없는 곳을 가리키는 주석 둘과 낡아 있던 P2 목록 — SUJEONG CHOI · `5a496d0`
+- `[Art]` F-1 필드 스프라이트·투사체 실크기 리사이즈 — gamome44 · `b76b43a`
+- `[Docs]` DEC-ART-001 폐기 → DEC-ART-002 대체 — 캐릭터 모션 예외 허용, 조준선 수정 — gamome44 · `d59dc31`
+- `[Chore]` DEC-ART-002 일괄 치환에서 뜻이 뒤집힌 주석 하나와 남은 참조 셋 — SUJEONG CHOI · `49e5f61`
+- `[Feat]` 걷기 bob — 정면 그림 한 장으로 걷게 한다 (DEC-ART-002) — SUJEONG CHOI · `aa77e8a`
+- `[Feat]` 좌·우·공격 교체 스프라이트 배선 — 그림이 오면 행 추가만으로 켜진다 — SUJEONG CHOI · `3a94ce8`
+- `[Feat]` 명중 충격선·피격 깜빡임·일시정지 중 조준선 정지 — SUJEONG CHOI · `ed5bf2e`
+- `[Fix]` 튜토리얼 마지막 단계에서 던지는 것을 보고 넘어간다 — SUJEONG CHOI · `24b99df`
+- `[Docs]` 8/7 밤 상태로 인계 문서 갱신 — 커밋 9개와 새 미결 셋 — SUJEONG CHOI · `d8b9b04`
+- `[Fix]` 지원 주민 공격에도 명중 표시를 붙인다 — SUJEONG CHOI · `d7914ef`
+- `[Fix]` 명중 충격선이 안 보이던 이유 둘 — 켜는 곳 누락과 그림 크기 — SUJEONG CHOI · `6b1c06e`
+- `[Chore]` 화면 배경 9종과 타이틀 로고 ID 를 파일보다 먼저 등록한다 — SUJEONG CHOI · `42586d9`
+- `[Art]` 대화 초상화 5종과 구현 인계 추가 — gamome44 · `c254475`
+- `[Docs]` 조준선과 야생동물 방향 결정 반영 — gamome44 · `4eecfad`
 
 ### 2026-08-06
 
@@ -32,19 +138,68 @@
 - `[Fix]` 지원 공격 표시가 0.1초라 보고 있어도 놓쳤다 — SUJEONG CHOI · `cb3a14c`
 - `[Docs]` DEC-UI-015·DEC-CONTENT-023 폐기 — 튜토리얼 순서 규칙을 데이터로 넘긴다 — gamome44 · `b7042dd`
 - `[Fix]` 맵 경계 제한이 셋 다 없었다 — 플레이어가 화면 밖으로 걸어 나갔다 — SUJEONG CHOI · `b6bdda1`
+- `[Docs]` A2 프롬프트를 확정된 결정에 맞춘다 — gamome44 · `1d085c4`
+- `[Docs]` 세계관을 조선시대로 명시하고 정비 셔터를 창호지 미닫이문으로 — gamome44 · `8e64564`
 - `[Fix]` 지원 기회 소비 표시가 조우 상대를 읽고 있었다 — 죽은 코드였다 — SUJEONG CHOI · `1597662`
 - `[Feat]` 일시정지 화면 — 계속하기·조작 안내·타이틀로(확인 절차) — SUJEONG CHOI · `3c7ddd8`
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — SUJEONG CHOI · `a8c1673`
 - `[Chore]` DEC-UI-030·DEC-CONTENT-025 반영 + 같은 stage 연속 검증 규칙 신설 — SUJEONG CHOI · `7c91f3f`
 - `[Fix]` 재배 게이지 홈을 613 으로 잘못 읽었다 — 실제로는 789 다 — SUJEONG CHOI · `39eac6e`
+- `[Docs]` 14.3 을 추가분 목록에서 전체 목록으로 — UI 에셋 37개 — gamome44 · `58e4b17`
 - `[Fix]` 게이지 홈은 595 다 — 앞 커밋의 789 는 글자 가장자리를 센 값이었다 — SUJEONG CHOI · `5a37595`
 - `[Feat]` 로딩·데이터 오류 화면 — data.error 가 8/2부터 콘솔로만 나갔다 — SUJEONG CHOI · `2b51353`
+- `[Docs]` 목업은 배치의 기준이지 질감의 기준이 아니다 · B1 시트 프롬프트 — gamome44 · `433346e`
+- `[Docs]` B2 정비 부품 시트 프롬프트 — gamome44 · `7198c8a`
 - `[Feat]` 튜토리얼 — 안내를 필드 위로 옮기고 조작으로 넘어가게 한다 — SUJEONG CHOI · `2851a22`
 - `[Docs]` 튜토리얼 P0 둘과 김민주 인계 — 4-2 절 신설 — SUJEONG CHOI · `334cac0`
+- `[Docs]` B2 프롬프트를 다시 쓴다 — 목업을 가리키지 않고 말로 묘사했다 — gamome44 · `d32a741`
 - `[Docs]` 캡처 3장 재촬영 — 8·9번 뒤의 확정 배치다 — SUJEONG CHOI · `d5890dd`
+- `[Docs]` B2 를 IMG-B-001 형식으로 되돌린다 · list_row 선택본과 자물쇠 추가 — gamome44 · `5cc554b`
 - `[Docs]` 4-2 인계 날짜 정정 + 남은 작업 표 — SUJEONG CHOI · `d04ecdd`
 - Merge branch 'develop' — v0.2 아트 적용 빌드 — SUJEONG CHOI · `f7f62dc`
 - Merge branch 'main' of https://github.com/xuxeong/batdureong-nantu — SUJEONG CHOI · `5c17462`
+- `[Docs]` B3 습격 예고 표지 시트 — 그림 자리와 문구 자리를 나눈다 — gamome44 · `c7707c9`
+- `[Docs]` 남은 작업 인계 문서 신설 + 로드맵 체크박스 정리 — SUJEONG CHOI · `b1cada6`
+- `[Docs]` 인계 문서 1-3·1-4 순서 정정 — SUJEONG CHOI · `a4138bc`
+- `[Docs]` 인계 문서에 제출 준비 절 추가 — 빠뜨린 것 넷을 찾았다 — SUJEONG CHOI · `40eaef0`
+- `[Docs]` B단계 파일 이름 16개와 목업·부품이 어긋날 때의 처리 — gamome44 · `d071f1a`
+- `[Docs]` A3 요소를 다시 훑어 빠진 셋을 찾고 B4·B5 프롬프트를 쓴다 — gamome44 · `090a12e`
+- `[Docs]` list_row 를 CSS 로 · item_slot 을 배지 유무 둘로 · 보관함 이름은 툴팁 — gamome44 · `ecfb2a4`
+- `[Docs]` 제작 상세창에서 설명과 수치를 빼고 목록 안내로 옮긴다 — gamome44 · `2e098e9`
+- `[Docs]` button_selected 를 뺀다 — 실제 배치에서 기능 버튼이 셋으로 줄었다 — gamome44 · `1b7b578`
+- `[Docs]` 팝업은 오른쪽 창만 · 재배와 정비의 습격 예고는 같지 않아도 된다 — gamome44 · `9597d1a`
+- `[Art]` B단계 UI 부품 17종과 원본 시트 9장, A3 목업 v2~v6 — gamome44 · `d0d6d5f`
+- `[Art]` 토란 2종 · 바나나 ID 유지 결정을 14.5 에 기록 — gamome44 · `a0ad76d`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — gamome44 · `c68cd70`
+- `[Docs]` C단계 아이콘 프롬프트 셋 · crop_attributes 도 부모 후보에 없다 — gamome44 · `020f8d1`
+- `[Docs]` 튜토리얼 P0 셋 확정 · 아트 순서에서 F를 C 앞으로 — gamome44 · `80bac54`
+- `[Docs]` 컨셉아트를 시트에서 정면 전신 한 장으로 · 산출물별 시점을 나눈다 — gamome44 · `6c28c44`
+- `[Docs]` 플레이어를 먼저 뽑아 태그 블록을 확정한다 — gamome44 · `3fb25f8`
+- `[Docs]` 6절을 사람과 그 밖으로 나눈다 — 사람은 목장이야기 계열 — gamome44 · `76a148e`
+- `[Docs]` C1 을 목업 지목 방식으로 다시 쓴다 — 규칙을 적어놓고 안 지켰다 — gamome44 · `14c828a`
+- `[Docs]` 아이콘은 한 단위만 · C1 수정 프롬프트 — gamome44 · `21963d7`
+- `[Docs]` 사람의 선과 채색을 목장이야기 계열로 — 5절도 사람과 그 밖으로 나눈다 — gamome44 · `39ac06a`
+- `[Docs]` 사람 태그를 2000년대 게임 일러스트로 못박는다 — 매체 이름을 정확히 쓴다 — gamome44 · `3d9764a`
+- `[Docs]` 캐릭터 태그 블록 확정 — harvest moon (series) 와 Prompt Guidance 4 — gamome44 · `6addc96`
+- `[Docs]` 캐릭터 시드를 고정하고 피부 톤을 공통 블록에 못박는다 — gamome44 · `75bac33`
+- `[Docs]` 캐릭터 컨셉아트 확정 — 다섯을 한 장에, 그림책 잉크 톤 — gamome44 · `fbe74a1`
+- `[Docs]` 낫은 별도 스프라이트가 아니다 · 이펙트 넷 · 조준선을 미결정에 올린다 — gamome44 · `adf8fff`
+- `[Docs]` 기획 보조 AI 교대 인계 문서 · SD 프롬프트에서 알아낸 것을 12.7 에 정리 — gamome44 · `a9ea78d`
+- `[Docs]` 제출 문서 TODO 작성 — AI 활용·팀 역할·출처 정리 — gamome44 · `bbf85bf`
+- `[Feat]` 튜토리얼 P0 둘 — assign_quickslot 신설과 시작 소지금 (schema_version 7) — ming9 · `83cd36b`
+- `[Docs]` 튜토리얼 P0 세션 기록 — ming9 · `b426be1`
+- `[Chore]` origin/develop 튜토리얼 변경 병합 — gamome44 · `5d2aa01`
+- `[Art]` A3 v7 최종 목업·C1 아이콘·캐릭터 기준 이미지 반영 — gamome44 · `e053226`
+- `[Art]` C2·C3 아이콘 11종과 원본 시트 반영 — gamome44 · `41e0529`
+- `[Art]` C단계 원본 시트와 생성 기록 정리 — gamome44 · `9ca31f3`
+- `[Art]` F·E·A4 최종 에셋과 제작 기록 반영 — gamome44 · `bd63668`
+- `[Feat]` 항목 안내를 hover 로 옮기고 상점·제작 상세창을 맞춘다 (14.8, 14.9) — ming9 · `9657f9f`
+- `[Feat]` 항목 안내를 hover 로 옮기고 상점·제작 상세창을 맞춘다 (14.8, 14.9) — ming9 · `e34c982`
+- `[Data]` 과일 꿀범벅 → 밭두렁 새참 — ming9 · `9f8d8f2`
+- `[Docs]` 변경사항 세션 기록 — ming9 · `3698432`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `ed130d5`
+- `[Data]` F·C·E 에셋 31행 연결 — field_sprite 8 · projectile 5 · icon 18 — ming9 · `ef8774f`
+- `[Feat]` 선택지 말풍선 연결 (A4) — ming9 · `8c7045b`
 
 ### 2026-08-05
 
@@ -127,6 +282,7 @@
 - `[Docs]` 김민주 CSV 네 건 도착을 로드맵에 반영 — 8번 전제와 10번이 바뀐다 — SUJEONG CHOI · `e5051ae`
 - `[Feat]` types.ts 에 tutorial_steps 와 콘텐츠 에셋 중첩을 넣는다 — SUJEONG CHOI · `8c570ed`
 - `[Feat]` A1 에셋 3층 렌더 — 배경 · 경작지/작물 · 수풀 앞 겹 — SUJEONG CHOI · `42922df`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `9379d13`
 
 ### 2026-08-04
 
