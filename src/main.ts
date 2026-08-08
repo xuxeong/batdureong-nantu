@@ -539,6 +539,17 @@ function startNewRun(playerName: string): void {
   // 안 지우면 직전 런의 마지막 좌표와 비교해 첫 프레임에 순간이동으로 읽힌다.
   resetBob()
 
+  // 재배 표시도 버린다 (8/8 플레이 테스트).
+  //
+  // **이 둘은 `advanceFeedback()` 이 줄이는데 그 함수는 재배 단계에서만 돈다.**
+  // 그래서 튜토리얼 재배에서 쌓인 것이 전투·정비 동안 남은 시간 그대로 얼어
+  // 있다가, 본 런 1일차 재배가 시작되는 순간부터 다시 흐른다 — 튜토리얼에서
+  // 딴 고추가 소지품에는 없는데 `고추 +2` 만 1일차 시작에 떴다.
+  //
+  // 시간이 흐르지 않는 구간이 있는 표시는 **단계가 바뀔 때 버려야** 한다.
+  harvestPopups = []
+  readyFlashes.clear()
+
   dayStartJournal = null
   journalRequestDay = null
   endingRecordPending = false
