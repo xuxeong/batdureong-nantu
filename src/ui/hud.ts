@@ -349,6 +349,12 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
         node.name.hidden = iconUrl !== null
 
         node.name.textContent = slot.name ?? ''
+        // 빈 칸에는 배지를 안 그린다.
+        //
+        // **지금도 안 보이긴 한다** — 빈 요소는 세로 여백이 0 이라 높이가 0 이고,
+        // 배경색이 있어도 26×0 이라 그려질 게 없다. 다만 8/9 에 배지가 판이 되면서
+        // 그게 우연이 됐다. 세로 여백이나 최소 높이가 붙는 순간 빈 크림 판이 뜬다.
+        node.count.hidden = slot.name === null
         node.count.textContent = slot.name === null ? '' : String(slot.count)
         node.root.classList.toggle('hud__slot--selected', slot.selected)
         // 편성은 유지한 채 사용 불가로만 구분한다 (DEC-RESOURCE-015)
