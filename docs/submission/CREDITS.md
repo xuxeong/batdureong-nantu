@@ -39,6 +39,7 @@
 | `assets/source/phase-b/sheets/b4_button_components_sheet_chroma_v2.png` | B4 빼기·더하기 기호 밝은색 보정본 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-012` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b5_closed_sliding_paper_doors_1920x1080.png` | B5 닫힌 창호지 미닫이문 단독 배경 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + System.Drawing | `IMG-B-011` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/*.png` (B1~B5) | B 시트에서 분리한 UI 부품 17종. `button_selected`는 실제 배치에서 기능 버튼이 셋으로 줄어 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-005`~`IMG-B-013` 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/quickslot_count_badge.png` | 투척 퀵슬롯 우하단 수량 배지 | 기존 AI 생성 내부 에셋에서 직접 분리·편집 | Figma | `assets/final/ui/item_slot_badge.png`의 배지 형태에서 분리 제작. 원본은 `IMG-B-006`~`IMG-B-008` 참조, 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/ui/*.png` (A1) | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_background_1920x1080_sheet.png` | A1 낮 필드 바닥 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_forest_frame_1920x1080_sheet.png` | A1 숲 뒤·앞 레이어 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |

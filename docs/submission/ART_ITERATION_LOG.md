@@ -32,6 +32,7 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | E1 | `assets/source/phase-e/e1_topview_wildlife_sprite_sheet.png` | 3 | 2 | **확정** | 까마귀를 비행 탑뷰로 고치고 야생동물 3종의 시점을 통일 |
 | E2 | `assets/source/phase-e/e2_projectile_sprite_sheet_chroma_v2.png` | 1 | 0 | **확정** | 투사체 5종 생성 뒤 배경만 순수 크로마키로 정규화 |
 | F-1 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 3 | 2 | **확정** | 5인 통합 시트 v2의 얼룩을 폐기하고 깨끗한 원본에서 선만 보강한 v3 채택 |
+| QA-UI-001 | `assets/final/ui/quickslot_count_badge.png` | 0 | 0 | **아트 확정·개발 등록 대기** | 2026-08-09 QA 반영. 프로젝트 책임자가 Figma에서 기존 수량 배지를 분리해 투척 퀵슬롯용으로 제작 |
 
 ## 상세 이력
 
@@ -135,3 +136,12 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | 1 | 기록만 보존 | 개별 캐릭터 생성 대신 5인을 한 시트에 생성해 2등신·선 굵기·색 단계를 한 번에 맞췄다. |
 | 2 | 기록만 보존 | 필드 화풍을 맞추려 스케치 질감을 더했으나 얼룩과 종이 질감이 누적돼 폐기했다. |
 | 3 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 깨끗한 통합본에서 형태·비율·포즈·소품·배치를 유지하고 불규칙한 먹선만 보강했다. 5종 최종 PNG는 `assets/final/field_sprite/`에 분리·투명화했다. 컨셉 수정 v2·v3 대화와 파일은 채택 디자인에 반영하지 않았다. |
+
+### QA-UI-001 — 투척 퀵슬롯 수량 배지
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 직접 편집 | `assets/final/ui/quickslot_count_badge.png` | 프로젝트 책임자가 Figma에서 `item_slot_badge.png`의 수량 배지 형태를 분리해 46×40 투명 PNG로 제작했다. 각 투척 퀵슬롯의 우하단에 유사한 위치로 배치하며 숫자는 이미지에 굽지 않고 코드에서 표시한다. AI 이미지 생성 호출은 없었다. |
+
+개발팀은 `asset.ui.quickslot_count_badge` 논리 ID의 스키마 등록과 에셋 로딩, 퀵슬롯별
+보유 수량 텍스트 합성을 추가해야 한다. 이 기록에서는 스키마와 구현을 변경하지 않는다.
