@@ -88,6 +88,19 @@ export interface HudView {
   emptyFireNotice: string | null
 
   /**
+   * 필드 입력이 잠겨 있는가 (`DEC-UI-026`).
+   *
+   * **잠겨 있으면 화면 위쪽 안내를 띄우지 않는다.** `투척 무기 없음` 과 빈 발사
+   * 안내는 지금 던질 수 있는지를 알리는 것인데, 대화·정비·일시정지 중에는 애초에
+   * 던질 수 없어서 알릴 것이 없다.
+   *
+   * 8/8 에 대화 말풍선을 목업 자리(위쪽)로 옮기면서 `투척 무기 없음` 글자가
+   * 말풍선 테두리에 절반 먹혔다. 겹침을 피해 자리를 옮기는 대신 **의미 없는
+   * 구간에는 안 띄우는 쪽**을 골랐다 — 자리를 옮기면 다음에 뭔가 커질 때 또 겹친다.
+   */
+  fieldInputLocked: boolean
+
+  /**
    * 습격 진입 시 어느 주민이 지원하는지 알리는 짧은 안내 (DEC-UI-012).
    *
    * `DEC-UI-017` 의 공통 요소 목록에는 없지만 `DEC-UI-012` 가
@@ -308,13 +321,16 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
         if (slot.name !== null && slot.count > 0) anyUsable = true
       })
 
-      // 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화하고 안내를 띄운다 (DEC-UI-002)
+      // 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화하고 안내를 띄운다 (DEC-UI-002).
+      // **필드 입력이 잠겨 있으면 안내는 띄우지 않는다** (`HudView.fieldInputLocked`) —
+      // 던질 수 없는 동안 "던질 것이 없다" 를 알릴 이유가 없다. 칸 비활성 표시는
+      // 상태라서 그대로 둔다.
       quickslots.classList.toggle('hud__quickslots--exhausted', !anyUsable)
-      if (anyUsable) noThrowable.remove()
+      if (anyUsable || view.fieldInputLocked) noThrowable.remove()
       else if (!noThrowable.isConnected) notices.appendChild(noThrowable)
 
       // 무기 없이 좌클릭했을 때의 짧은 안내 (DEC-UI-002)
-      if (view.emptyFireNotice === null) {
+      if (view.emptyFireNotice === null || view.fieldInputLocked) {
         emptyFire.remove()
       } else {
         emptyFire.textContent = view.emptyFireNotice

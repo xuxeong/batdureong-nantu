@@ -125,16 +125,51 @@
      인물은 크게, 대사창은 하단 전폭으로 인물의 하단을 덮는다.
      선택지는 대사창 안 목록이 아니라 두 인물 사이 말풍선 안이다. */
   /* 초상화 원본이 1080px 높이다. 이 값이 곧 다섯 인물 공통 배율이다 */
-  --dialogue-portrait-height: 780px;
-  --dialogue-box-width: 88%;
-  --dialogue-box-height: 210px;
-  /* 아래 셋은 assets/final/ui/ 실측값이다. 늘리면 꼬리가 뭉개진다 */
-  --dialogue-balloon-width: 506px;
-  --dialogue-balloon-height: 441px;
+  /*
+    아래 넷은 `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png`(1920×1080)
+    실측이다. 목업이 그대로 UI 명세다 (아트 디렉션).
+
+      인물      화면 높이의 약 89% — 위에서 잘리고 하단은 대사창이 덮는다
+      대사창    폭 73%, 높이 300, 바닥에서 50
+      말풍선    중심 x 61% (플레이어 쪽으로 치우침), 바닥에서 470
+  */
+  --dialogue-portrait-height: 960px;
+  --dialogue-box-width: 73%;
+  --dialogue-box-height: 300px;
+  /* 말풍선 중심. 가운데가 아니라 플레이어 쪽이다 — 꼬리가 그쪽을 향한다 */
+  --dialogue-balloon-center-x: 61%;
+  /*
+    말풍선은 `choice_balloon.png`(506×441)를 **비율 그대로 확대**한 값이다.
+    `background-size: contain` 이라 비율만 지키면 꼬리가 안 뭉개진다.
+
+    실측 크기로 두면 안쪽 크림색 영역이 450×365 인데 버튼 셋이 116×3 + 간격 =
+    364 라 **여유가 1px 도 없었다.** 자원 협상 버튼은 보조 줄(`수확물 N개
+    (보유 M)…`)이 붙어 더 커지므로 셋째 버튼이 말풍선 밖으로 나갔다 (8/8).
+
+    버튼을 줄이지 않고 말풍선을 키운다 — 버튼은 `button_normal.png` 실측
+    350×116 이고 그림 크기를 코드가 뒤집지 않는다 (`DEC-ART-004`).
+  */
+  --dialogue-balloon-width: 614px;
+  --dialogue-balloon-height: 535px;
+  /*
+    위 확대율로 잰 나무 테두리 두께. 버튼이 크림색 영역 안에만 놓인다.
+
+    **좌우가 다르다.** 오른쪽에 꼬리가 붙어 있어 그쪽 테두리가 더 두껍고,
+    좌우를 같게 주면 버튼이 크림색 한가운데가 아니라 오른쪽으로 밀린다 (8/8).
+  */
+  --dialogue-balloon-inset-top: 34px;
+  --dialogue-balloon-inset-left: 44px;
+  --dialogue-balloon-inset-right: 86px;
+  --dialogue-balloon-inset-bottom: 68px;
+  /* 아래 둘은 assets/final/ui/button_normal.png 실측값이다 */
   --dialogue-choice-width: 350px;
   --dialogue-choice-height: 116px;
-  /* 말풍선을 대사창 위로 띄우는 높이 */
-  --dialogue-balloon-lift: 220px;
+  /*
+    말풍선 바닥을 화면 아래에서 얼마나 띄우나. 목업이 470 이다.
+    **대사창이 길어져도 안 가려지는 값이어야 한다** — 대사가 세 줄이면
+    대사창이 위로 자라기 때문이다 (8/8 만복 조우에서 셋째 선택지가 가려졌다).
+  */
+  --dialogue-balloon-lift: 405px;
   /* 그림 위에 얹는 글자색. 어두운 패널 위(--ui-text)와 밝기가 반대다 */
   --dialogue-text-on-balloon: #2b2418;
   --dialogue-subtext-on-balloon: rgba(43, 36, 24, 0.65);
@@ -1750,7 +1785,12 @@
   inset: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: space-evenly;
+  /*
+    **`space-evenly` 가 아니다.** 말풍선이 흐름에서 빠지면서 남은 것은 인물
+    둘뿐이고, 목업은 둘을 양 끝에 붙인다. `space-evenly` 로 두면 말풍선 자리를
+    나눠 갖던 때의 간격이 남아 인물이 가운데로 몰린다.
+  */
+  justify-content: space-between;
   padding: 0 var(--ui-gap-lg);
   box-sizing: border-box;
 }
@@ -1863,6 +1903,15 @@
   나왔으므로 늘리지 않고 원래 크기로 둔다 — 늘리면 꼬리가 뭉개진다.
 */
 .dialogue__choices {
+  /*
+    **흐름에서 뺀다.** 인물 사이에 flex 항목으로 두면 초상화 폭에 따라 말풍선이
+    좌우로 흔들렸다 — 영순(493)과 만복(727)에서 위치가 달라 보인 것이 그 때문이다
+    (8/8). 목업은 인물과 무관하게 고정된 자리에 있다.
+  */
+  position: absolute;
+  left: var(--dialogue-balloon-center-x);
+  transform: translateX(-50%);
+  bottom: var(--dialogue-balloon-lift);
   width: var(--dialogue-balloon-width);
   height: var(--dialogue-balloon-height);
   flex: 0 0 auto;
@@ -1872,12 +1921,13 @@
   justify-content: center;
   gap: var(--ui-gap-sm);
   box-sizing: border-box;
+  /* 나무 테두리 안쪽에만 버튼을 둔다. 아래·오른쪽이 두꺼운 것은 꼬리 몫이다 */
+  padding: var(--dialogue-balloon-inset-top) var(--dialogue-balloon-inset-right)
+    var(--dialogue-balloon-inset-bottom) var(--dialogue-balloon-inset-left);
   background-image: var(--dialogue-balloon-image);
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
-  /* 말풍선이 인물보다 위에 떠 있어야 꼬리가 가려지지 않는다 */
-  margin-bottom: var(--dialogue-balloon-lift);
 }
 
 .dialogue__choices[hidden] {

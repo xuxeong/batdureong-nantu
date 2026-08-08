@@ -3413,6 +3413,9 @@ function hudView() {
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
+    // 대화·정비·일시정지가 입력을 가져가면 위쪽 안내를 띄우지 않는다.
+    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-031).
+    fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
     // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
