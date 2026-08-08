@@ -32,6 +32,8 @@ import { createCombat } from './systems/combat.ts'
 import type { CombatEvent, CombatSystem, CombatTarget } from './systems/combat.ts'
 import { headingStep, walkStep } from './render/motion.ts'
 import type { Facing } from './render/motion.ts'
+import { createBgm } from './audio/bgm.ts'
+import { createMixer } from './audio/mixer.ts'
 import { createSfx } from './audio/sfx.ts'
 import { createWildlife } from './systems/wildlife.ts'
 import type { WildlifeSystem } from './systems/wildlife.ts'
@@ -1267,6 +1269,21 @@ const IMPACT_FLASH_SECONDS = 0.22
 
 /** 효과음. 파일이 없으면 조용히 넘어간다 (src/audio/sfx.ts) */
 const sfx = createSfx()
+
+/**
+ * 배경음.
+ *
+ * **아직 어디서도 `play()` 를 부르지 않는다.** BGM 6종은 붙을 콘텐츠 부모가 없어
+ * 고정 목록으로 가야 하는데 `DEC-ART-004` 가 그 목록의 구간을 `ui`·`logo`·`hud`·
+ * `font` 로 한정했다. `DEC-ART-005` 대체가 선행이다 (`docs/submission/
+ * SOUND_ASSET_INDEX.md` 의 "막혀 있는 것"). 여기서 만들어 두는 이유는 음량
+ * 설정(`DEC-UI-027`)이 배경음 갈래를 요구하기 때문이다 — 대체가 확정되면
+ * 화면 전환에 `bgm.play(...)` 를 붙이는 것만 남는다.
+ */
+const bgm = createBgm()
+
+/** 전체·배경음·효과음 (DEC-UI-027). 일시정지 화면이 이걸 조작한다 */
+const mixer = createMixer({ bgm, sfx })
 
 /**
  * 작물 속성 효과가 낼 소리. `combat_mechanic_key` → 논리 에셋 ID.
@@ -2852,6 +2869,10 @@ const pauseScreen: PauseScreen = createPause(uiRoot, {
   // 확인은 화면이 이미 거쳤다 (DEC-UI-027). 흐름은 무엇을 확인했는지 모르므로
   // 여기서 다시 묻지 않는다. 오버레이는 `apply()` 가 층위를 바꾸며 같이 닫는다.
   onReturnToTitle: () => scenes.send({ type: 'abandon_run' }),
+
+  // 오디오가 있으므로 음량 셋을 표시한다 (DEC-UI-027). 이 인자를 빼면 화면이
+  // 항목 자체를 그리지 않는다 — "오디오를 구현하지 않는 빌드" 의 처리다.
+  mixer,
 })
 
 // 전투 전 대화와 투항 대화는 같은 표시·입력 규칙을 쓴다 (DEC-UI-010).

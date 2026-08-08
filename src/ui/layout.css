@@ -841,6 +841,7 @@
 }
 
 .pause__menu[hidden],
+.pause__volume[hidden],
 .pause__controls[hidden],
 .pause__confirm[hidden] {
   display: none;
@@ -871,6 +872,45 @@
 .pause__button--danger {
   border-color: var(--ui-danger);
   color: var(--ui-danger);
+}
+
+/* 음량 세 갈래 (DEC-UI-027). 조작 안내와 같은 접힘 판이다 */
+.pause__volume {
+  display: grid;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-md) 0;
+  border-top: 1px solid var(--ui-border);
+  font-size: var(--ui-font-sm);
+}
+
+/*
+  이름 · 슬라이더 · 백분율 세 칸.
+
+  백분율 칸을 고정 폭으로 두는 이유는 `100%` → `9%` 로 자릿수가 줄 때 슬라이더가
+  같이 늘어나 손잡이가 손 밑에서 움직이기 때문이다.
+*/
+.pause__volume-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 56px;
+  gap: var(--ui-gap-md);
+  align-items: center;
+}
+
+.pause__volume-label {
+  color: var(--ui-text-dim);
+}
+
+.pause__volume-slider {
+  pointer-events: auto;
+  cursor: pointer;
+  width: 100%;
+  accent-color: var(--ui-accent);
+}
+
+.pause__volume-value {
+  color: var(--ui-accent);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* 조작 안내 (DEC-INPUT-001~009). 키는 input/bindings.ts 에서 온다 */
