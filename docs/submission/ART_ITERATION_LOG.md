@@ -21,7 +21,7 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | A1-v2 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v2.png` | 3 | 2 | 대체됨 | 농부 축척과 HUD 채도 수정안이 사용자 피드백으로 기각됨 |
 | A1-v3 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v3.png` | 1 | 0 | 검토 대기 | 사용자 승인에 따라 v1 필드와 v2 HUD를 합성하고 체력 바는 빨간색 유지 |
 | A1-v4 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v4.png` | 1 | 0 | 검토 대기 | 최신 아트 디렉션 12.1·12.2절 A1 명세로 신규 생성 후 1920×1080 정규화 |
-| A1-v5 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | 2 | 1 | **확정** | 2026-08-05 사용자 확정. 숲 테두리는 필드 안쪽 약 5%만 침범 |
+| A1-v5 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v5.png` | 2 | 1 | 이전 확정 | 2026-08-09 A1-v6 QA 목업으로 배치 기준 갱신 |
 | A2 | `assets/source/phase-a/A2_maintenance_hub_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
 | A3 | `assets/source/phase-a/A3_dialogue_mockup.png` | 1 | 0 | 검토 대기 | 최초 생성 |
 | C1 | `assets/source/phase-c/sheets/c1_crop_material_icon_sheet_chroma_v3.png` | 3 | 2 | **확정** | 2026-08-06 사용자 채택. 작물 4종은 단일 수확물, 재료 3종은 기존 형태 유지 |
@@ -32,6 +32,16 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | E1 | `assets/source/phase-e/e1_topview_wildlife_sprite_sheet.png` | 3 | 2 | **확정** | 까마귀를 비행 탑뷰로 고치고 야생동물 3종의 시점을 통일 |
 | E2 | `assets/source/phase-e/e2_projectile_sprite_sheet_chroma_v2.png` | 1 | 0 | **확정** | 투사체 5종 생성 뒤 배경만 순수 크로마키로 정규화 |
 | F-1 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 3 | 2 | **확정** | 5인 통합 시트 v2의 얼룩을 폐기하고 깨끗한 원본에서 선만 보강한 v3 채택 |
+| QA-UI-001 | `assets/final/ui/quickslot_count_badge.png` | 0 | 0 | **아트 확정·개발 등록 대기** | 2026-08-09 QA 반영. 프로젝트 책임자가 Figma에서 기존 수량 배지를 분리해 투척 퀵슬롯·회복 칸 공용으로 제작 |
+| QA-UI-002 | `assets/final/ui/coin.png` | 0 | 0 | **확정·ID 등록 완료** | 김민주가 `asset.ui.coin`을 미리 등록. 33×32 원본을 게임에서 22px로 표시 |
+| A0-v2 | `assets/source/phase-a/A0_title_screen_mockup_v2.png` | 0 | 0 | **최신 배치 기준** | Figma에서 게임 시작·설정 팻말 배치를 갱신 |
+| A1-v6 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v6.png` | 0 | 0 | **최신 배치 기준** | 공용 습격 예고와 퀵슬롯 수량 배지를 반영한 재배 화면 |
+| A2-v2 | `assets/source/phase-a/A2_nighttime_gameplay_mockup_v2.png` | 0 | 0 | **최신 배치 기준** | 공용 습격 예고와 퀵슬롯 수량 배지를 반영한 습격 화면 |
+| A3-v8 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 0 | 0 | **최신 배치 기준** | 판매·제작·편성 2상태 4장으로 정비 화면 상태를 분리 |
+| A5-v1 | `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 0 | 0 | **배치 참고** | 1일차와 2~5일차 시작. 두루마리 등 최종 에셋 미반영 |
+| A6-v1 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png` | 0 | 0 | **최신 배치 기준** | 정비와 같은 창호지 셔터 배경 위에 조우 결과 패널 배치 |
+| A7-v1 | `assets/source/phase-a/A7_night_result_mockup_v1.png` | 0 | 0 | **최신 배치 기준** | 정비와 같은 창호지 셔터 배경 위에 밤 결과 패널 배치 |
+| A8-v1 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 0 | 0 | **배치 참고** | 대자보 게시판과 엔딩 컷신 최종 에셋 미반영 |
 
 ## 상세 이력
 
@@ -135,3 +145,34 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | 1 | 기록만 보존 | 개별 캐릭터 생성 대신 5인을 한 시트에 생성해 2등신·선 굵기·색 단계를 한 번에 맞췄다. |
 | 2 | 기록만 보존 | 필드 화풍을 맞추려 스케치 질감을 더했으나 얼룩과 종이 질감이 누적돼 폐기했다. |
 | 3 | `assets/source/phase-f/character/five_character_field_sd_sheet_chroma_v3.png` | 깨끗한 통합본에서 형태·비율·포즈·소품·배치를 유지하고 불규칙한 먹선만 보강했다. 5종 최종 PNG는 `assets/final/field_sprite/`에 분리·투명화했다. 컨셉 수정 v2·v3 대화와 파일은 채택 디자인에 반영하지 않았다. |
+
+### QA-UI-001 — 퀵슬롯 공용 수량 배지
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 직접 편집 | `assets/final/ui/quickslot_count_badge.png` | 프로젝트 책임자가 Figma에서 `item_slot_badge.png`의 수량 배지 형태를 분리해 46×40 투명 PNG로 제작했다. 투척 퀵슬롯과 회복 칸의 우하단에 같은 배지를 배치하며 숫자는 이미지에 굽지 않고 코드에서 표시한다. AI 이미지 생성 호출은 없었다. |
+
+개발팀은 `asset.ui.quickslot_count_badge` 논리 ID의 스키마 등록과 에셋 로딩, 투척 퀵슬롯과
+회복 칸의 보유 수량 텍스트 합성을 추가해야 한다. 이 기록에서는 스키마와 구현을 변경하지
+않는다.
+
+### QA-UI-002 — 공용 엽전 아이콘
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 직접 편집 | `assets/final/ui/coin.png` | 프로젝트 책임자가 Figma에서 33×32 투명 PNG로 제작했다. 가격·총액·보유량 옆에서 22px로 표시하며, 김민주가 `asset.ui.coin` 논리 ID를 미리 등록했다. 이미지 생성 도구 호출은 없었다. |
+
+### QA-FIGMA-001 — 화면 목업 12장 갱신
+
+| 구분 | 파일 | 결과·변경 내용 |
+|---|---|---|
+| 타이틀 | `assets/source/phase-a/A0_title_screen_mockup_v2.png` | 게임 시작과 설정 입력 두 개를 팻말에 배치한 최신 기준. |
+| 필드 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 재배·습격 모두 좌상단 공용 습격 예고와 하단 공용 수량 배지를 사용한다. |
+| 정비 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 판매·제작·편성된 슬롯 선택·빈 슬롯 선택 네 상태를 별도 보존했다. |
+| 일차 시작 | `assets/source/phase-a/A5_day_start_day1_mockup_v1.png`, `A5_day_start_day2_5_mockup_v1.png` | 배치 참고용이다. 2~5일차의 두루마리는 임시 도형이며 최종 에셋이 아니다. |
+| 결과 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png`, `A7_night_result_mockup_v1.png` | 두 독립 화면이 정비와 같은 창호지 셔터 배경을 재사용한다. 패널 구성은 서로 다르게 유지한다. |
+| 엔딩 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 배치 참고용이다. 대자보 게시판과 엔딩 컷신은 최종 에셋이 아니다. |
+
+12장은 모두 프로젝트 책임자가 Figma에서 직접 구성한 1920×1080 PNG이며 이미지 생성 도구
+호출은 없었다. `bg_encounter_result`·`bg_night_result`·`bg_pause`의 스키마 정리는 개발팀에
+인계하고 이 작업에서는 스키마와 코드를 변경하지 않는다.

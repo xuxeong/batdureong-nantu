@@ -14,7 +14,7 @@ import { createSceneManager } from './scenes/manager.ts'
 import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
-import { subjectParticle } from './ui/korean.ts'
+import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -313,7 +313,7 @@ let allySupport: AllySupport | null = null
 /**
  * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
  *
- * `DEC-UI-033` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * `DEC-UI-036` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
  * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
  * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
  */
@@ -697,6 +697,18 @@ function selectedRecoveryName(): string | null {
   const id = run?.pouch.selectedId ?? null
   if (id === null) return null
   return displayNames.get(id) ?? id
+}
+
+/**
+ * 선택된 회복 아이템의 보유 수량 (A1 목업 8/9 — 회복 칸에도 수량 배지).
+ *
+ * **퀵슬롯과 같은 뜻의 숫자다.** 칸에 무엇이 몇 개 남았는지가 던질 것과 먹을 것
+ * 양쪽에서 같은 자리에 보여야 한다. 선택된 것이 없으면 배지도 없다.
+ */
+function selectedRecoveryCount(): number | null {
+  const id = run?.pouch.selectedId ?? null
+  if (id === null || run === null || recoverySources === null) return null
+  return recoveryOptions(run, recoverySources).find((o) => o.id === id)?.held ?? null
 }
 
 const player = { x: 0, y: 0 }
@@ -2941,6 +2953,9 @@ const pauseScreen: PauseScreen = createPause(uiRoot, {
 const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
   choose: chooseDialogue,
   proceed: proceedDialogue,
+  // 순차 출력의 타자 소리 (DEC-UI-008). 대화창은 어느 소리인지 모르고
+  // "몇 자 찍혔다" 만 알린다 — 논리 에셋 ID 는 이쪽 자리다.
+  onType: () => sfx.play(SOUND_ASSET.recordTyping),
 })
 
 /**
@@ -2956,7 +2971,7 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
 function syncScreens(): void {
   const screen = scenes.currentScreen()
 
-  // HUD 는 **필드 공통** 요소다 (DEC-UI-033). 독립 화면은 필드를 대체하는 전환이라
+  // HUD 는 **필드 공통** 요소다 (DEC-UI-036). 독립 화면은 필드를 대체하는 전환이라
   // (DEC-UI-014) HUD 를 남기지 않는다. 독립 화면의 배경이 완전 불투명이 아니라서
   // 그냥 두면 엔딩·런 실패 화면 위로 체력과 일차가 비친다.
   //
@@ -3057,7 +3072,9 @@ function syncScreens(): void {
       endingScreen.render({
         // 제목·요약은 승인 데이터의 값이다. 런 상태에 복제해 두지 않는다
         title: ending.ending_title,
-        summary: ending.ending_summary,
+        // 승인 문구의 {player_name} 을 입력받은 이름으로 채운다. 조사도 같이
+        // 고른다 — 데이터에는 읽기 좋은 한 형태만 적혀 있다 (ui/korean.ts).
+        summary: fillPlayerName(ending.ending_summary, run?.playerName ?? ''),
         // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
         record: endingRecordPending
           ? { state: 'pending' }
@@ -3465,7 +3482,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
 const raidNoticeErrorsReported = new Set<RaidType>()
 
 /**
- * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-033).
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-036).
  *
  * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
  * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
@@ -3547,6 +3564,7 @@ function hudView() {
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
     // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
     recoveryName: selectedRecoveryName(),
+    recoveryCount: selectedRecoveryCount(),
     // 선택된 회복 아이템의 아이콘. 퀵슬롯과 같은 표에서 온다 (8/9)
     recoveryIcon: run?.pouch.selectedId === null || run?.pouch.selectedId === undefined
       ? undefined
@@ -3559,9 +3577,14 @@ function hudView() {
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
-    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-033). 습격 모드에서는 표시하지
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-036). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
-    raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
+    // 재배·습격 두 모드에서 같은 판·같은 자리에 남는다 (DEC-UI-036). 8/9 까지는
+    // 재배 전용이라 습격 중에 판의 크림 칸만 비어 고장난 것처럼 보였다.
+    raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
+    // 판 그림은 문구와 같은 값에서 나온다 (DEC-RUN-011). 재배 밖에서도 판은
+    // 남으므로 종류는 늘 넘긴다 — 사라지는 것은 문구 쪽이다.
+    raidType: raidTypeOfDay(run?.dayNumber ?? 1),
   }
 }
 
@@ -3758,7 +3781,7 @@ const loop = createGameLoop(
                 range: runConfig.sickleRange,
                 life: sickleSwing.remaining / SICKLE_SWING_SECONDS,
               },
-        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-033). 0~1 로 넘긴다.
+        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-036). 0~1 로 넘긴다.
         recovery:
           run?.recovering == null
             ? null

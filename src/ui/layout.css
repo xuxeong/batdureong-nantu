@@ -61,15 +61,25 @@
   --ui-font-lg: 26px;
   --ui-font-xl: 38px;
 
-  /* ── HUD (DEC-UI-033, A1 확정 배치) ─────────────
+  /* ── HUD (DEC-UI-036, A1 확정 배치) ─────────────
      아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-004 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
 
   /* 표지판 253×174 — 위칸 일차 / 아래칸 습격 예고 */
-  --hud-signboard-width: 253px;
-  --hud-signboard-height: 174px;
+  /* 좌측 상단 판 (A1 목업 8/9 — raid_notice_* 560×101).
+     8/9 까지 253×174 짜리 signboard 였는데 목업이 가로로 긴 판 하나다 */
+  --hud-signboard-width: 560px;
+  --hud-signboard-height: 101px;
+
+  /* 퀵슬롯 번호판·수량 배지 (A1 목업 8/9). 배지 그림이 오기 전의 판 색이다 —
+     그림이 붙으면 이 둘은 안 쓰이고 배경 그림이 대신한다 */
+  --hud-badge-dark: rgba(58, 40, 26, 0.92);
+  --hud-badge-cream: #efe3c2;
+
+  /* 좌측 판과 게이지 사이. 목업에서 눈으로 맞춘 값이라 여기 하나만 고치면 된다 */
+  --hud-timer-gap: 72px;
 
   /* 재배 시간 게이지 911×83 — 숫자 없음 */
   --hud-timer-width: 911px;
@@ -326,11 +336,13 @@
 */
 :root {
   /* 표지판 253×174 — 크림 판 두 칸 */
-  --hud-sign-inset-x: 18px;
-  --hud-sign-top-y: 22px;
-  --hud-sign-top-h: 62px;
-  --hud-sign-bottom-y: 96px;
-  --hud-sign-bottom-h: 60px;
+  /* 판 안 크림 칸 둘. 그림을 디코딩해 픽셀로 잰 값이다 (raid_notice_* 560×101) */
+  --hud-sign-cell-y: 13px;
+  --hud-sign-cell-h: 74px;
+  --hud-sign-day-x: 155px;
+  --hud-sign-day-w: 113px;
+  --hud-sign-raid-x: 276px;
+  --hud-sign-raid-w: 267px;
 
   /* 재배 게이지 911×83.
 
@@ -426,13 +438,21 @@
     그대로 둔다.** 강조는 강조, 위험은 위험이다.
   */
   --ui-text: var(--panel-hanji-text);
-  --ui-text-dim: rgba(51, 38, 26, 0.62);
-  --ui-border: rgba(51, 38, 26, 0.3);
+  /* 흐린 글자도 종이 위에서는 읽혀야 한다. 어두운 바탕일 때의 0.55 를 그대로
+     쓰면 한지에서는 거의 사라진다 (8/9 — `타이틀로 돌아가기` 가 안 보였다) */
+  --ui-text-dim: rgba(51, 38, 26, 0.72);
+  --ui-border: rgba(51, 38, 26, 0.42);
   --ui-border-strong: #6b4f33;
   /* 종이가 이미 바탕이다. 그 위에 또 판을 깔면 한지가 가려진다 */
   --ui-bg-panel: transparent;
-  /* 칸·입력란처럼 살짝 눌린 자리. 종이보다 조금 어둡기만 하면 된다 */
-  --ui-bg-slot: rgba(51, 38, 26, 0.08);
+  /*
+    칸·입력란처럼 살짝 눌린 자리.
+
+    **0.08 은 종이 위에서 안 보였다** (8/9). 어두운 바탕에서는 그 정도로도
+    칸이 갈렸는데 한지는 밝아서 대비가 안 난다. 버튼이 버튼으로 읽히려면
+    테두리와 바탕이 둘 다 있어야 한다.
+  */
+  --ui-bg-slot: rgba(51, 38, 26, 0.16);
   /* 임시값 둘 — 아트 디렉션 4.5절 색 코드 8종이 아직 미정이다 (8/8).
      연두(#c8d94a)와 주홍(#e8613c)은 밝은 종이 위에서 안 읽혀 그대로 못 쓴다.
      같은 색상 계열을 유지한 채 명도만 내렸다. 시안이 나오면 이 두 줄만 바꾼다 */
@@ -475,7 +495,8 @@
 /* ── 상단 왼쪽 끝: 표지판 (일차 / 습격 예고) ───── */
 .hud__signboard {
   position: absolute;
-  top: 0;
+  /* 8/9 까지 화면 맨 위(0)에 붙어 있었다. 목업은 다른 부품과 같은 여백을 준다 */
+  top: var(--hud-edge);
   left: var(--hud-edge);
   width: var(--hud-signboard-width);
   height: var(--hud-signboard-height);
@@ -486,11 +507,18 @@
 }
 
 /* 두 칸은 그림 안의 크림 판 위에 정확히 앉는다 */
+/*
+  두 칸이 **가로로** 나란히 앉는다 (A1 목업 8/9).
+
+  8/9 까지는 253×174 표지판에 위·아래로 쌓여 있었다. 새 판(`raid_notice_*`
+  560×101)은 왼쪽에 마을 그림, 그 오른쪽에 크림 칸 둘이 나란한 모양이다.
+  아래 좌표는 그림을 디코딩해 픽셀로 잰 값이다 — 어림값이 아니다.
+*/
 .hud__signboard-day,
 .hud__signboard-raid {
   position: absolute;
-  left: var(--hud-sign-inset-x);
-  right: var(--hud-sign-inset-x);
+  top: var(--hud-sign-cell-y);
+  height: var(--hud-sign-cell-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -499,24 +527,24 @@
 }
 
 .hud__signboard-day {
-  top: var(--hud-sign-top-y);
-  height: var(--hud-sign-top-h);
+  left: var(--hud-sign-day-x);
+  width: var(--hud-sign-day-w);
   font-size: var(--ui-font-lg);
   font-weight: 700;
   color: var(--ui-text-on-panel);
 }
 
 /*
-  습격 예고 (DEC-UI-033, DEC-RUN-011).
+  습격 예고 (DEC-UI-036, DEC-RUN-011).
 
   재배 모드 내내 상시 노출하고 습격이 없는 날에도 사라지지 않는다.
   문구는 raid_notices.csv 에서 온다 — 임시 문구를 여기에도 TS 에도 넣지 않는다.
 */
 .hud__signboard-raid {
-  top: var(--hud-sign-bottom-y);
-  height: var(--hud-sign-bottom-h);
+  left: var(--hud-sign-raid-x);
+  width: var(--hud-sign-raid-w);
   padding: 0 var(--ui-gap-xs);
-  font-size: var(--ui-font-sm);
+  font-size: var(--ui-font-md);
   color: var(--ui-text-on-panel);
 }
 
@@ -529,11 +557,27 @@
 /* ── 상단 가운데: 남은 재배 시간 게이지 ─────────
    숫자를 넣지 않는다 (A1). 게이지가 줄어드는 것만으로 읽힌다.
    `남은 재배 시간` 글자는 그림에 이미 박혀 있어 DOM 에 두지 않는다. */
+/*
+  남은 재배 시간 게이지.
+
+  **가운데 정렬을 버렸다** (8/9). 좌측 판이 253 → 560 으로 넓어지면서 가운데
+  정렬한 게이지(911)가 504px 에서 시작해 판과 겹쳤다. `DEC-UI-036` 이
+  *"기준 해상도에서 HUD 요소가 서로 겹치지 않게 배치한다"* 로 정했다.
+
+  이제 판 오른쪽에 붙는다 — 목업도 가운데가 아니라 판 다음 자리다.
+  1920 기준으로 16 + 560 + 72 + 911 + 138(톱니) + 16 = 1713 이라 들어간다.
+
+  **판과 톱니 사이의 가운데는 아니다.** 한 번 그렇게 뒀는데 톱니가 작아서
+  남는 구간의 가운데가 목업보다 오른쪽으로 갔다. 판에서 재는 쪽이 맞다.
+
+  세로는 **판의 중심에 맞춘다.** 판이 101, 게이지가 83 이라 둘 다 위 여백에
+  붙이면 게이지가 떠 보인다. 높이 차의 절반만큼 내리므로 판 높이가 바뀌어도
+  따라온다 — 숫자를 다시 계산할 필요가 없다.
+*/
 .hud__timer {
   position: absolute;
-  top: var(--hud-edge);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--hud-edge) + (var(--hud-signboard-height) - var(--hud-timer-height)) / 2);
+  left: calc(var(--hud-edge) + var(--hud-signboard-width) + var(--hud-timer-gap));
   width: var(--hud-timer-width);
   height: var(--hud-timer-height);
   background-image: var(--hud-timer-image);
@@ -603,7 +647,7 @@
 }
 
 /* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
-   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-033, 아트 디렉션 14.2)
+   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-036, 아트 디렉션 14.2)
 
    그림 안에 네 자리가 이미 그려져 있어 flex 로 나누지 않고 각 자리에 앉힌다. */
 .hud__card {
@@ -628,7 +672,7 @@
   display: contents;
 }
 
-/* 이름은 카드 디자인의 일부다. DEC-UI-033 의 공통 요소가 아니다 (아트 디렉션 14.2) */
+/* 이름은 카드 디자인의 일부다. DEC-UI-036 의 공통 요소가 아니다 (아트 디렉션 14.2) */
 .hud__name {
   position: absolute;
   left: var(--hud-card-name-x);
@@ -647,7 +691,7 @@
   text-overflow: ellipsis;
 }
 
-/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-033) ──── */
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-036) ──── */
 .hud__health {
   display: contents;
 }
@@ -670,7 +714,7 @@
 }
 
 /*
-  바 우측 수치 (DEC-UI-033 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
+  바 우측 수치 (DEC-UI-036 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
 
   **현재 체력 하나만 넣는다.** 확정문이 요구하는 것은 `현재 체력`의 수치이고,
   카드 그림의 이 자리가 55px 이라 `100 / 100` 은 애초에 안 들어간다. 최대치는
@@ -747,9 +791,82 @@
   opacity: 0.4;
 }
 
-.hud__slot-count {
+/*
+  칸 위 번호판과 오른쪽 아래 수량 배지 (A1 목업 8/9).
+
+  **칸 밖으로 나가는 것이 번호판 하나뿐**이라 `.hud__slot` 의 `overflow: hidden`
+  을 풀고 그 자리를 이름에게 넘겼다. 원래 그 규칙은 긴 무기 이름이 칸을 넘치는
+  것을 막으려던 것이고, 번호판까지 자를 이유는 없다.
+
+  **배지 그림이 아직 없어 판을 CSS 로 그린다.** 그림이 오면
+  `--hud-slot-badge-image` 를 붙이는 규칙 하나만 더하면 교체된다 —
+  지금까지 아트를 붙여 온 방식 그대로다 (AGENTS.md 6절).
+*/
+.hud__slot {
+  position: relative;
+  overflow: visible;
+}
+
+.hud__slot-name {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.hud__slot-index {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  min-width: 30px;
+  padding: 1px 8px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background: var(--hud-badge-dark);
+  color: var(--ui-text);
+  font-size: var(--ui-font-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text-dim);
+}
+
+/*
+  수량 배지 — 칸 오른쪽 아래 모서리 (전성민 8/9, 46×40).
+
+  **투척 퀵슬롯과 회복 칸이 같은 그림을 쓴다** (팀 결정 8/9). 에셋 메모에는
+  "투척 전용, 회복 칸에 자동 적용하지 말 것" 으로 왔는데 담당자가 같은 것으로
+  정했다 — 같은 뜻의 숫자라 모양이 갈리면 두 칸이 다른 규칙으로 읽힌다.
+
+  숫자는 판 가운데에 앉힌다 — 그림에 이미 자리가 파여 있어 글자를 따로 밀지 않는다.
+*/
+.hud__slot-count {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 46px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  /* 그림이 없을 때의 플레이스홀더. 붙으면 아래 규칙이 덮는다 */
+  border-radius: 5px;
+  background: var(--hud-badge-cream);
+  color: var(--ui-text-on-panel);
+  font-size: var(--ui-font-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  `bindAsset` 이 `hud--has-art` 를 **그 요소 자신에게** 붙이므로 후손 선택자가
+  아니라 같은 요소로 잡는다. 위쪽 `.hud .hud--has-art` 가 이미 배경색과 테두리를
+  지우고 크기·반복을 맞춰 두므로 여기서는 그림만 얹으면 된다.
+*/
+.hud__slot-count.hud--has-art {
+  border-radius: 0;
+  background-image: var(--hud-slot-badge-image);
+}
+
+.hud__slot-count[hidden] {
+  display: none;
 }
 
 /* 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화한다 (DEC-UI-002) */
@@ -784,7 +901,7 @@
   color: var(--ui-text);
 }
 
-/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-033) ── */
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-036) ── */
 /* 안쪽이 크림색 판이라 어두운 글씨다 (퀵슬롯 칸과 반대) */
 .hud__recovery {
   width: var(--hud-recovery-width);
@@ -814,6 +931,11 @@
   칸이 162×166 인데 둘을 같이 두면 아이콘도 글자도 읽을 수 없게 작아진다.
   그림이 없으면 이름이 그대로 서므로 플레이스홀더가 따로 필요 없다.
 */
+/* 수량 배지가 모서리에 붙으려면 칸이 위치 기준이어야 한다 */
+.hud__recovery {
+  position: relative;
+}
+
 .hud__recovery-icon {
   width: 72%;
   height: 72%;
@@ -846,9 +968,16 @@
   뜬 안내를 아무도 못 봤다 (플레이 테스트). 재배 게이지 아래에 두어 시선 안에
   들어오게 한다.
 */
+/*
+  화면 위쪽 안내 두 줄 (`투척 무기 없음` · 지원 주민).
+
+  **상단 부품에서 한 칸 더 떨어뜨린다** (8/9). 좌측 판이 커지고 게이지가 그
+  옆으로 오면서 상단이 빽빽해졌는데, 안내가 게이지 바로 밑에 붙어 세 겹으로
+  쌓였다. 판 높이를 기준으로 내리므로 판이 또 바뀌어도 따라온다.
+*/
 .hud__notices {
   position: absolute;
-  top: calc(var(--hud-edge) + var(--hud-timer-height) + var(--ui-gap-md));
+  top: calc(var(--hud-edge) + var(--hud-signboard-height) + var(--ui-gap-lg) * 2);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -993,6 +1122,18 @@
   justify-content: center;
   /* 정비 셔터보다 옅다. 여기는 덮는 연출이 아니라 위에 뜨는 창이다 */
   background: rgba(8, 10, 7, 0.72);
+  /*
+    **항상 최상위다** (DEC-UI-022, DEC-UI-026 — 일시정지는 가장 위 층위다).
+
+    8/9 까지 `z-index` 가 없어서 DOM 순서로만 쌓였는데, `main.ts` 가 대화창을
+    일시정지보다 **나중에** 만든다. 그래서 대화 중에 `Esc` 를 누르면 대화창이
+    일시정지 위로 올라오고, 대화창이 화면 전체에 까는 55% 막이 일시정지 판을
+    덮어 **한지가 회색으로 보였다.** 재배·정비에서는 위에 오는 것이 없어
+    같은 판이 멀쩡하게 나왔다.
+
+    튜토리얼 안내(50)와 툴팁·데이터 오류(100)보다 위여야 하므로 200 이다.
+  */
+  z-index: 200;
   font-family: var(--ui-font);
   color: var(--ui-text);
   pointer-events: auto;
@@ -1452,7 +1593,7 @@
   color: var(--hub-text-on-art);
 }
 
-/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-033) */
+/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-036) */
 .hub__money {
   display: flex;
   justify-content: space-between;
@@ -2354,21 +2495,22 @@
 }
 
 /*
-  아랫줄의 엽전 그림.
+  아랫줄의 엽전 그림 33×32 (8/9 반입).
 
-  **낱개 엽전 에셋이 아직 없다.** `money_plate` 안에 그려진 엽전은 판과 한 덩어리라
-  떼어 쓸 수 없다. 파일이 오면 `--hub-coin-image` 만 채우면 되고, 그때까지는 칸이
-  0 폭이라 숫자가 바로 선다 — 빈 사각형을 두면 "그림이 깨졌나" 로 읽힌다.
+  `money_plate` 안에 그려진 엽전은 판과 한 덩어리라 떼어 쓸 수 없어 낱개 파일을
+  따로 받았다. **그림이 없으면 칸이 0 폭이라 숫자가 바로 선다** — 빈 사각형을
+  두면 "그림이 깨졌나" 로 읽힌다. 파일이 다시 없어지면 그 상태로 돌아간다.
 */
 .hub__coin {
   flex: none;
   width: 0;
-  height: 22px;
+  height: 26px;
   background: var(--hub-coin-image) center / contain no-repeat;
 }
 
 .hub__coin[style*='--hub-coin-image'] {
-  width: 22px;
+  /* 원본 33×32 라 거의 정사각형이다. 높이에 맞춰 폭을 준다 */
+  width: 27px;
 }
 
 .hub__row-unit {
@@ -3558,10 +3700,19 @@
    일시정지 화면이 아직 뼈대라 위를 덮어 주는 것이 없다. 그래서 "지금은 못 누른다"
    를 여기서 직접 드러낸다 — 일시정지 화면이 생기면 이 흐림은 다시 볼 값이다.
    ───────────────────────────────────────────────── */
+/*
+  입력을 소유하지 않은 오버레이 (DEC-UI-026).
+
+  **입력만 끈다. 표시는 그대로 둔다.** 확정문이 *"가장 위 오버레이가 입력을
+  독점하고 아래 층위는 **표시만** 남는다"* 로 정했고 흐리게 하라는 말은 없다.
+
+  8/9 까지 `opacity: 0.45` 와 `saturate(0.6)` 이 걸려 있었다. 그래서 정비나
+  대화 중에 `Esc` 를 누르면 **그 화면이 반투명해져 뒤 필드가 비쳤다** —
+  일시정지 배경이 이미 72% 로 덮는데 그 아래가 또 45% 라 두 겹이 겹쳤다.
+  담당자가 *"일시정지 시 뒷 필드가 투명해진다"* 로 잡은 자리다.
+*/
 .is-inert {
   pointer-events: none;
-  opacity: 0.45;
-  filter: saturate(0.6);
 }
 
 /* ─────────────────────────────────────────────────

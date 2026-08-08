@@ -122,7 +122,7 @@ export interface FieldView {
   /**
    * 낫 재사용 대기 남은 정도 1~0. **개발 빌드에서만 넘긴다.**
    *
-   * 확정 DEC 어디에도 낫 대기 표시가 없다 — `DEC-UI-033`·`018`·`019` 셋 다
+   * 확정 DEC 어디에도 낫 대기 표시가 없다 — `DEC-UI-036`·`018`·`019` 셋 다
    * 목록에 없고 투척과 달리 퀵슬롯 칸도 없다. 없는 UI 규칙을 지어내는 대신
    * `DEC-UI-024` 가 세운 "개발 빌드에만 보이는 표시" 로 둔다.
    * 표시가 필요하다고 판단되면 그때 결정 로그에 올린다.
@@ -143,7 +143,7 @@ export interface FieldView {
   sickleSwing?: SickleSwingView | null
 
   /**
-   * 회복 사용 게이지 (DEC-UI-033).
+   * 회복 사용 게이지 (DEC-UI-036).
    *
    * 확정문이 **플레이어 캐릭터 바로 옆**에 표시하라고 정했다. HUD 의 회복 칸과
    * 다른 요소다 — 그쪽은 "무엇이 선택돼 있나", 이쪽은 "지금 먹는 중이고 얼마나
@@ -459,6 +459,38 @@ export function createFieldRenderer(
    * 부딪히지 않는 이유는 이것이 데이터에서 읽는 고정 배율이 아니라 시간에 따라
    * 변하는 표현이기 때문이다.** 기준 크기는 여전히 파일이 정한다.
    */
+  /**
+   * 경작지 강조 틀을 칸보다 조금 크게 그린다.
+   *
+   * **밑에 깔리므로 키우지 않으면 안 보인다.** 그림이 186×166 이고 칸이
+   * 175×160 이라 한 변당 5.5px·3px 밖에 안 나온다 — 흙에 거의 다 가린다.
+   *
+   * ── 배율의 상한이 정해져 있다 ──────────────────────────────
+   *
+   * 승인 좌표에서 밭 중심이 가로 200 · 세로 180 간격이다. 틀이 그 값을 넘으면
+   * **옆 밭의 틀과 붙어** 밭 경계가 뭉개진다.
+   *
+   *   가로 186 × S ≤ 200  →  S ≤ 1.075
+   *   세로 166 × S ≤ 180  →  S ≤ 1.084
+   *
+   * 1.05 는 195×174 라 칸 밖으로 10px·7px 나오고 옆 틀과 5px·6px 남는다.
+   * **1.07 을 넘기지 않는다** — 넘기면 두 밭이 한 덩어리로 보인다.
+   *
+   * 크기 변형은 `DEC-ART-005` 가 허용한 표현이다(위치·크기·투명도).
+   */
+  const PLOT_HIGHLIGHT_SCALE = 1.05
+
+  function drawPlotHighlight(at: Vec2): boolean {
+    const image = images.get(UI_ASSET.plotHighlight)
+    if (image === null) return false
+
+    const center = camera.worldToScreen(at)
+    const width = image.naturalWidth * PLOT_HIGHLIGHT_SCALE
+    const height = image.naturalHeight * PLOT_HIGHLIGHT_SCALE
+    ctx.drawImage(image, center.x - width / 2, center.y - height / 2, width, height)
+    return true
+  }
+
   function drawWorldSprite(
     assetId: string | null | undefined,
     at: Vec2,
@@ -657,28 +689,74 @@ export function createFieldRenderer(
       ctx.textAlign = 'start'
     }
 
-    // 회복 사용 게이지와 취소 힌트 (DEC-UI-033).
+    // 회복 사용 게이지와 취소 힌트 (DEC-UI-036).
     //
     // 확정문이 "진행 중에는 `Q`로 취소할 수 있다는 짧은 힌트 동반" 이라고 정했다.
     // 힌트가 없으면 취소가 되는지 화면에서 알 수 없다 — 8/5 플레이 테스트에서
     // 담당자가 그걸 확인하지 못했다.
     if (view.recovery !== null && view.recovery !== undefined) {
-      const width = radius * 3
-      const height = 6
-      const left = screen.x - width / 2
-      const top = screen.y - radius - 18
+      const progress = Math.max(0, Math.min(1, view.recovery.progress))
+      const gauge = images.get(UI_ASSET.healGauge)
+      const playerImage = images.get(view.playerAsset)
+      // 그림이 없으면 판정 반경이 기준이다. 있으면 스프라이트 옆에 세운다.
+      const halfWide = playerImage === null ? radius : playerImage.naturalWidth / 2
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
-      ctx.fillRect(left, top, width, height)
-      ctx.fillStyle = '#cfe07a'
-      ctx.fillRect(left, top, width * Math.max(0, Math.min(1, view.recovery.progress)), height)
+      if (gauge === null) {
+        // 그림이 없을 때의 가로 막대. 8/9 까지 이것만 있었다.
+        const width = radius * 3
+        const height = 6
+        const left = screen.x - width / 2
+        const top = screen.y - radius - 18
 
-      // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = '#f4ecd0'
-      ctx.fillText('Q — 취소', screen.x, top - 4)
-      ctx.textAlign = 'start'
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+        ctx.fillRect(left, top, width, height)
+        ctx.fillStyle = '#cfe07a'
+        ctx.fillRect(left, top, width * progress, height)
+
+        // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#f4ecd0'
+        ctx.fillText('Q — 취소', screen.x, top - 4)
+        ctx.textAlign = 'start'
+      } else {
+        /*
+          세로 게이지 (`DEC-UI-032` — 플레이어 캐릭터 **바로 옆**에 표시).
+
+          그림이 38×139 라 세로다. 8/9 까지 머리 위 가로 막대였는데 확정문도
+          그림도 옆을 가리킨다.
+
+          **채움을 틀 위에 그린다.** 처음에 밑에 깔았더니 아무것도 안 보였다 —
+          이 그림은 홈이 뚫려 있지 않고 **안쪽까지 알파 255 인 불투명 나무판**
+          이다. 그래서 홈 좌표를 코드가 알아야 한다.
+
+          아래 비율은 그림을 열어 픽셀로 잰 값이다 (x 12~24 · y 8~129).
+          그림이 다시 나오면 같은 방법으로 다시 재야 한다 — 어림값이 아니다.
+
+          **아래에서 위로 찬다.** 회복은 채워지는 것이라 위로 자라는 쪽이 읽힌다.
+        */
+        const gw = gauge.naturalWidth
+        const gh = gauge.naturalHeight
+        const left = screen.x - halfWide - gw - 8
+        const top = screen.y - gh / 2
+
+        ctx.drawImage(gauge, left, top, gw, gh)
+
+        const grooveX = left + gw * (12 / 38)
+        const grooveW = gw * (13 / 38)
+        const grooveTop = top + gh * (8 / 139)
+        const grooveH = gh * (121 / 139)
+        const fillH = grooveH * progress
+        ctx.fillStyle = '#cfe07a'
+        ctx.fillRect(grooveX, grooveTop + grooveH - fillH, grooveW, fillH)
+
+        // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#f4ecd0'
+        ctx.fillText('Q — 취소', left + gw / 2, top - 6)
+        ctx.textAlign = 'start'
+      }
     }
 
     /*
@@ -903,6 +981,23 @@ export function createFieldRenderer(
     const halfW = ground === null ? PLOT_HALF_SIZE * WORLD_TO_PIXEL : ground.naturalWidth / 2
     const halfH = ground === null ? PLOT_HALF_SIZE * WORLD_TO_PIXEL : ground.naturalHeight / 2
 
+    /*
+      강조 틀 — **경작지 그림보다 먼저 그린다** (8/9 담당자).
+
+      8/9 까지 흙 위에 얹혀서 칸 가장자리를 덮었다. 밑에 두면 틀이 칸보다
+      조금 큰 만큼만 삐져나와 **테두리로 읽힌다.** 그림이 흙을 가리지 않으니
+      무엇이 심겼는지도 그대로 보인다.
+
+      두 경우에 켠다.
+        · `E` 로 지금 상호작용할 수 있는 칸 (DEC-UI-018)
+        · 수확 가능한 칸 (DEC-UI-004 — 상태가 유지되는 동안 표식을 계속 표시)
+
+      **둘이 같은 그림인 것이 맞다.** 확정문 둘 다 "지금 이 칸에 할 일이 있다"
+      를 알리는 것이고, `DEC-UI-004` 는 표식의 모양을 아트에 위임했다.
+    */
+    const marked = plot.highlighted || plot.stage === 'ready'
+    const markedByArt = marked && drawPlotHighlight(plot)
+
     if (ground === null) {
       ctx.fillStyle = plot.stage === 'empty' ? '#3b2f22' : '#4a3a26'
       ctx.fillRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
@@ -913,8 +1008,8 @@ export function createFieldRenderer(
       drawWorldSprite(assets?.farmPlot, plot)
     }
 
-    // `E` 대상 강조 (DEC-UI-018). 강조 틀 그림이 없으면 테두리로 대신한다.
-    if (plot.highlighted && !drawWorldSprite(UI_ASSET.plotHighlight, plot)) {
+    // 그림이 없을 때만 테두리로 대신한다. 이건 흙 위에 그려야 보인다.
+    if (marked && !markedByArt) {
       ctx.strokeStyle = '#f4ecd0'
       ctx.lineWidth = 2
       ctx.strokeRect(center.x - halfW, center.y - halfH, halfW * 2, halfH * 2)
@@ -952,15 +1047,15 @@ export function createFieldRenderer(
       ctx.fillRect(center.x - halfW, center.y + halfH - 8, halfW * 2 * plot.eatingProgress, 6)
     }
 
-    // 수확 가능 상태가 유지되는 동안 표식을 계속 표시한다 (DEC-UI-004).
-    // 효과음이 없어도 이것만으로 수확 가능 여부를 판단할 수 있어야 한다.
-    if (plot.stage === 'ready') {
-      ctx.strokeStyle = '#f2e34a'
-      ctx.lineWidth = 3
-      ctx.beginPath()
-      ctx.arc(center.x, center.y - halfH + 12, 5, 0, Math.PI * 2)
-      ctx.stroke()
+    /*
+      수확 가능 표식 (DEC-UI-004 — 상태가 유지되는 동안 계속 표시).
 
+      **노란 동그라미를 뺐다** (8/9 담당자). 8/9 까지 칸 위쪽에 점 하나를 찍었는데
+      작물 그림이 붙은 뒤로는 잎사귀에 묻혀 무슨 표시인지 안 읽혔다. 표식 자체는
+      위에서 그리는 강조 틀이 맡는다 — 확정문이 요구하는 "계속 표시" 는 그대로다.
+      모양은 `DEC-ART-005` 위임이라 이 교체에 DEC 변경이 필요 없다.
+    */
+    if (plot.stage === 'ready') {
       // 전환 순간의 1회 강조. 반복하지 않는다 (DEC-UI-004).
       if (plot.readyFlash > 0) {
         const grow = 1 + (1 - plot.readyFlash) * 0.6
