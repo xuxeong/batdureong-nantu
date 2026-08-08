@@ -114,8 +114,18 @@
   */
   --hub-row-selected-bg: rgba(150, 96, 44, 0.62);
   --hub-row-selected-edge: #d9a05b;
-  /* 보관함 칸 그림 111×113 (배지 포함). 한 줄에 넷 */
-  --hub-slot-size: 111px;
+  /*
+    보관함 칸. 그림 원본은 111×113 이지만 **자리가 남아 키웠다** (8/8).
+
+    판 안쪽이 645 - 테두리 56 - 좌우 여백 40 = 549 라 넷에 사이 여백 12 를 빼면
+    한 칸에 134 까지 쓸 수 있다. 130 은 거기서 조금 남긴 값이다.
+  */
+  --hub-slot-size: 130px;
+  /* 팝업 목록·편성 칸. 보관함보다 한 단계 작다 — 옆에 두 줄이 같이 서야 한다 */
+  --hub-row-slot-size: 116px;
+  /* 한지 판 안의 스크롤바. 나무 테두리와 같은 갈색 계열이다 (8/8, 작업 17번) */
+  --hub-scroll-thumb: rgba(122, 84, 48, 0.72);
+  --hub-scroll-thumb-hover: rgba(96, 64, 34, 0.9);
   --hub-pad: 28px;
   --hub-inventory-width: 340px;
   --hub-popup-width: 560px;
@@ -123,6 +133,64 @@
   /* 편성 팝업의 슬롯 버튼. 필드 HUD 퀵슬롯(154×145)과 다른 것이다 —
      한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 크기가 갈린다 */
   --hub-slot-min-height: 78px;
+
+  /*
+    ── A3 목업 v7 의 실측 좌표 (2026-08-08) ────────────────────
+
+    아래 값은 `assets/source/phase-a/A3_maintenance_hub_mockup_v7.png` 에서 잰 것이다.
+    무대가 1920×1080 고정이고 배율이 없어(DEC-ART-004) 픽셀이 그대로 맞는다.
+
+    **격자를 쓰지 않고 자리를 하나씩 적는다.** 목업이 격자로 설명되는 배치가
+    아니다 — 기능 버튼 넷이 팝업 왼쪽 테두리에 물려 있고, 소지금은 보관함이 아니라
+    화면 우측 상단이며, 예고 판은 그 어느 열에도 속하지 않는다. 격자로 짜면
+    "물려 있음" 을 음수 여백으로 흉내내야 해서 값이 더 늘어난다.
+
+    아트가 없을 때는 아래 값을 쓰지 않고 기존 2열 격자가 그대로 남는다.
+  */
+  --hub-notice-x: 55px;
+  --hub-notice-y: 60px;
+  --hub-money-x: 1415px;
+  --hub-money-y: 62px;
+  --hub-pause-x: 1706px;
+  --hub-pause-y: 60px;
+
+  --hub-inv-x: 55px;
+  --hub-inv-y: 190px;
+  --hub-inv-w: 645px;
+  --hub-inv-h: 810px;
+  /* 보관함 제목 팻말. 판 왼쪽 위에서 잰 상대 좌표다 */
+  --hub-inv-heading-x: 177px;
+  --hub-inv-heading-w: 278px;
+  --hub-inv-heading-h: 70px;
+
+  /* 기능 버튼 넷. 세로로 쌓이며 팝업 왼쪽 테두리에 물린다 */
+  --hub-tab-x: 735px;
+  --hub-tab-y: 285px;
+  --hub-tab-w: 180px;
+  --hub-tab-h: 64px;
+  --hub-tab-pitch: 98px;
+  /*
+    안 열린 탭이 팝업 판 아래로 더 들어가는 거리.
+
+    **글자는 넷 다 온전히 보여야 한다** (8/8). 8/8 밤에 130 으로 뒀더니 절반이
+    판 아래로 들어가 글자가 가려졌다. 40 이면 열린 탭의 오른쪽 끝이 915, 나머지는
+    955 라 둘 다 팝업 왼쪽(905) 아래로 끄트머리만 물리고, 글자는 탭 가운데
+    (825·865) 라 어느 쪽도 가려지지 않는다.
+
+    차이가 40 뿐인 것도 의도다 — 열린 것이 "살짝" 왼쪽으로 나와 나머지와 비교만
+    되면 된다.
+  */
+  --hub-tab-tuck: 40px;
+
+  --hub-popup-x: 905px;
+  --hub-popup-y: 195px;
+  --hub-popup-w: 950px;
+  --hub-popup-h: 665px;
+
+  --hub-finish-x: 1490px;
+  --hub-finish-y: 915px;
+  --hub-finish-w: 360px;
+  --hub-finish-h: 80px;
 
   /* ── 결과 화면 (DEC-UI-023) ───────────────────────
      독립 화면이 필드를 덮을 때 쓰는 값. 화면마다 자기 규칙에서 참조한다.
@@ -1104,15 +1172,72 @@
     var(--hub-shutter-left) left center / 50% 100% no-repeat,
     var(--hub-shutter-right) right center / 50% 100% no-repeat;
   color: var(--hub-text-on-art);
+  /* 격자를 버리고 자리를 하나씩 적는다 — 위 :root 의 실측 좌표 주석 참고 */
+  display: block;
+  padding: 0;
+}
 
-  /*
-    칸 넷이 한 줄이라 보관함이 넓어져야 한다 — 111×4 = 444 에 칸 사이 여백,
-    9-slice 테두리 44 양쪽, 안쪽 여백까지 더한 값이다. 아트 없는 340px 로는
-    셋째 칸부터 다음 줄로 넘어간다.
+/*
+  ── 좌측 상단: 습격 예고 ────────────────────────
 
-    팝업 층의 `left` 도 이 변수를 쓰므로 팝업이 함께 오른쪽으로 밀린다.
-  */
-  --hub-inventory-width: 580px;
+  **판 한 장에 텍스트 둘을 얹는다** (8/8 QA). 8/8 밤까지 그림과 문구를 가로로 나눈
+  형제 요소로 뒀는데, 그러면 판의 오른쪽 크림색 두 칸이 남아 돌고 그림만 잘려 보인다.
+
+  `raid_notice_*` 는 560×101 이고 세 부분이다 — 왼쪽 그림 칸, 그리고 세로 선으로
+  갈린 크림색 두 칸. 아래 백분율은 그 PNG 에서 잰 값이다.
+
+    그림     0 ~ 25.9%
+    일차   27.1 ~ 56.3%   (가운데 41.7%)
+    문구   57.5 ~ 98.6%   (가운데 78.0%)
+
+  표시 폭은 보관함과 같은 645 로 맞춘다 (8/8 요청). 높이는 비율을 지켜
+  101 × 645/560 = 116 이다.
+
+  세 화면(재배·정비·습격)의 통일은 작업 16번(최수정)이다 — 여기서 한 것은 정비
+  화면의 판이 잘려 보이던 것을 고친 것까지다.
+*/
+.hub--has-art .hub__raid-notice {
+  position: absolute;
+  left: var(--hub-notice-x);
+  top: var(--hub-notice-y);
+  display: block;
+  width: var(--hub-inv-w);
+  height: calc(var(--hub-inv-w) * 101 / 560);
+}
+
+/* ── 우측 상단: 소지금 · 일시정지 ──────────────── */
+.hub--has-art .hub__top-right {
+  position: absolute;
+  left: var(--hub-money-x);
+  top: var(--hub-money-y);
+}
+
+.hub--has-art .hub__pause {
+  position: absolute;
+  left: calc(var(--hub-pause-x) - var(--hub-money-x));
+  top: calc(var(--hub-pause-y) - var(--hub-money-y));
+  width: 138px;
+  height: 122px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--hub-pause-image) center / contain no-repeat;
+  /* 그림이 곧 이름이다. 글자는 읽는 사람용으로 남기고 화면에서만 뺀다 */
+  text-indent: -9999px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.hub--has-art .hub__pause:hover {
+  filter: brightness(1.1);
+}
+
+/* 아트가 없으면 우측 상단 묶음이 아니라 원래 자리(보관함 머리)로 돌아간다 */
+.hub:not(.hub--has-art) .hub__top-right {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
 }
 
 /* 보관함은 상시 표시 영역이다. 팝업이 열려 있어도 계속 보여야 한다 (DEC-UI-020) */
@@ -1125,17 +1250,93 @@
   overflow-y: auto;
 }
 
-/* 대사창과 같은 9-slice 두 장이다 (panel_border 559×562 · panel_texture 563×622) */
+/*
+  ── 한지 판 안의 스크롤바 (8/8, 작업 17번) ──────────────────
+
+  기본 스크롤바는 밝은 회색이라 종이 위에서 이물질처럼 보인다. 나무 테두리와
+  같은 계열의 갈색으로 맞춘다.
+
+  `scrollbar-color` 가 표준이고 `::-webkit-scrollbar-*` 는 그것을 아직 안 읽는
+  브라우저용이다 — 둘 다 두면 어느 쪽이든 갈색이 나온다.
+*/
+.hub--has-art .hub__inventory,
+.hub__popup--has-art .hub__popup-body,
+.hub__popup--has-art .hub__popup-footer {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hub-scroll-thumb) transparent;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar {
+  width: 10px;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-track,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-track,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-thumb,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-thumb,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-thumb {
+  background: var(--hub-scroll-thumb);
+  border-radius: 5px;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-thumb:hover,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-thumb:hover,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-thumb:hover {
+  background: var(--hub-scroll-thumb-hover);
+}
+
+/* 판 그림은 `.panel--hanji` 가 준다 (`ui/panel.ts`). 여기서는 자리와 크기만 정한다 —
+   9-slice 를 화면마다 복사하지 않는다는 8/8 작업 분담대로다 */
 .hub--has-art .hub__inventory {
-  border: 44px solid transparent;
-  border-radius: 0;
-  border-image-source: var(--hub-panel-border);
-  border-image-slice: 44;
-  border-image-width: 44px;
-  background-image: var(--hub-panel-texture);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  position: absolute;
+  left: var(--hub-inv-x);
+  top: var(--hub-inv-y);
+  width: var(--hub-inv-w);
+  height: var(--hub-inv-h);
+  box-sizing: border-box;
+  /*
+    네 분류가 다 들어가야 한다 (8/8).
+
+    소모품까지 넷이라 위 여백을 테두리 두께만큼 주면 마지막 분류가 넘쳤다.
+    제목 팻말을 판 위쪽에 바짝 붙이고 아래 `--hub-inventory-gap` 으로 분류 간격을
+    줄여 810 안에 넣는다.
+  */
+  padding: 6px var(--ui-gap-lg) var(--ui-gap-sm);
+}
+
+/*
+  보관함 제목 팻말 (A3 목업).
+
+  판 위쪽 나무 테두리에 **물려 있다** — 위로 삐져나오므로 음수 여백을 쓴다.
+  9-slice 테두리가 28px 이라 판 안쪽 좌표가 그만큼 밀려서, 목업의 절대 x(232)
+  에서 판 왼쪽(55)과 테두리(28)를 뺀 값이 여기 들어간다.
+*/
+.hub__inventory-heading {
+  display: none;
+}
+
+.hub--has-art .hub__inventory-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* 판 안쪽 기준이라 목업 절대 x(232) 에서 판 왼쪽(55)과 테두리를 뺀다 */
+  left: calc(var(--hub-inv-heading-x) - var(--panel-hanji-slice));
+  width: var(--hub-inv-heading-w);
+  height: var(--hub-inv-heading-h);
+  /* 제목과 첫 분류(수확물) 사이를 좁힌다 (8/8) — 넷을 다 넣을 자리를 만든다 */
+  margin-bottom: 2px;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-size: 26px;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
 }
 
 .hub__inventory-group + .hub__inventory-group {
@@ -1146,6 +1347,24 @@
   font-size: var(--ui-font-sm);
   color: var(--ui-text-dim);
   margin-bottom: var(--ui-gap-xs);
+}
+
+/*
+  분류 이름(수확물·재료·무기·소모품)은 한지 위라 검은 글씨다 (8/8 요청).
+
+  `--ui-text-dim` 은 어두운 판 위에서 흐리게 보이라고 만든 값이라 종이 위에서는
+  거의 안 읽힌다. 목업의 크기도 본문보다 크다.
+*/
+.hub--has-art .hub__inventory-title {
+  color: var(--hub-text-on-art);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* 분류 사이 간격. 넷을 810 안에 넣으려면 기본값(--ui-gap-lg)보다 좁아야 한다 */
+.hub--has-art .hub__inventory-group + .hub__inventory-group {
+  margin-top: var(--ui-gap-sm);
 }
 
 .hub__inventory-row {
@@ -1201,8 +1420,8 @@
   left: 50%;
   top: 46%;
   transform: translate(-50%, -50%);
-  width: 62%;
-  height: 62%;
+  width: 66%;
+  height: 66%;
 }
 
 /* 그림이 없는 항목만 이름이 대신 선다 (14.8). 칸이 좁아 두 줄까지만 */
@@ -1271,21 +1490,13 @@
   display: none;
 }
 
-.hub__main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-md);
-  min-height: 0;
-}
-
-.hub__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ui-gap-md);
-}
-
 .hub__title {
   font-size: var(--ui-font-xl);
+}
+
+/* 목업의 소지금 숫자는 판 가운데가 아니라 오른쪽에서 조금 들어와 있다 (8/8 요청) */
+.hub--has-art .hub__money {
+  padding-right: 32px;
 }
 
 /* 습격 예고는 정비 허브에서도 계속 표시한다 (DEC-UI-020) */
@@ -1306,20 +1517,101 @@
   display: none;
 }
 
+/* 판 그림이 칸 전체를 채운다. 그림이 없으면 숨으므로 글자만 남는다 */
 .hub--has-art .hub__raid-plate {
-  width: 168px;
-  height: 96px;
-  background: var(--hub-raid-plate) center / contain no-repeat;
+  position: absolute;
+  inset: 0;
+  background: var(--hub-raid-plate) center / 100% 100% no-repeat;
+}
+
+/* 크림색 두 칸 위에 각각 앉는다. 위 주석의 백분율이 이 값들의 출처다 */
+.hub--has-art .hub__title,
+.hub--has-art .hub__raid-text {
+  position: absolute;
+  top: 12%;
+  height: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hub-text-on-art);
+  font-size: 26px;
+  font-weight: 700;
+  /* 문구가 칸보다 길면 넘치는 대신 줄인다 — 나무 테두리를 넘어가면 못 읽는다 */
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.hub--has-art .hub__title {
+  left: 27.1%;
+  width: 29.2%;
 }
 
 .hub--has-art .hub__raid-text {
-  color: var(--hub-text-on-art);
-  font-size: var(--ui-font-md);
+  left: 57.5%;
+  width: 41.1%;
+  font-size: 22px;
 }
 
+/* ── 기능 버튼 넷 — 팝업 왼쪽에 세로로 (A3 목업) ── */
 .hub__buttons {
   display: flex;
   gap: var(--ui-gap-md);
+}
+
+.hub--has-art .hub__buttons {
+  position: absolute;
+  left: var(--hub-tab-x);
+  top: var(--hub-tab-y);
+  flex-direction: column;
+  /* 목업의 간격은 버튼 높이보다 크다. 자리 간격에서 높이를 뺀 값이 여백이다 */
+  gap: calc(var(--hub-tab-pitch) - var(--hub-tab-h));
+  /* 팝업 테두리에 물려 있으므로 팝업보다 위에 그린다 */
+  z-index: 1;
+}
+
+/*
+  ── 보고 있는 기능만 튀어나온다 (8/8 요청) ─────────────────
+
+  넷을 서랍처럼 다룬다. 열려 있는 것만 왼쪽으로 나와 있고 나머지는 오른쪽으로
+  밀려 팝업 판 **뒤로** 들어간다. 그래서 지금 무엇을 보고 있는지 버튼 줄만
+  봐도 알 수 있다 — 8/8 플레이 테스트의 *"판매·구매·제작 중 무엇이 선택됐는지
+  아래까지 스크롤해야 안다"* 가 이 연출로 해결된다.
+
+  **뒤로 들어가려면 팝업보다 낮아야 한다.** 그래서 버튼 줄의 `z-index` 를 없애고
+  열린 버튼 하나만 팝업 위로 올린다.
+*/
+.hub--has-art .hub__buttons {
+  z-index: auto;
+}
+
+.hub--has-art .hub__button {
+  flex: none;
+  width: var(--hub-tab-w);
+  height: var(--hub-tab-h);
+  /*
+    글자를 **들어가 있을 때 기준으로** 가운데 맞춘다 (8/8).
+
+    밀려 있으면 오른쪽 `--hub-tab-tuck` 만큼이 판 아래로 들어가므로 보이는 폭은
+    `180 - 40 = 140` 이다. 오른쪽에 그만큼 여백을 주면 글자가 그 140 의 가운데에
+    선다 — 버튼 전체의 가운데(90) 가 아니라 70 이다.
+  */
+  padding: 0 var(--hub-tab-tuck) 0 0;
+  /* 밀려 들어간 상태가 기본이다. 끄트머리만 판 아래로 감춘다 */
+  transform: translateX(var(--hub-tab-tuck));
+  transition: transform 180ms ease-out;
+}
+
+.hub--has-art .hub__button--open {
+  transform: translateX(0);
+  /* 열린 것만 판 위로 올라와 테두리에 물린 것처럼 보인다 */
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub--has-art .hub__button {
+    transition: none;
+  }
 }
 
 .hub__button {
@@ -1392,6 +1684,18 @@
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* ── 하단 진행 버튼 (A3 목업 우측 하단) ────────────
+   문구가 길어 목업이 기능 버튼보다 넓다 (360×80 대 180×64) */
+.hub--has-art .hub__finish {
+  position: absolute;
+  left: var(--hub-finish-x);
+  top: var(--hub-finish-y);
+  width: var(--hub-finish-w);
+  height: var(--hub-finish-h);
+  min-height: 0;
+  padding: 0;
+}
+
 /* 하단 진행 버튼. 문구는 DEC-RUN-006 이 정한 두 가지다 */
 .hub__finish {
   grid-column: 2;
@@ -1436,6 +1740,16 @@
   pointer-events: none;
 }
 
+/* 아트가 붙으면 층이 목업의 팝업 자리를 그대로 차지한다 */
+.hub--has-art .hub__popup-layer {
+  left: var(--hub-popup-x);
+  top: var(--hub-popup-y);
+  right: auto;
+  bottom: auto;
+  width: var(--hub-popup-w);
+  height: var(--hub-popup-h);
+}
+
 .hub__popup {
   pointer-events: auto;
 }
@@ -1453,18 +1767,104 @@
   gap: var(--ui-gap-md);
 }
 
-/* 보관함과 같은 9-slice 두 장이다 */
+/*
+  ── 팝업은 한지 판 **두 장**이다 (A3 목업) ─────────────────
+
+  왼쪽 판이 목록과 상세, 오른쪽 판이 수량·총액·실행이다. 8/8까지 한 판에
+  위(목록)·아래(실행)로 쌓여 있었다.
+
+  **세 모달을 안 고치고 배치만 바뀌었다.** `createPopupShell` 이 이미 `body` 와
+  `footer` 를 나눠 주고 있었고, 판매·구매·제작이 `body` 에 목록+상세를,
+  `footer` 에 수량+실행을 넣고 있었다 — 목업의 두 판과 그대로 대응한다.
+  가로로 눕히는 것만으로 끝난 것은 그 경계가 이미 맞았기 때문이다.
+
+  판 그림은 `body`·`footer` 가 각자 `.panel--hanji` 로 받는다. 껍데기(`root`)는
+  자리만 잡으므로 배경이 없다.
+*/
 .hub__popup--has-art {
-  border: 44px solid transparent;
-  border-radius: 0;
-  border-image-source: var(--hub-panel-border);
-  border-image-slice: 44;
-  border-image-width: 44px;
-  background-image: var(--hub-panel-texture);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  /* 머리줄이 이 요소를 기준으로 눕는다. 없으면 기준이 팝업 층으로 올라간다 —
+     8/8 에 퀵슬롯 이름이 팝업 전체를 덮어 클릭을 먹은 것과 같은 실수다 */
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  border: none;
+  background: none;
+  padding: 0;
+  gap: 0;
+  width: 100%;
+  height: 100%;
   color: var(--hub-text-on-art);
+}
+
+/*
+  왼쪽 판: 목록과 상세.
+
+  여백이 테두리 두께(28px)보다 넉넉해야 한다 (8/8 요청) — 나무 테두리 그림이
+  안쪽으로 파고들어서 `slice` 만큼만 주면 글자가 나무에 붙는다. 위쪽은 제목이
+  겹쳐 뜨는 자리라 한 번 더 내린다.
+*/
+.hub__popup--has-art .hub__popup-body {
+  flex: 0 0 48%;
+  box-sizing: border-box;
+  /*
+    위 여백을 72 → 28 로 줄였다 (8/8).
+
+    72 는 팝업 머리줄이 겹쳐 뜰 때 그 자리를 비워 둔 값이었는데, 머리줄을 안
+    그리기로 하면서(탭이 같은 말을 한다) 아무것도 없는 공백으로 남았다.
+    제작의 `투척 무기` 제목이 판 한참 아래에서 시작하던 것이 이것 때문이다.
+  */
+  padding: 28px var(--ui-gap-lg) var(--ui-gap-lg) 44px;
+  overflow-y: auto;
+}
+
+/* 오른쪽 판: 수량 물음·증감·계산 결과·실행. 실행 버튼이 아래에 앉도록 세로로 쌓는다 */
+.hub__popup--has-art .hub__popup-footer {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  /* 왼쪽 판과 같은 이유로 테두리 두께보다 넉넉히 준다 */
+  padding: 28px 44px var(--ui-gap-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  overflow-y: auto;
+}
+
+/*
+  실행 버튼과 그 위 한 덩어리를 판 아래쪽에 붙인다 (8/8).
+
+  **총액·거래 후 보유는 증감 줄 아래가 아니라 실행 버튼 바로 위다.** 확정하기
+  직전에 읽는 숫자라 버튼 옆에 있어야 구조가 안정적이다. 편성의 *"칸을 비워도
+  수량은 줄지 않는다"* 도 같은 이유로 `칸 비우기` 바로 위다.
+
+  빈 공간을 어디에 줄지는 `margin-top: auto` 가 정한다. 열에서 그것을 가진 **첫**
+  요소가 남는 높이를 전부 먹으므로, 아래 둘에 같이 걸어도 앞선 것만 벌어진다 —
+  판매는 `총액` 이 먼저고, 편성은 안내가 먼저다. 제작은 `필요 재료` 가 증감 줄에
+  붙어 있어야 해서 그 뒤의 안내가 벌어진다.
+*/
+.hub__popup--has-art .hub__totals,
+.hub__popup--has-art .hub__preview {
+  margin-top: auto;
+}
+
+.hub__popup--has-art .hub__action {
+  width: 350px;
+  flex: none;
+}
+
+/*
+  머리줄을 그리지 않는다 (8/8).
+
+  제목이 `판매`·`구매`·`제작`·`퀵슬롯 편성` 인데 **왼쪽 탭이 이미 같은 말을
+  하고 있다.** 열린 탭이 튀어나와 있으므로 판 안에 한 번 더 적으면 같은 단어가
+  나란히 둘이 된다. 닫기 버튼도 붙이지 않으므로(위 `createPopupShell` 주석)
+  머리줄에 남는 것이 없다.
+
+  DOM 에서 지우지 않고 숨기는 이유는 되돌릴 자리를 남겨 두려는 것이다 —
+  `DEC-UI-020` 의 닫기 버튼 조항이 아직 정리되지 않았다.
+*/
+.hub__popup--has-art .hub__popup-header {
+  display: none;
 }
 
 .hub__popup-header {
@@ -1789,41 +2189,6 @@
   margin-bottom: var(--ui-gap-md);
 }
 
-/* 팝업 닫기 버튼 (DEC-UI-020). 그림은 8/8 에 붙였다 — 파일은 8/6 에 왔는데
-   `UI_ASSET` 에 등록이 빠져 있어 두 이틀 글자 버튼으로 남아 있었다 */
-.hub__close {
-  pointer-events: auto;
-  cursor: pointer;
-  padding: var(--ui-gap-xs) var(--ui-gap-md);
-  border: 1px solid var(--ui-border);
-  border-radius: var(--ui-radius);
-  background: var(--ui-bg-panel);
-  color: var(--ui-text);
-  font-family: var(--ui-font);
-  font-size: var(--ui-font-md);
-}
-
-.hub__close:hover {
-  border-color: var(--ui-border-strong);
-}
-
-/* 그림 98×93. 글자는 지우지 않고 화면 밖으로 밀어 둔다 — 읽는 사람에게 이름이
-   남아야 하고, 그림이 안 왔을 때 되돌릴 자리이기도 하다 */
-.hub__close--has-art {
-  width: 98px;
-  height: 93px;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: var(--hub-close-image) center / contain no-repeat;
-  text-indent: -9999px;
-  overflow: hidden;
-}
-
-.hub__close--has-art:hover {
-  filter: brightness(1.1);
-}
-
 /*
   수량 증감 (A3 목업, B4). `step_minus` 79×61 · `step_plus` 79×58 로 높이가
   미세하게 다르지만 같은 칸에 `contain` 으로 넣어 가운데를 맞춘다.
@@ -1877,6 +2242,265 @@
   font-size: 38px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+/*
+  ── 수량 물음 + 증감 줄 (A3 목업) ─────────────────────────
+
+  물음이 증감 줄 **위**에 선다. 8/8까지 증감 줄만 있어서 그 숫자가 무엇의 개수인지
+  판 안에 적혀 있지 않았다. 문구는 각 모달이 자기 동사로 넘긴다 —
+  판매 `몇 개 파시겠습니까?` · 구매 `몇 개 사시겠습니까?` · 제작 `몇 개 제작하시겠습니까?`
+*/
+.hub__qty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+}
+
+.hub__qty-prompt {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.hub__popup--has-art .hub__qty-prompt {
+  color: var(--hub-text-on-art);
+}
+
+/*
+  계산 결과와 필요 재료 — 증감 줄 아래다 (8/8 요청).
+
+  숫자를 누르면서 총액·필요 수량이 바뀌는 것을 눈으로 따라갈 수 있어야 해서,
+  왼쪽 판이 아니라 증감 줄 바로 아래에 둔다.
+*/
+.hub__totals,
+.hub__needs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
+  font-size: var(--ui-font-md);
+}
+
+.hub__popup--has-art .hub__totals,
+.hub__popup--has-art .hub__needs {
+  color: var(--hub-text-on-art);
+}
+
+/*
+  ── 상점 목록 한 줄 — 나무 칸 + 두 줄 (A3 목업, 8/8) ────────
+
+    [나무 칸]  고추
+               (엽전) 8   보유 0
+
+  칸 넷이 판 높이에 맞으므로 칸 크기가 보관함(111)보다 조금 작다.
+*/
+.hub__popup--has-art .hub__row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  text-align: left;
+  /* 어두운 칸 배경(--ui-bg-slot)은 종이 위에서 이물질로 보인다. 종이보다
+     살짝 진한 면으로 바꿔 모서리 둥근 상자만 남긴다 */
+  background: rgba(120, 84, 48, 0.14);
+  border-color: rgba(58, 43, 28, 0.2);
+  color: var(--hub-text-on-art);
+}
+
+.hub__popup--has-art .hub__row:hover:not(:disabled) {
+  border-color: var(--hub-row-selected-edge);
+}
+
+/* 나무 칸이 이미 있는 줄은 그 판이 곧 테두리다. 상자를 한 겹 더 두지 않는다 */
+.hub__popup--has-art .hub__row:has(.hub__row-slot) {
+  background: none;
+  border-color: transparent;
+}
+
+.hub__row-slot {
+  position: relative;
+  flex: none;
+  width: var(--hub-row-slot-size);
+  height: var(--hub-row-slot-size);
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+.hub__row-slot .icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 66%;
+  height: 66%;
+}
+
+.hub__row-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hub__popup--has-art .hub__row-name {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.hub__row-price {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+}
+
+/*
+  아랫줄의 엽전 그림.
+
+  **낱개 엽전 에셋이 아직 없다.** `money_plate` 안에 그려진 엽전은 판과 한 덩어리라
+  떼어 쓸 수 없다. 파일이 오면 `--hub-coin-image` 만 채우면 되고, 그때까지는 칸이
+  0 폭이라 숫자가 바로 선다 — 빈 사각형을 두면 "그림이 깨졌나" 로 읽힌다.
+*/
+.hub__coin {
+  flex: none;
+  width: 0;
+  height: 22px;
+  background: var(--hub-coin-image) center / contain no-repeat;
+}
+
+.hub__coin[style*='--hub-coin-image'] {
+  width: 22px;
+}
+
+.hub__row-unit {
+  font-weight: 700;
+}
+
+.hub__row-held {
+  color: var(--ui-text-dim);
+}
+
+.hub__popup--has-art .hub__row-held {
+  /* 종이 위에서는 흐린 회색이 안 읽힌다. 갈색 계열로 한 단계만 연하게 */
+  color: rgba(58, 43, 28, 0.72);
+}
+
+/*
+  ── 판 안의 제목과 구분선 (편성 팝업, A3 목업) ──────────────
+
+  팝업 머리줄을 그리지 않으므로 판마다 자기 제목을 들고, 아래 가로줄로 목록과
+  나눈다. 편성은 두 판이 다른 것을 다루므로(칸 / 무기) 제목이 둘 필요하다.
+*/
+.hub__pane-title {
+  font-size: 24px;
+  font-weight: 700;
+  /* 판 가운데다 (8/8). 왼쪽 정렬이면 나무 테두리 쪽으로 쏠려 보인다 */
+  text-align: center;
+}
+
+.hub__popup--has-art .hub__pane-title {
+  color: var(--hub-text-on-art);
+}
+
+/* 목록이 비었을 때의 한 줄. 없는 것을 지어내지 않고 없다고만 적는다 */
+.hub__pane-empty {
+  padding: var(--ui-gap-lg) 0;
+  text-align: center;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hub__popup--has-art .hub__pane-empty {
+  color: rgba(58, 43, 28, 0.7);
+}
+
+.hub__pane-rule {
+  height: 1px;
+  background: var(--ui-border);
+  margin: var(--ui-gap-sm) 0 var(--ui-gap-md);
+}
+
+.hub__popup--has-art .hub__pane-rule {
+  background: rgba(58, 43, 28, 0.35);
+}
+
+/* ── 편성 왼쪽 판: 칸 넷이 세로로 ──────────────── */
+.hub__popup--has-art .hub__slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.hub__popup--has-art .hub__slot {
+  flex: none;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.hub__slot-plate {
+  position: relative;
+  flex: none;
+  width: var(--hub-row-slot-size);
+  height: var(--hub-row-slot-size);
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+/* 편성된 무기 그림이 판 위에 올라간다. 빈 칸이면 이 겹이 비어 있다 */
+.hub__slot-plate::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 66%;
+  height: 66%;
+  background: var(--hub-slot-icon) center / contain no-repeat;
+}
+
+/* 번호는 반투명 판 위에 얹어 무기 그림과 겹쳐도 읽히게 한다 */
+.hub__popup--has-art .hub__slot-index {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 1;
+  min-width: 24px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(28, 20, 12, 0.6);
+  color: #fdf6e3;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hub__slot-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hub__popup--has-art .hub__slot-name {
+  /* 보관함 칸의 이름과 클래스가 같아 그쪽 절대 배치를 되돌린다 */
+  position: static;
+  inset: auto;
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+}
+
+/* ── 편성 오른쪽 판: 무기 목록 세로 ──────────────── */
+.hub__weapon-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  width: 100%;
 }
 
 .hub__popup--has-art .hub__qty-value {

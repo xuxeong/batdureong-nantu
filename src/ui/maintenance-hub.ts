@@ -10,6 +10,7 @@
 // 이 파일은 화면만 만든다. 판정과 자원 변경은 economy.ts 가 한다.
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
+import { applyHanjiPanel } from './panel.ts'
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
 import { createIcon } from './icon.ts'
@@ -115,6 +116,13 @@ export interface HubView {
 export interface HubHandlers {
   openPopup(popup: HubPopupId): void
   finish(): void
+  /**
+   * 일시정지·설정을 연다. 필드 HUD 의 같은 버튼과 같은 화면이다.
+   *
+   * `DEC-UI-020` 이 정비 허브의 항목으로 열거하지 않은 입력이다 — 위 `pauseButton`
+   * 주석 참고.
+   */
+  onPause(): void
 }
 
 export interface MaintenanceHub {
@@ -151,8 +159,13 @@ const BUTTONS: { id: HubPopupId; label: string }[] = [
   { id: 'sell', label: '판매' },
   { id: 'buy', label: '구매' },
   { id: 'craft', label: '제작' },
-  { id: 'quickslots', label: '퀵슬롯 편성' },
+  // 넷 다 두 글자다. 탭이 좁아 `퀵슬롯 편성` 만 두 줄로 접혀서 줄을 맞췄다 (8/8).
+  // 무엇을 편성하는지는 팝업 왼쪽 판의 제목(`투척 퀵슬롯 편성`)이 말한다.
+  { id: 'quickslots', label: '편성' },
 ]
+
+/** 보관함 판 머리의 팻말 문구. `DEC-UI-029` 의 라벨 갈래다 — 영역 이름일 뿐이다 */
+const INVENTORY_HEADING = '보관함'
 
 const GROUPS: { key: keyof InventoryView; title: string }[] = [
   { key: 'crops', title: '수확물' },
@@ -187,8 +200,8 @@ export function createMaintenanceHub(
 
   // ── 좌측: 보관함 상시 영역 + 소지금 ──────────────
   const inventory = el('div', 'hub__inventory')
-  paint(inventory, '--hub-panel-border', UI_ASSET.panelBorder)
-  paint(inventory, '--hub-panel-texture', UI_ASSET.panelTexture)
+  // 판 그림은 공용 헬퍼가 붙인다. 9-slice 를 화면마다 복사하지 않는다 (ui/panel.ts)
+  applyHanjiPanel(inventory)
 
   // 소지금 틀에는 엽전 그림이 이미 들어 있다 (B2). 그래서 `소지금` 글자를 빼고
   // 숫자만 얹는다 — 그림이 없을 때만 글자가 무엇인지 알려준다.
@@ -197,8 +210,30 @@ export function createMaintenanceHub(
   const moneyLabel = el('span', 'hub__money-label', '소지금')
   const moneyValue = el('span', 'hub__count')
   money.append(moneyLabel, moneyValue)
+
+  /**
+   * 일시정지·설정 (A3 목업의 우측 상단 톱니바퀴).
+   *
+   * **`DEC-UI-020` 이 정비 허브의 항목으로 열거하지 않았다.** 같은 확정문이
+   * *"`Esc` 는 팝업을 닫지 않고 일시정지를 연다"* 로 정비 중 일시정지는 정해
+   * 뒀는데, 마우스로 들어가는 수단은 정하지 않았다. 필드 HUD 에는 있고
+   * (`DEC-UI-033`) 정비에는 없어 비대칭이라 목업 기준으로 넣었다 —
+   * **결정로그에 근거가 없는 항목이므로 확인이 필요하다.**
+   *
+   * 여는 것은 필드 HUD 의 그 버튼과 같은 화면이다. 새 설정 화면을 만들지 않는다.
+   */
+  const pauseButton = el('button', 'hub__pause', '일시정지')
+  pauseButton.type = 'button'
+  pauseButton.setAttribute('aria-label', '일시정지')
+  paint(pauseButton, '--hub-pause-image', UI_ASSET.settingsButton)
+  pauseButton.addEventListener('click', () => handlers.onPause())
+
+  // 보관함 제목 표지 (A3 목업). 판 위쪽 테두리에 물려 있는 팻말이다
+  const heading = el('div', 'hub__inventory-heading', INVENTORY_HEADING)
+  paint(heading, '--hub-button-image', UI_ASSET.buttonNormal)
+  inventory.appendChild(heading)
+
   const groupNodes = new Map<keyof InventoryView, HTMLElement>()
-  inventory.appendChild(money)
   for (const group of GROUPS) {
     const wrap = el('div', 'hub__inventory-group')
     wrap.appendChild(el('div', 'hub__inventory-title', group.title))
@@ -209,17 +244,32 @@ export function createMaintenanceHub(
     groupNodes.set(group.key, list)
   }
 
-  // ── 우측: 제목·습격 예고 + 기능 버튼 ─────────────
-  const main = el('div', 'hub__main')
-  const header = el('div', 'hub__header')
-  const title = el('div', 'hub__title')
-  // 표지의 그림 자리와 문구 자리를 나눈다 (B3). 그림은 판이 들고 문구만 얹는다.
+  // ── 좌측 상단: 습격 예고 ─────────────────────────
+  //
+  // **판의 배치·크기는 최수정 담당이다** (작업 16번). 8/8 QA 가 세 화면(재배·정비·
+  // 습격)의 예고 표시를 한 판으로 통일하기로 했고 그 일을 한 사람이 맡는다.
+  //
+  // 여기서 한 것은 A3 목업의 자리(좌측 상단)로 옮긴 것뿐이다 — 아래 `.hub__money`
+  // 가 목업대로 우측 상단으로 가면서 이 판이 있던 우측 헤더가 없어졌기 때문이다.
+  // **그림 자리와 문구 자리를 나눈 구조는 그대로 뒀다.** QA 는 560×101 한 장을
+  // 컨테이너 배경으로 쓰고 텍스트 둘을 얹으라고 했는데, 그 변경이 16번의 내용이다.
+  //
+  // 일차도 여기 들어온다. QA 가 판의 오른쪽을 세로 두 칸으로 나눠 왼쪽에 일차,
+  // 오른쪽에 `hud_label` 을 넣기로 했다. 8/8까지 일차는 `${n}일차 정비` 라는
+  // 별개의 제목이었는데, 목업에 그 글자가 없고 판 안에 자리가 생겼다.
   const raidNotice = el('div', 'hub__raid-notice')
   const raidNoticePlate = el('div', 'hub__raid-plate')
+  const title = el('div', 'hub__title')
   const raidNoticeText = el('div', 'hub__raid-text')
-  raidNotice.append(raidNoticePlate, raidNoticeText)
-  header.append(title, raidNotice)
+  raidNotice.append(raidNoticePlate, title, raidNoticeText)
 
+  // ── 우측 상단: 소지금 · 일시정지 ─────────────────
+  const topRight = el('div', 'hub__top-right')
+  topRight.append(money, pauseButton)
+
+  // ── 기능 버튼 넷 (DEC-UI-020) ────────────────────
+  // 목업은 팝업 왼쪽 바깥에 세로로 붙인다. 지금 보고 있는 기능이 어느 것인지
+  // 버튼 줄에서 알 수 있어야 하므로 순서와 자리를 고정한다.
   const buttons = el('div', 'hub__buttons')
   /** 잠긴 기능을 매 프레임 다시 만들지 않고 여기서 상태만 바꾼다 */
   const buttonNodes = new Map<HubPopupId, HTMLButtonElement>()
@@ -231,7 +281,6 @@ export function createMaintenanceHub(
     buttons.appendChild(button)
     buttonNodes.set(spec.id, button)
   }
-  main.append(header, buttons)
 
   // ── 하단: 진행 버튼 (DEC-RUN-006) ────────────────
   // 별도의 확인 창을 두지 않는다. 문구가 다음에 일어날 일을 이미 알린다 (DEC-UI-020).
@@ -244,7 +293,7 @@ export function createMaintenanceHub(
   const popupLayer = el('div', 'hub__popup-layer')
   popupLayer.hidden = true
 
-  root.append(inventory, main, finish, popupLayer)
+  root.append(raidNotice, topRight, inventory, buttons, finish, popupLayer)
   container.appendChild(root)
 
   const tooltip = createTooltip(root)
@@ -333,7 +382,8 @@ export function createMaintenanceHub(
 
   return {
     render(view) {
-      title.textContent = `${view.dayNumber}일차 정비`
+      // 판 안의 왼쪽 칸이라 `정비` 를 빼고 일차만 쓴다 (8/8 QA)
+      title.textContent = `${view.dayNumber}일차`
       // 문구가 없으면 비워 둔다. 임시 문구를 채우지 않는다 (DEC-RUN-011)
       raidNoticeText.textContent = view.raidNoticeLabel ?? ''
 
@@ -398,40 +448,44 @@ export function createMaintenanceHub(
 }
 
 /**
- * 팝업 껍데기. 제목·본문·바닥과 닫기 버튼만 만든다.
+ * 팝업 껍데기. 제목과 두 칸만 만든다.
  *
- * 닫기는 이 버튼 하나뿐이다 (DEC-UI-020). 바깥 클릭 핸들러를 붙이지 않는다.
+ * ── 닫기 버튼이 없다 (2026-08-08 확정) ──
+ *
+ * **팝업이 항상 하나 열려 있고 기능 버튼 넷이 그것을 갈아 끼운다.** 그러면
+ * "닫힌 상태" 가 없으므로 닫을 것도 없다. A3 목업에는 X 가 있었지만 탭이 그
+ * 역할을 대신하게 되면서 빠졌다 (`DEC-UI-020` 의 닫기 조항도 함께 정리된다).
+ *
+ * ── 아트가 붙으면 한지 판 **두 장**이 된다 (A3 목업) ──
+ *
+ * 왼쪽 판이 `body`(목록·상세), 오른쪽 판이 `footer`(수량·총액·실행)다.
+ * **반환 형태는 바뀌지 않는다** — 세 모달이 이미 그 경계로 나눠 담고 있었고
+ * 목업의 두 판이 마침 같은 경계다. 그래서 판매·구매·제작·편성은 담는 자리를
+ * 안 옮겼다.
+ *
+ * 껍데기 자신은 판이 아니다. 자리만 잡고 배경은 두 판이 각자 받는다.
  */
-export function createPopupShell(
-  titleText: string,
-  onClose: () => void,
-): { root: HTMLElement; body: HTMLElement; footer: HTMLElement } {
+export function createPopupShell(titleText: string): {
+  root: HTMLElement
+  body: HTMLElement
+  footer: HTMLElement
+} {
   const root = el('div', 'hub__popup')
-  const borderUrl = assetCssUrl(UI_ASSET.panelBorder)
-  if (borderUrl !== null) {
-    root.style.setProperty('--hub-panel-border', borderUrl)
-    root.classList.add('hub__popup--has-art')
-  }
-  const textureUrl = assetCssUrl(UI_ASSET.panelTexture)
-  if (textureUrl !== null) root.style.setProperty('--hub-panel-texture', textureUrl)
 
+  // 아트가 붙으면 이 줄을 그리지 않는다 — 열린 탭이 이미 같은 말을 하고 있다.
+  // 그림이 없을 때만 무슨 팝업인지 알려주는 자리로 남는다.
   const header = el('div', 'hub__popup-header')
-  // 팝업 닫기는 정비 허브 안의 버튼이다. 8/5까지 필드 HUD 의 아이콘 버튼 클래스를
-  // 빌려 썼는데, A1 에서 HUD 쪽이 톱니바퀴 그림 한 장으로 바뀌면서 규칙이 갈렸다.
-  // 8/8 에 `asset.ui.close_button` 을 붙였다 — 글자가 남아 있는 것은 그림이 없을
-  // 때의 플레이스홀더이자 읽는 사람을 위한 이름이고, 그림이 있으면 CSS 가 숨긴다.
-  const closeButton = el('button', 'hub__close', '닫기')
-  closeButton.type = 'button'
-  const closeUrl = assetCssUrl(UI_ASSET.closeButton)
-  if (closeUrl !== null) {
-    closeButton.style.setProperty('--hub-close-image', closeUrl)
-    closeButton.classList.add('hub__close--has-art')
-  }
-  closeButton.addEventListener('click', onClose)
-  header.append(el('div', 'hub__popup-title', titleText), closeButton)
+  header.append(el('div', 'hub__popup-title', titleText))
 
   const body = el('div', 'hub__popup-body')
   const footer = el('div', 'hub__popup-footer')
+
+  // 두 판이 각자 그림을 받는다. 둘 다 붙어야 2단 배치가 성립하므로 한쪽만
+  // 성공하면 아트 없는 쪽으로 떨어진다 — 판 하나만 종이인 화면을 만들지 않는다.
+  if (applyHanjiPanel(body) && applyHanjiPanel(footer)) {
+    root.classList.add('hub__popup--has-art')
+  }
+
   root.append(header, body, footer)
 
   return { root, body, footer }

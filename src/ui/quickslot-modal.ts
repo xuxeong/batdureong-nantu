@@ -57,7 +57,6 @@ export interface QuickslotView {
 export interface QuickslotHandlers {
   /** 편성하거나(`weaponId`) 비운다(`null`). 수량은 건드리지 않는다 */
   assign(slotIndex: number, weaponId: string | null): void
-  close(): void
 }
 
 export interface QuickslotModal {
@@ -65,15 +64,44 @@ export interface QuickslotModal {
   render(view: QuickslotView): void
 }
 
+/**
+ * 두 판의 머리 문구 (A3 목업).
+ *
+ * `DEC-UI-029` 의 라벨 갈래다 — 각 판이 무엇을 다루는 자리인지만 가리킨다.
+ * 팝업 머리줄은 그리지 않으므로(왼쪽 탭이 이미 `편성` 이라고 적혀 있다) 판마다
+ * 자기 제목을 들고 아래 구분선으로 목록과 나눈다.
+ */
+const SLOTS_TITLE = '투척 퀵슬롯 편성'
+const WEAPONS_TITLE = '편성할 무기'
+
+/** 무기 보관함이 비었을 때. 제작하기 전에는 정상 상태다 */
+const EMPTY_WEAPONS = '편성할 무기가 없습니다'
+
 export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModal {
-  const { root, body, footer } = createPopupShell('투척 퀵슬롯 편성', handlers.close)
+  const { root, body, footer } = createPopupShell(SLOTS_TITLE)
 
   /** 지금 고른 칸. 고르기 전에는 무기 목록을 만들지 않는다 (DEC-UI-034) */
   let selectedIndex: number | null = null
 
+  // ── 왼쪽 판: 제목 · 구분선 · 칸 넷 (A3 목업, 8/8) ──
+  //
+  // 칸이 가로 한 줄이 아니라 **세로로 넷**이다. 각 칸은 나무 판 하나에 번호를
+  // 얹고, 그 오른쪽에 무엇이 편성돼 있는지 적는다. 판이 좁아 가로로 넷을 늘어놓으면
+  // 무기 이름 자리가 남지 않는다.
   const slotRow = el('div', 'hub__slots')
-  const weaponList = el('div')
-  body.append(slotRow, weaponList)
+  body.append(
+    el('div', 'hub__pane-title', SLOTS_TITLE),
+    el('div', 'hub__pane-rule'),
+    slotRow,
+  )
+
+  // ── 오른쪽 판: 제목 · 구분선 · 무기 목록 ──────────
+  const weaponList = el('div', 'hub__weapon-list')
+  footer.append(
+    el('div', 'hub__pane-title', WEAPONS_TITLE),
+    el('div', 'hub__pane-rule'),
+    weaponList,
+  )
 
   // 슬롯에서 무기를 제거해도 무기 보관함의 수량이 줄지 않는다는 것을 알 수 있게 한다
   // (DEC-UI-034, DEC-RESOURCE-019). 제거 버튼 옆에 상시로 둔다.
@@ -91,8 +119,13 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
   })
   footer.appendChild(clearButton)
 
-  /** 칸 다섯 개는 개수가 고정이라 매번 만들지 않고 재사용한다 */
-  const slotNodes: { root: HTMLButtonElement; name: HTMLElement; count: HTMLElement }[] = []
+  /** 칸은 개수가 고정이라 매번 만들지 않고 재사용한다 */
+  const slotNodes: {
+    root: HTMLButtonElement
+    plate: HTMLElement
+    name: HTMLElement
+    count: HTMLElement
+  }[] = []
 
   function ensureSlots(n: number): void {
     while (slotNodes.length < n) {
@@ -100,18 +133,30 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
       const button = el('button', 'hub__slot') as HTMLButtonElement
       button.type = 'button'
 
-      // 칸 번호는 `1~4` 입력과 같은 번호다 (DEC-INPUT-013)
+      // 나무 판 하나. 편성된 무기 그림이 이 판 **위에** 올라간다 (8/8) —
+      // 왼쪽에서 칸을 고르고 오른쪽에서 무기를 누르면 그림이 여기로 온다.
+      const plate = el('div', 'hub__slot-plate')
+      const plateUrl = assetCssUrl(UI_ASSET.itemSlot)
+      if (plateUrl !== null) plate.style.setProperty('--hub-slot-image', plateUrl)
+
+      // 칸 번호는 `1~4` 입력과 같은 번호다 (DEC-INPUT-013).
+      // 반투명 판 위에 얹어 무기 그림과 겹쳐도 읽히게 한다.
       const label = el('div', 'hub__slot-index', String(index + 1))
+      plate.appendChild(label)
+
       const name = el('div', 'hub__slot-name')
       const count = el('div', 'hub__row-sub')
-      button.append(label, name, count)
+      const lines = el('div', 'hub__slot-lines')
+      lines.append(name, count)
+
+      button.append(plate, lines)
 
       button.addEventListener('click', () => {
         selectedIndex = index
       })
 
       slotRow.appendChild(button)
-      slotNodes.push({ root: button, name, count })
+      slotNodes.push({ root: button, plate, name, count })
     }
   }
 
@@ -129,19 +174,13 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
 
     weaponList.replaceChildren()
     if (selectedIndex === null) {
-      weaponList.appendChild(
-        el('div', 'hub__preview', '편성할 칸을 먼저 고른다.'),
-      )
+      weaponList.appendChild(el('div', 'hub__pane-empty', '편성할 칸을 먼저 고른다.'))
       return
     }
 
-    weaponList.appendChild(el('div', 'hub__popup-group-title', '편성할 무기'))
-
     if (view.weapons.length === 0) {
       // 제작하기 전에는 무기 보관함이 비어 있다. 없는 것을 지어내지 않는다
-      weaponList.appendChild(
-        el('div', 'hub__inventory-row hub__inventory-row--empty', '무기 보관함이 비어 있다'),
-      )
+      weaponList.appendChild(el('div', 'hub__pane-empty', EMPTY_WEAPONS))
       return
     }
 
@@ -189,6 +228,12 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
 
         node.name.textContent = slot.weaponName ?? '비어 있음'
         node.count.textContent = slot.weaponId === null ? '' : String(slot.count)
+
+        // 편성된 무기 그림을 나무 판 위에 올린다 (8/8). 빈 칸이면 판만 남는다.
+        // 번호는 판의 자식이라 지우지 않고 그림만 갈아 끼운다.
+        const iconUrl = assetCssUrl(slot.icon)
+        if (iconUrl === null) node.plate.style.removeProperty('--hub-slot-icon')
+        else node.plate.style.setProperty('--hub-slot-icon', iconUrl)
 
         node.root.classList.toggle('hub__slot--selected', i === selectedIndex)
         // 빈 칸도 빈 상태로 표시한다 (DEC-UI-034)

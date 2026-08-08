@@ -68,7 +68,6 @@ export interface ShopHandlers {
    * 순간 현재 소지금과 보유 수량을 다시 검증한다).
    */
   submit(itemId: string, quantity: number): { ok: boolean; reason: string | null }
-  close(): void
 }
 
 export interface ShopModal {
@@ -84,6 +83,14 @@ const MODE: Readonly<
     {
       title: string
       action: string
+      /**
+       * 수량 증감 위에 서는 물음 (A3 목업).
+       *
+       * `DEC-UI-029` 의 라벨 갈래다 — 무엇을 하는 자리인지만 가리키고 플레이어의
+       * 선택을 바꾸는 정보가 없다. 판매·구매·제작이 같은 자리에 서로 다른 동사를
+       * 쓰므로 모드마다 적는다.
+       */
+      prompt: string
       /** 목록 행의 보조 설명 */
       heldLabel: string
       /** 거래 후 무엇이 남는지 (DEC-UI-005) */
@@ -94,6 +101,7 @@ const MODE: Readonly<
   sell: {
     title: '판매',
     action: '판매',
+    prompt: '몇 개 파시겠습니까?',
     heldLabel: '보유',
     // 판매 실행 전에 거래 후 남는 수확물 수량을 표시한다
     remainderLabel: '거래 후 보유',
@@ -101,6 +109,7 @@ const MODE: Readonly<
   buy: {
     title: '구매',
     action: '구매',
+    prompt: '몇 개 사시겠습니까?',
     heldLabel: '보유',
     // 구매 실행 전에 거래 후 남는 소지금을 표시한다
     remainderLabel: '거래 후 소지금',
@@ -112,7 +121,7 @@ export function createShopModal(
   handlers: ShopHandlers,
 ): ShopModal {
   const spec = MODE[mode]
-  const { root, body, footer } = createPopupShell(spec.title, handlers.close)
+  const { root, body, footer } = createPopupShell(spec.title)
 
   /** 지금 고른 품목. 고르지 않았으면 null — 그때는 실행 버튼이 꺼져 있다 */
   let selectedId: string | null = null
@@ -127,13 +136,17 @@ export function createShopModal(
   /** 실패했을 때만 한 줄. 성공하면 지운다 */
   let notice: string | null = null
 
-  // ── 목록 + 상세 ──────────────────────────────────
+  // ── 목록만 (8/8) ─────────────────────────────────
   //
-  // 제작과 같은 구조다 — 목록에서 하나를 고르면 아래에 이름과 줄 몇 개가 뜨고
-  // 바닥에서 수량을 정해 실행한다 (아트 디렉션 14.9).
+  // **고른 품목의 상세를 따로 두지 않는다.** 8/8 에 목록 한 줄이 나무 칸 + 두 줄
+  // (이름 / 엽전 단가 · 보유 n) 로 바뀌면서, 아래 상세창이 같은 셋을 한 번 더
+  // 적고 있었다. 네 줄이 이미 다 말하고 있으므로 판이 그만큼 짧아지고 왼쪽 판에
+  // 스크롤이 사라진다 — 품목이 넷뿐인 판매에서 스크롤바가 뜰 이유가 없었다.
+  //
+  // `DEC-UI-005` 가 요구하는 보유 수량·단가는 목록 줄이 계속 들고 있고, 총액과
+  // 거래 후 남는 값은 오른쪽 판이 맡는다.
   const list = el('div')
-  const detail = el('div', 'hub__detail')
-  body.append(list, detail)
+  body.append(list)
 
   const tooltip = createTooltip(root)
   /** 안내가 뜰 때 최신 뷰에서 다시 읽는다 — 보유 수량이 거래마다 바뀐다 */
@@ -155,15 +168,35 @@ export function createShopModal(
       const button = el('button', 'hub__row') as HTMLButtonElement
       button.type = 'button'
 
-      // 거래 대상의 단가와 현재 보유 수량을 함께 표시한다 (DEC-UI-005).
-      // 목록에는 아이콘과 이름이 같이 온다 — 상세로 넘어가기 전에 고르는 자리라
-      // 보관함 칸(14.8)과 달리 이름을 뺄 수 없다.
+      // ── 나무 칸 + 두 줄 (A3 목업, 8/8) ────────────────
+      //
+      // 왼쪽에 보관함과 같은 나무 칸을 두고 그림을 그 위에 올린다. 오른쪽은 두
+      // 줄이다 — 윗줄이 이름, 아랫줄이 `엽전 단가   보유 n` 이다.
+      //
+      // 8/8까지 아이콘·이름·단가·보유가 한 줄에 나란히 있었다. 판이 좁아 넷이
+      // 붙으면서 어느 숫자가 단가인지 읽히지 않았다.
+      const slot = el('div', 'hub__row-slot')
+      const slotUrl = assetCssUrl(UI_ASSET.itemSlot)
+      if (slotUrl !== null) slot.style.setProperty('--hub-slot-image', slotUrl)
       const icon = createIcon(item.icon)
+      if (icon !== null) slot.appendChild(icon)
+
       const name = el('div', 'hub__row-name', item.name)
-      const price = el('div', 'hub__row-sub', `단가 ${item.unitPrice}`)
-      const held = el('div', 'hub__row-sub')
-      if (icon !== null) button.appendChild(icon)
-      button.append(name, price, held)
+
+      // 아랫줄. 엽전 그림이 오면 숫자 앞에 서고, 없으면 숫자만 남는다 —
+      // 파일 반입 대기 중이라 지금은 후자다 (`render/assets.ts` 의 `coin` 주석).
+      const price = el('div', 'hub__row-price')
+      const coin = el('span', 'hub__coin')
+      const coinUrl = assetCssUrl(UI_ASSET.coin)
+      if (coinUrl !== null) coin.style.setProperty('--hub-coin-image', coinUrl)
+      price.appendChild(coin)
+      price.appendChild(el('span', 'hub__row-unit', String(item.unitPrice)))
+      const held = el('span', 'hub__row-held')
+      price.appendChild(held)
+
+      const lines = el('div', 'hub__row-lines')
+      lines.append(name, price)
+      button.append(slot, lines)
 
       // 고르는 것만으로는 거래가 발생하지 않는다 (DEC-RESOURCE-013)
       button.addEventListener('click', () => {
@@ -212,6 +245,10 @@ export function createShopModal(
 
   qtyWrap.append(minus, qtyValue, plus)
 
+  // 증감 줄 위에 서는 물음 (A3 목업). 줄과 한 덩어리로 묶어 세로로 쌓는다
+  const qtyBlock = el('div', 'hub__qty-block')
+  qtyBlock.append(el('div', 'hub__qty-prompt', spec.prompt), qtyWrap)
+
   /**
    * 수량을 고쳐 쓴다.
    *
@@ -238,7 +275,11 @@ export function createShopModal(
   const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
   if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
-  footer.append(qtyWrap, preview, action)
+  // 계산 결과(총액·거래 후 남는 값)는 오른쪽 판의 증감 줄 아래다 (A3 목업).
+  // 왼쪽 판에는 고른 품목이 무엇이고 단가가 얼마인지까지만 남는다.
+  const totals = el('div', 'hub__totals')
+
+  footer.append(qtyBlock, totals, preview, action)
 
   action.addEventListener('click', () => {
     if (busy) return
@@ -299,44 +340,56 @@ export function createShopModal(
 
       action.disabled = !allowed || busy
 
-      // ── 상세: 이름과 줄 몇 개 (DEC-UI-005, 14.9) ──
+      // ── 상세 (DEC-UI-005, 14.9) ──
       //
-      // 판매는 보유 수량·단가·총액·거래 후 남는 수확물,
-      // 구매는 단가·총액·거래 후 남는 소지금이다. 설명과 수치는 여기 없다.
+      // 왼쪽 판의 목록 줄이 이름·단가·보유를 계속 들고 있으므로, 여기서 그리는
+      // 것은 **수량에 따라 바뀌는 계산 결과뿐**이다 (DEC-UI-005).
+      // 실행 버튼 바로 위에 둔다 (8/8) — 확정하기 직전에 읽는 숫자라서다.
       if (selected === null) {
-        detail.replaceChildren()
+        totals.replaceChildren()
         preview.textContent = '품목을 고른다'
       } else {
-        const lines: [string, string][] =
-          mode === 'sell'
-            ? [
-                ['보유 수량', String(selected.held)],
-                ['단가', String(selected.unitPrice)],
-                ['총액', total === null ? '—' : String(total)],
-                [spec.remainderLabel, String(selected.held - amount)],
-              ]
-            : [
-                ['단가', String(selected.unitPrice)],
-                ['총액', total === null ? '—' : String(total)],
-                [
-                  spec.remainderLabel,
-                  total === null ? '—' : String(view.money - total),
-                ],
-              ]
+        // 오른쪽 판 — 수량에 따라 바뀌는 것
+        const sums: [string, string][] = [
+          ['총액', total === null ? '—' : String(total)],
+          [
+            spec.remainderLabel,
+            mode === 'sell'
+              ? String(selected.held - amount)
+              : total === null
+                ? '—'
+                : String(view.money - total),
+          ],
+        ]
 
-        // 큰 아이콘과 이름이 상세의 머리다 (14.9 공통 구조)
-        const heading = el('div', 'hub__detail-heading')
-        const bigIcon = createIcon(selected.icon, 'icon--lg')
-        if (bigIcon !== null) heading.appendChild(bigIcon)
-        heading.appendChild(el('div', 'hub__detail-title', selected.name))
+        const detailRow = ([label, value]: [string, string]): HTMLElement => {
+          const row = el('div', 'hub__detail-row')
+          row.append(el('span', 'hub__row-sub', label), el('span', undefined, value))
+          return row
+        }
 
-        detail.replaceChildren(
-          heading,
-          ...lines.map(([label, value]) => {
-            const row = el('div', 'hub__detail-row')
-            row.append(el('span', 'hub__row-sub', label), el('span', undefined, value))
-            return row
-          }),
+        /**
+         * 엽전이 값 앞에 서는 줄 (8/8).
+         *
+         * 총액과 거래 후 남는 소지금은 둘 다 돈이라 엽전이 붙는다. 판매의
+         * `거래 후 보유` 는 **수확물 개수**라 돈이 아니므로 붙이지 않는다 —
+         * 같은 자리에 있다고 같은 단위로 읽히게 하면 안 된다.
+         */
+        const moneyRow = ([label, value]: [string, string]): HTMLElement => {
+          const row = el('div', 'hub__detail-row')
+          const right = el('span', 'hub__row-price')
+          const coin = el('span', 'hub__coin')
+          const url = assetCssUrl(UI_ASSET.coin)
+          if (url !== null) coin.style.setProperty('--hub-coin-image', url)
+          right.append(coin, el('span', undefined, value))
+          row.append(el('span', 'hub__row-sub', label), right)
+          return row
+        }
+
+        // 총액은 항상 돈이고, 거래 후 남는 값은 구매만 돈이다 (판매는 수확물 개수)
+        totals.replaceChildren(
+          moneyRow(sums[0]!),
+          (mode === 'buy' ? moneyRow : detailRow)(sums[1]!),
         )
 
         preview.textContent = ''

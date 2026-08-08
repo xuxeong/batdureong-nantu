@@ -34,6 +34,15 @@ import { createTooltip } from './tooltip.ts'
 import { createIcon } from './icon.ts'
 import './layout.css'
 
+/**
+ * 횟수 증감 위에 서는 물음 (A3 목업).
+ *
+ * `DEC-UI-029` 의 라벨 갈래다 — 이 자리가 무엇을 정하는 곳인지만 가리키고
+ * 플레이어의 선택을 바꾸는 정보가 없다. 판매·구매는 `shop-modal.ts` 의 `MODE`
+ * 표가 같은 자리의 문구를 들고 있다.
+ */
+const CRAFT_PROMPT = '몇 개 제작하시겠습니까?'
+
 export type CraftResultKind = 'throwable_weapon' | 'recovery_item'
 
 /**
@@ -118,7 +127,6 @@ export interface CraftHandlers {
     recipeId: string,
     times: number,
   ): { ok: boolean; unlockedNames: readonly string[]; reason: string | null }
-  close(): void
 }
 
 export interface CraftModal {
@@ -151,7 +159,7 @@ function sortRecipes(recipes: readonly CraftRecipeView[]): CraftRecipeView[] {
 }
 
 export function createCraftModal(handlers: CraftHandlers): CraftModal {
-  const { root, body, footer } = createPopupShell('제작', handlers.close)
+  const { root, body, footer } = createPopupShell('제작')
 
   /** 한 번에 한 레시피만 고른다 (DEC-UI-006) */
   let selectedId: string | null = null
@@ -194,9 +202,19 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
       for (const recipe of inGroup) {
         const button = el('button', 'hub__row') as HTMLButtonElement
         button.type = 'button'
+
+        // 판매·구매 목록과 같은 나무 칸에 결과물 그림을 올린다 (8/8).
+        // 일곱 개가 한 판에 다 안 들어가므로 넷쯤 보이고 나머지는 휠로 내린다 —
+        // 왼쪽 판의 `overflow-y` 가 그 역할을 한다.
+        const slot = el('div', 'hub__row-slot')
+        const slotUrl = assetCssUrl(UI_ASSET.itemSlot)
+        if (slotUrl !== null) slot.style.setProperty('--hub-slot-image', slotUrl)
         const rowIcon = createIcon(recipe.resultIcon)
-        if (rowIcon !== null) button.appendChild(rowIcon)
-        button.append(el('div', 'hub__row-name', recipe.resultName))
+        if (rowIcon !== null) slot.appendChild(rowIcon)
+
+        const lines = el('div', 'hub__row-lines')
+        lines.appendChild(el('div', 'hub__row-name', recipe.resultName))
+
         // 잠김을 목록에서도 알 수 있게 한다. 조건은 골랐을 때 상세에 나온다.
         // 자물쇠 그림(B2)이 있으면 그것이 서고 없으면 글자가 남는다 — 어느 쪽이든
         // 해금 조건은 여기 오지 않는다 (DEC-UI-006).
@@ -207,13 +225,15 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
             lock.style.setProperty('--hub-lock-image', lockUrl)
             lock.classList.add('hub__lock--has-art')
           }
-          button.appendChild(lock)
+          lines.appendChild(lock)
         }
+
+        button.append(slot, lines)
 
         button.addEventListener('click', () => {
           selectedId = recipe.id
           notice = null
-          times.value = '1'
+          setTimes(1)
         })
 
         // 설명과 수치는 여기로 온다 (14.9). 잠긴 레시피는 이름과 해금 조건뿐이다 —
@@ -249,14 +269,39 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   // 자원으로 만들 수 있는 최대 제작 횟수를 표시한다). 미리보기에 같이 넣었더니
   // "고춧가루 주머니 1개 · 최대 0회" 처럼 성격이 다른 숫자 둘이 한 줄에 붙어서,
   // 어느 쪽이 내가 지정한 값인지 읽히지 않았다.
+  //
+  // **입력칸이 아니라 증감 버튼이다** (A3 목업). 판매·구매가 8/8 에 먼저 바뀌었고
+  // 제작만 남아 있었다 — 같은 자리에 같은 조작이어야 셋이 한 화면으로 읽힌다.
+  let times = 1
+
   const timesWrap = el('div', 'hub__qty')
-  const timesLabel = el('span', 'hub__row-sub', '횟수')
-  const times = el('input') as HTMLInputElement
-  times.type = 'number'
-  times.min = '1'
-  times.step = '1'
-  times.value = '1'
-  timesWrap.append(timesLabel, times)
+  const minus = el('button', 'hub__step hub__step--minus') as HTMLButtonElement
+  minus.type = 'button'
+  minus.ariaLabel = '횟수 줄이기'
+  const timesValue = el('span', 'hub__qty-value', '1')
+  const plus = el('button', 'hub__step hub__step--plus') as HTMLButtonElement
+  plus.type = 'button'
+  plus.ariaLabel = '횟수 늘리기'
+
+  const minusUrl = assetCssUrl(UI_ASSET.stepMinus)
+  if (minusUrl !== null) minus.style.setProperty('--hub-step-image', minusUrl)
+  const plusUrl = assetCssUrl(UI_ASSET.stepPlus)
+  if (plusUrl !== null) plus.style.setProperty('--hub-step-image', plusUrl)
+
+  timesWrap.append(minus, timesValue, plus)
+
+  // 증감 줄 위에 서는 물음 (A3 목업). `DEC-UI-029` 의 라벨 갈래다
+  const timesBlock = el('div', 'hub__qty-block')
+  timesBlock.append(el('div', 'hub__qty-prompt', CRAFT_PROMPT), timesWrap)
+
+  /**
+   * 제작 1회당 필요 재료와 보유 수량 (DEC-UI-006).
+   *
+   * **오른쪽 판의 증감 줄 아래다** (8/8 요청). 왼쪽 판에 있을 때는 횟수를 올려도
+   * 필요 수량이 시선 밖에서 바뀌어서, 무엇이 부족해 실행이 막힌 것인지 알기까지
+   * 눈이 판 사이를 왕복해야 했다.
+   */
+  const needs = el('div', 'hub__needs')
 
   const preview = el('div', 'hub__preview')
 
@@ -265,24 +310,28 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
   if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
-  footer.append(timesWrap, preview, action)
+  footer.append(timesBlock, needs, preview, action)
 
-  function requestedTimes(): number | null {
-    const parsed = Number(times.value)
-    if (!Number.isInteger(parsed) || parsed < 1) return null
-    return parsed
+  /** 횟수를 고쳐 쓴다. 상한은 두지 않고 실행 가능 여부만 `render` 가 판정한다 */
+  function setTimes(next: number): void {
+    times = Math.max(1, next)
+    timesValue.textContent = String(times)
+    // 필요 수량이 횟수에 곱해지므로 바로 다시 그린다
+    if (latestView !== null) draw(latestView)
   }
+
+  minus.addEventListener('click', () => setTimes(times - 1))
+  plus.addEventListener('click', () => setTimes(times + 1))
 
   action.addEventListener('click', () => {
     if (busy) return
     const id = selectedId
-    const count = requestedTimes()
-    if (id === null || count === null) return
+    if (id === null) return
 
     busy = true
     action.disabled = true
     try {
-      const result = handlers.submit(id, count)
+      const result = handlers.submit(id, times)
       if (!result.ok) {
         notice = '제작을 확정하지 못했다'
       } else {
@@ -291,7 +340,7 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
           result.unlockedNames.length > 0
             ? `${result.unlockedNames.join(' · ')} 해금됨`
             : null
-        times.value = '1'
+        setTimes(1)
       }
     } finally {
       busy = false
@@ -311,10 +360,11 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     if (bigIcon !== null) heading.appendChild(bigIcon)
     heading.appendChild(el('div', 'hub__detail-title', recipe.resultName))
 
-    const nodes: HTMLElement[] = [
-      heading,
-      el('div', 'hub__popup-group-title', '제작 1회당 필요'),
-    ]
+    // 왼쪽 판에는 무엇을 만드는지까지만 남는다
+    detail.replaceChildren(heading)
+
+    // 필요 재료는 오른쪽 판이다 (8/8 요청)
+    const nodes: HTMLElement[] = [el('div', 'hub__popup-group-title', '제작 1회당 필요')]
     for (const input of recipe.inputs) {
       const row = el('div', 'hub__detail-row')
       const need = count === null ? input.perCraft : input.perCraft * count
@@ -334,7 +384,7 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
       nodes.push(row)
     }
 
-    detail.replaceChildren(...nodes)
+    needs.replaceChildren(...nodes)
   }
 
   /**
@@ -368,50 +418,52 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     )
   }
 
+  /** 마지막으로 받은 뷰. 증감 버튼이 이것으로 필요 수량을 다시 그린다 */
+  let latestView: CraftView | null = null
+
   return {
     root,
 
     render(view) {
-      latest = view.recipes
-      buildList(view.recipes)
-
-      const selected = view.recipes.find((r) => r.id === selectedId) ?? null
-      if (selected === null) selectedId = null
-
-      for (const [id, button] of rowButtons) {
-        button.classList.toggle('hub__row--selected', id === selectedId)
-      }
-
-      const count = requestedTimes()
-
-      if (selected === null) {
-        detail.replaceChildren()
-        timesLabel.textContent = '횟수'
-        preview.textContent = '레시피를 고른다'
-        action.disabled = true
-      } else if (selected.locked) {
-        renderLocked(selected)
-        timesLabel.textContent = '횟수'
-        // 해금된 레시피만 제작할 수 있다 (DEC-CRAFT-006)
-        preview.textContent = '아직 해금되지 않았다'
-        action.disabled = true
-      } else {
-        renderUnlocked(selected, count)
-        timesLabel.textContent = `횟수 (최대 ${selected.maxTimes})`
-
-        // 지정한 횟수의 전체 결과 수량을 실행 전에 보여준다.
-        // 전체 입력 수량은 위 입력표가 이미 횟수만큼 곱해서 보여주고 있다.
-        if (count === null) {
-          preview.textContent = '횟수는 1 이상의 정수여야 한다'
-          action.disabled = true
-        } else {
-          preview.textContent =
-            `${count}회 → ${selected.resultName} ${selected.resultQuantity * count}개`
-          action.disabled = count > selected.maxTimes || busy
-        }
-      }
-
-      if (notice !== null) preview.textContent = notice
+      latestView = view
+      draw(view)
     },
+  }
+
+  function draw(view: CraftView): void {
+    latest = view.recipes
+    buildList(view.recipes)
+
+    const selected = view.recipes.find((r) => r.id === selectedId) ?? null
+    if (selected === null) selectedId = null
+
+    for (const [id, button] of rowButtons) {
+      button.classList.toggle('hub__row--selected', id === selectedId)
+    }
+
+    if (selected === null) {
+      detail.replaceChildren()
+      needs.replaceChildren()
+      preview.textContent = '레시피를 고른다'
+      action.disabled = true
+    } else if (selected.locked) {
+      renderLocked(selected)
+      // 잠긴 레시피의 입력을 공개하지 않는다 (DEC-UI-006)
+      needs.replaceChildren()
+      preview.textContent = '아직 해금되지 않았다'
+      action.disabled = true
+    } else {
+      renderUnlocked(selected, times)
+
+      // 만들 수 있는 최대 횟수만 남긴다 (DEC-UI-006).
+      //
+      // 8/8까지 `1회 → 고춧가루 주머니 1개` 도 같이 적었는데, 같은 날 미끈 토란
+      // 주머니가 1회당 2개에서 1개로 내려가면서 **네 레시피가 전부 1개**가 됐다.
+      // 그 뒤로는 횟수와 결과 수량이 늘 같은 숫자라 한 줄이 아무 말도 하지 않는다.
+      preview.textContent = `최대 ${selected.maxTimes}회`
+      action.disabled = times > selected.maxTimes || busy
+    }
+
+    if (notice !== null) preview.textContent = notice
   }
 }

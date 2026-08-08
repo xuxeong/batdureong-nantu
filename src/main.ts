@@ -2755,6 +2755,8 @@ const hud: Hud = createHud(uiRoot, {
 })
 
 const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
+  // 필드 HUD 의 일시정지 버튼과 같은 경로다 (A3 목업의 우측 상단 톱니바퀴)
+  onPause: () => scenes.handleEscape(),
   openPopup: (popup) => {
     // 한 번에 하나만 연다. 이미 같은 팝업이 열려 있으면 아무 일도 하지 않는다 (DEC-UI-020)
     if (openPopup === popup) return
@@ -3095,11 +3097,19 @@ const POPUP_TITLES: Record<string, string> = {
   sell: '판매',
   buy: '구매',
   craft: '제작',
+  // 아트가 붙으면 이 제목이 안 보인다 — 탭이 `편성` 이라고 적혀 있고 팝업 왼쪽
+  // 판이 `투척 퀵슬롯 편성` 을 들고 있다. 그림 없는 빌드의 플레이스홀더 문구다.
   quickslots: '투척 퀵슬롯 편성',
 }
 
-/** 팝업을 닫는다. 닫기 버튼이 유일한 경로다 (DEC-UI-020) */
-function closePopup(): void {
+/**
+ * 열려 있던 팝업을 버린다.
+ *
+ * **화면에 닫기 입력이 없다** (2026-08-08). 팝업은 항상 하나 열려 있고 기능 버튼
+ * 넷이 갈아 끼우므로 플레이어가 닫는 경로가 없다. 이 함수는 정비 허브 자체를
+ * 떠날 때 상태를 비우는 데만 쓴다.
+ */
+function discardPopup(): void {
   openPopup = null
   renderOpenPopup = null
   hub.setPopup(null)
@@ -3297,7 +3307,6 @@ function buildPopup(popup: string): HTMLElement {
   if ((popup === 'sell' || popup === 'buy') && economy !== null) {
     const mode: ShopMode = popup
     const modal = createShopModal(mode, {
-      close: closePopup,
       submit(itemId, quantity) {
         const result =
           mode === 'sell' ? economy!.sell(itemId, quantity) : economy!.buy(itemId, quantity)
@@ -3323,7 +3332,6 @@ function buildPopup(popup: string): HTMLElement {
 
   if (popup === 'craft' && economy !== null) {
     const modal = createCraftModal({
-      close: closePopup,
       submit(recipeId, times) {
         const result = economy!.craft(recipeId, times)
         if (!result.ok) {
@@ -3361,7 +3369,6 @@ function buildPopup(popup: string): HTMLElement {
 
   if (popup === 'quickslots') {
     const modal = createQuickslotModal({
-      close: closePopup,
       assign: assignQuickslot,
     })
     renderOpenPopup = () => modal.render(quickslotView())
@@ -3369,7 +3376,7 @@ function buildPopup(popup: string): HTMLElement {
   }
 
   // 여기 오면 팝업 종류가 늘었는데 화면을 안 붙인 것이다. 빈 껍데기로 넘기지 않는다.
-  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup, closePopup)
+  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup)
   const note = document.createElement('div')
   note.className = 'hub__preview'
   note.textContent = '이 팝업의 목록 UI는 아직 붙지 않았다.'
@@ -3806,6 +3813,19 @@ const loop = createGameLoop(
       const owner = scenes.inputOwner()
 
       if (open.includes('maintenance_hub')) {
+        // ── 판매를 기본으로 열어 둔다 (2026-08-08) ────────────
+        //
+        // 팝업에 닫기 버튼이 없어졌고 기능 버튼 넷이 갈아 끼우는 방식이라,
+        // 아무것도 열려 있지 않으면 오른쪽 두 판이 빈 종이로 남는다.
+        //
+        // **잠긴 기능은 열지 않는다.** 튜토리얼이 판매를 막아 두는데(수확물을
+        // 팔아 버리면 제작 안내를 완료할 수 없다) 그때 자동으로 열면 막아 둔
+        // 것을 화면이 먼저 펼쳐 보이는 셈이다.
+        if (openPopup === null && !inTutorial()) {
+          openPopup = 'sell'
+          hub.setPopup(buildPopup('sell'))
+        }
+
         hub.render(hubView())
         // 거래·제작이 성공하면 소지금·보관함·제작 가능 상태를 즉시 갱신한다
         // (DEC-UI-005, DEC-UI-006). 열려 있는 팝업도 같은 프레임에 다시 그린다.
@@ -3816,8 +3836,7 @@ const loop = createGameLoop(
         // 여기서만 팝업을 버린다. 입력 소유만 잃었을 때 버리면 포커스를 되찾아도
         // 열려 있던 상점·제작 팝업이 사라져 있다.
         hub.hide()
-        openPopup = null
-        renderOpenPopup = null
+        discardPopup()
       }
 
       // 회복 퀵메뉴. 목록은 보관함에서 매번 계산한다 (DEC-RESOURCE-017)
