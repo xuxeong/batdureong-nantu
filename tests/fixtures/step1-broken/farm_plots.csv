@@ -3,3 +3,5 @@ map.prototype_field,plot_01,600,350
 map.prototype_field,plot_02,600,350
 map.prototype_field,plot_03,9999,350
 map.prototype_field,plot_04,TBD,350
+map.prototype_field,plot_05,900,500,600
+map.prototype_field,plot_06,900
