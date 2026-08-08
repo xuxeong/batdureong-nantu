@@ -1,4 +1,4 @@
-// 정비 허브 (DEC-UI-020, DEC-UI-021, DEC-RUN-006)
+// 정비 허브 (DEC-UI-020, DEC-UI-034, DEC-RUN-006)
 //
 // 화면 전환이 아니라 셔터가 필드를 덮고 그 위에 올라오는 오버레이다.
 // 보관함은 상시 영역이고 기능 버튼은 넷이다 — 판매·구매·제작·투척 퀵슬롯 편성.
@@ -33,7 +33,7 @@ export type HubPopupId = 'sell' | 'buy' | 'craft' | 'quickslots'
 /**
  * 보관함 한 줄.
  *
- * `DEC-UI-021` 이 항목마다 이름·수량과 함께 설명·수치를 요구하는데, 상시로 요구하는
+ * `DEC-UI-034` 이 항목마다 이름·수량과 함께 설명·수치를 요구하는데, 상시로 요구하는
  * 것은 **네 분류의 구분 표시**까지다. 설명과 수치는 마우스를 올렸을 때 뜨는 안내로
  * 간다 (아트 디렉션 14.8).
  *
@@ -52,7 +52,7 @@ export interface InventoryRow {
   stats?: readonly TooltipStat[]
 }
 
-/** 보관함 네 분류 (DEC-UI-021) */
+/** 보관함 네 분류 (DEC-UI-034) */
 export interface InventoryView {
   crops: readonly InventoryRow[]
   materials: readonly InventoryRow[]

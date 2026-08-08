@@ -1,11 +1,11 @@
-// 필드 공통 HUD (DEC-UI-017, DEC-UI-018, DEC-UI-002)
+// 필드 공통 HUD (DEC-UI-033, DEC-UI-018, DEC-UI-002)
 //
 // 재배 모드와 습격 모드 모두에서 표시하는 공통 레이어다.
 // 위치·크기·색은 전부 layout.css 의 변수에서 온다. 여기에 픽셀 값을 쓰지 않는다
 // (개발 로드맵 2절).
 //
 // 이 파일은 **상태를 읽어 그리기만 한다.** 자원을 직접 바꾸지 않는다.
-// 소지금은 필드 HUD 에 표시하지 않는다. 정비 단계 화면에서만 보인다 (DEC-UI-017).
+// 소지금은 필드 HUD 에 표시하지 않는다. 정비 단계 화면에서만 보인다 (DEC-UI-033).
 //
 // ── A1 확정 배치 (아트 디렉션 12.2) ────────────────────────
 //
@@ -13,20 +13,22 @@
 //   상단 가운데     가로로 긴 게이지 하나 — 남은 재배 시간. **숫자를 넣지 않는다**
 //   상단 오른쪽 끝  톱니바퀴 버튼 하나. 이것뿐이다
 //   하단 왼쪽 끝    가로로 긴 카드 — 초상화 자리 / 이름 / 체력 바 + 바 우측 수치
-//   하단 오른쪽     투척 퀵슬롯 5칸, 그 오른쪽에 회복 칸이 화면 끝에 닿는다
+//   하단 오른쪽     투척 퀵슬롯 4칸, 그 오른쪽에 회복 칸이 화면 끝에 닿는다
 //
 // **일차와 습격 예고를 한 틀에 합쳤다.** 8/5까지 둘이 `topLeft`·`topCenter` 로
 // 갈려 있었는데 `asset.ui.signboard` 가 두 칸짜리 한 장이다.
 //
-// **남은 시간에서 숫자를 뺐다.** `DEC-UI-017` 은 "재배 모드 전용 요소: 남은 재배
+// **남은 시간에서 숫자를 뺐다.** `DEC-UI-033` 은 "재배 모드 전용 요소: 남은 재배
 // 시간" 이라고만 정하고 형태를 정하지 않았고, `DEC-UI-018` 이 *"배치 좌표, 색과
 // 아이콘은 `DEC-ART-004`에서 정한다"* 로 위임했다. 그 위임을 받은 A1 이 게이지로
-// 정했다. 반면 **체력 수치는 뺄 수 없다** — `DEC-UI-017` 이 "게이지 바와 수치를
+// 정했다. 반면 **체력 수치는 뺄 수 없다** — `DEC-UI-033` 이 "게이지 바와 수치를
 // 함께 표시, 바 우측에 수치" 로 못박았다.
 //
-// **플레이어 이름은 아트 장식이다.** `DEC-UI-017` 의 공통 요소 여덟 개에 이름이
+// **플레이어 이름은 아트 장식이다.** `DEC-UI-033` 의 공통 요소 여덟 개에 이름이
 // 없지만 `DEC-UI-030` 이름 입력에서 오는 값이라 새 정보를 더하는 것이 아니다.
-// 근거는 아트 디렉션 14.2 이며 `DEC-UI-017` 을 폐기·대체하지 않는다.
+// 근거는 아트 디렉션 14.2 이며, 이름을 넣으려고 그 DEC 를 폐기·대체하지는 않았다.
+// (8/8 에 `DEC-UI-017` 이 `DEC-UI-033` 로 대체됐는데 이유는 이름이 아니라
+//  퀵슬롯 칸 수다 — 5칸 → 4칸.)
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import './layout.css'
@@ -56,7 +58,7 @@ export interface HudView {
 
   /**
    * 남은 재배 시간의 **비율** 1~0. 습격 모드에는 시간제한이 없어 null 이다
-   * (DEC-UI-017).
+   * (DEC-UI-033).
    *
    * 초가 아니라 비율인 이유는 화면이 숫자를 쓰지 않기 때문이다. 초를 넘기면
    * 받는 쪽이 전체 길이를 따로 알아야 게이지를 그릴 수 있고, 그 길이는
@@ -103,7 +105,7 @@ export interface HudView {
   /**
    * 습격 진입 시 어느 주민이 지원하는지 알리는 짧은 안내 (DEC-UI-012).
    *
-   * `DEC-UI-017` 의 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+   * `DEC-UI-033` 의 공통 요소 목록에는 없지만 `DEC-UI-012` 가
    * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
    * 잠깐 떴다 사라지므로 자리를 상시로 잡지 않는다. 없으면 null 이다.
    */
@@ -115,7 +117,7 @@ export interface HudView {
    * `DEC-RUN-011` 이 문구를 승인 데이터에서 공급하라고 정했다. 데이터가 없으면
    * null 이고 표지판 아래칸이 빈다 — 임시 문구를 코드에 넣지 않는다.
    *
-   * 재배 모드 내내 상시 노출하며 습격이 없는 날에도 사라지지 않는다 (DEC-UI-017).
+   * 재배 모드 내내 상시 노출하며 습격이 없는 날에도 사라지지 않는다 (DEC-UI-033).
    */
   raidNoticeLabel: string | null
 }
@@ -123,7 +125,7 @@ export interface HudView {
 export interface Hud {
   render(view: HudView): void
   /**
-   * 필드가 떠 있는 동안만 보인다 (DEC-UI-017 — **필드 공통** HUD).
+   * 필드가 떠 있는 동안만 보인다 (DEC-UI-033 — **필드 공통** HUD).
    *
    * 독립 화면(일차 시작·결과 2종·런 실패·엔딩)은 필드를 대체하는 전환이라
    * HUD 가 남으면 안 된다 (DEC-UI-014). 그런데 독립 화면의 배경이 완전 불투명이
@@ -169,7 +171,7 @@ function bindAsset(node: HTMLElement, property: string, assetId: string): void {
 const DAY_SUFFIX = '일차'
 
 export interface HudHandlers {
-  /** 일시정지·설정 아이콘. Esc 와 같은 화면을 연다 (DEC-UI-017) */
+  /** 일시정지·설정 아이콘. Esc 와 같은 화면을 연다 (DEC-UI-033) */
   onPause(): void
 }
 
@@ -206,7 +208,7 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
 
   // ── 하단 왼쪽 끝: 플레이어 상태 카드 ─────────────
   //
-  // 초상화 자리 · 이름 · 체력 바 · 바 우측 수치 (DEC-UI-017).
+  // 초상화 자리 · 이름 · 체력 바 · 바 우측 수치 (DEC-UI-033).
   // 초상화 그림은 F단계라 아직 없다. 자리만 만들어 둔다.
   const card = el('div', 'hud__card')
   const portrait = el('div', 'hud__portrait')
@@ -222,7 +224,7 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   card.append(portrait, cardBody)
   bindAsset(card, '--hud-card-image', UI_ASSET.playerStatusCard)
 
-  // ── 하단 오른쪽: 퀵슬롯 5칸 + 회복 칸 ────────────
+  // ── 하단 오른쪽: 퀵슬롯 4칸 + 회복 칸 ────────────
   //
   // 회복 칸이 화면 오른쪽 끝에 닿는다 (A1).
   const bottomRight = el('div', 'hud__bottom-right')
@@ -276,7 +278,7 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       // 이름 입력을 지나면 항상 값이 있고, 없다는 것은 그 화면을 건너뛴 것이다.
       name.textContent = view.playerName
 
-      // 체력 — 게이지 바와 수치를 함께, 수치는 바 우측 (DEC-UI-017).
+      // 체력 — 게이지 바와 수치를 함께, 수치는 바 우측 (DEC-UI-033).
       // 수치는 **현재 체력 하나**다. 확정문이 요구하는 것이 `현재 체력`의 수치이고
       // 카드 그림의 그 자리가 55px 이라 `100 / 100` 은 들어가지 않는다.
       const ratio = view.maxHealth > 0 ? view.health / view.maxHealth : 0
@@ -285,7 +287,7 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
 
       day.textContent = `${view.dayNumber}${DAY_SUFFIX}`
 
-      // 습격 모드에는 시간제한이 없으므로 게이지를 통째로 숨긴다 (DEC-UI-017)
+      // 습격 모드에는 시간제한이 없으므로 게이지를 통째로 숨긴다 (DEC-UI-033)
       timer.hidden = view.timeRatio === null
       if (view.timeRatio !== null) {
         // **퍼센트가 아니라 0~1 비율을 넘긴다.** 게이지 홈은 그림(911px) 전체가

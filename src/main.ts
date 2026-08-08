@@ -241,7 +241,7 @@ let dialogue: {
 let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoice>()
 
 /**
- * 항목별 설명과 수치 (`DEC-UI-021`, 아트 디렉션 14.8·14.9).
+ * 항목별 설명과 수치 (`DEC-UI-034`, 아트 디렉션 14.8·14.9).
  *
  * 보관함·상점·제작 목록이 **같은 사전을 본다.** 세 화면이 각자 만들면 같은 아이템이
  * 화면마다 다른 수치를 보여줄 수 있다. 값은 전부 승인 데이터에서 오고 설명 문장에서
@@ -312,7 +312,7 @@ let allySupport: AllySupport | null = null
 /**
  * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
  *
- * `DEC-UI-017` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * `DEC-UI-033` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
  * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
  * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
  */
@@ -2645,7 +2645,7 @@ const input = createInput(renderer.canvas, {
   onInteract,
   onThrow,
   onSickle,
-  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-006).
+  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-013).
   onQuickslotSelect: (index) => {
     if (combat === null || run === null) return
     combat.selectSlot(run, index)
@@ -2784,7 +2784,7 @@ function finishTutorial(): void {
  * 현재 안내를 화면에 맞춘다.
  *
  * `stage` 가 `maintenance` 면 정비 허브를 연다 — 팔고 사고 만드는 것은 거기서만
- * 할 수 있다 (`DEC-INPUT-006` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
+ * 할 수 있다 (`DEC-INPUT-013` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
  */
 function syncTutorial(): void {
   if (tutorial === null) return
@@ -2895,7 +2895,7 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
 function syncScreens(): void {
   const screen = scenes.currentScreen()
 
-  // HUD 는 **필드 공통** 요소다 (DEC-UI-017). 독립 화면은 필드를 대체하는 전환이라
+  // HUD 는 **필드 공통** 요소다 (DEC-UI-033). 독립 화면은 필드를 대체하는 전환이라
   // (DEC-UI-014) HUD 를 남기지 않는다. 독립 화면의 배경이 완전 불투명이 아니라서
   // 그냥 두면 엔딩·런 실패 화면 위로 체력과 일차가 비친다.
   //
@@ -3320,7 +3320,7 @@ function buildPopup(popup: string): HTMLElement {
   return root
 }
 
-/** 편성 팝업이 그릴 내용 (DEC-UI-021) */
+/** 편성 팝업이 그릴 내용 (DEC-UI-034) */
 function quickslotView(): QuickslotView {
   const slots = run?.quickslots.slots ?? []
   const held = run?.resources.throwables ?? {}
@@ -3348,7 +3348,7 @@ function quickslotView(): QuickslotView {
 }
 
 /**
- * 퀵슬롯 편성 (DEC-RESOURCE-014, DEC-INPUT-006).
+ * 퀵슬롯 편성 (DEC-RESOURCE-019, DEC-INPUT-013).
  *
  * **수량을 옮기지 않는다.** 칸은 무기 종류만 보관함에 연결하므로 여기서 바뀌는 것은
  * `slots` 배열 하나뿐이고 보관함은 그대로다.
@@ -3364,7 +3364,7 @@ function assignQuickslot(slotIndex: number, weaponId: string | null): void {
   if (weaponId !== null && slots.some((id, i) => id === weaponId && i !== slotIndex)) {
     console.warn(
       `[정비] ${weaponId} 는 이미 다른 칸에 편성돼 있다. ` +
-        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-014).',
+        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-019).',
     )
     return
   }
@@ -3383,7 +3383,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
       id,
       name: displayNames.get(id) ?? id,
       count,
-      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-021, 아트 디렉션 14.8)
+      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-034, 아트 디렉션 14.8)
       description: itemDescriptions.get(id),
       stats: itemStats.get(id),
       icon: itemIcons.get(id),
@@ -3399,7 +3399,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
 const raidNoticeErrorsReported = new Set<RaidType>()
 
 /**
- * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-017).
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-033).
  *
  * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
  * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
@@ -3489,7 +3489,7 @@ function hudView() {
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
-    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-033). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
     raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
   }
@@ -3677,7 +3677,7 @@ const loop = createGameLoop(
                 range: runConfig.sickleRange,
                 life: sickleSwing.remaining / SICKLE_SWING_SECONDS,
               },
-        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-017). 0~1 로 넘긴다.
+        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-033). 0~1 로 넘긴다.
         recovery:
           run?.recovering == null
             ? null
@@ -4067,7 +4067,7 @@ bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
 bus.on('shop.bought', () => completeTutorialStep('buy_material'))
 bus.on('craft.made', () => completeTutorialStep('craft_item'))
 // 편성 확정만 듣는다. 요청(`quickslot.assign`)은 중복 편성으로 거절될 수 있어
-// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-014).
+// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-019).
 bus.on('quickslot.assigned', () => completeTutorialStep('assign_quickslot'))
 bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
 // 투척만 곧바로 알리지 않는다. 마지막 단계라 완료되는 순간 종료 화면이 필드를

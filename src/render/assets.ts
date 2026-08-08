@@ -91,16 +91,16 @@ export const UI_ASSET = {
   fieldFrameFront: 'asset.ui.field_frame_front',
   /** `E` 대상 경작지 강조 틀 (DEC-UI-018) */
   plotHighlight: 'asset.ui.plot_highlight',
-  /** 일차와 습격 예고가 한 틀 (DEC-UI-017, DEC-RUN-011) */
+  /** 일차와 습격 예고가 한 틀 (DEC-UI-033, DEC-RUN-011) */
   signboard: 'asset.ui.signboard',
-  /** 숫자 없는 가로 게이지 (DEC-UI-017) */
+  /** 숫자 없는 가로 게이지 (DEC-UI-033) */
   farmingTimer: 'asset.ui.farming_timer',
   /** 초상화·이름·체력 바가 한 틀 */
   playerStatusCard: 'asset.ui.player_status_card',
   /** 투척 퀵슬롯 빈 칸 / 선택된 칸 (DEC-UI-002) */
   quickslot: 'asset.ui.quickslot',
   quickslotSelected: 'asset.ui.quickslot_selected',
-  /** 선택된 회복 아이템 칸 (DEC-UI-017) */
+  /** 선택된 회복 아이템 칸 (DEC-UI-033) */
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',

@@ -112,11 +112,11 @@ export interface CombatSystem {
   /** 우클릭 (DEC-INPUT-004) */
   swingSickle(origin: Vec2, aimAngle: number): SickleResult
 
-  /** `1~5` — 해당 위치를 직접 선택한다. 수량이 0이어도 선택된다 (DEC-INPUT-006) */
+  /** `1~4` — 해당 위치를 직접 선택한다. 수량이 0이어도 선택된다 (DEC-INPUT-013) */
   selectSlot(run: ThrowContext, index: number): void
   /**
    * 마우스 휠 — **수량이 남은 무기만 순환하고 수량 0인 슬롯은 건너뛴다**
-   * (DEC-INPUT-006). 전부 비었으면 아무 일도 하지 않는다.
+   * (DEC-INPUT-013). 전부 비었으면 아무 일도 하지 않는다.
    */
   cycleSlot(run: ThrowContext, direction: 1 | -1): void
   /**
@@ -423,8 +423,8 @@ export function createCombat(options: CombatOptions): CombatSystem {
     },
 
     selectSlot(run, index) {
-      // 수량이 0이어도 선택은 된다. `1~5`는 위치를 직접 고르는 입력이고
-      // 수량 조건은 발사 시점에 본다 (DEC-INPUT-006).
+      // 수량이 0이어도 선택은 된다. `1~4`는 위치를 직접 고르는 입력이고
+      // 수량 조건은 발사 시점에 본다 (DEC-INPUT-013).
       if (index < 0 || index >= run.quickslots.slots.length) return
       run.quickslots.selectedIndex = index
     },

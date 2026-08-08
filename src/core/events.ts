@@ -91,7 +91,7 @@ export interface UiRequests {
   /** 제작. 한 종류 레시피 × 1 이상의 횟수 (DEC-CRAFT-004) */
   'craft.make': { recipeId: string; times: number }
 
-  /** 정비 단계에서만 편성할 수 있다 (DEC-INPUT-006) */
+  /** 정비 단계에서만 편성할 수 있다 (DEC-INPUT-013) */
   'quickslot.assign': { slotIndex: number; throwableId: string | null }
   /** 재배·습격 중에는 선택만 가능하다 */
   'quickslot.select': { slotIndex: number }
@@ -189,7 +189,7 @@ export interface SystemEvents {
   /** 모든 투척 무기가 소진됐다. 낫은 계속 쓸 수 있다 */
   'quickslot.allEmpty': Record<string, never>
   /**
-   * 퀵슬롯 편성이 실제로 바뀌었다 (DEC-RESOURCE-014, DEC-INPUT-006).
+   * 퀵슬롯 편성이 실제로 바뀌었다 (DEC-RESOURCE-019, DEC-INPUT-013).
    *
    * **요청(`quickslot.assign`)이 아니라 확정이다.** 중복 편성처럼 거절되는 요청이
    * 있어서 요청만 듣고 튜토리얼을 넘기면 아무것도 안 바뀐 채로 다음 안내로 간다.

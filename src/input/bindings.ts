@@ -41,16 +41,15 @@ export const MOUSE_BINDINGS: Readonly<Record<number, InputAction>> = {
 }
 
 /**
- * 투척 퀵슬롯 직접 선택 키. `1~5`가 해당 위치의 무기를 고른다 (DEC-INPUT-006).
- * 퀵슬롯은 5칸 고정이므로 길이가 곧 칸 수다.
+ * 투척 퀵슬롯 직접 선택 키. `1~4`가 해당 위치의 무기를 고른다 (DEC-INPUT-013).
+ * 퀵슬롯은 4칸 고정이므로 길이가 곧 칸 수다.
+ *
+ * **칸 수의 원본은 `state/types.ts` 의 `THROWABLE_QUICKSLOT_COUNT` 다.** 키는
+ * 배치표인 이 파일이 들고 있어야 해서(`DEC-INPUT-001`) 두 곳으로 갈리는데,
+ * 갈린 채 어긋나면 없는 칸을 가리키는 키가 생긴다. 그래서 개수를 맞췄는지
+ * `tests/quickslot-count.test.ts` 가 확인한다.
  */
-export const QUICKSLOT_KEYS: readonly string[] = [
-  'Digit1',
-  'Digit2',
-  'Digit3',
-  'Digit4',
-  'Digit5',
-]
+export const QUICKSLOT_KEYS: readonly string[] = ['Digit1', 'Digit2', 'Digit3', 'Digit4']
 
 /**
  * `Q`를 길게 눌렀다고 판정하는 시간.
