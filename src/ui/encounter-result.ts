@@ -30,6 +30,7 @@ import type {
   ResidentAllegiance,
   ResidentLifeState,
 } from '../state/types.ts'
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 /** 지급되거나 소비된 자원 한 줄. 표시 이름은 승인 데이터에서 온다 */
@@ -183,6 +184,8 @@ export function createEncounterResult(
   root.hidden = true
 
   const panel = el('div', 'encounter-result__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
 
   // ── 머리: 주민 이름 + 해결 방식 ──────────────────
   const header = el('div', 'encounter-result__header')

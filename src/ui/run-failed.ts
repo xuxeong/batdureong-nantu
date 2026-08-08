@@ -16,6 +16,7 @@
 // 로 확정했다. 지금 두 화면이 닮아 보이는 것은 둘 다 단순해서일 뿐이고, 묶으면
 // 위 금지 목록이 엔딩 쪽 규칙에 섞여 들어간다.
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface RunFailedView {
@@ -74,6 +75,8 @@ export function createRunFailed(
   root.hidden = true
 
   const panel = el('div', 'run-failed__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
   const text = el('p', 'run-failed__text', FAILED_TEXT)
   const day = el('p', 'run-failed__day')
 

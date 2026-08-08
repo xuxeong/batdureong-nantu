@@ -20,6 +20,7 @@
 // 지시문이 맡는다** (`schema/*_prompt_system.md`). 여기서 내용을 걸러내지 않는다 —
 // 화면이 조용히 지우면 플레이어가 입력한 것과 기록된 것이 달라진다.
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface NameInputHandlers {
@@ -72,6 +73,8 @@ export function createNameInput(
   root.hidden = true
 
   const panel = el('div', 'name-input__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
   const prompt = el('p', 'name-input__prompt', PROMPT_TEXT)
 
   // 줄바꿈을 표현할 수 없는 요소를 쓴다 (DEC-UI-030)

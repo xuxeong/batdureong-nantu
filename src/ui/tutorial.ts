@@ -25,6 +25,7 @@
 //   - 진행도는 "현재 몇 번째인지 알 수 있는 수준" 까지만. 남은 개수를 강조하거나
 //     막대로 그리지 않는다
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface TutorialView {
@@ -100,6 +101,8 @@ export function createTutorial(
 
   // ── 진행 중 안내 ────────────────────────────────
   const guide = el('div', 'tutorial__guide')
+  // 한지 판 (팀 결정 8/8). 6번 항목의 창·화살표·건너뛰기 재배치는 별도로 온다.
+  applyHanjiPanel(guide)
   const progress = el('div', 'tutorial__progress')
   const text = el('p', 'tutorial__text')
 

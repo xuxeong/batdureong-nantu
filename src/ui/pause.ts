@@ -34,6 +34,7 @@
 import type { Mixer, VolumeChannel } from '../audio/mixer.ts'
 import { KEY_BINDINGS, MOUSE_BINDINGS, QUICKSLOT_KEYS } from '../input/bindings.ts'
 import type { InputAction } from '../input/bindings.ts'
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface PauseHandlers {
@@ -151,6 +152,8 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
   root.hidden = true
 
   const panel = el('div', 'pause__panel')
+  // 한지 판 (팀 결정 8/8). 그림이 없으면 아무것도 안 하고 아래 플레이스홀더가 남는다.
+  applyHanjiPanel(panel)
   panel.append(el('h2', 'pause__title', TITLE))
 
   // ── 기본 메뉴 ────────────────────────────────────
