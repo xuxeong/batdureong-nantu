@@ -255,7 +255,7 @@ export function createDialogueModal(
    * `layout.css` 에 있고 여기서는 **언제 끝나는지만** 안다 — 둘이 어긋나면
    * 연출이 끝나기 전에 입력이 열리거나, 끝났는데 화면이 안 받는다.
    */
-  const ENTER_MS = 620
+  const ENTER_MS = 980
   let entering = false
   let enterTimer: number | null = null
 

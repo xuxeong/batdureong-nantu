@@ -2378,27 +2378,31 @@
   셋이 같이 나타나면 누가 말하는 자리인지가 한 번에 뭉쳐 보인다. 순서를 두면
   시선이 왼쪽 → 오른쪽으로 옮겨간 뒤 대사창에 앉는다.
 
-  **총 길이가 dialogue-modal.ts 의 `ENTER_MS`(620) 와 맞아야 한다.** 여기가 더
+  **총 길이가 dialogue-modal.ts 의 `ENTER_MS`(980) 와 맞아야 한다.** 여기가 더
   길면 연출이 끝나기 전에 선택지가 열리고, 짧으면 다 끝난 화면이 입력을 안 받는
-  구간이 생긴다. 지연 140 + 길이 280 + 대사창 지연 420 + 길이 200 = 620 이다.
+  구간이 생긴다. 플레이어 지연 220 + 대사창 지연 600 + 길이 380 = 980 이다.
+
+  8/9 에 620 → 980 으로 늘렸다. **"순차로 들어오나?" 하는 순간 이미 끝나 있었다** —
+  세 단계가 서로를 밀고 들어와서 한 덩어리로 보였다. 인물 사이 간격(140 → 220)과
+  대사창 시작점(420 → 600)을 벌려 단계가 각각 읽히게 했다.
 
   `transform` 과 `opacity` 만 건드려서 매 프레임 레이아웃을 다시 계산하지 않는다.
 */
 .dialogue--entering .dialogue__portrait {
-  animation: dialogue-enter-left 280ms ease-out both;
+  animation: dialogue-enter-left 380ms ease-out both;
 }
 
 .dialogue--entering .dialogue__portrait--player {
-  animation: dialogue-enter-right 280ms ease-out 140ms both;
+  animation: dialogue-enter-right 380ms ease-out 220ms both;
 }
 
 .dialogue--entering .dialogue__panel {
-  animation: dialogue-enter-panel 200ms ease-out 420ms both;
+  animation: dialogue-enter-panel 380ms ease-out 600ms both;
 }
 
 /* 연출 중에는 선택지 말풍선이 아직 없다. 화살표도 대사창과 같이 들어온다 */
 .dialogue--entering .dialogue__advance {
-  animation: dialogue-enter-panel 200ms ease-out 420ms both;
+  animation: dialogue-enter-panel 380ms ease-out 600ms both;
 }
 
 @keyframes dialogue-enter-left {
@@ -2423,10 +2427,16 @@
   }
 }
 
+/*
+  대사창은 **화면 아래에서 올라온다.**
+
+  8/9 까지 24px 이었는데 그 거리로는 "떠오른다" 가 아니라 "살짝 흔들린다" 로
+  읽혔다. 대사창 높이의 절반 이상을 움직여야 아래에서 들어온 것으로 보인다.
+*/
 @keyframes dialogue-enter-panel {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(calc(var(--dialogue-box-height) * 0.9));
   }
   to {
     opacity: 1;
