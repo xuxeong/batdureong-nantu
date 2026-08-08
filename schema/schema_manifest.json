@@ -1,6 +1,6 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
-  "schema_version": 12,
+  "schema_version": 13,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -176,6 +176,21 @@
         "DEC-ART-005",
         "DEC-RUN-011",
         "DEC-RUN-008"
+      ]
+    },
+    {
+      "schema_version": {
+        "from": 12,
+        "to": 13
+      },
+      "date": "2026-08-09",
+      "change": "enums.json 의 ui_system_asset_id 고정 목록에 quickslot_count_badge 추가 — 투척 퀵슬롯 수량 배지 46×40. 전성민이 8/9 에 파일을 올리면서 등록과 배선을 개발 쪽으로 넘겼다",
+      "csv_migration": "고정 목록은 코드가 참조하는 값이라 승인 CSV 의 변환이 없다",
+      "affected": "src/render/assets.ts 의 UI_ASSET 에 같은 ID 를 더해야 코드가 부를 수 있다. **투척 퀵슬롯 전용이다** — 회복 칸에도 같은 뜻의 수량 배지가 있지만 그림을 준 쪽이 퀵슬롯만 지정했으므로 자동 적용하지 않고 회복 칸은 CSS 판을 유지한다. heal_gauge 는 8/6 부터 목록에 있었는데 UI_ASSET 에 없어 코드가 못 쓰고 있었고 같은 커밋에서 더했다",
+      "decisions": [
+        "DEC-ART-005",
+        "DEC-UI-002",
+        "DEC-UI-032"
       ]
     }
   ]

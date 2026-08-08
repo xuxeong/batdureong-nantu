@@ -158,7 +158,8 @@
       "asset.sfx.day_start_raid",
       "asset.sfx.day_start_final",
       "asset.sfx.run_failed",
-      "asset.sfx.ending_decided"
+      "asset.sfx.ending_decided",
+      "asset.ui.quickslot_count_badge"
     ]
   },
   "system_result_id": {

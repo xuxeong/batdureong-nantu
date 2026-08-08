@@ -91,16 +91,30 @@ export const UI_ASSET = {
   fieldFrameFront: 'asset.ui.field_frame_front',
   /** `E` 대상 경작지 강조 틀 (DEC-UI-018) */
   plotHighlight: 'asset.ui.plot_highlight',
-  /** 일차와 습격 예고가 한 틀 (DEC-UI-033, DEC-RUN-011) */
+  /** 일차와 습격 예고가 한 틀 (DEC-UI-036, DEC-RUN-011) */
   signboard: 'asset.ui.signboard',
-  /** 숫자 없는 가로 게이지 (DEC-UI-033) */
+  /** 숫자 없는 가로 게이지 (DEC-UI-036) */
   farmingTimer: 'asset.ui.farming_timer',
   /** 초상화·이름·체력 바가 한 틀 */
   playerStatusCard: 'asset.ui.player_status_card',
   /** 투척 퀵슬롯 빈 칸 / 선택된 칸 (DEC-UI-002) */
   quickslot: 'asset.ui.quickslot',
   quickslotSelected: 'asset.ui.quickslot_selected',
-  /** 선택된 회복 아이템 칸 (DEC-UI-033) */
+  /**
+   * 투척 퀵슬롯 수량 배지 46×40 (전성민 8/9).
+   *
+   * **투척 퀵슬롯 전용이다.** 회복 칸에는 자동 적용하지 않는다 — 같은 뜻의
+   * 숫자지만 그림을 준 쪽이 퀵슬롯만 지정했다. 회복 칸은 CSS 판을 쓴다.
+   */
+  quickslotCountBadge: 'asset.ui.quickslot_count_badge',
+  /**
+   * 회복 사용 게이지 38×139 (DEC-UI-032).
+   *
+   * **세로다.** 확정문이 *"플레이어 캐릭터 바로 옆에 표시"* 라고 정했고 그림도
+   * 세로라 캐릭터 옆에 세운다 — 8/9 까지는 머리 위 가로 막대였다.
+   */
+  healGauge: 'asset.ui.heal_gauge',
+  /** 선택된 회복 아이템 칸 (DEC-UI-036) */
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',
