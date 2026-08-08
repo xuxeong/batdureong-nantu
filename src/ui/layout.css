@@ -2369,6 +2369,71 @@
   filter: brightness(0.45) saturate(0.7);
 }
 
+/*
+  등장 연출 — 주민 → 플레이어 → 대사창 (DEC-ART-005).
+
+  **프레임 애니메이션이 아니라 위치와 투명도다.** 확정문이 *"움직임은 코드가
+  위치·크기·투명도로 표현한다"* 로 열어 둔 수단이라 새 그림이 필요 없다.
+
+  셋이 같이 나타나면 누가 말하는 자리인지가 한 번에 뭉쳐 보인다. 순서를 두면
+  시선이 왼쪽 → 오른쪽으로 옮겨간 뒤 대사창에 앉는다.
+
+  **총 길이가 dialogue-modal.ts 의 `ENTER_MS`(620) 와 맞아야 한다.** 여기가 더
+  길면 연출이 끝나기 전에 선택지가 열리고, 짧으면 다 끝난 화면이 입력을 안 받는
+  구간이 생긴다. 지연 140 + 길이 280 + 대사창 지연 420 + 길이 200 = 620 이다.
+
+  `transform` 과 `opacity` 만 건드려서 매 프레임 레이아웃을 다시 계산하지 않는다.
+*/
+.dialogue--entering .dialogue__portrait {
+  animation: dialogue-enter-left 280ms ease-out both;
+}
+
+.dialogue--entering .dialogue__portrait--player {
+  animation: dialogue-enter-right 280ms ease-out 140ms both;
+}
+
+.dialogue--entering .dialogue__panel {
+  animation: dialogue-enter-panel 200ms ease-out 420ms both;
+}
+
+/* 연출 중에는 선택지 말풍선이 아직 없다. 화살표도 대사창과 같이 들어온다 */
+.dialogue--entering .dialogue__advance {
+  animation: dialogue-enter-panel 200ms ease-out 420ms both;
+}
+
+@keyframes dialogue-enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(-90px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dialogue-enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(90px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dialogue-enter-panel {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ─────────────────────────────────────────────────
    밤 결과 (DEC-RUN-015, DEC-UI-023)
 
