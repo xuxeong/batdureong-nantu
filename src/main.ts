@@ -771,6 +771,17 @@ async function bootData(): Promise<boolean> {
       ...residentProjectiles.values(),
       ...throwableProjectiles.values(),
       ...(data.wildlife ?? []).map((w) => w.assets?.field_sprite),
+      // 초상화와 UI 부품도 같이 받는다 (8/8 플레이 테스트).
+      //
+      // **이것들은 캔버스가 아니라 CSS `background-image` 로 쓰인다.** 그래도
+      // 여기 넣는 이유는 `new Image()` 가 브라우저 HTTP 캐시를 데워 두기 때문이다 —
+      // 안 그러면 그 그림이 **화면에 나타나는 순간에** 받기 시작해서, 대화창이
+      // 열린 뒤 초상화가 한 박자 늦게 뜨고 정비 창호지 두 짝이 순차로 나타난다.
+      //
+      // `UI_ASSET` 전체를 넣는다. 하나씩 고르면 부품이 늘 때마다 여기가 낡는다.
+      playerPortrait,
+      ...residentPortraits.values(),
+      ...Object.values(UI_ASSET),
       // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
       ...[playerAssets, ...residentAssets.values()].flatMap((a) => [
