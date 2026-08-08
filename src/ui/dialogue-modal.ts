@@ -125,15 +125,6 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node
 }
 
-/**
- * 반응 대사를 읽고 넘어가는 버튼의 문구.
- *
- * **근거 없이 고른 값이다.** 결과 화면의 진행 입력과 같은 말을 쓴다.
- * `DEC-UI-008` 은 "되돌아가는 수단을 제공하지 않는다"만 정하고 앞으로 가는 입력의
- * 문구는 정하지 않았다.
- */
-const PROCEED_LABEL = '확인'
-
 export function createDialogueModal(
   container: HTMLElement,
   handlers: DialogueHandlers,
@@ -178,18 +169,191 @@ export function createDialogueModal(
   bindUi(speaker, '--dialogue-name-image', UI_ASSET.buttonNormal)
   const text = el('p', 'dialogue__text')
 
-  const proceed = el('button', 'dialogue__proceed', PROCEED_LABEL)
-  proceed.type = 'button'
-  bindUi(proceed, '--dialogue-button-image', UI_ASSET.buttonNormal)
-  proceed.addEventListener('click', () => handlers.proceed())
+  /**
+   * 다음이 있다는 표시 (`DEC-UI-035`).
+   *
+   * **버튼이 아니라 표시다.** 8/8까지는 `확인` 버튼이었는데 확정문이
+   * *"읽고 넘기는 자리에는 다음이 있다는 표시를 둔다. 그 표시가 조작 번호나 키
+   * 이름을 드러내지 않게 한다"* 로 바뀌었다. 그래서 글자를 넣지 않고 화살표만
+   * 둔다 — `클릭` 이나 `Space` 라고 적으면 확정문이 막은 쪽이다.
+   *
+   * 누르는 자리는 대사창 전체이므로 이 요소는 클릭을 받지 않는다.
+   */
+  const advance = el('div', 'dialogue__advance')
+  advance.setAttribute('aria-hidden', 'true')
 
-  panel.append(speaker, text, proceed)
+  panel.append(speaker, text, advance)
 
   root.append(stage, panel)
   container.appendChild(root)
 
   /** 지금 그려진 내용의 서명. 같으면 다시 만들지 않는다 */
   let builtSignature = ''
+
+  /**
+   * 시작 대사를 읽었는가 (`DEC-UI-008` — 시작 대사를 먼저, 그다음 선택지).
+   *
+   * 확정문은 순서만 정하고 그 사이에 무엇이 필요한지는 안 정했는데, 선택지가
+   * 대사와 같이 뜨면 **읽기 전에 고르게 된다.** 한 번 넘겨야 선택지가 나온다.
+   */
+  let openingRead = false
+
+  /**
+   * 반응 대사를 나눈 장. 한 장씩 넘긴다 (19번, 8/8 담당자 요청).
+   *
+   * 승인 문구 중 금례 공감이 79자로 대사창 한 장에 안 들어간다. 나머지는 58자
+   * 이하라 한 장이다 — **길 때만 나뉜다.**
+   */
+  let reactionPages: string[] = []
+  let reactionPage = 0
+
+  /**
+   * 한 장에 담는 글자 수.
+   *
+   * **문장 부호로 나누되 이 길이를 넘을 때만 나눈다.** 승인 문구를 고치는 것이
+   * 아니라 같은 문장을 나눠 보여줄 뿐이므로 데이터 경계를 넘지 않는다.
+   * 값의 근거는 대사창 크기다 — 선택지 글자 25px 을 실측으로 정한 것과 같은
+   * 종류의 수치이고, 문구가 바뀌어도 이 값이 바뀌지는 않는다.
+   */
+  const REACTION_PAGE_CHARS = 60
+
+  /**
+   * 문장 경계로 나눈다. 경계가 없으면 통째로 한 장이다.
+   *
+   * 글자 수로 자르지 않는 이유는 문장이 중간에서 끊기면 **읽는 사람이 그것을
+   * 오타로 읽기 때문**이다. 문장이 하나뿐인데 길면 나누지 않고 그대로 둔다 —
+   * 그때는 데이터에 문단을 나누는 것이 맞고, 코드가 문장을 쪼갤 자리가 아니다.
+   */
+  function paginate(reaction: string): string[] {
+    if (reaction.length <= REACTION_PAGE_CHARS) return [reaction]
+
+    const sentences = reaction.split(/(?<=[.!?…。])\s+/).filter((s) => s !== '')
+    if (sentences.length <= 1) return [reaction]
+
+    const pages: string[] = []
+    let current = ''
+    for (const sentence of sentences) {
+      if (current === '') current = sentence
+      else if (`${current} ${sentence}`.length <= REACTION_PAGE_CHARS) current += ` ${sentence}`
+      else {
+        pages.push(current)
+        current = sentence
+      }
+    }
+    if (current !== '') pages.push(current)
+    return pages
+  }
+
+  /** 지금 화면에서 넘기기 입력이 할 일 */
+  function advanceRead(): void {
+    if (root.hidden) return
+
+    // 반응 대사를 읽는 중이면 장을 넘기고, 마지막이면 흐름을 진행시킨다.
+    if (reactionPages.length > 0) {
+      if (reactionPage < reactionPages.length - 1) {
+        reactionPage += 1
+        text.textContent = reactionPages[reactionPage] ?? ''
+        return
+      }
+      handlers.proceed()
+      return
+    }
+
+    // 시작 대사를 읽는 중이면 선택지를 연다. 이미 열렸으면 할 일이 없다 —
+    // 고르는 것은 마우스 전용이라 넘기기 입력이 선택을 대신하지 않는다.
+    if (!openingRead) {
+      openingRead = true
+      showChoices()
+    }
+  }
+
+  /**
+   * 말하는 쪽만 밝게 둔다 (19번, 8/8 담당자 요청).
+   *
+   * 두 인물이 같은 밝기로 서 있으면 **누가 말하고 있는지가 대사창 이름판에만
+   * 남는다.** 딤 전용 그림은 아직 없어서 `layout.css` 가 밝기로 처리한다 —
+   * 그림이 오면 그 규칙만 갈아 끼우면 되고 이 함수는 그대로다.
+   */
+  function setSpeakingSide(side: 'resident' | 'player'): void {
+    portrait.classList.toggle('dialogue__portrait--dim', side !== 'resident')
+    playerPortrait.classList.toggle('dialogue__portrait--dim', side !== 'player')
+  }
+
+  /**
+   * 선택지를 만들어 띄운다.
+   *
+   * `render()` 에서 바로 만들지 않고 미뤄 두는 이유는 시작 대사를 한 번 넘겨야
+   * 나오기 때문이다. 넘기기 전에는 `pendingChoices` 에만 들고 있는다.
+   */
+  function showChoices(): void {
+    // 선택지가 뜨면 고르는 쪽은 플레이어다.
+    setSpeakingSide('player')
+    advance.hidden = true
+
+    choiceList.replaceChildren()
+    choiceList.hidden = false
+    pendingChoices.forEach((choice, index) => {
+      const button = el('button', 'dialogue__choice') as HTMLButtonElement
+      button.type = 'button'
+      // 세 선택지를 시각적으로 구분하되 그 구분이 기능 이름을 드러내지 않게 한다
+      // (DEC-UI-007). 자리 순서로만 색을 준다 — 뷰에 기능이 오지 않으므로
+      // 이 코드는 어떤 선택지가 무슨 기능인지 알 수 없다.
+      button.dataset.slot = String(index)
+      button.appendChild(el('span', 'dialogue__choice-text', choice.text))
+
+      // 자원 협상 선택지에만 제안 수량·현재 총수량·무작위 소비 사실을
+      // 한 줄로 짧게 덧붙인다 (DEC-UI-008). 어떤 작물이 나갈지는 공개하지 않는다.
+      if (choice.offer !== null) {
+        button.appendChild(
+          el(
+            'span',
+            'dialogue__choice-offer',
+            `수확물 ${choice.offer.quantity}개 (보유 ${choice.offer.heldTotal}) · 무작위로 나간다`,
+          ),
+        )
+      }
+
+      if (choice.usable) {
+        bindUi(button, '--dialogue-button-image', UI_ASSET.buttonNormal)
+        button.addEventListener('click', () => handlers.choose(choice.id))
+      } else {
+        // 흐리게 처리해 고를 수 없음을 나타내며 별도의 안내를 덧붙이지 않는다.
+        // 그림도 비활성 한 장으로 갈린다 — 투명도만으로는 눈에 덜 띈다.
+        bindUi(button, '--dialogue-button-image', UI_ASSET.buttonDisabled)
+        button.disabled = true
+      }
+
+      choiceList.appendChild(button)
+    })
+  }
+
+  /**
+   * 읽고 넘기는 입력 (`DEC-UI-035`).
+   *
+   * **대사창을 눌러도 되고 스페이스를 눌러도 된다.** 확정문이 고르는 조작과
+   * 읽고 넘기는 조작을 갈랐고, 후자만 키를 받는다.
+   *
+   * 선택지 버튼 위 클릭은 여기로 오지 않게 막는다 — 고르는 순간 같은 클릭이
+   * 넘기기까지 하면 반응 대사 첫 장이 그대로 지나간다.
+   */
+  panel.addEventListener('click', () => advanceRead())
+  stage.addEventListener('click', (event) => {
+    const target = event.target
+    if (target instanceof Element && target.closest('button') !== null) return
+    advanceRead()
+  })
+
+  function onKeyDown(event: KeyboardEvent): void {
+    if (event.code !== 'Space') return
+    if (root.hidden || root.classList.contains('is-inert')) return
+    // 스페이스로 화면이 스크롤되거나 포커스된 버튼이 눌리는 것을 막는다.
+    event.preventDefault()
+    advanceRead()
+  }
+  window.addEventListener('keydown', onKeyDown)
+
+  /** 아직 안 띄운 선택지. 시작 대사를 넘기면 이걸로 만든다 */
+  let pendingChoices: readonly DialogueChoiceView[] = []
 
   function signatureOf(view: DialogueView): string {
     return [
@@ -225,53 +389,33 @@ export function createDialogueModal(
       // 순차 출력 연출은 확정문이 "사용할 수 있으며"로 열어 둔 선택 사항이라
       // 1차 빌드에서는 쓰지 않고 전체를 즉시 표시한다.
       if (view.reaction !== null) {
-        text.textContent = view.reaction
+        reactionPages = paginate(view.reaction)
+        reactionPage = 0
+        text.textContent = reactionPages[0] ?? ''
         // 말풍선을 통째로 숨긴다. 빈 말풍선이 인물 사이에 남으면
         // 아직 고를 것이 있는 것처럼 보인다.
         choiceList.replaceChildren()
         choiceList.hidden = true
-        proceed.hidden = false
+        advance.hidden = false
+        // 반응은 주민이 말한다. 플레이어 쪽을 죽인다.
+        setSpeakingSide('resident')
         return
       }
 
+      // 새 대화다. 시작 대사를 아직 안 읽은 상태로 되돌린다.
+      reactionPages = []
+      reactionPage = 0
+      openingRead = false
+
       text.textContent = view.openingText
-      proceed.hidden = true
+      // 시작 대사도 주민이 말한다.
+      setSpeakingSide('resident')
 
+      // 선택지는 한 번 넘긴 뒤에 나온다. 화살표가 그때까지 자리를 지킨다.
       choiceList.replaceChildren()
-      choiceList.hidden = false
-      view.choices.forEach((choice, index) => {
-        const button = el('button', 'dialogue__choice') as HTMLButtonElement
-        button.type = 'button'
-        // 세 선택지를 시각적으로 구분하되 그 구분이 기능 이름을 드러내지 않게 한다
-        // (DEC-UI-007). 자리 순서로만 색을 준다 — 뷰에 기능이 오지 않으므로
-        // 이 코드는 어떤 선택지가 무슨 기능인지 알 수 없다.
-        button.dataset.slot = String(index)
-        button.appendChild(el('span', 'dialogue__choice-text', choice.text))
-
-        // 자원 협상 선택지에만 제안 수량·현재 총수량·무작위 소비 사실을
-        // 한 줄로 짧게 덧붙인다 (DEC-UI-008). 어떤 작물이 나갈지는 공개하지 않는다.
-        if (choice.offer !== null) {
-          button.appendChild(
-            el(
-              'span',
-              'dialogue__choice-offer',
-              `수확물 ${choice.offer.quantity}개 (보유 ${choice.offer.heldTotal}) · 무작위로 나간다`,
-            ),
-          )
-        }
-
-        if (choice.usable) {
-          bindUi(button, '--dialogue-button-image', UI_ASSET.buttonNormal)
-          button.addEventListener('click', () => handlers.choose(choice.id))
-        } else {
-          // 흐리게 처리해 고를 수 없음을 나타내며 별도의 안내를 덧붙이지 않는다.
-          // 그림도 비활성 한 장으로 갈린다 — 투명도만으로는 눈에 덜 띈다.
-          bindUi(button, '--dialogue-button-image', UI_ASSET.buttonDisabled)
-          button.disabled = true
-        }
-
-        choiceList.appendChild(button)
-      })
+      choiceList.hidden = true
+      advance.hidden = false
+      pendingChoices = view.choices
     },
 
     show() {
@@ -290,6 +434,7 @@ export function createDialogueModal(
     },
 
     destroy() {
+      window.removeEventListener('keydown', onKeyDown)
       root.remove()
     },
   }

@@ -2316,36 +2316,51 @@
   color: var(--ui-text-dim);
 }
 
-/* 반응 대사를 읽고 넘어가는 버튼. 선택지와 같은 그림을 쓴다 */
-.dialogue__proceed {
+/*
+  읽고 넘긴다는 표시 (DEC-UI-035).
+
+  **버튼이 아니다.** 8/8까지는 확인 버튼이었는데, 확정문이 읽기 진행을 클릭과
+  스페이스 둘 다로 열면서 "다음이 있다는 표시를 두되 조작 번호나 키 이름을
+  드러내지 않게 한다" 로 바뀌었다. 그래서 글자가 없고 누르는 자리도 아니다 —
+  대사창 전체가 누르는 자리이므로 이 표시는 클릭을 받지 않는다.
+
+  깜빡이게 두는 이유는 **멈춰 있는 화살표가 장식으로 읽히기 때문**이다.
+*/
+.dialogue__advance {
   align-self: flex-end;
-  padding: var(--ui-gap-sm) var(--ui-gap-lg);
-  border: 1px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius);
-  background: var(--ui-bg-panel);
-  color: var(--ui-text);
-  font-family: var(--ui-font);
-  font-size: var(--ui-font-md);
-  cursor: pointer;
+  width: 0;
+  height: 0;
+  margin: var(--ui-gap-sm) var(--ui-gap-md) 0 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 14px solid var(--ui-text-dim);
+  pointer-events: none;
+  animation: dialogue-advance 1.1s ease-in-out infinite;
 }
 
-.dialogue--has-art .dialogue__proceed {
-  min-width: calc(var(--dialogue-choice-width) * 0.6);
-  min-height: calc(var(--dialogue-choice-height) * 0.7);
-  border: none;
-  border-radius: 0;
-  background-image: var(--dialogue-button-image);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  color: var(--dialogue-text-on-balloon);
+.dialogue--has-art .dialogue__advance {
+  border-top-color: var(--dialogue-text-on-panel);
 }
 
-.dialogue--has-art .dialogue__proceed:active {
-  transform: translateY(2px);
-}
-
-.dialogue__proceed[hidden] {
+.dialogue__advance[hidden] {
   display: none;
+}
+
+@keyframes dialogue-advance {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(3px);
+  }
+}
+
+/* 말하지 않는 쪽은 어둡게 (19번, 8/8). 딤 전용 그림이 오면 이 규칙만 갈아 끼운다 */
+.dialogue__portrait--dim {
+  filter: brightness(0.45) saturate(0.7);
 }
 
 /* ─────────────────────────────────────────────────
