@@ -75,6 +75,33 @@ export interface HubView {
   raidType: string
   /** 하단 진행 버튼 문구는 DEC-RUN-006 이 정한 두 가지다 */
   finishLabel: string
+  /**
+   * 정비를 끝낼 수 있는가. **튜토리얼 중에는 false 다.**
+   *
+   * 튜토리얼은 `syncTutorial()` 이 정비 안내 차례에 이 허브를 열지만, 흐름상
+   * 아직 `tutorial` 단계이고 그 단계는 `confirm` 만 받는다 (`scenes/flow.ts`).
+   * 종료 버튼을 누르면 `maintenance_finished` 가 처리할 수 없는 입력으로 떨어져
+   * **오류가 나고 화면이 필드 바탕색만 남은 빈 초록으로 변한다** (8/8).
+   *
+   * 튜토리얼을 벗어나는 길은 `DEC-UI-030` 이 정한 `건너뛰고 시작` 하나다.
+   * 종료 버튼은 설계에 없는 두 번째 탈출구다.
+   *
+   * **비활성이 아니라 숨긴다.** 튜토리얼에는 "정비를 끝낸다" 는 개념 자체가
+   * 없다 — 흐름이 아직 `tutorial` 단계이고 다음으로 가는 것은 안내를 다 밟는
+   * 것뿐이다. 아래 `lockedPopups` 와 기준이 갈리는 지점이다:
+   * **아직 없는 것은 숨기고, 지금만 못 쓰는 것은 비활성으로 둔다.**
+   */
+  canFinish: boolean
+  /**
+   * 지금 열 수 없는 기능. 튜토리얼이 쓰지 않는 것을 막는다.
+   *
+   * **판매가 여기 들어간다.** 튜토리얼에는 판매 안내가 없는데(`sell_crop` 행을
+   * 8/6 에 뺐다) 버튼은 살아 있어서, 플레이어가 수확물을 팔아 버리면 제작 재료가
+   * 없어져 `craft_item` 안내를 완료할 수 없다. **8/6 에 "45% 막힘" 으로 잡았던
+   * 바로 그 구멍이 화면 쪽에 남아 있었다** — 데이터에서 판매 단계를 뺀 것으로는
+   * 플레이어가 스스로 파는 것을 막지 못한다.
+   */
+  lockedPopups: readonly HubPopupId[]
 }
 
 export interface HubHandlers {
@@ -186,12 +213,15 @@ export function createMaintenanceHub(
   header.append(title, raidNotice)
 
   const buttons = el('div', 'hub__buttons')
+  /** 잠긴 기능을 매 프레임 다시 만들지 않고 여기서 상태만 바꾼다 */
+  const buttonNodes = new Map<HubPopupId, HTMLButtonElement>()
   for (const spec of BUTTONS) {
-    const button = el('button', 'hub__button', spec.label)
+    const button = el('button', 'hub__button', spec.label) as HTMLButtonElement
     button.type = 'button'
     paint(button, '--hub-button-image', UI_ASSET.buttonNormal)
     button.addEventListener('click', () => handlers.openPopup(spec.id))
     buttons.appendChild(button)
+    buttonNodes.set(spec.id, button)
   }
   main.append(header, buttons)
 
@@ -306,6 +336,19 @@ export function createMaintenanceHub(
       if (plate !== null) raidNoticePlate.style.setProperty('--hub-raid-plate', plate)
       moneyValue.textContent = String(view.money)
       finish.textContent = view.finishLabel
+      // 튜토리얼 중에는 정비를 끝낼 수 없다 (`HubView.canFinish` 주석)
+      finish.hidden = !view.canFinish
+
+      // 잠긴 기능은 회색으로 남긴다. 비활성 그림이 있으면 같이 바꾼다.
+      for (const [id, button] of buttonNodes) {
+        const locked = view.lockedPopups.includes(id)
+        button.disabled = locked
+        paint(
+          button,
+          '--hub-button-image',
+          locked ? UI_ASSET.buttonDisabled : UI_ASSET.buttonNormal,
+        )
+      }
 
       renderInventory(view.inventory)
     },

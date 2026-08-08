@@ -3369,6 +3369,14 @@ function hubView() {
     raidType,
     // 문구는 DEC-RUN-006 이 정한 두 가지다
     finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
+    // 튜토리얼 중에는 정비를 끝낼 수 없다. 흐름이 아직 `tutorial` 단계라
+    // `maintenance_finished` 가 처리할 수 없는 입력이 된다 (HubView.canFinish).
+    canFinish: !inTutorial(),
+    // 튜토리얼에는 판매 안내가 없는데(8/6 에 `sell_crop` 행을 뺐다) 버튼은
+    // 살아 있어서, 수확물을 팔아 버리면 제작 재료가 없어져 `craft_item` 을
+    // 완료할 수 없다. **데이터에서 단계를 뺀 것으로는 플레이어가 스스로 파는
+    // 것을 못 막는다** — 8/6 에 "45% 막힘" 으로 잡았던 구멍의 화면 쪽이다.
+    lockedPopups: inTutorial() ? (['sell'] as const) : [],
   }
 }
 
