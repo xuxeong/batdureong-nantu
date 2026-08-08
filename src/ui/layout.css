@@ -2400,9 +2400,9 @@
   animation: dialogue-enter-panel 380ms ease-out 600ms both;
 }
 
-/* 연출 중에는 선택지 말풍선이 아직 없다. 화살표도 대사창과 같이 들어온다 */
+/* 연출 중에는 선택지 말풍선이 아직 없다. 화살표는 판을 따라가되 자리는 그대로다 */
 .dialogue--entering .dialogue__advance {
-  animation: dialogue-enter-panel 380ms ease-out 600ms both;
+  animation: dialogue-enter-fade 380ms ease-out 600ms both;
 }
 
 @keyframes dialogue-enter-left {
@@ -2432,15 +2432,34 @@
 
   8/9 까지 24px 이었는데 그 거리로는 "떠오른다" 가 아니라 "살짝 흔들린다" 로
   읽혔다. 대사창 높이의 절반 이상을 움직여야 아래에서 들어온 것으로 보인다.
+
+  **가로 가운데 정렬(`translateX(-50%)`)을 키프레임 안에 같이 적는다.**
+  `transform` 은 속성 하나라 애니메이션이 그 값을 통째로 덮는다. 세로만 적으면
+  연출 동안 판이 오른쪽으로 반 폭 밀려 있다가 클래스가 빠지는 순간 왼쪽으로
+  미끄러진다 — 8/9 에 담당자가 *"우측에서 올라왔다가 다시 왼쪽으로 슬라이드된다"*
+  로 잡은 것이 이것이다.
 */
 @keyframes dialogue-enter-panel {
   from {
     opacity: 0;
-    transform: translateY(calc(var(--dialogue-box-height) * 0.9));
+    transform: translate(-50%, calc(var(--dialogue-box-height) * 0.9));
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate(-50%, 0);
+  }
+}
+
+/*
+  화살표는 대사창 안에 있어 판과 같이 떠오른다. 자리를 옮기면 안 되므로
+  투명도만 맞춘다 — 여기에 판의 이동을 또 걸면 두 번 움직인다.
+*/
+@keyframes dialogue-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
