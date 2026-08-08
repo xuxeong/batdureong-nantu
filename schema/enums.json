@@ -61,7 +61,8 @@
       "sell_crop",
       "buy_material",
       "craft_item",
-      "assign_quickslot"
+      "assign_quickslot",
+      "open_shop"
     ]
   },
   "asset_role": {

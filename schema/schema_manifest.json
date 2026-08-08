@@ -1,6 +1,6 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
-  "schema_version": 14,
+  "schema_version": 16,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -205,6 +205,20 @@
       "decisions": [
         "DEC-ART-005",
         "DEC-UI-008"
+      ]
+    },
+    {
+      "schema_version": {
+        "from": 15,
+        "to": 16
+      },
+      "date": "2026-08-09",
+      "change": "completion_key 고정 목록에 open_shop 추가 — 아홉 번째 값. 8/9 튜토리얼 재구성에서 \"구매를 눌러 보세요\" 단계가 생겼는데, 창을 연 것을 완료로 볼 키가 없었다. 기존 buy_material 은 실제로 산 뒤에야 완료된다",
+      "csv_migration": "기존 승인 행의 변환은 필요 없다. tutorial_steps.csv 에 한 행을 더하고 step_order 를 다시 매긴다",
+      "affected": "completion_key 는 코드가 판정하는 고정 시스템 키라 콘텐츠 담당자가 새로 만들 수 없고 추가는 스키마와 구현 변경으로 처리한다(DEC-CONTENT-025). 그래서 DEC 폐기·대체 없이 이 변경으로 끝난다 — 8/6 의 assign_quickslot 과 같은 절차다. **목록이 두 곳에 있다**: enums.json 과 schema/tables/tutorial_steps.json 이 같은 값을 따로 들고 있어 하나만 고치면 검증이 어긋난다. src/data/types.ts 의 TutorialCompletionKey 와 정비 팝업이 열릴 때 알리는 배선이 함께 필요하다",
+      "decisions": [
+        "DEC-CONTENT-025",
+        "DEC-UI-020"
       ]
     }
   ]

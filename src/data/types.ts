@@ -188,6 +188,8 @@ export type TutorialCompletionKey =
   | 'buy_material'
   | 'craft_item'
   | 'assign_quickslot'
+  /** 정비에서 구매 창을 열었다. 실제 구매는 buy_material 이 따로 본다 */
+  | 'open_shop'
 
 /**
  * DEC-ART-004 — 콘텐츠에 붙는 논리 에셋의 역할.
