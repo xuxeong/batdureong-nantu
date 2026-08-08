@@ -1319,6 +1319,12 @@ function noteHitFlash(event: CombatEvent): void {
     sfx.play(mechanicSfx.get('damage_over_time'))
     return
   }
+  // 투척 명중음도 여기서 낸다. 이 함수가 `damaged` 를 받는 네 경로의 유일한
+  // 합류점이라, 발행 지점에 붙이면 그중 하나는 반드시 빠진다.
+  // `impactMode` 가 없는 것은 낫과 지원 주민 공격이라 투척음을 내지 않는다.
+  if (event.impactMode === 'area') sfx.play(SOUND_ASSET.impactArea)
+  else if (event.impactMode === 'direct') sfx.play(SOUND_ASSET.impactDirect)
+
   if (event.targetId === undefined) return
   hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
 }
@@ -2570,6 +2576,8 @@ function onTargetKilled(targetId: string): void {
     return
   }
 
+  // 야생동물 처치는 공통 소리 하나다 (종류를 가르지 않는다).
+  sfx.play(SOUND_ASSET.wildlifeDefeat)
   wildlife?.remove(targetId)
 }
 
@@ -2653,13 +2661,18 @@ const input = createInput(renderer.canvas, {
   onThrow,
   onSickle,
   // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-013).
+  // 선택 전환음은 여기서 낸다 (DEC-ART-005). **버스를 못 쓴다** —
+  // `quickslot.select` 는 시스템 이벤트가 아니라 입력 의도라 `bus.on` 이 안 받는다.
+  // 소진 자동 전환(`quickslot.autoSwitched`)은 시스템 이벤트라 그쪽에 붙어 있다.
   onQuickslotSelect: (index) => {
     if (combat === null || run === null) return
     combat.selectSlot(run, index)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onQuickslotCycle: (dir) => {
     if (combat === null || run === null) return
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onRecoverShortPress: () => onRecoverPressed(),
   // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
@@ -4004,6 +4017,73 @@ function bgmForScreen(screen: ScreenId): string | null {
 bus.on('screen.changed', ({ screen }) => {
   const track = bgmForScreen(screen)
   if (track !== null) bgm.play(track)
+})
+
+/**
+ * 부팅 시점의 화면에도 트랙을 건다.
+ *
+ * **첫 `screen.changed` 는 이 구독보다 먼저 지나간다.** `createSceneManager()` 가
+ * 만들어지는 그 자리에서 `apply(INITIAL_STEP)` 을 부르고, 그게 타이틀의
+ * `screen.changed` 를 발행한다 — 위 구독은 180줄 뒤에 등록되므로 못 듣는다.
+ *
+ * 놓치면 **대기 중인 트랙이 없어서 화면을 눌러도 아무 일이 안 일어난다.**
+ * 자동 재생 거부는 거부된 트랙을 기억했다가 첫 조작에 다시 트는 구조인데,
+ * 애초에 요청이 없었으니 기억할 것도 없다. 8/8 에 담당자가 *"타이틀에서 아무
+ * 데나 눌러도 안 나고 버튼을 눌러야 난다"* 로 잡았다 — 버튼을 누르면 다음
+ * 화면의 `screen.changed` 가 와서 그제야 걸렸던 것이다.
+ */
+const bootTrack = bgmForScreen(scenes.currentScreen() ?? 'title')
+if (bootTrack !== null) bgm.play(bootTrack)
+
+/*
+  효과음 배선 (DEC-ART-005).
+
+  **전부 버스 구독이다.** 소리를 내는 조건을 발행 지점마다 적으면 발행자가 하나
+  더 생길 때 빠진다 — 8/7 에 명중 표시로 네 번 반복한 자리다 (3-B-1).
+  낫 소리만 예외인데 `swingSickle()` 이 이벤트가 아니라 반환값이라 구조가 다르다.
+*/
+bus.on('screen.changed', () => sfx.play(SOUND_ASSET.screenTransition))
+bus.on('overlay.opened', () => sfx.play(SOUND_ASSET.modalOpen))
+bus.on('request.rejected', () => sfx.play(SOUND_ASSET.buttonReject))
+
+bus.on('farm.planted', () => sfx.play(SOUND_ASSET.plantSeed))
+bus.on('farm.harvested', () => sfx.play(SOUND_ASSET.harvest))
+// `DEC-UI-004` 가 "수확 가능으로 바뀔 때 짧은 효과음" 을 확정문으로 요구한다.
+bus.on('farm.plotReady', () => sfx.play(SOUND_ASSET.harvestReady))
+
+// 판매·구매·보상이 같은 소리다. 셋 다 "받았다" 는 같은 사실을 알린다.
+bus.on('shop.sold', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('shop.bought', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('reward.granted', () => sfx.play(SOUND_ASSET.tradeConfirm))
+
+bus.on('quickslot.autoSwitched', () => sfx.play(SOUND_ASSET.quickslotSwitch))
+bus.on('quickslot.allEmpty', () => sfx.play(SOUND_ASSET.quickslotEmpty))
+bus.on('combat.throwableSpent', () => sfx.play(SOUND_ASSET.throw))
+
+bus.on('recovery.started', () => sfx.play(SOUND_ASSET.recoveryStart))
+bus.on('recovery.completed', () => sfx.play(SOUND_ASSET.recoveryComplete))
+
+bus.on('dialogue.opened', () => sfx.play(SOUND_ASSET.dialogueOpen))
+bus.on('encounter.finished', ({ finalOutcome }) => {
+  // 막타일 때만이다. 공감·협상·영입·퇴각은 죽인 것이 아니다 (DEC-RESIDENT-052).
+  if (finalOutcome === 'killed') sfx.play(SOUND_ASSET.residentDefeat)
+})
+
+/*
+  버튼 클릭음은 버스가 아니라 DOM 에 건다.
+
+  누를 수 있는 것이 화면마다 흩어져 있고 그 전부가 이벤트를 쏘지는 않는다 —
+  조작 안내 펼치기나 팝업 닫기처럼 게임 상태를 안 바꾸는 버튼이 그렇다.
+  버튼마다 손으로 붙이면 다음에 만드는 버튼이 반드시 빠진다.
+
+  **막힌 버튼은 울리지 않는다.** `disabled` 는 클릭 이벤트가 아예 안 오고,
+  눌렀는데 거절된 경우는 `request.rejected` 가 따로 거절음을 낸다.
+*/
+uiRoot.addEventListener('click', (event) => {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest('button') === null) return
+  sfx.play(SOUND_ASSET.buttonClick)
 })
 
 bus.on('field.entered', ({ mode }) => {

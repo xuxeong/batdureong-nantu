@@ -231,6 +231,40 @@ export const SOUND_ASSET = {
   sickleHit: 'asset.sfx.sickle_hit',
   /** 플레이어가 맞았을 때. 피격 깜빡임의 짝이다 */
   playerHit: 'asset.sfx.player_hit',
+
+  /** 버튼 클릭 전반. 어느 화면이든 같은 소리다 */
+  buttonClick: 'asset.sfx.button_click',
+  /** 눌렸지만 거절된 것 (`request.rejected`) */
+  buttonReject: 'asset.sfx.button_reject',
+  /** 오버레이가 열릴 때 */
+  modalOpen: 'asset.sfx.modal_open',
+  /** 독립 화면 전환 */
+  screenTransition: 'asset.sfx.screen_transition',
+
+  plantSeed: 'asset.sfx.plant_seed',
+  /** 수확 가능으로 바뀌는 순간. `DEC-UI-004` 가 요구하는 소리다 */
+  harvestReady: 'asset.sfx.harvest_ready',
+  harvest: 'asset.sfx.harvest',
+  /** 판매·구매·보상 획득 공용 */
+  tradeConfirm: 'asset.sfx.trade_confirm',
+
+  /** 퀵슬롯 선택 전환과 소진 자동 전환 공용 */
+  quickslotSwitch: 'asset.sfx.quickslot_switch',
+  /** 던질 것이 하나도 안 남았다 */
+  quickslotEmpty: 'asset.sfx.quickslot_empty',
+  throw: 'asset.sfx.throw',
+  /** 투척 명중 — `impact_mode` 로 가른다 (DEC-CONTENT-005) */
+  impactDirect: 'asset.sfx.impact_direct',
+  impactArea: 'asset.sfx.impact_area',
+
+  recoveryStart: 'asset.sfx.recovery_start',
+  recoveryComplete: 'asset.sfx.recovery_complete',
+
+  dialogueOpen: 'asset.sfx.dialogue_open',
+  /** 야생동물 처치 (공통) */
+  wildlifeDefeat: 'asset.sfx.wildlife_defeat',
+  /** 주민을 죽여서 조우가 끝났다 */
+  residentDefeat: 'asset.sfx.resident_defeat',
 } as const
 
 for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {

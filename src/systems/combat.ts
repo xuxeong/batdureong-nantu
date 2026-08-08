@@ -20,7 +20,7 @@
 // 개념만 주민에게 있어서 그것을 `surrenderThreshold` 하나로 받는다. 여기서 종류를
 // 나누면 "야생동물에는 효과가 안 걸리는" 종류의 누락이 생긴다.
 
-import type { CropAttribute, PlayerBaseStats, ThrowableWeapon } from '../data/types.ts'
+import type { CropAttribute, ImpactMode, PlayerBaseStats, ThrowableWeapon } from '../data/types.ts'
 import type { ActiveEffect, FieldEntity, ProjectileInstance, Resources } from '../state/types.ts'
 import { DataMissingError } from '../data/run-config.ts'
 
@@ -51,6 +51,14 @@ export interface CombatEvent {
   amount?: number
   /** 지속 피해로 발생했는가. 화면 표시를 가르는 데 쓴다 */
   overTime?: boolean
+  /**
+   * 투척 명중이면 그 무기의 충돌 방식 (DEC-CONTENT-005).
+   *
+   * **부르는 쪽이 소리를 가르는 데 쓴다.** 이 시스템은 어느 소리인지 모르고
+   * 무엇으로 맞았는지만 알린다 — 논리 에셋 ID 는 `render/assets.ts` 자리다.
+   * 낫과 지원 주민 공격은 투척이 아니므로 비어 있다.
+   */
+  impactMode?: ImpactMode
 }
 
 /** 발사 뒤 슬롯이 어떻게 됐는가 (DEC-INPUT-007) */
@@ -246,7 +254,12 @@ export function createCombat(options: CombatOptions): CombatSystem {
     events: CombatEvent[],
   ): void {
     const outcome = applyDamage(target, weapon.base_damage)
-    events.push({ type: 'damaged', targetId: target.entity.instanceId, amount: weapon.base_damage })
+    events.push({
+      type: 'damaged',
+      targetId: target.entity.instanceId,
+      amount: weapon.base_damage,
+      impactMode: weapon.impact_mode,
+    })
 
     if (outcome === 'killed') {
       events.push({ type: 'killed', targetId: target.entity.instanceId })
