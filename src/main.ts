@@ -1268,7 +1268,11 @@ let allyAttackRemaining = 0
  * 간격은 화면 표시가 아니라 소리의 리듬이라 `layout.css` 가 아니라 여기 있다.
  */
 const CHOMP_COUNT = 3
-const CHOMP_GAP_MS = 110
+/**
+ * 간격. **8/9 에 110 → 240 으로 늘렸다** — 110 은 씹는 소리가 아니라 연사음으로
+ * 들렸다. 사람이 세 번 씹는 속도에 가까워야 "챱챱챱" 으로 읽힌다.
+ */
+const CHOMP_GAP_MS = 240
 
 function playChomp(): void {
   for (let i = 0; i < CHOMP_COUNT; i += 1) {
@@ -3536,6 +3540,10 @@ function hudView() {
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
     // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
     recoveryName: selectedRecoveryName(),
+    // 선택된 회복 아이템의 아이콘. 퀵슬롯과 같은 표에서 온다 (8/9)
+    recoveryIcon: run?.pouch.selectedId === null || run?.pouch.selectedId === undefined
+      ? undefined
+      : itemIcons.get(run.pouch.selectedId),
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,

@@ -739,6 +739,27 @@
   color: var(--ui-text-dim);
 }
 
+/*
+  선택된 회복 아이템의 아이콘 (8/9 담당자).
+
+  **퀵슬롯 칸과 같은 규칙이다** — 그림이 있으면 아이콘만 남기고 이름을 숨긴다.
+  칸이 162×166 인데 둘을 같이 두면 아이콘도 글자도 읽을 수 없게 작아진다.
+  그림이 없으면 이름이 그대로 서므로 플레이스홀더가 따로 필요 없다.
+*/
+.hud__recovery-icon {
+  width: 72%;
+  height: 72%;
+  background-image: var(--hud-recovery-icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hud__recovery-icon[hidden],
+.hud__recovery-name[hidden] {
+  display: none;
+}
+
 .hud__recovery.hud--has-art {
   color: var(--ui-text-on-panel);
 }
