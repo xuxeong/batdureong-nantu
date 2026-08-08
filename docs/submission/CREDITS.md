@@ -93,33 +93,38 @@
 
 | 파일 | 용도 | 제작 방법 | 도구 | 프롬프트 / 출처 | 라이선스 |
 |---|---|---|---|---|---|
-| `assets/final/sfx/button_click.wav` | 버튼 클릭 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/button_reject.wav` | 버튼 클릭 거절·비활성 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/modal_open.wav` | 모달·오버레이 열기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/screen_transition.wav` | 화면 전환 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/plant_seed.wav` | 파종 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/harvest_ready.wav` | 수확 가능 전환 (DEC-UI-004) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/harvest.wav` | 수확 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/trade_confirm.wav` | 판매·구매·보상 획득 공용 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/quickslot_switch.wav` | 퀵슬롯 선택·자동 전환 공용 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/quickslot_empty.wav` | 퀵슬롯 전부 소진(빈 발사음) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/sickle_swing.wav` | 낫 휘두르기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/sickle_hit.wav` | 낫 명중 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/throw.wav` | 투척 던지기 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/impact_direct.wav` | 투척 명중 — direct(고춧가루·미끈 토란) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/impact_area.wav` | 투척 명중 — area(토마토·찹쌀풀) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/burn_tick.wav` | 화상 상태 틱(화끈함·짓무름 공용) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/slow_tick.wav` | 감속 상태 걸림(미끄러움·끈적함 공용) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/player_hit.wav` | 플레이어 피격 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/recovery_start.wav` | 회복 시작 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/recovery_complete.wav` | 회복 완료 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/wildlife_crow_cry.wav` | 까마귀 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/wildlife_deer_cry.wav` | 고라니 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/wildlife_boar_cry.wav` | 멧돼지 등장 울음 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/wildlife_defeat.wav` | 야생동물 처치(공통) | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/dialogue_open.wav` | 대화 열림 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/resident_defeat.wav` | 주민 처치 막타 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
-| `assets/final/sfx/record_typing.wav` | 엔딩 기록문 타이핑 | AI 생성 | VARCO Sound | *(기재 필요)* | 해당 없음 (AI 생성) |
+| `assets/final/sfx/button_click.wav` | 버튼 클릭 | AI 생성 | VARCO Sound | 나무를 짧게 부딪히는 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/button_reject.wav` | 버튼 클릭 거절·비활성 | AI 생성 | VARCO Sound | 나무를 짧게 부딪히는 둔탁한 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/modal_open.wav` | 모달·오버레이 열기 | AI 생성 | VARCO Sound | 두꺼운 책 피는 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/screen_transition.wav` | 화면 전환 | AI 생성 | VARCO Sound | 창호 문 닫히는 소리/효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/plant_seed.wav` | 파종 | AI 생성 | VARCO Sound | 작물을 심는 짧은 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/harvest_ready.wav` | 수확 가능 전환 (DEC-UI-004) | AI 생성 | VARCO Sound | 띠리링 완료된 소리 (짧은 효과음) | 해당 없음 (AI 생성) |
+| `assets/final/sfx/harvest.wav` | 수확 | AI 생성 | VARCO Sound | 수확하는 짧은 효과음 (바스락 소리) | 해당 없음 (AI 생성) |
+| `assets/final/sfx/trade_confirm.wav` | 판매·구매·보상 획득 공용 | AI 생성 | VARCO Sound | 둔탁하게 엽전 떨어지는 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/quickslot_switch.wav` | 퀵슬롯 선택·자동 전환 공용 | AI 생성 | VARCO Sound | 장착하는 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/quickslot_empty.wav` | 퀵슬롯 전부 소진(빈 발사음) | AI 생성 | VARCO Sound | 빈 발사음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/sickle_swing.wav` | 낫 휘두르기 | AI 생성 | VARCO Sound | 낫 휘두르는 짧은 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/sickle_hit.wav` | 낫 명중 | AI 생성 | VARCO Sound | 낫으로 시원하게 두꺼운 물체를 서걱 자른 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/throw.wav` | 투척 던지기 | AI 생성 | VARCO Sound | 물체를 던지는 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/impact_direct.wav` | 투척 명중 — direct(고춧가루·미끈 토란) | AI 생성 | VARCO Sound | 토마토에 맞아서 질퍽한 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/impact_area.wav` | 투척 명중 — area(토마토·찹쌀풀) | AI 생성 | VARCO Sound | 쨍그랑 깨지는 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/burn_tick.wav` | 화상 상태 틱(화끈함·짓무름 공용) | AI 생성 | VARCO Sound | 화르륵 타오르는 짧은 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/slow_tick.wav` | 감속 상태 걸림(미끄러움·끈적함 공용) | AI 생성 | VARCO Sound | 질퍽한 진흙 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/player_hit.wav` | 플레이어 피격 | AI 생성 | VARCO Sound | 주먹으로 맞는 짧은 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/recovery_start.wav` | 회복 시작 | AI 생성 | VARCO Sound | 챱챱챱 먹는 소리 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/recovery_complete.wav` | 회복 완료 | AI 생성 | VARCO Sound | Recovery 소리 퓨잇 또로롱 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_crow_cry.wav` | 까마귀 등장 울음 | AI 생성 | VARCO Sound | 까마귀의 까악- 까악- 울음 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_deer_cry.wav` | 고라니 등장 울음 | AI 생성 | VARCO Sound | 낮고 짧은 사람 비명소리 (고라니와 같은) | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_boar_cry.wav` | 멧돼지 등장 울음 | AI 생성 | VARCO Sound | 멧돼지 울음 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/wildlife_defeat.wav` | 야생동물 처치(공통) | AI 생성 | VARCO Sound | 야생동물 죽는 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/dialogue_open.wav` | 대화 열림 | AI 생성 | VARCO Sound | 달그락 소리 나무 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/resident_defeat.wav` | 주민 처치 막타 | AI 생성 | VARCO Sound | 막타 치는 효과음 (타격감 있는) | 해당 없음 (AI 생성) |
+| `assets/final/sfx/record_typing.wav` | 엔딩 기록문 타이핑 | AI 생성 | VARCO Sound | 타이핑 하는 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/day_start_none.wav` | 일차 시작 화면, 조용한 밤 | AI 생성 | VARCO Sound | 아침이 시작되고 닭이 우는 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/day_start_raid.wav` | 일차 시작 화면, 일반 습격 예고 (`day_start_none.wav`와 동일 파일 — 의도적으로 같은 소리 재사용) | AI 생성 | VARCO Sound | 아침이 시작되고 닭이 우는 효과음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/day_start_final.wav` | 일차 시작 화면, 마지막 습격 예고 | AI 생성 | VARCO Sound | 고요하고 강한 바람 소리 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/run_failed.wav` | 런 실패 발생 순간의 스팅어 | AI 생성 | VARCO Sound | 낮은 징(대형 공) 한 번의 묵직한 타격음 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/ending_decided.wav` | 엔딩 확정 순간의 전환 스팅어 | AI 생성 | VARCO Sound | 짧은 전환 스팅어. 1초 내외 원샷. 풍경(처마 밑 바람종)이 한 번 가볍게 흔들리며 내는 청아한 금속음 하나 | 해당 없음 (AI 생성) |
 
 ## 폰트
 

@@ -5,7 +5,7 @@
 없고, 어떻게 연결하는가**만 다룬다.
 
 - 상태: **진행 중** (2026-08-08)
-- SFX 27/33 제작, BGM 6/6 제작
+- SFX 32/32 제작, BGM 6/6 제작
 
 ## 해결됨 — 파일 형식
 
@@ -63,7 +63,7 @@
 
 ## SFX — `assets/final/sfx/`
 
-### 제작 완료 (27종)
+### 제작 완료 (32종)
 
 | 파일 | 트리거 | 연결 방식 |
 |---|---|---|
@@ -94,30 +94,20 @@
 | `dialogue_open.wav` | `dialogue.opened` | 예정 |
 | `resident_defeat.wav` | `encounter.finished({finalOutcome:'killed'})` — 막타 | 예정 |
 | `record_typing.wav` | `ending.recordReady` 표시 중 | 예정 |
-
-### 결정됐지만 아직 미제작 (5종)
-
-습격 예고 3종 + 일차 시작을 하나로 합친 결과다. 원래 있던 `raid_notice_none/raid/final`과
-`day_start`를 대체한다 — 그 4개 파일명은 이제 쓰지 않는다.
-
-| 파일(예정) | 용도 | 비고 |
-|---|---|---|
-| `day_start_none.wav` | `day_start` 화면, 조용한 밤 | `raid_notices.csv`가 `content_assets.csv` 부모 후보에 없어 예정 |
-| `day_start_raid.wav` | `day_start` 화면, 일반 습격 | 위와 동일 |
-| `day_start_final.wav` | `day_start` 화면, 마지막 습격 | 위와 동일 |
+| `day_start_none.wav` | `day_start` 화면, 조용한 밤 | 예정 — `raid_notices.csv`가 `content_assets.csv` 부모 후보에 없다 |
+| `day_start_raid.wav` | `day_start` 화면, 일반 습격 | 예정 (위와 동일 사유). `day_start_none.wav`와 동일 파일 — 의도적으로 같은 소리를 쓴다(2026-08-08, 전성민) |
+| `day_start_final.wav` | `day_start` 화면, 마지막 습격 | 예정 (위와 동일 사유) |
 | `run_failed.wav` | `run.failed` 발생 순간의 스팅어. `defeat.mp3`(BGM)와 별개로 유지 확정 | 예정 |
 | `ending_decided.wav` | `ending.decided` 순간, 화면 전환음과 별개로 유지하기로 함 | 예정 |
 
-### 확인 필요 (1종)
-
-| 항목 | 상태 |
-|---|---|
-| `modal_close.wav` (모달·오버레이 닫기) | `modal_open`과 짝으로 제안했으나 이후 대화에서 다루지 않았다. 필요한지 확인 필요 |
+습격 예고 3종 + 일차 시작을 하나로 합친 결과다. 원래 있던 `raid_notice_none/raid/final`과
+`day_start`를 대체한다 — 그 4개 파일명은 이제 쓰지 않는다.
 
 ### 뺀 것 (재추가하지 않는다)
 
 | 항목 | 뺀 이유 |
 |---|---|
+| `modal_close.wav` (모달·오버레이 닫기) | `modal_open`과 짝으로 제안했으나 필요 없다고 판단(2026-08-08, 전성민) |
 | 데이터 오류 알림 | `data.error`는 승인 데이터가 검증을 통과하면 정상 플레이에서 발생하지 않는 개발자용 안전망이다. 시각 표시만으로 충분 |
 | 퀵슬롯 편성 변경 | 정비 단계 로드아웃 조작. 버튼 클릭음으로 충분하다고 판단 |
 | 제작 성공 / 실패 | 버튼 클릭·거절음으로 충분 |
