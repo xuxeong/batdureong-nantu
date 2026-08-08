@@ -3916,7 +3916,23 @@
 /* 안내는 화면 위쪽 가운데. 재배 게이지는 튜토리얼에서 숨으므로 그 자리를 쓴다 */
 .tutorial__guide {
   position: absolute;
-  top: var(--hud-edge);
+  /*
+    상단 HUD 띠와 겹치지 않게 **조금 내린다** (8/9 담당자).
+
+    8/9 까지 화면 맨 위였는데 좌측 판이 560×101 로 커지면서 안내판이 그 띠와
+    같은 높이에 섰다. 처음엔 띠 아래로 완전히 내렸더니 너무 내려왔다.
+
+    **판 아래 끝에 거의 붙인다.** 판이 세로로 `16~117` 을 차지하는데, 판 바로
+    아래(117)까지 내리면 안내가 밭 쪽으로 너무 내려앉는다. 판 높이의 0.7 이면
+    아래 끝에 가까워 어긋난 정렬로는 안 보이면서 상단 띠보다는 낮다.
+
+    **띠 아래까지 안 내려도 되는 이유**는 튜토리얼에서 재배 시간 게이지가
+    숨기 때문이다 (`DEC-RUN-003` — 튜토리얼에 시간제한이 없다). 안내판이 서는
+    화면 가로 가운데가 평소에는 게이지 자리인데 튜토리얼에서는 비어 있다.
+
+    판 높이 기준이라 판이 또 바뀌어도 따라온다. 배수만 고치면 위아래로 움직인다.
+  */
+  top: calc(var(--hud-edge) + var(--hud-signboard-height) * 0.7);
   left: 50%;
   transform: translateX(-50%);
   width: var(--screen-panel-width);
@@ -3958,9 +3974,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  안내 문구.
+
+  **8/9 에 `lg`(26px)에서 `md`(20px)로 줄였다.** 튜토리얼이 8단계로 늘면서 문구가
+  길어졌다 — 제일 긴 것이 76자라 26px 로는 안내판이 화면을 크게 차지한다.
+  안내는 밭 위에 얹히는 것이라(`tutorial.ts` 머리 주석) 커질수록 가려진다.
+*/
 .tutorial__text {
   margin: 0;
-  font-size: var(--ui-font-lg);
+  font-size: var(--ui-font-md);
   line-height: 1.6;
 }
 
@@ -4058,7 +4081,18 @@
   inset: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  /*
+    **회복 칸 바로 위**에 붙인다 (8/9 담당자).
+
+    8/9 까지 화면 가로 가운데였다. 고르는 대상이 오른쪽 아래 칸인데 목록이
+    화면 한가운데 뜨면 시선이 두 번 움직이고, 퀵슬롯 위를 지나가서 무엇을
+    고르는 목록인지도 흐려진다.
+
+    오른쪽 여백은 회복 칸이 화면 끝에 닿는 만큼(`--hud-edge`)만 둔다 —
+    칸과 목록의 오른쪽 선이 맞아야 둘이 한 덩어리로 읽힌다.
+  */
+  justify-content: flex-end;
+  padding-right: var(--hud-edge);
   /* 퀵슬롯·회복 칸 위에 뜬다. 회복 칸이 둘 중 높다 (166 대 145) */
   padding-bottom: calc(var(--hud-recovery-height) + var(--ui-gap-lg));
   box-sizing: border-box;

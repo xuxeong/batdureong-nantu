@@ -2774,6 +2774,18 @@ const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
     if (openPopup === popup) return
     openPopup = popup
     hub.setPopup(buildPopup(popup))
+    /*
+      튜토리얼의 `open_shop` 안내가 여기서 완료된다 (`DEC-CONTENT-025`).
+
+      **`buy_material` 과 다른 순간이다.** 그쪽은 실제로 산 뒤에 완료되는데,
+      8/9 튜토리얼은 그 앞에 "구매를 눌러 보세요" 를 따로 둔다 — 정비의 기능
+      버튼을 한 번도 안 눌러 본 사람에게 곧바로 "무엇을 사라" 고 하면 어디를
+      눌러야 하는지가 안내에 없다.
+
+      `sell`·`craft`·`quickslots` 를 열어도 완료되지 않는다. 안내가 가리킨
+      버튼과 다른 것을 눌러 넘어가면 안내가 거짓말이 된다.
+    */
+    if (popup === 'buy') completeTutorialStep('open_shop')
   },
   finish: () => {
     // 습격 여부에 따라 버튼이 하나만 나온다. 흐름이 둘을 대조해 어긋나면 오류로 잡는다.
