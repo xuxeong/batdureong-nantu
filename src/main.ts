@@ -14,7 +14,7 @@ import { createSceneManager } from './scenes/manager.ts'
 import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
-import { subjectParticle } from './ui/korean.ts'
+import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -3067,7 +3067,9 @@ function syncScreens(): void {
       endingScreen.render({
         // 제목·요약은 승인 데이터의 값이다. 런 상태에 복제해 두지 않는다
         title: ending.ending_title,
-        summary: ending.ending_summary,
+        // 승인 문구의 {player_name} 을 입력받은 이름으로 채운다. 조사도 같이
+        // 고른다 — 데이터에는 읽기 좋은 한 형태만 적혀 있다 (ui/korean.ts).
+        summary: fillPlayerName(ending.ending_summary, run?.playerName ?? ''),
         // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
         record: endingRecordPending
           ? { state: 'pending' }
