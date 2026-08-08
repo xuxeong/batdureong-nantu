@@ -71,6 +71,11 @@
   --hud-signboard-width: 253px;
   --hud-signboard-height: 174px;
 
+  /* 퀵슬롯 번호판·수량 배지 (A1 목업 8/9). 배지 그림이 오기 전의 판 색이다 —
+     그림이 붙으면 이 둘은 안 쓰이고 배경 그림이 대신한다 */
+  --hud-badge-dark: rgba(58, 40, 26, 0.92);
+  --hud-badge-cream: #efe3c2;
+
   /* 재배 시간 게이지 911×83 — 숫자 없음 */
   --hud-timer-width: 911px;
   --hud-timer-height: 83px;
@@ -679,9 +684,60 @@
   opacity: 0.4;
 }
 
-.hud__slot-count {
+/*
+  칸 위 번호판과 오른쪽 아래 수량 배지 (A1 목업 8/9).
+
+  **칸 밖으로 나가는 것이 번호판 하나뿐**이라 `.hud__slot` 의 `overflow: hidden`
+  을 풀고 그 자리를 이름에게 넘겼다. 원래 그 규칙은 긴 무기 이름이 칸을 넘치는
+  것을 막으려던 것이고, 번호판까지 자를 이유는 없다.
+
+  **배지 그림이 아직 없어 판을 CSS 로 그린다.** 그림이 오면
+  `--hud-slot-badge-image` 를 붙이는 규칙 하나만 더하면 교체된다 —
+  지금까지 아트를 붙여 온 방식 그대로다 (AGENTS.md 6절).
+*/
+.hud__slot {
+  position: relative;
+  overflow: visible;
+}
+
+.hud__slot-name {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.hud__slot-index {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  min-width: 30px;
+  padding: 1px 8px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background: var(--hud-badge-dark);
+  color: var(--ui-text);
+  font-size: var(--ui-font-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text-dim);
+}
+
+/* 수량은 칸 오른쪽 아래 모서리에 문다. 회복 칸도 같은 클래스를 쓴다 */
+.hud__slot-count {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  min-width: 26px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background: var(--hud-badge-cream);
+  color: var(--ui-text-on-panel);
+  font-size: var(--ui-font-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud__slot-count[hidden] {
+  display: none;
 }
 
 /* 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화한다 (DEC-UI-002) */
@@ -746,6 +802,11 @@
   칸이 162×166 인데 둘을 같이 두면 아이콘도 글자도 읽을 수 없게 작아진다.
   그림이 없으면 이름이 그대로 서므로 플레이스홀더가 따로 필요 없다.
 */
+/* 수량 배지가 모서리에 붙으려면 칸이 위치 기준이어야 한다 */
+.hud__recovery {
+  position: relative;
+}
+
 .hud__recovery-icon {
   width: 72%;
   height: 72%;
