@@ -3433,7 +3433,18 @@
   inset: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  /*
+    **회복 칸 바로 위**에 붙인다 (8/9 담당자).
+
+    8/9 까지 화면 가로 가운데였다. 고르는 대상이 오른쪽 아래 칸인데 목록이
+    화면 한가운데 뜨면 시선이 두 번 움직이고, 퀵슬롯 위를 지나가서 무엇을
+    고르는 목록인지도 흐려진다.
+
+    오른쪽 여백은 회복 칸이 화면 끝에 닿는 만큼(`--hud-edge`)만 둔다 —
+    칸과 목록의 오른쪽 선이 맞아야 둘이 한 덩어리로 읽힌다.
+  */
+  justify-content: flex-end;
+  padding-right: var(--hud-edge);
   /* 퀵슬롯·회복 칸 위에 뜬다. 회복 칸이 둘 중 높다 (166 대 145) */
   padding-bottom: calc(var(--hud-recovery-height) + var(--ui-gap-lg));
   box-sizing: border-box;
