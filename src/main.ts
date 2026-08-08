@@ -699,6 +699,18 @@ function selectedRecoveryName(): string | null {
   return displayNames.get(id) ?? id
 }
 
+/**
+ * 선택된 회복 아이템의 보유 수량 (A1 목업 8/9 — 회복 칸에도 수량 배지).
+ *
+ * **퀵슬롯과 같은 뜻의 숫자다.** 칸에 무엇이 몇 개 남았는지가 던질 것과 먹을 것
+ * 양쪽에서 같은 자리에 보여야 한다. 선택된 것이 없으면 배지도 없다.
+ */
+function selectedRecoveryCount(): number | null {
+  const id = run?.pouch.selectedId ?? null
+  if (id === null || run === null || recoverySources === null) return null
+  return recoveryOptions(run, recoverySources).find((o) => o.id === id)?.held ?? null
+}
+
 const player = { x: 0, y: 0 }
 
 /**
@@ -3540,6 +3552,7 @@ function hudView() {
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
     // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
     recoveryName: selectedRecoveryName(),
+    recoveryCount: selectedRecoveryCount(),
     // 선택된 회복 아이템의 아이콘. 퀵슬롯과 같은 표에서 온다 (8/9)
     recoveryIcon: run?.pouch.selectedId === null || run?.pouch.selectedId === undefined
       ? undefined

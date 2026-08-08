@@ -77,6 +77,13 @@ export interface HudView {
    * 칸이 162×166 이라 아이콘과 이름을 같이 두면 둘 다 작아진다.
    */
   recoveryIcon?: string
+  /**
+   * 선택된 회복 아이템의 보유 수량 (A1 목업 8/9).
+   *
+   * 퀵슬롯 칸의 수량 배지와 같은 자리·같은 모양이다 — 던질 것과 먹을 것의
+   * 남은 개수가 화면에서 같은 방식으로 읽혀야 한다. 없으면 배지를 안 그린다.
+   */
+  recoveryCount?: number | null
 
   /**
    * 소진으로 자동 전환돼 새로 선택된 칸 (DEC-UI-002, DEC-INPUT-007).
@@ -240,7 +247,10 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   // 퀵슬롯 칸과 같은 구조다 — 아이콘이 있으면 그것만, 없으면 이름이 대신 선다.
   const recoveryIcon = el('div', 'hud__recovery-icon')
   const recoveryName = el('div', 'hud__recovery-name')
-  recovery.append(recoveryIcon, recoveryName)
+  // 수량 배지는 퀵슬롯 칸과 같은 클래스를 쓴다 (A1 목업 8/9) — 같은 뜻의 숫자라
+  // 모양이 갈리면 안 된다.
+  const recoveryCount = el('div', 'hud__slot-count')
+  recovery.append(recoveryIcon, recoveryName, recoveryCount)
   bindAsset(recovery, '--hud-recovery-image', UI_ASSET.recoverySlot)
   bottomRight.append(quickslots, recovery)
 
@@ -273,7 +283,21 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       const slotIcon = el('div', 'hud__slot-icon')
       const slotName = el('div', 'hud__slot-name')
       const count = el('div', 'hud__slot-count')
-      slot.append(slotIcon, slotName, count)
+      /*
+        칸 위 번호판 (A1 목업 8/9).
+
+        **여기 번호는 장식이 아니라 조작이다.** `DEC-INPUT-013` 이 `1~4` 로 그
+        위치를 직접 고르게 정했고, 편성 팝업은 이미 번호를 달고 있다(`hub__slot-index`).
+        HUD 에만 없어서 필드에서는 몇 번을 눌러야 하는지 알 수 없었다.
+
+        `DEC-UI-035` 가 막은 번호 표시는 **대화 선택지** 쪽이다 — 거긴 번호키
+        조작 자체가 없어서 번호를 보이면 없는 조작을 약속하게 된다. 여기는 반대다.
+
+        길이는 `QUICKSLOT_KEYS` 가 아니라 칸 순서에서 온다. 배치표를 여기서
+        다시 읽으면 두 곳이 갈린다 — 칸 수와 키 수가 같은 것은 테스트가 지킨다.
+      */
+      const index = el('div', 'hud__slot-index', String(slotNodes.length + 1))
+      slot.append(slotIcon, slotName, count, index)
       quickslots.appendChild(slot)
       slotNodes.push({ root: slot, icon: slotIcon, name: slotName, count })
     }
@@ -368,6 +392,10 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       if (recoveryIconUrl !== null) {
         recoveryIcon.style.setProperty('--hud-recovery-icon-image', recoveryIconUrl)
       }
+
+      const held = view.recoveryCount ?? null
+      recoveryCount.hidden = held === null
+      if (held !== null) recoveryCount.textContent = String(held)
     },
 
     setVisible(visible) {
