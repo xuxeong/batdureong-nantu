@@ -27,7 +27,7 @@
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v4.png` | A3 소지품 정렬·소지금 HUD·상세 여백 보정본 | AI 보정 2회 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-010` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v5.png` | A3 독립 소지금 HUD·소지품 제목판·기능 버튼 선택 표시 보정본 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-011` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v6(구).png` | A3 소지금 HUD 축소·기능 버튼 선택선 정돈 구버전 | AI 보정 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-A-012` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/source/phase-a/A3_maintenance_hub_mockup_v7.png` | 실제 구현 배치에 맞춘 A3 정비 허브 최종 목업 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(편집 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 5 (7).png` | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v7.png` | v8 이전의 A3 정비 허브 배치 기준 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(편집 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 5 (7).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-b/sheets/a1_hud_components_sheet_chroma.png` | A1 HUD 10종 통합 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-001` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b1_common_ui_frame_components_sheet_chroma.png` | B1 공용 패널·한지·버튼 상태·닫기 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-005` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b2_maintenance_small_components_sheet_chroma.png` | B2 정비 화면 소형 부품 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-006` 전문 참조 | 해당 없음 (AI 생성) |
@@ -38,8 +38,9 @@
 | `assets/source/phase-b/sheets/b4_button_components_sheet_chroma.png` | B4 선택 기능·수량 조절 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-010` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b4_button_components_sheet_chroma_v2.png` | B4 빼기·더하기 기호 밝은색 보정본 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-012` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b5_closed_sliding_paper_doors_1920x1080.png` | B5 닫힌 창호지 미닫이문 단독 배경 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + System.Drawing | `IMG-B-011` 전문 참조 | 해당 없음 (AI 생성) |
-| `assets/final/ui/*.png` (B1~B5) | B 시트에서 분리한 UI 부품 17종. `button_selected`는 실제 배치에서 기능 버튼이 셋으로 줄어 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-005`~`IMG-B-013` 참조 | 해당 없음 (AI 생성) |
-| `assets/final/ui/quickslot_count_badge.png` | 투척 퀵슬롯 우하단 수량 배지 | 기존 AI 생성 내부 에셋에서 직접 분리·편집 | Figma | `assets/final/ui/item_slot_badge.png`의 배지 형태에서 분리 제작. 원본은 `IMG-B-006`~`IMG-B-008` 참조, 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
+| `assets/final/ui/*.png` (B1~B5) | B 시트에서 분리한 UI 부품 17종. `button_selected`는 v8의 네 기능 버튼이 같은 기본 그림을 위치만 옮겨 선택을 표시하므로 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-005`~`IMG-B-013` 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/quickslot_count_badge.png` | 투척 퀵슬롯·회복 칸 우하단 공용 수량 배지 | 기존 AI 생성 내부 에셋에서 직접 분리·편집 | Figma | `assets/final/ui/item_slot_badge.png`의 배지 형태에서 분리 제작. 원본은 `IMG-B-006`~`IMG-B-008` 참조, 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
+| `assets/final/ui/coin.png` | 가격·총액·보유량 옆 공용 엽전 아이콘 | 기존 프로젝트 엽전 형태를 프로젝트 책임자가 직접 편집 | Figma | 프로젝트 내부 UI 엽전 형태 참조. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/final/ui/*.png` (A1) | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_background_1920x1080_sheet.png` | A1 낮 필드 바닥 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/a1_forest_frame_1920x1080_sheet.png` | A1 숲 뒤·앞 레이어 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-002` 전문 참조 | 해당 없음 (AI 생성) |
@@ -70,6 +71,11 @@
 | `assets/source/phase-d/bg_title_v3.png`, `assets/final/ui/bg_title.png` | 누런 하늘·언덕 너머 시골 마을·우측 팻말 기둥으로 구성한 타이틀 화면 배경 원본과 최종본 | AI 생성·반복 보정·프로젝트 책임자 선별·최종 저장 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 14.3.1절 및 제작 대화 참조 | 해당 없음 (AI 생성) |
 | `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A0_title_screen_mockup_v2.png`, `A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 타이틀·재배·습격 화면의 2026-08-09 QA 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 정비 화면 판매·제작·편성 2상태의 QA 최신 배치 목업 4장 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 1일차와 2~5일차 시작 화면의 배치 전용 임시 아트 목업 2장 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 두루마리 등 최종 에셋 미반영. 배치만 참고 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A6_encounter_result_mockup_v1.png`, `A7_night_result_mockup_v1.png` | 창호지 셔터 공용 배경을 사용한 조우 결과·밤 결과 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A8_ending_mockup_v1.png` | 엔딩 화면의 배치 전용 임시 아트 목업 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 대자보 게시판과 엔딩 컷신 미반영. 배치만 참고 | 해당 없음 (내부 제작) |
 
 ## 사운드 · BGM
 
