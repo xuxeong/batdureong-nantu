@@ -33,7 +33,7 @@ export interface InputEvents {
   onThrow?(): void
   /** 오른쪽 클릭 (DEC-INPUT-004) */
   onSickle?(): void
-  /** `1~5` 직접 선택 (DEC-INPUT-006) */
+  /** `1~4` 직접 선택 (DEC-INPUT-013) */
   onQuickslotSelect?(index: number): void
   /** 휠. 수량이 남은 무기만 순환하는 것은 시스템 쪽 판단이다 */
   onQuickslotCycle?(direction: 1 | -1): void

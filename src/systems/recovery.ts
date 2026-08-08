@@ -13,10 +13,10 @@
 // 둘뿐이다 — `회복 아이템 없음` 상태에서 뭔가를 얻었을 때(DEC-RESOURCE-017),
 // 그리고 선택한 것이 소진됐을 때(DEC-RESOURCE-018).
 //
-// ── 순서는 하나다 (DEC-UI-001) ─────────────────────────────
+// ── 순서는 하나다 (DEC-UI-037) ─────────────────────────────
 //
 // 제작 회복 아이템 먼저, 생식 가능한 수확물 뒤, 각 묶음 안에서 ID 오름차순.
-// `DEC-UI-001` 이 퀵메뉴 표시 순서로 정하고 **그 순서를 자동 선택에도 쓴다**고
+// `DEC-UI-037` 이 퀵메뉴 표시 순서로 정하고 **그 순서를 자동 선택에도 쓴다**고
 // 명시했다. 그래서 목록을 만드는 곳이 여기 하나다 — 두 벌이면 화면에서 고른
 // 순서와 자동으로 고르는 순서가 달라진다.
 
@@ -27,7 +27,7 @@ import type { ItemStore, RecoveryPouch, RunState } from '../state/types.ts'
 export interface RecoveryOption {
   id: string
   displayName: string
-  /** 승인 데이터에서 읽은 회복량 (DEC-UI-001) */
+  /** 승인 데이터에서 읽은 회복량 (DEC-UI-037) */
   healAmount: number
   useDurationSeconds: number
   moveSpeedMultiplier: number
@@ -51,7 +51,7 @@ function countIn(store: ItemStore, id: string): number {
 }
 
 /**
- * 지금 쓸 수 있는 회복 항목 (DEC-RESOURCE-017, DEC-UI-001).
+ * 지금 쓸 수 있는 회복 항목 (DEC-RESOURCE-017, DEC-UI-037).
  *
  * **보유 1개 이상만** 담는다. 0개인 것을 목록에 두면 퀵메뉴가 못 쓰는 항목을
  * 보여주게 되고 자동 선택도 그것을 고른다.
@@ -85,7 +85,7 @@ export function recoveryOptions(run: RunState, sources: RecoverySources): Recove
     .filter((option) => option.held > 0)
     .sort((a, b) => a.id.localeCompare(b.id))
 
-  // 제작 회복 아이템이 먼저다 (DEC-UI-001)
+  // 제작 회복 아이템이 먼저다 (DEC-UI-037)
   return [...made, ...raw]
 }
 

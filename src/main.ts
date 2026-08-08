@@ -11,13 +11,15 @@
 import { createEventBus } from './core/bus.ts'
 import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
+import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
-import { subjectParticle } from './ui/korean.ts'
+import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
+import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { createAssetImages, UI_ASSET } from './render/assets.ts'
+import { BGM_ASSET, SOUND_ASSET, createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -29,7 +31,12 @@ import type { FarmingSystem } from './systems/farming.ts'
 import { createStageTimer } from './systems/stage-timer.ts'
 import type { StageTimer } from './systems/stage-timer.ts'
 import { createCombat } from './systems/combat.ts'
-import type { CombatSystem, CombatTarget } from './systems/combat.ts'
+import type { CombatEvent, CombatSystem, CombatTarget } from './systems/combat.ts'
+import { headingStep, walkStep } from './render/motion.ts'
+import type { Facing } from './render/motion.ts'
+import { createBgm } from './audio/bgm.ts'
+import { createMixer } from './audio/mixer.ts'
+import { createSfx } from './audio/sfx.ts'
 import { createWildlife } from './systems/wildlife.ts'
 import type { WildlifeSystem } from './systems/wildlife.ts'
 import { createResidentCombat } from './systems/resident-combat.ts'
@@ -66,7 +73,7 @@ import type { JournalBaseline, RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
 import type { Hud } from './ui/hud.ts'
 import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
-import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
+import type { HubPopupId, InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
 import { createNightResult, selectNightResultText } from './ui/night-result.ts'
 import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
 import { createTitle } from './ui/title.ts'
@@ -116,6 +123,7 @@ import { createShopModal } from './ui/shop-modal.ts'
 import type { ShopItemView, ShopMode } from './ui/shop-modal.ts'
 import { createCraftModal } from './ui/craft-modal.ts'
 import type { CraftRecipeView, CraftStatView } from './ui/craft-modal.ts'
+import type { TooltipStat } from './ui/tooltip.ts'
 import { createQuickslotModal } from './ui/quickslot-modal.ts'
 import type { QuickslotView } from './ui/quickslot-modal.ts'
 import { createDialogueModal } from './ui/dialogue-modal.ts'
@@ -152,13 +160,40 @@ let farmingTimer: StageTimer | null = null
 let cropsById = new Map<string, Crop>()
 
 /**
- * 필드가 그릴 논리 에셋 ID (DEC-ART-001).
+ * 필드가 그릴 논리 에셋 ID (DEC-ART-004).
  *
  * 승인 데이터가 오기 전에는 비어 있고, 그동안 필드는 플레이스홀더 도형으로 그려진다.
  * 여기에 임시 ID 를 넣지 않는다 — 없는 것은 없는 대로 보여야 한다.
  */
 let fieldAssets: FieldAssetIds = {}
-/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-001) */
+/**
+ * 필드에 그리는 논리 에셋 ID (`DEC-ART-004`, 아트 디렉션 F·E 단계).
+ *
+ * **주민은 `residents.csv`, 야생동물은 `wildlife.csv`, 투척물은
+ * `throwable_weapons.csv` 의 `assets` 에서 온다.** 적대 주민이 쏘는 투사체만
+ * 쏘는 주민 쪽에 붙는다 — `resident_combat_profiles.csv` 는 에셋 연결 CSV 의
+ * 부모 후보가 아니고 쏘는 주체가 주민이라서다.
+ *
+ * 그림이 없으면 값이 `undefined` 이고 렌더가 도형으로 대신한다.
+ */
+let playerSprite: string | undefined
+/**
+ * 플레이어·주민의 에셋 묶음 전체.
+ *
+ * `DEC-ART-004` 가 좌·우·공격 교체 스프라이트를 허용하면서 `field_sprite` 한 장만
+ * 들고 있어서는 고를 수 없게 됐다. `characterSprite()` 가 여기서 방향과 공격
+ * 상태에 맞는 것을 꺼낸다. 위 `playerSprite` 는 정면 한 장이 필요한 자리
+ * (지원 주민·미리 받기)가 계속 쓴다.
+ */
+let playerAssets: ContentAssets | undefined
+let residentAssets = new Map<string, ContentAssets>()
+/** 대화 화면의 플레이어 그림. `portrait` 이 없으면 `field_sprite` 로 떨어진다 */
+let playerPortrait: string | undefined
+let residentSprites = new Map<string, string | undefined>()
+let residentPortraits = new Map<string, string | undefined>()
+let residentProjectiles = new Map<string, string | undefined>()
+let throwableProjectiles = new Map<string, string | undefined>()
+/** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-004) */
 let seedAssetId: string | null = null
 /** 작물 ID → 성장·수확 가능 그림. 씨앗은 여기 없다 */
 let cropAssetsById = new Map<string, ContentAssets>()
@@ -167,8 +202,14 @@ let run: RunState | null = null
 let economy: Economy | null = null
 /** 보관함 표시 이름을 찾기 위한 통합 사전. 분류가 달라도 조회는 한 곳에서 한다 */
 let displayNames = new Map<string, string>()
-/** 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020) */
-let openPopup: string | null = null
+/**
+ * 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020).
+ *
+ * **`string` 이 아니라 `HubPopupId` 다.** 넷으로 고정된 값인데 느슨하게 두면
+ * 오타가 검사에 안 걸린다 — `buildPopup()` 의 마지막 갈래가 "팝업 종류가 늘었는데
+ * 화면을 안 붙인 것" 을 잡으라고 있는데, 타입이 좁으면 그 전에 걸린다.
+ */
+let openPopup: HubPopupId | null = null
 /**
  * 열려 있는 팝업을 갱신하는 함수. 닫혀 있으면 null.
  *
@@ -200,6 +241,26 @@ let dialogue: {
 
 /** 선택지 문장을 찾기 위한 사전. 판정은 encounter.ts 가 하고 문장은 여기서 읽는다 */
 let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoice>()
+
+/**
+ * 항목별 설명과 수치 (`DEC-UI-034`, 아트 디렉션 14.8·14.9).
+ *
+ * 보관함·상점·제작 목록이 **같은 사전을 본다.** 세 화면이 각자 만들면 같은 아이템이
+ * 화면마다 다른 수치를 보여줄 수 있다. 값은 전부 승인 데이터에서 오고 설명 문장에서
+ * 읽지 않는다.
+ *
+ * 작물에는 `player_description` 열이 없어 설명이 비고 수치만 들어간다.
+ */
+let itemDescriptions = new Map<string, string>()
+let itemStats = new Map<string, TooltipStat[]>()
+
+/**
+ * 항목별 아이콘 (`asset.icon.*`).
+ *
+ * 보관함·상점·제작 목록과 입력 표·퀵슬롯 칸·편성 팝업이 **같은 사전을 본다.**
+ * 작물·재료·투척 무기·회복 아이템·작물 속성이 전부 여기 들어간다.
+ */
+let itemIcons = new Map<string, string | undefined>()
 
 /** 상점·제작 모달이 읽는 승인 데이터 */
 let shopMaterials: readonly CraftingMaterial[] = []
@@ -253,7 +314,7 @@ let allySupport: AllySupport | null = null
 /**
  * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
  *
- * `DEC-UI-017` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * `DEC-UI-036` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
  * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
  * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
  */
@@ -487,6 +548,20 @@ function startNewRun(playerName: string): void {
   dialogue = null
   pendingEncounter = null
   encounterResultView = null
+  // 걷기 위상은 개체 키로 들고 있어서 새 런이 같은 키를 다시 쓴다 (DEC-ART-004).
+  // 안 지우면 직전 런의 마지막 좌표와 비교해 첫 프레임에 순간이동으로 읽힌다.
+  resetBob()
+
+  // 재배 표시도 버린다 (8/8 플레이 테스트).
+  //
+  // **이 둘은 `advanceFeedback()` 이 줄이는데 그 함수는 재배 단계에서만 돈다.**
+  // 그래서 튜토리얼 재배에서 쌓인 것이 전투·정비 동안 남은 시간 그대로 얼어
+  // 있다가, 본 런 1일차 재배가 시작되는 순간부터 다시 흐른다 — 튜토리얼에서
+  // 딴 고추가 소지품에는 없는데 `고추 +2` 만 1일차 시작에 떴다.
+  //
+  // 시간이 흐르지 않는 구간이 있는 표시는 **단계가 바뀔 때 버려야** 한다.
+  harvestPopups = []
+  readyFlashes.clear()
 
   dayStartJournal = null
   journalRequestDay = null
@@ -625,6 +700,18 @@ function selectedRecoveryName(): string | null {
   return displayNames.get(id) ?? id
 }
 
+/**
+ * 선택된 회복 아이템의 보유 수량 (A1 목업 8/9 — 회복 칸에도 수량 배지).
+ *
+ * **퀵슬롯과 같은 뜻의 숫자다.** 칸에 무엇이 몇 개 남았는지가 던질 것과 먹을 것
+ * 양쪽에서 같은 자리에 보여야 한다. 선택된 것이 없으면 배지도 없다.
+ */
+function selectedRecoveryCount(): number | null {
+  const id = run?.pouch.selectedId ?? null
+  if (id === null || run === null || recoverySources === null) return null
+  return recoveryOptions(run, recoverySources).find((o) => o.id === id)?.held ?? null
+}
+
 const player = { x: 0, y: 0 }
 
 /**
@@ -668,7 +755,7 @@ async function bootData(): Promise<boolean> {
     const map = data.maps![0]
     camera.setWorldSize(map.world_width, map.world_height)
 
-    // ── 논리 에셋 ID (DEC-ART-001) ──────────────────
+    // ── 논리 에셋 ID (DEC-ART-004) ──────────────────
     //
     // 붙어 있는 것만 온다. **없는 역할을 코드가 지어내지 않는다** — 그림이 없으면
     // 렌더가 플레이스홀더로 그리고, 그 사실이 화면에 보이는 것이 맞다.
@@ -680,6 +767,30 @@ async function bootData(): Promise<boolean> {
       (data.crops ?? []).map((crop) => [crop.id, crop.assets ?? {}]),
     )
 
+    // 필드 위 사람·짐승·투사체 (F·E 단계)
+    playerSprite = data.player_base_stats![0].assets?.field_sprite
+    playerAssets = data.player_base_stats![0].assets
+    residentAssets = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets ?? {}]),
+    )
+    playerPortrait =
+      data.player_base_stats![0].assets?.portrait ??
+      data.player_base_stats![0].assets?.field_sprite
+    residentSprites = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.field_sprite]),
+    )
+    // 대화 화면의 초상화 (A4). `portrait` 이 아직 없어 `field_sprite` 로 떨어진다 —
+    // 같은 인물의 그림이라 누가 말하는지는 전달된다. 파일이 오면 이 줄이 알아서 바뀐다.
+    residentPortraits = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.portrait ?? r.assets?.field_sprite]),
+    )
+    residentProjectiles = new Map(
+      (data.residents ?? []).map((r) => [r.id, r.assets?.projectile]),
+    )
+    throwableProjectiles = new Map(
+      (data.throwable_weapons ?? []).map((w) => [w.id, w.assets?.projectile]),
+    )
+
     // 첫 프레임에 밭이 비어 보이지 않게 미리 받는다. 실패해도 진행을 막지 않는다 —
     // 아트는 아직 없을 수 있고 그것 때문에 런이 안 시작되면 안 된다.
     void assetImages.preload([
@@ -689,6 +800,31 @@ async function bootData(): Promise<boolean> {
       UI_ASSET.fieldFrameFront,
       UI_ASSET.plotHighlight,
       ...[...cropAssetsById.values()].flatMap((a) => [a.crop_growing, a.crop_ready]),
+      // 사람과 짐승은 첫 프레임부터 보여야 한다. 습격에서 처음 받으면 주민이
+      // 한 박자 늦게 나타난다.
+      playerSprite,
+      ...residentSprites.values(),
+      ...residentProjectiles.values(),
+      ...throwableProjectiles.values(),
+      ...(data.wildlife ?? []).map((w) => w.assets?.field_sprite),
+      // 초상화와 UI 부품도 같이 받는다 (8/8 플레이 테스트).
+      //
+      // **이것들은 캔버스가 아니라 CSS `background-image` 로 쓰인다.** 그래도
+      // 여기 넣는 이유는 `new Image()` 가 브라우저 HTTP 캐시를 데워 두기 때문이다 —
+      // 안 그러면 그 그림이 **화면에 나타나는 순간에** 받기 시작해서, 대화창이
+      // 열린 뒤 초상화가 한 박자 늦게 뜨고 정비 창호지 두 짝이 순차로 나타난다.
+      //
+      // `UI_ASSET` 전체를 넣는다. 하나씩 고르면 부품이 늘 때마다 여기가 낡는다.
+      playerPortrait,
+      ...residentPortraits.values(),
+      ...Object.values(UI_ASSET),
+      // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
+      // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
+      ...[playerAssets, ...residentAssets.values()].flatMap((a) => [
+        a?.field_sprite_left,
+        a?.field_sprite_right,
+        a?.field_sprite_attack,
+      ]),
     ])
     player.x = map.world_width / 2
     player.y = map.world_height / 2
@@ -706,6 +842,13 @@ async function bootData(): Promise<boolean> {
     farmingTimer = createStageTimer(schedule.farming_duration_seconds)
 
     throwablesById = new Map((data.throwable_weapons ?? []).map((w) => [w.id, w]))
+
+    // 작물 속성 효과가 낼 소리 (mechanicSfx 주석 참고). 붙은 것만 들어간다.
+    mechanicSfx = new Map(
+      (data.crop_attributes ?? [])
+        .filter((a) => a.assets?.sfx !== undefined)
+        .map((a) => [a.combat_mechanic_key, a.assets!.sfx!]),
+    )
 
     const weapons = data.throwable_weapons ?? []
     combat = createCombat({
@@ -870,6 +1013,57 @@ async function bootData(): Promise<boolean> {
     // 목록과 판정이 서로 다른 데이터를 보면 화면에는 있는데 못 만드는 레시피가 생긴다.
     dialogueChoicesById = new Map((data.dialogue_choices ?? []).map((c) => [c.id, c]))
 
+    // 항목별 설명·수치 사전. 네 분류를 한 곳에 모은다 (아트 디렉션 14.8)
+    itemDescriptions = new Map(
+      [
+        ...(data.crafting_materials ?? []),
+        ...(data.throwable_weapons ?? []),
+        ...(data.recovery_items ?? []),
+      ].map((entry) => [entry.id, entry.player_description]),
+    )
+    itemStats = new Map([
+      // 작물은 player_description 열이 없다. 수치만 넣는다
+      ...crops.map(
+        (crop) =>
+          [
+            crop.id,
+            [
+              { label: '판매가', value: String(crop.sell_price) },
+              { label: '수확량', value: String(crop.base_yield) },
+              ...(crop.is_raw_edible && crop.raw_heal_amount !== null
+                ? [{ label: '생식 회복', value: String(crop.raw_heal_amount) }]
+                : []),
+            ],
+          ] as [string, TooltipStat[]],
+      ),
+      ...(data.crafting_materials ?? []).map(
+        (material) =>
+          [material.id, [{ label: '구매가', value: String(material.buy_price) }]] as [
+            string,
+            TooltipStat[],
+          ],
+      ),
+      ...(data.throwable_weapons ?? []).map(
+        (weapon) => [weapon.id, throwableStats(weapon)] as [string, TooltipStat[]],
+      ),
+      ...(data.recovery_items ?? []).map(
+        (item) => [item.id, recoveryStats(item)] as [string, TooltipStat[]],
+      ),
+    ])
+
+    // 아이콘 사전. 다섯 테이블이 한 곳으로 모인다 (C단계 18종)
+    itemIcons = new Map(
+      [
+        ...crops,
+        ...(data.crafting_materials ?? []),
+        ...(data.throwable_weapons ?? []),
+        ...(data.recovery_items ?? []),
+        ...(data.crop_attributes ?? []),
+      ].map((entry) => [entry.id, entry.assets?.icon]),
+    )
+    // 정비 화면은 셔터가 덮은 뒤 열리므로 미리 받아 두지 않으면 첫 프레임이 빈다
+    void assetImages.preload([...itemIcons.values()])
+
     shopMaterials = data.crafting_materials ?? []
     craftRecipes = data.recipes ?? []
     recipesById = new Map(craftRecipes.map((r) => [r.id, r]))
@@ -909,23 +1103,384 @@ const HARVEST_POPUP_SECONDS = 1.2
 /** 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002 — "짧게"만 정해져 있다) */
 const AUTO_SWITCH_FLASH_SECONDS = 1
 const EMPTY_FIRE_NOTICE_SECONDS = 1.2
+/**
+ * 낫 휘두름 호가 보이는 시간.
+ *
+ * 전성민이 이펙트 넷을 코드 도형과 시간값으로 하라고 정하면서 지속시간은
+ * 주지 않았다 (8/6). 낫 재사용 대기가 승인 데이터로 0.5초라 그보다 짧아야
+ * 다음 휘두름과 겹치지 않는다.
+ */
+const SICKLE_SWING_SECONDS = 0.18
 
 /**
- * 투척 퀵슬롯 피드백 (DEC-UI-002).
+ * 투척 퀵슬롯 피드백 (DEC-UI-002)과 낫 휘두름 표시.
  *
  * **재배·습격 양쪽에서 흐른다.** 아래 `advanceFeedback()` 은 재배 단계에서만
- * 불리는데 투척은 습격에서도 쓴다. 그래서 이 둘만 따로 두고 단계와 무관하게 줄인다 —
- * 습격에서 소진 전환이 일어나면 강조가 영영 안 사라지는 것을 막는다.
+ * 불리는데 투척과 낫은 습격에서도 쓴다. 그래서 이것들만 따로 두고 단계와 무관하게
+ * 줄인다 — 습격에서 소진 전환이 일어나면 강조가 영영 안 사라지는 것을 막는다.
  */
 let autoSwitchFlash: { index: number; remaining: number } | null = null
 let emptyFireRemaining = 0
 
-function advanceThrowFeedback(dt: number): void {
+/**
+ * 방금 휘두른 낫의 조준 방향과 남은 표시 시간.
+ *
+ * **각도를 휘두른 순간에 붙잡는다.** 그리는 시점의 `input.aimAngle()` 을 쓰면
+ * 호가 커서를 따라다녀서, 판정이 이미 끝난 방향이 아니라 지금 커서 방향을
+ * 가리킨다. 판정은 `swingSickle()` 이 그 순간의 각도로 이미 끝냈다.
+ */
+let sickleSwing: { angle: number; remaining: number } | null = null
+
+/**
+ * 걷는 흔들림(bob)의 위상. 개체 키 → 위상 0~1 과 직전 좌표 (`DEC-ART-004`).
+ *
+ * **확정문이 걷기를 스프라이트 예외에서 빼고 코드 bob 으로 못박았다** —
+ * *"이동 중 흔들림은 예외가 아니라 코드가 위치를 오르내리는 방식(bob)으로
+ * 표현하며 새 스프라이트를 만들지 않는다."*
+ *
+ * 위상을 렌더가 아니라 여기서 들고 있는 이유는 **실제로 움직였는지를 좌표
+ * 변화로만 알 수 있어서다.** 플레이어는 입력으로, 적대 주민은 자기 AI 로
+ * 움직이므로 속도를 한곳에서 읽을 수 없다. 직전 좌표와 비교하면 어느 쪽이든
+ * 같은 방법으로 판정된다.
+ */
+const bobStates = new Map<string, { phase: number; x: number; y: number }>()
+
+/** 한 걸음에 걸리는 시간. 표현이라 승인 데이터가 아니다 */
+const BOB_STEP_SECONDS = 0.42
+/**
+ * 이 속도 아래면 멈춘 것으로 본다 (월드 단위/초).
+ *
+ * 0 으로 두면 밀림·반올림 같은 미세한 좌표 변화에도 계속 튄다.
+ */
+const BOB_MOVING_SPEED = 4
+
+/**
+ * 좌표 변화로 이동을 판정해 위상을 진행시킨다. 멈췄으면 null.
+ *
+ * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
+ * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
+ */
+/* 방향과 위상 계산은 `render/motion.ts` 에 있다 — 그 파일만 테스트가 붙는다 */
+
+/**
+ * 좌표 변화로 이동을 판정해 위상과 방향을 낸다. 멈췄으면 위상이 null 이다.
+ *
+ * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
+ * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
+ */
+function advanceBob(
+  key: string,
+  x: number,
+  y: number,
+  dt: number,
+): { phase: number | null; facing: Facing } {
+  const prev = bobStates.get(key)
+  if (prev === undefined) {
+    bobStates.set(key, { phase: 0, x, y })
+    return { phase: null, facing: null }
+  }
+
+  const step = walkStep(prev.phase, x - prev.x, y - prev.y, dt, runConfig.moveSpeed, {
+    stepSeconds: BOB_STEP_SECONDS,
+    movingSpeed: BOB_MOVING_SPEED,
+  })
+  prev.x = x
+  prev.y = y
+  // 멈추면 착지 자세로 되돌린다. 공중에서 굳으면 떠 있는 것처럼 보인다.
+  prev.phase = step.phase ?? 0
+  return step
+}
+
+/**
+ * 필드가 입력을 갖고 있던 마지막 조준 각도.
+ *
+ * 그리는 시점의 `input.aimAngle()` 을 그대로 쓰면 일시정지·대화·정비가 열려
+ * 있어도 조준선이 커서를 따라다닌다. 낫·투척은 계속 `input.aimAngle()` 을
+ * 직접 읽는다 — 그쪽은 필드가 입력을 가질 때만 불리므로 굳힐 이유가 없다.
+ */
+let fieldAimAngle = 0
+
+/**
+ * 야생동물의 진행 방향. 인스턴스 ID → 각도와 직전 좌표 (`DEC-ART-004`).
+ *
+ * 확정문이 사람과 야생동물을 갈랐다 — 사람은 bob, **야생동물은 회전**이다.
+ * *"탑뷰에서 머리가 진행 방향을 향하도록 이동 중인 야생동물의 기존 한 장짜리
+ * 스프라이트를 현재 이동 벡터 방향으로 코드가 회전한다."*
+ *
+ * **멈추면 마지막 방향을 유지한다.** 그래서 각도를 들고 있어야 하고, 멈춘
+ * 프레임에 각도를 버리면 설 때마다 홱 돌아간다.
+ */
+const wildlifeHeadings = new Map<string, { angle: number; x: number; y: number }>()
+
+/**
+ * 아직 안 움직인 개체의 방향. **회전 0 이 되는 각도다.**
+ *
+ * 그림이 화면 아래쪽(+Y)을 보고 있어서 `field.ts` 가 `heading - 90도` 로 돌린다.
+ * 그래서 여기가 `+90도` 여야 처음 그림이 그려진 그대로 선다.
+ */
+const HEADING_REST = Math.PI / 2
+
+function advanceWildlifeHeadings(dt: number): void {
+  const alive = new Set<string>()
+  for (const runtime of wildlife?.instances ?? []) {
+    const id = runtime.entity.instanceId
+    alive.add(id)
+
+    const prev = wildlifeHeadings.get(id)
+    if (prev === undefined) {
+      wildlifeHeadings.set(id, { angle: HEADING_REST, x: runtime.entity.x, y: runtime.entity.y })
+      // **이 개체를 처음 본 프레임이다.** 나타날 때 한 번 운다 — `wildlife.csv` 의
+      // `sfx` 는 종류별 울음이고, 출현이 그 소리가 붙을 가장 자연스러운 순간이다.
+      // 여기서 내는 이유는 출현을 알리는 별도 이벤트가 없어서다.
+      sfx.play(runtime.species.assets?.sfx)
+      continue
+    }
+
+    // 멈춰 있으면 각도를 그대로 둔다 (확정문 — 마지막 이동 방향 유지).
+    prev.angle = headingStep(
+      prev.angle,
+      runtime.entity.x - prev.x,
+      runtime.entity.y - prev.y,
+      dt,
+      BOB_MOVING_SPEED,
+    )
+    prev.x = runtime.entity.x
+    prev.y = runtime.entity.y
+  }
+
+  // 사라진 개체는 버린다. 인스턴스 ID 가 재사용되면 직전 개체의 방향을 물려받는다.
+  for (const id of [...wildlifeHeadings.keys()]) {
+    if (!alive.has(id)) wildlifeHeadings.delete(id)
+  }
+}
+
+/** 이번 프레임의 걷기 위상과 방향. 뷰를 만들 때 읽는다 */
+let playerBob: number | null = null
+let playerFacing: Facing = null
+let hostileBob: number | null = null
+let hostileFacing: Facing = null
+
+/**
+ * 적대 주민이 방금 공격했다는 표시가 남은 초 (`DEC-ART-004` 교체 스프라이트).
+ *
+ * `resident-combat.ts` 가 `attacked` 이벤트를 이미 내고 있었는데 **듣는 쪽이
+ * 없었다.** 공격 순간이 화면에 아무 흔적도 남기지 않던 자리다.
+ */
+let hostileAttackRemaining = 0
+
+/** 지원 주민이 방금 공격했다는 표시가 남은 초. 적대 쪽과 같은 길이를 쓴다 */
+let allyAttackRemaining = 0
+
+/**
+ * 야생동물이 작물을 먹는 소리 — "챱챱챱" (8/9 담당자).
+ *
+ * 회복 시작음 한 장을 세 번 겹쳐 낸다. **파일을 세 개 만들지 않는 이유**는
+ * 같은 소리의 반복이 필요한 것이지 다른 소리 셋이 필요한 게 아니기 때문이다.
+ * `sfx.play()` 가 매번 새 `Audio` 를 만들어서 겹쳐 나는 것이 이미 보장된다.
+ *
+ * 간격은 화면 표시가 아니라 소리의 리듬이라 `layout.css` 가 아니라 여기 있다.
+ */
+const CHOMP_COUNT = 3
+/**
+ * 간격. **8/9 에 110 → 240 으로 늘렸다** — 110 은 씹는 소리가 아니라 연사음으로
+ * 들렸다. 사람이 세 번 씹는 속도에 가까워야 "챱챱챱" 으로 읽힌다.
+ */
+const CHOMP_GAP_MS = 240
+
+function playChomp(): void {
+  for (let i = 0; i < CHOMP_COUNT; i += 1) {
+    if (i === 0) sfx.play(SOUND_ASSET.recoveryStart)
+    else window.setTimeout(() => sfx.play(SOUND_ASSET.recoveryStart), i * CHOMP_GAP_MS)
+  }
+}
+
+/** 교체 스프라이트가 보이는 시간. 표현이라 승인 데이터가 아니다 */
+const ATTACK_SPRITE_SECONDS = 0.2
+
+/**
+ * 방금 맞은 적대 개체의 명중 표시. 인스턴스 ID → 남은 초.
+ *
+ * `combat.ts` 의 `damaged` 이벤트가 `overTime` 구분자를 **"화면 표시를 가르는 데
+ * 쓴다"** 는 주석과 함께 갖고 있었는데 듣는 쪽이 없었다. 지속 피해 틱에는 켜지
+ * 않는다 — 틱마다 켜면 불타는 내내 충격선이 깜빡여 지속 피해 링과 뜻이 겹친다.
+ */
+const hitFlashes = new Map<string, number>()
+const IMPACT_FLASH_SECONDS = 0.22
+
+/** 효과음. 파일이 없으면 조용히 넘어간다 (src/audio/sfx.ts) */
+const sfx = createSfx()
+
+/**
+ * 배경음.
+ *
+ * **아직 어디서도 `play()` 를 부르지 않는다.** BGM 6종은 붙을 콘텐츠 부모가 없어
+ * 고정 목록으로 가야 하는데 `DEC-ART-004` 가 그 목록의 구간을 `ui`·`logo`·`hud`·
+ * `font` 로 한정했다. `DEC-ART-005` 대체가 선행이다 (`docs/submission/
+ * SOUND_ASSET_INDEX.md` 의 "막혀 있는 것"). 여기서 만들어 두는 이유는 음량
+ * 설정(`DEC-UI-027`)이 배경음 갈래를 요구하기 때문이다 — 대체가 확정되면
+ * 화면 전환에 `bgm.play(...)` 를 붙이는 것만 남는다.
+ */
+const bgm = createBgm()
+
+/** 전체·배경음·효과음 (DEC-UI-027). 일시정지 화면이 이걸 조작한다 */
+const mixer = createMixer({ bgm, sfx })
+
+/**
+ * 작물 속성 효과가 낼 소리. `combat_mechanic_key` → 논리 에셋 ID.
+ *
+ * **효과에는 속성 ID 가 없고 `mechanicKey` 만 있다** (`systems/combat.ts`).
+ * 그런데 같은 기전을 쓰는 속성 둘이 같은 파일을 가리키므로(화끈함·짓무름 →
+ * `burn_tick`, 미끄러움·끈적함 → `slow_tick`) 기전으로 골라도 모호하지 않다.
+ * **속성마다 다른 소리를 주게 되면 이 map 이 먼저 깨진다** — 그때는 효과가
+ * 속성 ID 를 들고 다녀야 한다.
+ */
+let mechanicSfx = new Map<string, string>()
+
+/** 둔화가 방금 걸린 것을 잡으려고 직전 상태를 들고 있는다 */
+const slowedBefore = new Set<string>()
+
+/**
+ * 명중 표시를 켠다. **`combat` 의 이벤트를 받는 곳은 전부 이걸 부른다.**
+ *
+ * 받는 곳이 넷이다 — 재배와 습격의 `combat.update()` 가 각각, 지원 공격의
+ * `applySupportDamage()`, 그리고 낫은 `swingSickle()` 반환값이라 이벤트가
+ * 아니다. 8/7 에 습격 쪽만 연결하고 완료로 적었다가 재배에서 안 뜨는 것을
+ * 담당자가 잡았고, 그 직전에는 지원 공격을 빠뜨렸다. **판단을 한 곳에 모아야
+ * 다음 호출자가 생겨도 같은 규칙을 쓴다.**
+ *
+ * 지속 피해 틱은 뺀다 — `overTime` 이 정확히 그것을 가르라고 있는 구분자다.
+ * 틱마다 켜면 불타는 내내 충격선이 깜빡여 지속 피해 링과 뜻이 겹친다.
+ */
+function noteHitFlash(event: CombatEvent): void {
+  if (event.type !== 'damaged') return
+  if (event.overTime === true) {
+    // 지속 피해 틱은 화면 표시를 안 켜는 대신 소리로 알린다 (DEC-CONTENT-013).
+    sfx.play(mechanicSfx.get('damage_over_time'))
+    return
+  }
+  // 투척 명중음도 여기서 낸다. 이 함수가 `damaged` 를 받는 네 경로의 유일한
+  // 합류점이라, 발행 지점에 붙이면 그중 하나는 반드시 빠진다.
+  // `impactMode` 가 없는 것은 낫과 지원 주민 공격이라 투척음을 내지 않는다.
+  if (event.impactMode === 'area') sfx.play(SOUND_ASSET.impactArea)
+  else if (event.impactMode === 'direct') sfx.play(SOUND_ASSET.impactDirect)
+
+  if (event.targetId === undefined) return
+  hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
+}
+
+/** 플레이어가 방금 맞았다는 표시가 남은 초 */
+let playerHitRemaining = 0
+const PLAYER_HIT_SECONDS = 0.45
+
+/**
+ * 튜토리얼 `use_throwable` 완료까지 남은 초. 대기 중이 아니면 null.
+ *
+ * **던지는 것을 보고 나서 넘어가게 하려는 지연이다.** 8/7 플레이 테스트에서
+ * *"투척 무기를 던지는 걸 못 보고 좌클릭 누르자마자 넘어간다"* 가 나왔다.
+ * 마지막 단계라 완료되는 즉시 종료 화면이 필드를 덮어서, 자기가 뭘 했는지
+ * 못 본 채로 튜토리얼이 끝난다.
+ *
+ * **`DEC-UI-030` 의 "실제로 성공하면 다음으로 넘어간다" 를 바꾸지 않는다** —
+ * 성공 여부가 아니라 알리는 시점만 미룬다. 실패하면 애초에 이벤트가 안 온다.
+ */
+let throwableStepDelay: number | null = null
+const THROWABLE_STEP_DELAY_SECONDS = 0.9
+
+/** 런이 바뀌면 개체 키가 재사용되므로 위상을 버린다 */
+function resetBob(): void {
+  bobStates.clear()
+  playerBob = null
+  playerFacing = null
+  hostileBob = null
+  hostileFacing = null
+  hostileAttackRemaining = 0
+  allyAttackRemaining = 0
+  // 인스턴스 ID 로 들고 있어서 새 런이 같은 키를 다시 쓴다
+  hitFlashes.clear()
+  wildlifeHeadings.clear()
+  // 안 지우면 새 런의 첫 프레임에 이미 둔화된 것으로 읽혀 소리를 건너뛴다
+  slowedBefore.clear()
+  playerHitRemaining = 0
+  // 튜토리얼을 건너뛰거나 런이 끝나면 대기 중인 완료 알림을 버린다.
+  // 안 버리면 본 런 1일차에서 뒤늦게 튜토리얼 단계가 완료된다.
+  throwableStepDelay = null
+}
+
+/**
+ * 방향과 공격 상태에 맞는 `field_sprite` 를 고른다 (`DEC-ART-004`).
+ *
+ * **없으면 정면으로 떨어진다.** 교체 스프라이트 15장이 아직 제작 전이라
+ * 지금은 전부 정면이 나오고, 파일이 와서 `content_assets.csv` 에 행이 붙으면
+ * 코드 수정 없이 바뀐다. 공격이 방향보다 우선이다 — 휘두르는 중에 좌우로
+ * 움직여도 공격 그림이 유지돼야 한다.
+ */
+function characterSprite(
+  assets: ContentAssets | undefined,
+  facing: Facing,
+  attacking: boolean,
+): string | undefined {
+  if (attacking && assets?.field_sprite_attack !== undefined) {
+    return assets.field_sprite_attack
+  }
+  if (facing === 'left' && assets?.field_sprite_left !== undefined) {
+    return assets.field_sprite_left
+  }
+  if (facing === 'right' && assets?.field_sprite_right !== undefined) {
+    return assets.field_sprite_right
+  }
+  return assets?.field_sprite
+}
+
+function advanceCombatFeedback(dt: number): void {
   if (autoSwitchFlash !== null) {
     autoSwitchFlash.remaining -= dt
     if (autoSwitchFlash.remaining <= 0) autoSwitchFlash = null
   }
   if (emptyFireRemaining > 0) emptyFireRemaining = Math.max(0, emptyFireRemaining - dt)
+  if (sickleSwing !== null) {
+    sickleSwing.remaining -= dt
+    if (sickleSwing.remaining <= 0) sickleSwing = null
+  }
+  if (hostileAttackRemaining > 0) {
+    hostileAttackRemaining = Math.max(0, hostileAttackRemaining - dt)
+  }
+  if (allyAttackRemaining > 0) {
+    allyAttackRemaining = Math.max(0, allyAttackRemaining - dt)
+  }
+  if (playerHitRemaining > 0) {
+    playerHitRemaining = Math.max(0, playerHitRemaining - dt)
+  }
+  for (const [id, remaining] of hitFlashes) {
+    const next = remaining - dt
+    if (next <= 0) hitFlashes.delete(id)
+    else hitFlashes.set(id, next)
+  }
+  if (throwableStepDelay !== null) {
+    throwableStepDelay -= dt
+    if (throwableStepDelay <= 0) {
+      throwableStepDelay = null
+      completeTutorialStep('use_throwable')
+    }
+  }
+
+  // 둔화가 **방금 걸린** 순간에만 소리를 낸다 (DEC-CONTENT-013).
+  //
+  // 지속 피해와 달리 둔화에는 틱이 없어서 알릴 순간이 걸리는 때뿐이다. 걸려 있는
+  // 동안 계속 내면 소음이 되고, 효과를 거는 이벤트가 따로 없어 상태 전이로 잡는다.
+  const slowNow = new Set<string>()
+  for (const runtime of wildlife?.instances ?? []) {
+    if (runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow')) {
+      slowNow.add(runtime.entity.instanceId)
+    }
+  }
+  if (hostile !== null && hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow')) {
+    slowNow.add(hostile.entity.instanceId)
+  }
+  for (const id of slowNow) {
+    if (!slowedBefore.has(id)) sfx.play(mechanicSfx.get('movement_slow'))
+  }
+  slowedBefore.clear()
+  for (const id of slowNow) slowedBefore.add(id)
 }
 
 /** 전환 강조가 남은 경작지. plot_id → 남은 초 */
@@ -982,6 +1537,13 @@ function updateRaid(dt: number): void {
   }
 
   for (const event of residentCombat.update(dt, { ...player, collisionRadius: runConfig.collisionRadius })) {
+    // 공격 순간 교체 스프라이트 (DEC-ART-004). 이 이벤트는 8/3부터 나오고 있었는데
+    // 듣는 쪽이 없어서 공격이 화면에 아무 흔적도 남기지 않았다.
+    if (event.type === 'attacked') hostileAttackRemaining = ATTACK_SPRITE_SECONDS
+    // 만복의 엽전만 실제 투사체다 (DEC-CONTENT-008 — 나머지 지원 공격은 즉시
+    // 확정 피해라 던지는 것이 없다). 플레이어 투척과 같은 소리를 쓴다 — 같은
+    // 동작이고, 던지는 사람마다 소리를 가르는 규칙이 없다.
+    if (event.type === 'projectileFired') sfx.play(SOUND_ASSET.throw)
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
@@ -990,6 +1552,7 @@ function updateRaid(dt: number): void {
   // 플레이어 → 주민. 야생동물과 같은 시스템을 쓰되 대상만 바뀐다.
   combat.setTargets(currentTargets())
   for (const event of combat.update(dt)) {
+    noteHitFlash(event)
     if (event.type === 'surrenderOffered') onSurrenderOffered()
     if (event.type === 'killed') {
       onTargetKilled(event.targetId ?? '')
@@ -1005,7 +1568,16 @@ function updateRaid(dt: number): void {
   if (allySupport !== null && hostileTarget !== null) {
     const damage = allySupport.update(dt)
     if (damage !== null) {
+      // 공격 자세 교체 (DEC-ART-005 — 주민이 공격하는 순간 스프라이트 1장).
+      // 적대 주민에는 8/7 에 붙였는데 지원 주민이 빠져 있었다. **지원 공격은
+      // 투사체가 없어서**(DEC-CONTENT-008) 자세가 안 바뀌면 밝은 테두리만 있는
+      // 사람이 가만히 서 있는 동안 상대 체력이 줄어드는 것으로 보인다.
+      allyAttackRemaining = ATTACK_SPRITE_SECONDS
       for (const event of combat.applySupportDamage(hostileTarget.entity.instanceId, damage)) {
+        // 지원 공격은 투사체가 없으므로(DEC-CONTENT-008) **명중 표시가 유일한
+        // 흔적이다.** 확정문이 "필요한 것은 시각적인 발사·명중 효과뿐" 이라고
+        // 정했는데 발사 쪽(attackFlash)만 있고 명중 쪽이 비어 있었다.
+        noteHitFlash(event)
         if (event.type === 'surrenderOffered') onSurrenderOffered()
       }
     }
@@ -1768,7 +2340,7 @@ function plotViews(): readonly PlotView[] {
 }
 
 /**
- * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-001).
+ * 경작지 단계에 맞는 작물 그림을 고른다 (DEC-ART-004).
  *
  * **씨앗은 작물을 보지 않는다.** 씨앗 단계에서 종류를 공개하지 않는 것이 확정
  * 규칙(`DEC-FARM-001`)이라 그림도 작물별로 두지 않고 맵에 한 장이다. 여기서 작물
@@ -1960,6 +2532,17 @@ function hostileViews(): HostileView[] {
             windup: null,
             slowed: hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
             burning: hostile.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+            // 방향·공격 교체 스프라이트 (DEC-ART-004). 파일이 아직 없어서
+            // 지금은 전부 정면으로 떨어진다.
+            assetId: characterSprite(
+              residentAssets.get(hostile.entity.residentId),
+              hostileFacing,
+              hostileAttackRemaining > 0,
+            ),
+            // 걷는 흔들림은 적대 주민에만 붙인다. DEC-ART-004 가 야생동물에
+            // bob 을 적용할지는 정하지 않았다 (field.ts HostileView.bob 주석).
+            bob: hostileBob,
+            hitFlash: flashRatio(hostile.entity.instanceId),
           },
         ]
 
@@ -1975,7 +2558,18 @@ function hostileViews(): HostileView[] {
         : runtime.windupSeconds / runtime.species.attack_windup_seconds,
     slowed: runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow'),
     burning: runtime.entity.effects.some((e) => e.mechanicKey === 'damage_over_time'),
+    assetId: runtime.species.assets?.field_sprite,
+    // 명중 표시는 야생동물에도 준다. 이건 DEC-CONTENT-013 이 요구한 효과 구분이지
+    // DEC-ART-004 의 스프라이트 예외가 아니다.
+    hitFlash: flashRatio(runtime.entity.instanceId),
+    // 야생동물은 bob 을 안 쓰고 진행 방향으로 회전한다 (DEC-ART-004).
+    heading: wildlifeHeadings.get(runtime.entity.instanceId)?.angle ?? null,
   })))
+}
+
+/** 명중 표시 남은 정도 1~0. 렌더는 초가 아니라 비율을 받는다 */
+function flashRatio(instanceId: string): number {
+  return (hitFlashes.get(instanceId) ?? 0) / IMPACT_FLASH_SECONDS
 }
 
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
@@ -2034,6 +2628,8 @@ function onTargetKilled(targetId: string): void {
     return
   }
 
+  // 야생동물 처치는 공통 소리 하나다 (종류를 가르지 않는다).
+  sfx.play(SOUND_ASSET.wildlifeDefeat)
   wildlife?.remove(targetId)
 }
 
@@ -2042,14 +2638,28 @@ function onSickle(): void {
   if (combat === null) return
 
   combat.setTargets(currentTargets())
-  const result = combat.swingSickle(player, input.aimAngle())
+  const aimAngle = input.aimAngle()
+  const result = combat.swingSickle(player, aimAngle)
   if (!result.swung) return // 재사용 대기 중
+
+  // 휘두른 방향을 그 순간의 각도로 붙잡는다. 명중과 무관하게 그린다 —
+  // 빗나간 휘두름이 안 보이면 사거리를 배울 수가 없다.
+  sickleSwing = { angle: aimAngle, remaining: SICKLE_SWING_SECONDS }
 
   // 휘두른 것 자체가 조작 성공이다 — 명중과 무관하다 (DEC-RUN-003).
   // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
   bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
 
+  // 휘두름과 명중을 따로 낸다 (DEC-ART-005). 빗나간 휘두름에도 소리가 나야
+  // 사거리를 소리로도 배운다. 여러 대상을 맞혀도 명중음은 한 번이다 —
+  // 대상 수만큼 겹치면 한 번의 휘두름이 여러 번 때린 것처럼 들린다.
+  sfx.play(SOUND_ASSET.sickleSwing)
+  if (result.hits.length > 0) sfx.play(SOUND_ASSET.sickleHit)
+
   for (const hit of result.hits) {
+    // 낫은 `swingSickle()` 이 명중을 그 자리에서 돌려주므로 `combat.update()` 의
+    // `damaged` 를 타지 않는다. 충격선을 여기서 따로 켠다.
+    hitFlashes.set(hit.targetId, IMPACT_FLASH_SECONDS)
     // 피해를 받은 crop_first 야생동물은 플레이어에게 영구 적대한다 (DEC-CONTENT-007).
     // 이 알림이 그 전환의 유일한 경로다. 습격 중에는 해당 없다.
     wildlife?.notifyDamagedByPlayer(hit.targetId)
@@ -2102,17 +2712,22 @@ const input = createInput(renderer.canvas, {
   onInteract,
   onThrow,
   onSickle,
-  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-006).
+  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-013).
+  // 선택 전환음은 여기서 낸다 (DEC-ART-005). **버스를 못 쓴다** —
+  // `quickslot.select` 는 시스템 이벤트가 아니라 입력 의도라 `bus.on` 이 안 받는다.
+  // 소진 자동 전환(`quickslot.autoSwitched`)은 시스템 이벤트라 그쪽에 붙어 있다.
   onQuickslotSelect: (index) => {
     if (combat === null || run === null) return
     combat.selectSlot(run, index)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onQuickslotCycle: (dir) => {
     if (combat === null || run === null) return
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
+  // 회복 퀵메뉴 (DEC-UI-037, DEC-INPUT-008).
   //
   // `Q` 를 누르고 있는 동안에만 열린다. 오버레이로 올리면 화면 매니저가 시간을
   // 늦춘다 — 다른 오버레이처럼 멈추지 않는 것이 확정 규칙이다 (`syncSimulation`).
@@ -2150,14 +2765,109 @@ bus.on('data.error', ({ summary, detail }) => {
 
 const hud: Hud = createHud(uiRoot, {
   onPause: () => scenes.handleEscape(),
+
+  // 칸을 눌러 그 자리를 고른다 (DEC-INPUT-013). `1~4` 키와 같은 일이다.
+  onSelectSlot: (index) => {
+    if (combat === null || run === null) return
+    combat.selectSlot(run, index)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
+  },
+
+  onOpenRecoveryMenu: () => openRecoveryMenuByClick(),
 })
 
+/**
+ * 마우스로 연 회복 퀵메뉴는 **스스로 닫힌다** (`DEC-UI-037`).
+ *
+ * `Q` 길게와 달리 손을 떼는 순간이 없어서 닫을 계기가 없다. 그대로 두면
+ * `DEC-INPUT-008` 이 정한 "열려 있는 동안 게임 전체 속도를 크게 낮춘다" 가
+ * 끝나지 않는다.
+ *
+ * 시간은 조작 반응성이지 밸런스 수치가 아니라 승인 데이터에 두지 않는다 —
+ * `Q` 길게 판정 시간을 `input/bindings.ts` 에 둔 것과 같은 종류다.
+ */
+const RECOVERY_MENU_CLICK_MS = 2600
+let recoveryMenuTimer: number | null = null
+
+/**
+ * 다른 입력이 들어오면 시간이 남아 있어도 닫는다 (`DEC-UI-037`).
+ *
+ * 타이머만 두면 **움직이려는 사람이 시간이 다 가기를 기다려야 하고**, 그동안
+ * 화면은 느린 채다 (`DEC-INPUT-008`). 뭔가를 눌렀다는 건 이미 다음 일을 하려는
+ * 것이므로 메뉴를 붙잡을 이유가 없다.
+ *
+ * **키와 클릭을 둘 다 본다.** 클릭은 `click` 으로 듣는다 — `pointerdown` 으로
+ * 들으면 메뉴 항목을 누를 때 그 항목의 처리보다 먼저 닫혀서 선택이 사라진다.
+ * `click` 은 항목에서 위로 올라오므로 `onSelect` 가 먼저 돌고, 그때 이미 닫혀
+ * 있어 여기서는 아무 일도 안 한다.
+ *
+ * 여는 클릭(회복 칸)은 `hud.ts` 가 위로 안 올려보낸다. 안 그러면 열자마자 닫힌다.
+ */
+function onInputWhileRecoveryMenu(): void {
+  if (recoveryMenuTimer !== null) closeRecoveryMenuByClick()
+}
+
+/**
+ * 이 키가 닫아야 하는 입력인가.
+ *
+ * **아무 키나가 아니라 배치표에 있는 필드 조작 키만** 본다. 키 목록을 여기
+ * 나열하지 않는 이유는 `DEC-INPUT-001` 이 `input/bindings.ts` 를 유일한 배치표로
+ * 정했기 때문이다 — 두 곳에 적으면 배치를 바꿀 때 한쪽이 남는다.
+ *
+ * **`Esc` 는 뺀다.** `DEC-UI-022`·`DEC-INPUT-009` 가 `Esc` 를 일시정지로 정해
+ * 뒀는데, 여기서 먼저 잡으면 메뉴만 닫히고 일시정지가 안 뜬다.
+ */
+function closesRecoveryMenu(code: string): boolean {
+  if (QUICKSLOT_KEYS.includes(code)) return true
+  const action = KEY_BINDINGS[code]
+  return action !== undefined && action !== 'escape'
+}
+
+function onKeyWhileRecoveryMenu(event: KeyboardEvent): void {
+  if (closesRecoveryMenu(event.code)) onInputWhileRecoveryMenu()
+}
+
+function closeRecoveryMenuByClick(): void {
+  if (recoveryMenuTimer !== null) {
+    window.clearTimeout(recoveryMenuTimer)
+    recoveryMenuTimer = null
+  }
+  window.removeEventListener('keydown', onKeyWhileRecoveryMenu)
+  window.removeEventListener('click', onInputWhileRecoveryMenu)
+  scenes.closeOverlay('recovery_quickmenu')
+}
+
+function openRecoveryMenuByClick(): void {
+  // 이미 열려 있으면 시계를 새로 감는다. 다시 누른 것은 더 보겠다는 뜻이다.
+  if (recoveryMenuTimer !== null) window.clearTimeout(recoveryMenuTimer)
+  else {
+    window.addEventListener('keydown', onKeyWhileRecoveryMenu)
+    window.addEventListener('click', onInputWhileRecoveryMenu)
+  }
+  scenes.openOverlay('recovery_quickmenu')
+  recoveryMenuTimer = window.setTimeout(closeRecoveryMenuByClick, RECOVERY_MENU_CLICK_MS)
+}
+
 const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
+  // 필드 HUD 의 일시정지 버튼과 같은 경로다 (A3 목업의 우측 상단 톱니바퀴)
+  onPause: () => scenes.handleEscape(),
   openPopup: (popup) => {
     // 한 번에 하나만 연다. 이미 같은 팝업이 열려 있으면 아무 일도 하지 않는다 (DEC-UI-020)
     if (openPopup === popup) return
     openPopup = popup
     hub.setPopup(buildPopup(popup))
+    /*
+      튜토리얼의 `open_shop` 안내가 여기서 완료된다 (`DEC-CONTENT-025`).
+
+      **`buy_material` 과 다른 순간이다.** 그쪽은 실제로 산 뒤에 완료되는데,
+      8/9 튜토리얼은 그 앞에 "구매를 눌러 보세요" 를 따로 둔다 — 정비의 기능
+      버튼을 한 번도 안 눌러 본 사람에게 곧바로 "무엇을 사라" 고 하면 어디를
+      눌러야 하는지가 안내에 없다.
+
+      `sell`·`craft`·`quickslots` 를 열어도 완료되지 않는다. 안내가 가리킨
+      버튼과 다른 것을 눌러 넘어가면 안내가 거짓말이 된다.
+    */
+    if (popup === 'buy') completeTutorialStep('open_shop')
   },
   finish: () => {
     // 습격 여부에 따라 버튼이 하나만 나온다. 흐름이 둘을 대조해 어긋나면 오류로 잡는다.
@@ -2241,7 +2951,7 @@ function finishTutorial(): void {
  * 현재 안내를 화면에 맞춘다.
  *
  * `stage` 가 `maintenance` 면 정비 허브를 연다 — 팔고 사고 만드는 것은 거기서만
- * 할 수 있다 (`DEC-INPUT-006` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
+ * 할 수 있다 (`DEC-INPUT-013` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
  */
 function syncTutorial(): void {
   if (tutorial === null) return
@@ -2260,6 +2970,8 @@ function syncTutorial(): void {
     guideText: step.guide_text,
     position: tutorial.position,
     total: tutorial.total,
+    // 안내가 설 자리를 가른다 — 정비면 허브 기능 버튼을 덮지 않게 아래로 내린다
+    stage: step.stage,
   })
 }
 
@@ -2267,7 +2979,7 @@ function syncTutorial(): void {
  * 조작 성공을 튜토리얼에 알린다.
  *
  * 튜토리얼 밖에서는 아무 일도 하지 않는다 — 본 런에서 심었다고 진행도가 움직이면
- * 안 된다. `completion_key` 는 고정 일곱 개이고 코드가 판정한다 (DEC-CONTENT-025).
+ * 안 된다. `completion_key` 는 고정 여덟 개이고 코드가 판정한다 (DEC-CONTENT-025).
  */
 function completeTutorialStep(key: TutorialCompletionKey): void {
   if (tutorial === null || !inTutorial()) return
@@ -2276,13 +2988,16 @@ function completeTutorialStep(key: TutorialCompletionKey): void {
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
-// 회복 퀵메뉴 (DEC-UI-001). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
+// 회복 퀵메뉴 (DEC-UI-037). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
 const recoveryMenu: RecoveryMenu = createRecoveryMenu(uiRoot, {
   onSelect: (itemId) => {
     if (run === null) return
     // **선택만 바꾼다.** 사용 시작은 `Q` 를 짧게 누를 때다.
     run.pouch.selectedId = itemId
     if (isDevBuild) console.info(`[회복] 선택 변경 — ${itemId}`)
+    // 마우스로 연 퀵메뉴는 고르는 순간 닫는다 (DEC-UI-037). 고른 뒤에는 더 볼
+    // 것이 없고, 느려진 시간이 남아 있으면 그것이 이득이 된다.
+    if (recoveryMenuTimer !== null) closeRecoveryMenuByClick()
   },
 })
 
@@ -2324,6 +3039,10 @@ const pauseScreen: PauseScreen = createPause(uiRoot, {
   // 확인은 화면이 이미 거쳤다 (DEC-UI-027). 흐름은 무엇을 확인했는지 모르므로
   // 여기서 다시 묻지 않는다. 오버레이는 `apply()` 가 층위를 바꾸며 같이 닫는다.
   onReturnToTitle: () => scenes.send({ type: 'abandon_run' }),
+
+  // 오디오가 있으므로 음량 셋을 표시한다 (DEC-UI-027). 이 인자를 빼면 화면이
+  // 항목 자체를 그리지 않는다 — "오디오를 구현하지 않는 빌드" 의 처리다.
+  mixer,
 })
 
 // 전투 전 대화와 투항 대화는 같은 표시·입력 규칙을 쓴다 (DEC-UI-010).
@@ -2331,6 +3050,9 @@ const pauseScreen: PauseScreen = createPause(uiRoot, {
 const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
   choose: chooseDialogue,
   proceed: proceedDialogue,
+  // 순차 출력의 타자 소리 (DEC-UI-008). 대화창은 어느 소리인지 모르고
+  // "몇 자 찍혔다" 만 알린다 — 논리 에셋 ID 는 이쪽 자리다.
+  onType: () => sfx.play(SOUND_ASSET.recordTyping),
 })
 
 /**
@@ -2346,7 +3068,7 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
 function syncScreens(): void {
   const screen = scenes.currentScreen()
 
-  // HUD 는 **필드 공통** 요소다 (DEC-UI-017). 독립 화면은 필드를 대체하는 전환이라
+  // HUD 는 **필드 공통** 요소다 (DEC-UI-036). 독립 화면은 필드를 대체하는 전환이라
   // (DEC-UI-014) HUD 를 남기지 않는다. 독립 화면의 배경이 완전 불투명이 아니라서
   // 그냥 두면 엔딩·런 실패 화면 위로 체력과 일차가 비친다.
   //
@@ -2447,7 +3169,9 @@ function syncScreens(): void {
       endingScreen.render({
         // 제목·요약은 승인 데이터의 값이다. 런 상태에 복제해 두지 않는다
         title: ending.ending_title,
-        summary: ending.ending_summary,
+        // 승인 문구의 {player_name} 을 입력받은 이름으로 채운다. 조사도 같이
+        // 고른다 — 데이터에는 읽기 좋은 한 형태만 적혀 있다 (ui/korean.ts).
+        summary: fillPlayerName(ending.ending_summary, run?.playerName ?? ''),
         // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
         record: endingRecordPending
           ? { state: 'pending' }
@@ -2487,11 +3211,19 @@ const POPUP_TITLES: Record<string, string> = {
   sell: '판매',
   buy: '구매',
   craft: '제작',
+  // 아트가 붙으면 이 제목이 안 보인다 — 탭이 `편성` 이라고 적혀 있고 팝업 왼쪽
+  // 판이 `투척 퀵슬롯 편성` 을 들고 있다. 그림 없는 빌드의 플레이스홀더 문구다.
   quickslots: '투척 퀵슬롯 편성',
 }
 
-/** 팝업을 닫는다. 닫기 버튼이 유일한 경로다 (DEC-UI-020) */
-function closePopup(): void {
+/**
+ * 열려 있던 팝업을 버린다.
+ *
+ * **화면에 닫기 입력이 없다** (2026-08-08). 팝업은 항상 하나 열려 있고 기능 버튼
+ * 넷이 갈아 끼우므로 플레이어가 닫는 경로가 없다. 이 함수는 정비 허브 자체를
+ * 떠날 때 상태를 비우는 데만 쓴다.
+ */
+function discardPopup(): void {
   openPopup = null
   renderOpenPopup = null
   hub.setPopup(null)
@@ -2521,6 +3253,9 @@ function shopItems(mode: ShopMode): ShopItemView[] {
       name: crop.display_name,
       unitPrice: crop.sell_price,
       held: run?.resources.crops[crop.id] ?? 0,
+      description: itemDescriptions.get(crop.id),
+      stats: itemStats.get(crop.id),
+      icon: itemIcons.get(crop.id),
     }))
   }
 
@@ -2531,52 +3266,65 @@ function shopItems(mode: ShopMode): ShopItemView[] {
     name: material.display_name,
     unitPrice: material.buy_price,
     held: run?.resources.materials[material.id] ?? 0,
+    description: itemDescriptions.get(material.id),
+    stats: itemStats.get(material.id),
+    icon: itemIcons.get(material.id),
   }))
 }
 
 /**
- * 제작 결과물의 실제 수치 (DEC-UI-006).
+ * 투척 무기의 수치 (DEC-UI-006).
  *
  * **설명 문장에서 읽지 않고 승인 데이터에서 읽는다.** `player_description` 은
  * 따로 표시하며 이 목록과 섞지 않는다.
+ *
+ * 보관함 안내·상점 안내·제작 안내가 **이 함수 하나를 같이 쓴다.** 화면마다 따로
+ * 만들면 같은 무기가 자리에 따라 다른 수치를 보여줄 수 있다.
  */
-function resultStatsOf(recipe: Recipe): CraftStatView[] {
-  if (recipe.result_kind === 'throwable_weapon') {
-    const weapon = throwablesById.get(recipe.result_id)
-    if (weapon === undefined) return []
-
-    const stats: CraftStatView[] = [
-      { label: '피해', value: String(weapon.base_damage) },
-      { label: '사거리', value: String(weapon.max_range) },
-      { label: '재사용 대기', value: `${weapon.cooldown_seconds}초` },
-    ]
-    // 범위 무기만 반경이 있다 (DEC-CONTENT-005)
-    if (weapon.impact_mode === 'area' && weapon.area_radius !== null) {
-      stats.push({ label: '범위 반경', value: String(weapon.area_radius) })
-    }
-    // 전투 효과는 작물 속성이 정한다. 둘 중 하나만 채워진다 (DEC-CONTENT-013)
-    if (weapon.effect_damage_per_tick !== null) {
-      stats.push({
-        label: '지속 피해',
-        value: `${weapon.effect_damage_per_tick} · ${weapon.effect_duration_seconds}초`,
-      })
-    }
-    if (weapon.effect_move_speed_multiplier !== null) {
-      stats.push({
-        label: '이동 둔화',
-        value: `×${weapon.effect_move_speed_multiplier} · ${weapon.effect_duration_seconds}초`,
-      })
-    }
-    return stats
+function throwableStats(weapon: ThrowableWeapon): TooltipStat[] {
+  const stats: TooltipStat[] = [
+    { label: '피해', value: String(weapon.base_damage) },
+    { label: '사거리', value: String(weapon.max_range) },
+    { label: '재사용 대기', value: `${weapon.cooldown_seconds}초` },
+  ]
+  // 범위 무기만 반경이 있다 (DEC-CONTENT-005)
+  if (weapon.impact_mode === 'area' && weapon.area_radius !== null) {
+    stats.push({ label: '범위 반경', value: String(weapon.area_radius) })
   }
+  // 전투 효과는 작물 속성이 정한다. 둘 중 하나만 채워진다 (DEC-CONTENT-013)
+  if (weapon.effect_damage_per_tick !== null) {
+    stats.push({
+      label: '지속 피해',
+      value: `${weapon.effect_damage_per_tick} · ${weapon.effect_duration_seconds}초`,
+    })
+  }
+  if (weapon.effect_move_speed_multiplier !== null) {
+    stats.push({
+      label: '이동 둔화',
+      value: `×${weapon.effect_move_speed_multiplier} · ${weapon.effect_duration_seconds}초`,
+    })
+  }
+  return stats
+}
 
-  const item = recoveryItemsById.get(recipe.result_id)
-  if (item === undefined) return []
+/** 회복 아이템의 수치 (DEC-UI-006). 위와 같은 이유로 한 곳에 둔다 */
+function recoveryStats(item: RecoveryItem): TooltipStat[] {
   return [
     { label: '회복량', value: String(item.heal_amount) },
     { label: '사용 시간', value: `${item.use_duration_seconds}초` },
     { label: '사용 중 이동속도', value: `×${item.move_speed_multiplier}` },
   ]
+}
+
+/** 제작 결과물의 수치. 분류에 따라 위 둘 중 하나를 고른다 (DEC-CRAFT-005) */
+function resultStatsOf(recipe: Recipe): CraftStatView[] {
+  if (recipe.result_kind === 'throwable_weapon') {
+    const weapon = throwablesById.get(recipe.result_id)
+    return weapon === undefined ? [] : throwableStats(weapon)
+  }
+
+  const item = recoveryItemsById.get(recipe.result_id)
+  return item === undefined ? [] : recoveryStats(item)
 }
 
 /** 결과물의 표시 이름과 설명. 분류에 따라 다른 테이블에서 온다 (DEC-CRAFT-005) */
@@ -2611,6 +3359,7 @@ function craftRecipeViews(): CraftRecipeView[] {
         resultKind: recipe.result_kind,
         base,
         resultName: name,
+        resultIcon: itemIcons.get(recipe.result_id),
         resultDescription: description,
         resultStats: resultStatsOf(recipe),
         inputs: (recipe.inputs ?? []).map((input) => ({
@@ -2620,6 +3369,7 @@ function craftRecipeViews(): CraftRecipeView[] {
             (input.input_kind === 'crop'
               ? run?.resources.crops[input.input_id]
               : run?.resources.materials[input.input_id]) ?? 0,
+          icon: itemIcons.get(input.input_id),
         })),
         resultQuantity: recipe.result_quantity,
         maxTimes: economy.maxCraftTimes(recipe.id),
@@ -2647,10 +3397,11 @@ function craftRecipeViews(): CraftRecipeView[] {
       resultKind: recipe.result_kind,
       base,
       resultName: name,
+      resultIcon: itemIcons.get(recipe.result_id),
       unlock: {
         cropName: cropsById.get(unlock.crop_id)?.display_name ?? unlock.crop_id,
-        // content_assets.csv 가 아직 승인되지 않았다. 이름이 플레이스홀더다
-        cropAssetId: null,
+        // 해금 조건에 대상 작물의 논리 에셋을 함께 보인다 (DEC-UI-006)
+        cropAssetId: itemIcons.get(unlock.crop_id) ?? null,
         currentMastery: run?.record.cropMastery[unlock.crop_id] ?? 0,
         requiredMastery: unlock.required_mastery,
       },
@@ -2670,7 +3421,6 @@ function buildPopup(popup: string): HTMLElement {
   if ((popup === 'sell' || popup === 'buy') && economy !== null) {
     const mode: ShopMode = popup
     const modal = createShopModal(mode, {
-      close: closePopup,
       submit(itemId, quantity) {
         const result =
           mode === 'sell' ? economy!.sell(itemId, quantity) : economy!.buy(itemId, quantity)
@@ -2696,7 +3446,6 @@ function buildPopup(popup: string): HTMLElement {
 
   if (popup === 'craft' && economy !== null) {
     const modal = createCraftModal({
-      close: closePopup,
       submit(recipeId, times) {
         const result = economy!.craft(recipeId, times)
         if (!result.ok) {
@@ -2734,7 +3483,6 @@ function buildPopup(popup: string): HTMLElement {
 
   if (popup === 'quickslots') {
     const modal = createQuickslotModal({
-      close: closePopup,
       assign: assignQuickslot,
     })
     renderOpenPopup = () => modal.render(quickslotView())
@@ -2742,7 +3490,7 @@ function buildPopup(popup: string): HTMLElement {
   }
 
   // 여기 오면 팝업 종류가 늘었는데 화면을 안 붙인 것이다. 빈 껍데기로 넘기지 않는다.
-  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup, closePopup)
+  const { root, body } = createPopupShell(POPUP_TITLES[popup] ?? popup)
   const note = document.createElement('div')
   note.className = 'hub__preview'
   note.textContent = '이 팝업의 목록 UI는 아직 붙지 않았다.'
@@ -2752,7 +3500,7 @@ function buildPopup(popup: string): HTMLElement {
   return root
 }
 
-/** 편성 팝업이 그릴 내용 (DEC-UI-021) */
+/** 편성 팝업이 그릴 내용 (DEC-UI-034) */
 function quickslotView(): QuickslotView {
   const slots = run?.quickslots.slots ?? []
   const held = run?.resources.throwables ?? {}
@@ -2765,6 +3513,7 @@ function quickslotView(): QuickslotView {
       // 수량은 퀵슬롯이 아니라 **무기 보관함**에서 읽는다 (DEC-RESOURCE-002).
       // 편성된 채 수량이 0이 되면 키가 지워지므로 0으로 떨어진다 (DEC-RESOURCE-015).
       count: weaponId === null ? 0 : (held[weaponId] ?? 0),
+      icon: weaponId === null ? undefined : itemIcons.get(weaponId),
     })),
 
     // 편성 목록은 무기 보관함에 실제로 있는 것뿐이다. 없는 무기를 지어내지 않는다.
@@ -2773,12 +3522,13 @@ function quickslotView(): QuickslotView {
       name: throwablesById.get(id)?.display_name ?? id,
       count,
       assignedElsewhere: slots.includes(id),
+      icon: itemIcons.get(id),
     })),
   }
 }
 
 /**
- * 퀵슬롯 편성 (DEC-RESOURCE-014, DEC-INPUT-006).
+ * 퀵슬롯 편성 (DEC-RESOURCE-019, DEC-INPUT-013).
  *
  * **수량을 옮기지 않는다.** 칸은 무기 종류만 보관함에 연결하므로 여기서 바뀌는 것은
  * `slots` 배열 하나뿐이고 보관함은 그대로다.
@@ -2794,18 +3544,30 @@ function assignQuickslot(slotIndex: number, weaponId: string | null): void {
   if (weaponId !== null && slots.some((id, i) => id === weaponId && i !== slotIndex)) {
     console.warn(
       `[정비] ${weaponId} 는 이미 다른 칸에 편성돼 있다. ` +
-        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-014).',
+        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-019).',
     )
     return
   }
 
   slots[slotIndex] = weaponId
+
+  // 편성이 **실제로 바뀐 뒤에만** 알린다. 위 거절 경로를 지나온 호출은 여기 못 온다.
+  // 튜토리얼의 `assign_quickslot` 안내가 이 이벤트로 완료된다 (DEC-CONTENT-025).
+  bus.emit('quickslot.assigned', { slotIndex, throwableId: weaponId })
 }
 
 /** 보관함 한 분류를 표시용 줄로 바꾼다. 수량 0인 키는 애초에 없다 */
 function rowsOf(store: ItemStore): InventoryRow[] {
   return Object.entries(store)
-    .map(([id, count]) => ({ id, name: displayNames.get(id) ?? id, count }))
+    .map(([id, count]) => ({
+      id,
+      name: displayNames.get(id) ?? id,
+      count,
+      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-034, 아트 디렉션 14.8)
+      description: itemDescriptions.get(id),
+      stats: itemStats.get(id),
+      icon: itemIcons.get(id),
+    }))
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
 
@@ -2817,7 +3579,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
 const raidNoticeErrorsReported = new Set<RaidType>()
 
 /**
- * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-017).
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-036).
  *
  * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
  * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
@@ -2852,8 +3614,20 @@ function hubView() {
       recoveries: rowsOf(run?.resources.recoveries ?? {}),
     },
     raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
+    // 표지 판의 그림을 고른다. 문구와 출처가 달라 따로 넘긴다 (DEC-RUN-011)
+    raidType,
     // 문구는 DEC-RUN-006 이 정한 두 가지다
     finishLabel: raidType !== 'none' ? '밭을 정찰하러 간다' : '아침까지 잔다',
+    // 튜토리얼 중에는 정비를 끝낼 수 없다. 흐름이 아직 `tutorial` 단계라
+    // `maintenance_finished` 가 처리할 수 없는 입력이 된다 (HubView.canFinish).
+    canFinish: !inTutorial(),
+    // 튜토리얼에는 판매 안내가 없는데(8/6 에 `sell_crop` 행을 뺐다) 버튼은
+    // 살아 있어서, 수확물을 팔아 버리면 제작 재료가 없어져 `craft_item` 을
+    // 완료할 수 없다. **데이터에서 단계를 뺀 것으로는 플레이어가 스스로 파는
+    // 것을 못 막는다** — 8/6 에 "45% 막힘" 으로 잡았던 구멍의 화면 쪽이다.
+    lockedPopups: inTutorial() ? (['sell'] as const) : [],
+    // 어느 기능을 보고 있는지 버튼에서 알린다 (8/8 플레이 테스트).
+    openPopup,
   }
 }
 
@@ -2863,6 +3637,8 @@ function hudView() {
     name: id === null ? null : (throwablesById.get(id)?.display_name ?? id),
     count: id === null ? 0 : (run?.resources.throwables[id] ?? 0),
     selected: index === (run?.quickslots.selectedIndex ?? 0),
+    // 소진 자동 전환 강조가 이름과 아이콘을 함께 쓴다 (DEC-UI-002)
+    icon: id === null ? undefined : itemIcons.get(id),
   }))
 
   // 남은 시간은 비율로 넘긴다. 화면이 숫자를 쓰지 않으므로(A1) 초를 넘기면
@@ -2885,14 +3661,27 @@ function hudView() {
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
     // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
     recoveryName: selectedRecoveryName(),
+    recoveryCount: selectedRecoveryCount(),
+    // 선택된 회복 아이템의 아이콘. 퀵슬롯과 같은 표에서 온다 (8/9)
+    recoveryIcon: run?.pouch.selectedId === null || run?.pouch.selectedId === undefined
+      ? undefined
+      : itemIcons.get(run.pouch.selectedId),
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
+    // 대화·정비·일시정지가 입력을 가져가면 위쪽 안내를 띄우지 않는다.
+    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-031).
+    fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
-    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-036). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
-    raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
+    // 재배·습격 두 모드에서 같은 판·같은 자리에 남는다 (DEC-UI-036). 8/9 까지는
+    // 재배 전용이라 습격 중에 판의 크림 칸만 비어 고장난 것처럼 보였다.
+    raidNoticeLabel: raidNoticeLabelOf(run?.dayNumber ?? 1),
+    // 판 그림은 문구와 같은 값에서 나온다 (DEC-RUN-011). 재배 밖에서도 판은
+    // 남으므로 종류는 늘 넘긴다 — 사라지는 것은 문구 쪽이다.
+    raidType: raidTypeOfDay(run?.dayNumber ?? 1),
   }
 }
 
@@ -2909,8 +3698,32 @@ const loop = createGameLoop(
       // 임시 수치로 움직여 보는 상태이고 밭도 그려지지 않는다.
       if (worldBounds !== null) clampToWorld(player, worldBounds)
 
+      // 조준선은 **필드가 입력을 갖고 있을 때만** 따라간다 (DEC-UI-026).
+      //
+      // 캔버스는 화면 층위와 무관하게 매 프레임 그려서(위 `renderer.draw` 주석),
+      // 일시정지나 대화가 열려 있어도 조준선이 커서를 쫓아다녔다. 멈춘 화면에서
+      // 선만 움직이면 조작이 살아 있는 것처럼 보인다. 마지막 각도로 굳힌다.
+      if (scenes.inputOwner() === null) fieldAimAngle = input.aimAngle()
+
+      // 걷는 흔들림 (DEC-ART-004). 경계 제한 뒤에 재야 벽에 붙어 밀고 있을 때
+      // 좌표가 안 바뀌는 것이 그대로 "멈춤" 으로 읽힌다.
+      const playerStep = advanceBob('player', player.x, player.y, dt)
+      playerBob = playerStep.phase
+      playerFacing = playerStep.facing
+
+      const hostileStep =
+        hostile === null
+          ? null
+          : advanceBob('hostile', hostile.entity.x, hostile.entity.y, dt)
+      hostileBob = hostileStep?.phase ?? null
+      hostileFacing = hostileStep?.facing ?? null
+
+      // 야생동물은 bob 대신 진행 방향으로 회전한다 (DEC-ART-004).
+      // 재배 밖에서는 개체가 없어 아무 일도 하지 않는다.
+      advanceWildlifeHeadings(dt)
+
       // 투척 피드백은 재배·습격 양쪽에서 흐른다 (DEC-UI-002)
-      advanceThrowFeedback(dt)
+      advanceCombatFeedback(dt)
 
       // 회복 게이지도 양쪽에서 흐른다. 완료되면 소비와 회복이 한 처리로 끝난다.
       advanceRecoveryGauge(dt)
@@ -2946,6 +3759,11 @@ const loop = createGameLoop(
           })
         }
         if (event.type === 'cropEaten') {
+          // 먹는 소리 (8/9 담당자). 회복 시작음을 그대로 쓴다 — 둘 다 무언가를
+          // 먹는 짧은 소리이고, 야생동물 전용 소리를 따로 만들지 않기로 했다.
+          // **세 번 겹쳐 낸다.** 한 번이면 "챱" 하나라 한 입 문 것처럼 들리는데
+          // 실제로는 작물 하나를 통째로 없애는 사건이다.
+          playChomp()
           // 먹힌 작물은 보관함에 넣지 않는다 (DEC-FARM-006).
           // 여기서 수확 처리를 부르면 잃은 작물이 오히려 쌓인다.
           //
@@ -2966,6 +3784,10 @@ const loop = createGameLoop(
       if (combat !== null) {
         combat.setTargets(currentTargets())
         for (const event of combat.update(dt)) {
+          // 재배에서 던진 것도 명중 표시가 뜬다. **여기가 빠져 있었다** —
+          // 습격 쪽만 연결하고 완료로 적었는데 야생동물에 던지는 것이 훨씬
+          // 자주 일어난다.
+          noteHitFlash(event)
           if (event.type === 'killed' && event.targetId !== undefined) {
             wildlife?.remove(event.targetId)
           }
@@ -3011,9 +3833,14 @@ const loop = createGameLoop(
       if (scenes.currentFieldMode() === null) renderer.clear()
       else renderer.draw({
         player,
-        aimAngle: input.aimAngle(),
+        aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
         assets: fieldAssets,
+        // 방향·공격 교체 스프라이트 (DEC-ART-004). 낫을 휘두르는 동안은
+        // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.
+        playerAsset: characterSprite(playerAssets, playerFacing, sickleSwing !== null),
+        playerBob,
+        playerHit: playerHitRemaining / PLAYER_HIT_SECONDS,
         plots: plotViews(),
         actionPrompt: actionPrompt(),
         harvestPopups: harvestPopups.map((p) => ({
@@ -3027,11 +3854,31 @@ const loop = createGameLoop(
         ally:
           allySupport === null
             ? null
-            : { x: allySupport.x, y: allySupport.y, attackFlash: allySupport.attackFlash },
+            : {
+                x: allySupport.x,
+                y: allySupport.y,
+                attackFlash: allySupport.attackFlash,
+                // 공격 중에는 공격 자세로 갈아 끼운다 (DEC-ART-005). 방향은 null 이다 —
+                // 지원 주민은 제자리에서 쏘므로 좌우로 향할 방향이 없다.
+                assetId: characterSprite(
+                  residentAssets.get(allySupport.residentId),
+                  null,
+                  allyAttackRemaining > 0,
+                ),
+              },
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.
         devSickleCooldown: devSickleRatio(),
-        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-017). 0~1 로 넘긴다.
+        // 낫 휘두름 호. 사거리는 승인 데이터에서 오고 남은 시간만 0~1 로 넘긴다.
+        sickleSwing:
+          sickleSwing === null
+            ? null
+            : {
+                angle: sickleSwing.angle,
+                range: runConfig.sickleRange,
+                life: sickleSwing.remaining / SICKLE_SWING_SECONDS,
+              },
+        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-036). 0~1 로 넘긴다.
         recovery:
           run?.recovering == null
             ? null
@@ -3057,12 +3904,19 @@ const loop = createGameLoop(
             y: p.y,
             radius: throwablesById.get(p.sourceId)?.collision_radius ?? 4,
             hostile: false,
+            assetId: throwableProjectiles.get(p.sourceId),
           })),
           ...(residentCombat?.projectiles ?? []).map((p) => ({
             x: p.x,
             y: p.y,
             radius: hostileProjectileRadius(p.sourceId),
             hostile: true,
+            // 적대 주민 투사체는 쏜 주민에게 붙는다. `sourceId` 는 전투 프로필이라
+            // 지금 습격 중인 주민에게서 찾는다 — 습격은 한 번에 한 명이다.
+            assetId:
+              hostile === null
+                ? undefined
+                : residentProjectiles.get(hostile.entity.residentId),
           })),
         ],
       })
@@ -3079,6 +3933,19 @@ const loop = createGameLoop(
       const owner = scenes.inputOwner()
 
       if (open.includes('maintenance_hub')) {
+        // ── 판매를 기본으로 열어 둔다 (2026-08-08) ────────────
+        //
+        // 팝업에 닫기 버튼이 없어졌고 기능 버튼 넷이 갈아 끼우는 방식이라,
+        // 아무것도 열려 있지 않으면 오른쪽 두 판이 빈 종이로 남는다.
+        //
+        // **잠긴 기능은 열지 않는다.** 튜토리얼이 판매를 막아 두는데(수확물을
+        // 팔아 버리면 제작 안내를 완료할 수 없다) 그때 자동으로 열면 막아 둔
+        // 것을 화면이 먼저 펼쳐 보이는 셈이다.
+        if (openPopup === null && !inTutorial()) {
+          openPopup = 'sell'
+          hub.setPopup(buildPopup('sell'))
+        }
+
         hub.render(hubView())
         // 거래·제작이 성공하면 소지금·보관함·제작 가능 상태를 즉시 갱신한다
         // (DEC-UI-005, DEC-UI-006). 열려 있는 팝업도 같은 프레임에 다시 그린다.
@@ -3089,8 +3956,7 @@ const loop = createGameLoop(
         // 여기서만 팝업을 버린다. 입력 소유만 잃었을 때 버리면 포커스를 되찾아도
         // 열려 있던 상점·제작 팝업이 사라져 있다.
         hub.hide()
-        openPopup = null
-        renderOpenPopup = null
+        discardPopup()
       }
 
       // 회복 퀵메뉴. 목록은 보관함에서 매번 계산한다 (DEC-RESOURCE-017)
@@ -3115,6 +3981,10 @@ const loop = createGameLoop(
         dialogueModal.render({
           phase: dialogue.phase,
           residentName: dialogue.residentName,
+          portraitAsset: residentPortraits.get(dialogue.residentId),
+          // A4 는 두 사람이 마주 보는 화면이다 (아트 디렉션 12.2·14.7).
+          // 주민과 같은 이유로 `portrait` 이 없으면 `field_sprite` 로 떨어진다.
+          playerPortraitAsset: playerPortrait,
           openingText: dialogue.openingText,
           choices: dialogue.choices,
           reaction: dialogue.reaction,
@@ -3313,6 +4183,130 @@ function beginNightResult(): void {
   }
 }
 
+/**
+ * 배경음 전환 (DEC-ART-005, `docs/submission/SOUND_ASSET_INDEX.md`).
+ *
+ * ── 안 바꾸는 것이 기본이다 ────────────────────────────────
+ *
+ * **아래에 없는 화면은 흐르던 트랙을 그대로 둔다.** 조우 결과·밤 결과의 배경음은
+ * 아직 정해지지 않았고(직전 트랙 유지인지 전용 트랙인지), 전투 전 대화와 투항
+ * 대화는 *"진입 시점에 이미 흐르던 트랙을 그대로 유지한다"* 로 정해져 있다.
+ * 정해지지 않은 자리에 임의로 트랙을 고르면 그게 곧 결정이 된다.
+ *
+ * ── 재배와 정비가 같은 트랙이다 ────────────────────────────
+ *
+ * 정비 허브는 화면 전환이 아니라 필드 위 오버레이라 `screen.changed` 가 오지
+ * 않는다. 그런데 같은 `farm` 트랙이므로 **아무것도 안 해도 이어진다** — 여기서
+ * `overlay.opened` 를 따로 듣지 않는 이유다. `bgm.play()` 가 같은 ID 를 무시하는
+ * 것과 맞물려, 재배 → 정비 → 다음 날 재배가 한 곡으로 이어진다.
+ */
+function bgmForScreen(screen: ScreenId): string | null {
+  if (screen === 'title' || screen === 'name_input') return BGM_ASSET.title
+  if (screen === 'run_failed') return BGM_ASSET.defeat
+  if (screen === 'ending') return BGM_ASSET.ending
+  return null
+}
+
+bus.on('screen.changed', ({ screen }) => {
+  const track = bgmForScreen(screen)
+  if (track !== null) bgm.play(track)
+})
+
+/**
+ * 부팅 시점의 화면에도 트랙을 건다.
+ *
+ * **첫 `screen.changed` 는 이 구독보다 먼저 지나간다.** `createSceneManager()` 가
+ * 만들어지는 그 자리에서 `apply(INITIAL_STEP)` 을 부르고, 그게 타이틀의
+ * `screen.changed` 를 발행한다 — 위 구독은 180줄 뒤에 등록되므로 못 듣는다.
+ *
+ * 놓치면 **대기 중인 트랙이 없어서 화면을 눌러도 아무 일이 안 일어난다.**
+ * 자동 재생 거부는 거부된 트랙을 기억했다가 첫 조작에 다시 트는 구조인데,
+ * 애초에 요청이 없었으니 기억할 것도 없다. 8/8 에 담당자가 *"타이틀에서 아무
+ * 데나 눌러도 안 나고 버튼을 눌러야 난다"* 로 잡았다 — 버튼을 누르면 다음
+ * 화면의 `screen.changed` 가 와서 그제야 걸렸던 것이다.
+ */
+const bootTrack = bgmForScreen(scenes.currentScreen() ?? 'title')
+if (bootTrack !== null) bgm.play(bootTrack)
+
+/*
+  효과음 배선 (DEC-ART-005).
+
+  **전부 버스 구독이다.** 소리를 내는 조건을 발행 지점마다 적으면 발행자가 하나
+  더 생길 때 빠진다 — 8/7 에 명중 표시로 네 번 반복한 자리다 (3-B-1).
+  낫 소리만 예외인데 `swingSickle()` 이 이벤트가 아니라 반환값이라 구조가 다르다.
+*/
+bus.on('screen.changed', () => sfx.play(SOUND_ASSET.screenTransition))
+bus.on('overlay.opened', () => sfx.play(SOUND_ASSET.modalOpen))
+bus.on('request.rejected', () => sfx.play(SOUND_ASSET.buttonReject))
+
+bus.on('farm.planted', () => sfx.play(SOUND_ASSET.plantSeed))
+bus.on('farm.harvested', () => sfx.play(SOUND_ASSET.harvest))
+// `DEC-UI-004` 가 "수확 가능으로 바뀔 때 짧은 효과음" 을 확정문으로 요구한다.
+bus.on('farm.plotReady', () => sfx.play(SOUND_ASSET.harvestReady))
+
+// 판매·구매·보상이 같은 소리다. 셋 다 "받았다" 는 같은 사실을 알린다.
+bus.on('shop.sold', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('shop.bought', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('reward.granted', () => sfx.play(SOUND_ASSET.tradeConfirm))
+
+bus.on('quickslot.autoSwitched', () => sfx.play(SOUND_ASSET.quickslotSwitch))
+bus.on('quickslot.allEmpty', () => sfx.play(SOUND_ASSET.quickslotEmpty))
+bus.on('combat.throwableSpent', () => sfx.play(SOUND_ASSET.throw))
+
+bus.on('recovery.started', () => sfx.play(SOUND_ASSET.recoveryStart))
+bus.on('recovery.completed', () => sfx.play(SOUND_ASSET.recoveryComplete))
+
+bus.on('dialogue.opened', () => sfx.play(SOUND_ASSET.dialogueOpen))
+bus.on('run.failed', () => sfx.play(SOUND_ASSET.runFailed))
+bus.on('ending.decided', () => sfx.play(SOUND_ASSET.endingDecided))
+
+/**
+ * 일차 시작 스팅어 (`DEC-RUN-011`).
+ *
+ * 오늘 밤에 무엇이 오는지를 소리로도 알린다. **일차가 아니라 승인 일정의
+ * `raid_type` 으로 고른다** — 화면에 뜨는 예고 문구를 고르는 기준과 같아야
+ * 소리와 글이 어긋나지 않는다.
+ */
+bus.on('screen.changed', ({ screen }) => {
+  if (screen !== 'day_start') return
+  const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
+  if (raidType === 'final_raid') sfx.play(SOUND_ASSET.dayStartFinal)
+  else if (raidType === 'raid') sfx.play(SOUND_ASSET.dayStartRaid)
+  else sfx.play(SOUND_ASSET.dayStartNone)
+})
+bus.on('encounter.finished', ({ finalOutcome }) => {
+  // 막타일 때만이다. 공감·협상·영입·퇴각은 죽인 것이 아니다 (DEC-RESIDENT-052).
+  if (finalOutcome === 'killed') sfx.play(SOUND_ASSET.residentDefeat)
+})
+
+/*
+  버튼 클릭음은 버스가 아니라 DOM 에 건다.
+
+  누를 수 있는 것이 화면마다 흩어져 있고 그 전부가 이벤트를 쏘지는 않는다 —
+  조작 안내 펼치기나 팝업 닫기처럼 게임 상태를 안 바꾸는 버튼이 그렇다.
+  버튼마다 손으로 붙이면 다음에 만드는 버튼이 반드시 빠진다.
+
+  **막힌 버튼은 울리지 않는다.** `disabled` 는 클릭 이벤트가 아예 안 오고,
+  눌렀는데 거절된 경우는 `request.rejected` 가 따로 거절음을 낸다.
+*/
+uiRoot.addEventListener('click', (event) => {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest('button') === null) return
+  sfx.play(SOUND_ASSET.buttonClick)
+})
+
+bus.on('field.entered', ({ mode }) => {
+  if (mode !== 'raid') {
+    bgm.play(BGM_ASSET.farm)
+    return
+  }
+  // 마지막 습격만 다른 곡이다. 일차가 아니라 승인 일정의 raid_type 으로 가른다 —
+  // "5일차" 는 지금 일정이 그럴 뿐이고 코드가 알 값이 아니다 (DEC-RUN-011).
+  const final = raidTypeOfDay(run?.dayNumber ?? 1) === 'final_raid'
+  bgm.play(final ? BGM_ASSET.boss : BGM_ASSET.raid)
+})
+
 // 일지 준비와 밤 결과 문구 선택을 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫
 // 그리기가 지난 값을 그대로 쓰고 한 박자 늦게 바뀐다.
 bus.on('screen.changed', beginDayStart)
@@ -3409,8 +4403,17 @@ bus.on('farm.harvested', () => completeTutorialStep('harvest_crop'))
 bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
 bus.on('shop.bought', () => completeTutorialStep('buy_material'))
 bus.on('craft.made', () => completeTutorialStep('craft_item'))
+// 편성 확정만 듣는다. 요청(`quickslot.assign`)은 중복 편성으로 거절될 수 있어
+// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-019).
+bus.on('quickslot.assigned', () => completeTutorialStep('assign_quickslot'))
 bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
-bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
+// 투척만 곧바로 알리지 않는다. 마지막 단계라 완료되는 순간 종료 화면이 필드를
+// 덮어서, 던진 것이 날아가는 것을 못 본 채 튜토리얼이 끝난다 (8/7 플레이 테스트).
+// 대기 중에 또 던져도 시계를 새로 감지 않는다 — 처음 던진 것을 기준으로 센다.
+bus.on('combat.throwableSpent', () => {
+  if (tutorial === null || !inTutorial()) return
+  if (throwableStepDelay === null) throwableStepDelay = THROWABLE_STEP_DELAY_SECONDS
+})
 /**
  * 공격받으면 진행 중인 회복이 취소된다 (DEC-INPUT-005). 아이템은 소비하지 않는다.
  *
@@ -3420,6 +4423,15 @@ bus.on('combat.throwableSpent', () => completeTutorialStep('use_throwable'))
  * 반드시 하나를 빠뜨린다.
  */
 bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
+// 맞았다는 것을 화면으로도 알린다 (8/7 플레이 테스트). 때리는 쪽 표시는 있었는데
+// 맞는 쪽이 없어서 체력 숫자 말고는 신호가 없었다.
+bus.on('combat.playerDamaged', () => {
+  playerHitRemaining = PLAYER_HIT_SECONDS
+})
+// 깜빡임의 짝이 되는 소리 (DEC-ART-005). **발행 지점이 아니라 여기에 붙인다** —
+// `combat.playerDamaged` 를 내는 곳이 습격(주민)과 재배(야생동물) 둘이라 발행
+// 쪽에 붙이면 한쪽을 빠뜨린다. 8/7 에 명중 표시로 정확히 그 실수를 했다 (3-B-1).
+bus.on('combat.playerDamaged', () => sfx.play(SOUND_ASSET.playerHit))
 
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)

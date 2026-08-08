@@ -1,5 +1,5 @@
 id,kind,content_status,content_version,display_name,design_intent,scenario_id,info_type,source_fact_text,ending_fact_text
-story_info.yeongsun_basic,story_info,draft,1,영순 기본 — 동생들,습격 동기 공개.,story_scenario.yeongsun_family,basic,영순은 굶는 동생들 때문에 처음으로 낫을 들고 남의 밭에 왔다.,영순은 굶는 동생들을 위해 처음으로 남의 밭에 들어왔다.
+story_info.yeongsun_basic,story_info,draft,1,영순 기본 — 동생들,습격 동기 공개.,story_scenario.yeongsun_family,basic,영순은 굶는 동생들 때문에 돌멩이를 움켜쥐고 남의 밭에 왔다.,영순은 굶는 동생들을 위해 처음으로 남의 밭에 들어왔다.
 story_info.yeongsun_core,story_info,draft,1,영순 핵심 — 열여섯 가장,공감·투항 루트의 속사정.,story_scenario.yeongsun_family,core,영순의 부모는 흉년에 몸져누워 일을 못 하게 되었고 영순은 열여섯에 가장이 되었다.,영순의 부모는 흉년에 몸져누웠고 영순이 열여섯 나이로 집안을 책임지고 있었다.
 story_info.manbok_basic,story_info,draft,1,만복 기본 — 선금,습격 동기 공개. 화폐 무력화 전제 포함.,story_scenario.manbok_promise,basic,만복은 봄에 곡식을 대주겠다며 선금을 받았으나 흉년으로 구할 곡식이 없어 약속을 지키지 못하게 된 장사꾼이다.,만복은 봄에 곡식을 대주기로 선금을 받았지만 흉년으로 살 곡식이 없어 약속을 지킬 수 없게 되었다.
 story_info.manbok_core,story_info,draft,1,만복 핵심 — 명단,공감·투항 루트의 속사정.,story_scenario.manbok_promise,core,만복이 지닌 엽전의 절반은 마을 사람들의 선금이며 그는 선금을 준 사람들의 명단을 아직 품에 넣고 다닌다.,만복이 가진 엽전의 절반은 마을 사람들의 선금이었고 그는 그 명단을 여전히 품에 지니고 다녔다.

@@ -22,6 +22,7 @@
 //
 // 런 실패 화면과 클래스도 파일도 공유하지 않는다 (DEC-UI-014, DEC-UI-023).
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 /**
@@ -88,6 +89,8 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
   root.hidden = true
 
   const panel = el('div', 'ending__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
 
   const title = el('h1', 'ending__title')
   const summary = el('p', 'ending__summary')

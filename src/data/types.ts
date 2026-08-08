@@ -187,9 +187,12 @@ export type TutorialCompletionKey =
   | 'sell_crop'
   | 'buy_material'
   | 'craft_item'
+  | 'assign_quickslot'
+  /** 정비에서 구매 창을 열었다. 실제 구매는 buy_material 이 따로 본다 */
+  | 'open_shop'
 
 /**
- * DEC-ART-001 — 콘텐츠에 붙는 논리 에셋의 역할.
+ * DEC-ART-004 — 콘텐츠에 붙는 논리 에셋의 역할.
  *
  * `content_assets.csv` 의 `asset_role` 이자 논리 에셋 ID `asset.<구간>.<이름>` 의
  * 구간이다. 둘은 같은 값을 쓴다. UI·시스템 에셋은 어떤 콘텐츠에도 속하지 않아
@@ -209,6 +212,17 @@ export type AssetRole =
   | 'cutscene'
   | 'sfx'
   | 'bgm'
+  /**
+   * `DEC-ART-004` 가 프레임 교체를 허용한 세 예외를 담는 구간 (2026-08-07).
+   *
+   * **`field_sprite` 를 쓰는 전투 참여 캐릭터(플레이어·주민 4명)에만 붙는다.**
+   * 야생동물은 예외 대상이 아니다. 좌·우는 이동 방향에 따라, `attack` 은 낫을
+   * 휘두르거나 주민이 공격하는 순간에 교체한다. 상하 이동과 정지는 기존 정면
+   * 스프라이트를 그대로 쓰고, 걷기는 예외가 아니라 코드 bob 이다.
+   */
+  | 'field_sprite_left'
+  | 'field_sprite_right'
+  | 'field_sprite_attack'
 
 /**
  * 콘텐츠 행에 중첩되는 논리 에셋 ID 묶음.
@@ -277,7 +291,7 @@ export interface WorldMap extends CommonEntry {
   /**
    * 맵에 붙은 논리 에셋 (`background`·`farm_plot`·`crop_seed`).
    *
-   * **씨앗은 작물이 아니라 맵에 하나만 있다.** `DEC-ART-001` 이 "씨앗은 종류를
+   * **씨앗은 작물이 아니라 맵에 하나만 있다.** `DEC-ART-004` 이 "씨앗은 종류를
    * 공개하지 않으므로 작물별로 두지 않는다"로 확정해서, 네 작물이 전부 이 한 장을
    * 가리킨다. `crops[].assets` 에는 `crop_growing`·`crop_ready` 둘뿐이다.
    */
@@ -288,11 +302,21 @@ export interface WorldMap extends CommonEntry {
 // 작물 (DEC-CONTENT-003, DEC-CONTENT-013)
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * 작물 속성 (DEC-CONTENT-013).
+ *
+ * `assets.icon` 은 속성 아이콘이다. 확정문이 "색상·아이콘과 이펙트 파일은 공통 에셋
+ * 연결 CSV 에서 논리 에셋 ID 로 관리한다"로 정했고, 그래서 `crop_attributes.csv` 가
+ * 8/6 에 에셋 연결 CSV 의 부모 후보에 들어갔다.
+ */
 export interface CropAttribute extends CommonEntry {
   kind: 'crop_attribute'
   player_description: string
   combat_mechanic_key: CombatMechanicKey
   ending_prompt_summary: string
+
+  /** 속성 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface Crop extends CommonEntry {
@@ -313,7 +337,7 @@ export interface Crop extends CommonEntry {
   /**
    * 작물에 붙은 논리 에셋 (`crop_growing`·`crop_ready`).
    *
-   * 씨앗 단계는 여기 없다 — 맵 쪽 `crop_seed` 한 장을 공용으로 쓴다 (DEC-ART-001).
+   * 씨앗 단계는 여기 없다 — 맵 쪽 `crop_seed` 한 장을 공용으로 쓴다 (DEC-ART-004).
    */
   assets?: ContentAssets
 }
@@ -332,6 +356,9 @@ export interface CraftingMaterial extends CommonEntry {
    * (DEC-CONTENT-004). recipes.csv 가 승인되지 않았으면 속성이 없다.
    */
   used_by?: ResultKind[]
+
+  /** 재료 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface ThrowableWeapon extends CommonEntry {
@@ -355,6 +382,13 @@ export interface ThrowableWeapon extends CommonEntry {
   effect_tick_interval_seconds: number | null
   /** combat_mechanic_key 가 movement_slow 인 속성에서만 채워진다 */
   effect_move_speed_multiplier: number | null
+
+  /**
+   * 투척 무기에 붙은 논리 에셋 (`icon`·`projectile`).
+   *
+   * `projectile` 은 날아가는 동안의 그림이고 `icon` 은 보관함·퀵슬롯·목록의 그림이다.
+   */
+  assets?: ContentAssets
 }
 
 export interface RecoveryItem extends CommonEntry {
@@ -364,6 +398,9 @@ export interface RecoveryItem extends CommonEntry {
   use_duration_seconds: number
   /** 회복 사용 중 이동속도 배율 (DEC-INPUT-008) */
   move_speed_multiplier: number
+
+  /** 회복 아이템 아이콘 (`icon`) */
+  assets?: ContentAssets
 }
 
 export interface RecipeInput extends LinkEntry {
@@ -409,6 +446,9 @@ export interface Wildlife extends CommonEntry {
   attack_cooldown_seconds: number
   crop_eat_duration_seconds: number
   target_mode: TargetMode
+
+  /** 야생동물에 붙은 논리 에셋 (`field_sprite`·`icon`) */
+  assets?: ContentAssets
 }
 
 export interface WildlifeSpawnEntry extends LinkEntry {
@@ -523,6 +563,15 @@ export interface Resident extends CommonEntry {
   personality_profile_id: string
   combat_profile_id: string
   support_attack_profile_id: string
+
+  /**
+   * 주민에게 붙은 논리 에셋 (`field_sprite`·`portrait`·`projectile`).
+   *
+   * `projectile` 은 **이 주민이 쏘는 투사체**다. 전투 프로필이 아니라 주민에 붙는
+   * 이유는 `resident_combat_profiles.csv` 가 에셋 연결 CSV 의 부모 후보가 아니고
+   * 쏘는 주체가 주민이기 때문이다 (만복의 엽전).
+   */
+  assets?: ContentAssets
 
   /**
    * 이 주민의 승인 사연 시나리오 ID 목록. CSV에 역참조를 저장하지 않고
@@ -699,6 +748,15 @@ export interface PlayerBaseStats extends CommonEntry {
   sickle_damage: number
   sickle_range: number
   sickle_cooldown_seconds: number
+
+  /**
+   * 플레이어에게 붙은 논리 에셋 (`field_sprite`·`portrait`).
+   *
+   * 플레이어는 콘텐츠 테이블이 따로 없어서 이 표가 유일한 자리다 —
+   * 그래서 `player_base_stats.csv` 가 에셋 연결 CSV 의 부모 후보에 들어갔다
+   * (아트 디렉션 14.7).
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────

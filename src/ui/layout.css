@@ -9,11 +9,11 @@
   화면 표현이라 CSV 로 빼지 않는다. 반대로 작물 성장 시간·가격·확률은 여기 두지 않는다.
 
   기준 해상도는 DEC-UI-025 가 1920×1080 으로 확정했다 (8/3). 창 크기가 다르면 전체를
-  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-001 이 월드 1단위 = 화면
+  비율 유지로 확대·축소하고 남는 영역은 여백이다. DEC-ART-004 이 월드 1단위 = 화면
   1픽셀로 확정해서 배율은 1.0 고정이다. 맵이 1600×900 이라 좌우 160·상하 90 의 여백이
   남고 그 여백을 필드 HUD 가 쓴다.
 
-  색·여백·그림자는 DEC-ART-001 이 "layout.css 의 값으로 관리하고 이미지로 만들지
+  색·여백·그림자는 DEC-ART-004 이 "layout.css 의 값으로 관리하고 이미지로 만들지
   않는다"로 확정했다 (8/4). **여기가 임시가 아니라 원본이다.**
 */
 
@@ -29,7 +29,7 @@
   --ui-base-width: 1920px;
   --ui-base-height: 1080px;
 
-  /* ── 색 — 여기가 원본이다 (DEC-ART-001) ──────── */
+  /* ── 색 — 여기가 원본이다 (DEC-ART-004) ──────── */
   --ui-bg-panel: rgba(17, 23, 15, 0.82);
   --ui-bg-slot: rgba(0, 0, 0, 0.45);
   --ui-border: rgba(232, 217, 160, 0.35);
@@ -38,6 +38,14 @@
   --ui-text-dim: rgba(244, 236, 208, 0.55);
   --ui-accent: #c8d94a;
   --ui-danger: #e8613c;
+
+  /* 필드 조준선 (2026-08-07 전성민). **캔버스가 읽는 첫 색이다** —
+     나머지 캔버스 색은 아직 field.ts 안에 있다. 색의 원본이 여기라는 것은
+     위 주석이 이미 말하고 있었고, 조준선부터 그 통로를 낸다.
+     붉은색을 안 쓰는 이유는 아트 디렉션 4.2 절이다 — 고추·토마토가 붉은
+     계열이라 밭 안에서 붉은색을 쓰면 익은 작물과 판독이 갈린다. */
+  --field-aim-outline: #2a1c16;
+  --field-aim-line: #f2ead1;
 
   /* ── 글자 ──────────────────────────────────────
      **1920 기준이다.** 8/5까지의 값(12/14/18/26)은 무대가 없던 시절에 정한 것이라
@@ -53,15 +61,25 @@
   --ui-font-lg: 26px;
   --ui-font-xl: 38px;
 
-  /* ── HUD (DEC-UI-017, A1 확정 배치) ─────────────
-     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-001 이 월드
+  /* ── HUD (DEC-UI-036, A1 확정 배치) ─────────────
+     아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-004 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
 
   /* 표지판 253×174 — 위칸 일차 / 아래칸 습격 예고 */
-  --hud-signboard-width: 253px;
-  --hud-signboard-height: 174px;
+  /* 좌측 상단 판 (A1 목업 8/9 — raid_notice_* 560×101).
+     8/9 까지 253×174 짜리 signboard 였는데 목업이 가로로 긴 판 하나다 */
+  --hud-signboard-width: 560px;
+  --hud-signboard-height: 101px;
+
+  /* 퀵슬롯 번호판·수량 배지 (A1 목업 8/9). 배지 그림이 오기 전의 판 색이다 —
+     그림이 붙으면 이 둘은 안 쓰이고 배경 그림이 대신한다 */
+  --hud-badge-dark: rgba(58, 40, 26, 0.92);
+  --hud-badge-cream: #efe3c2;
+
+  /* 좌측 판과 게이지 사이. 목업에서 눈으로 맞춘 값이라 여기 하나만 고치면 된다 */
+  --hud-timer-gap: 72px;
 
   /* 재배 시간 게이지 911×83 — 숫자 없음 */
   --hud-timer-width: 911px;
@@ -78,20 +96,46 @@
   --hud-health-height: 26px;
 
   /* 퀵슬롯 154×145 · 회복 칸 162×166.
-     5칸(770) + 회복(162) = 932px 이라 1920 하단에 들어간다. */
+     4칸(616) + 회복(162) = 778px 이라 1920 하단에 들어간다.
+     8/8 에 5칸(770+162=932)에서 줄었다 — `DEC-INPUT-013`. 칸 그림 크기는
+     그대로고 개수만 줄었으므로 하단 오른쪽이 154px 만큼 덜 찬다. */
   --hud-slot-width: 154px;
   --hud-slot-height: 145px;
   --hud-recovery-width: 162px;
   --hud-recovery-height: 166px;
   --hud-slot-gap: 0px;
 
-  /* ── 정비 허브 (DEC-UI-020, DEC-UI-021) ─────────
+  /* ── 정비 허브 (DEC-UI-020, DEC-UI-034) ─────────
      셔터 불투명도를 0.94 에서 올렸다. `DEC-UI-020` 이 셔터를 "필드를 덮는" 것으로
      정했는데, 0.94 로는 뒤의 필드 HUD 가 비친다. 8/5에는 HUD 부품이 작아 "거의
      안 보인다" 로 넘어갔지만, A1 배치에서 표지판이 253×174 로 커지면서 허브의
      `소지금` 위에 `1일차` 가 겹쳐 읽혔다 — 아트 디렉션 3절 판독 우선에 걸린다.
      필드가 아주 옅게 남아 "덮였을 뿐 사라지지 않았다" 는 인상은 유지된다. */
   --hub-shutter: rgba(10, 8, 6, 0.985);
+  /* 나무·한지 위에서는 크림색 글자가 묻힌다. A3 목업의 진한 갈색을 쓴다 */
+  --hub-text-on-art: #3a2b1c;
+  /*
+    고른 항목의 바탕과 테두리 (8/8).
+
+    **크림색을 얹으면 밝기만 달라져 구분이 약하다.** 줄이 한지 위의 어두운 판이라
+    거기에 크림을 얹으면 연한 노란색이 될 뿐이고, 안 고른 줄과 색상이 같다.
+    나무색 계열로 바꾸면 한지 위에서 색상 자체가 갈린다 — 집어 올린 나무 조각처럼
+    읽힌다. 아트 디렉션 4.5 절의 색 코드가 아직 미정이라 여기 값이 임시 기준이다.
+  */
+  --hub-row-selected-bg: rgba(150, 96, 44, 0.62);
+  --hub-row-selected-edge: #d9a05b;
+  /*
+    보관함 칸. 그림 원본은 111×113 이지만 **자리가 남아 키웠다** (8/8).
+
+    판 안쪽이 645 - 테두리 56 - 좌우 여백 40 = 549 라 넷에 사이 여백 12 를 빼면
+    한 칸에 134 까지 쓸 수 있다. 130 은 거기서 조금 남긴 값이다.
+  */
+  --hub-slot-size: 130px;
+  /* 팝업 목록·편성 칸. 보관함보다 한 단계 작다 — 옆에 두 줄이 같이 서야 한다 */
+  --hub-row-slot-size: 116px;
+  /* 한지 판 안의 스크롤바. 나무 테두리와 같은 갈색 계열이다 (8/8, 작업 17번) */
+  --hub-scroll-thumb: rgba(122, 84, 48, 0.72);
+  --hub-scroll-thumb-hover: rgba(96, 64, 34, 0.9);
   --hub-pad: 28px;
   --hub-inventory-width: 340px;
   --hub-popup-width: 560px;
@@ -99,6 +143,64 @@
   /* 편성 팝업의 슬롯 버튼. 필드 HUD 퀵슬롯(154×145)과 다른 것이다 —
      한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 크기가 갈린다 */
   --hub-slot-min-height: 78px;
+
+  /*
+    ── A3 목업 v7 의 실측 좌표 (2026-08-08) ────────────────────
+
+    아래 값은 `assets/source/phase-a/A3_maintenance_hub_mockup_v7.png` 에서 잰 것이다.
+    무대가 1920×1080 고정이고 배율이 없어(DEC-ART-004) 픽셀이 그대로 맞는다.
+
+    **격자를 쓰지 않고 자리를 하나씩 적는다.** 목업이 격자로 설명되는 배치가
+    아니다 — 기능 버튼 넷이 팝업 왼쪽 테두리에 물려 있고, 소지금은 보관함이 아니라
+    화면 우측 상단이며, 예고 판은 그 어느 열에도 속하지 않는다. 격자로 짜면
+    "물려 있음" 을 음수 여백으로 흉내내야 해서 값이 더 늘어난다.
+
+    아트가 없을 때는 아래 값을 쓰지 않고 기존 2열 격자가 그대로 남는다.
+  */
+  --hub-notice-x: 55px;
+  --hub-notice-y: 60px;
+  --hub-money-x: 1415px;
+  --hub-money-y: 62px;
+  --hub-pause-x: 1706px;
+  --hub-pause-y: 60px;
+
+  --hub-inv-x: 55px;
+  --hub-inv-y: 190px;
+  --hub-inv-w: 645px;
+  --hub-inv-h: 810px;
+  /* 보관함 제목 팻말. 판 왼쪽 위에서 잰 상대 좌표다 */
+  --hub-inv-heading-x: 177px;
+  --hub-inv-heading-w: 278px;
+  --hub-inv-heading-h: 70px;
+
+  /* 기능 버튼 넷. 세로로 쌓이며 팝업 왼쪽 테두리에 물린다 */
+  --hub-tab-x: 735px;
+  --hub-tab-y: 285px;
+  --hub-tab-w: 180px;
+  --hub-tab-h: 64px;
+  --hub-tab-pitch: 98px;
+  /*
+    안 열린 탭이 팝업 판 아래로 더 들어가는 거리.
+
+    **글자는 넷 다 온전히 보여야 한다** (8/8). 8/8 밤에 130 으로 뒀더니 절반이
+    판 아래로 들어가 글자가 가려졌다. 40 이면 열린 탭의 오른쪽 끝이 915, 나머지는
+    955 라 둘 다 팝업 왼쪽(905) 아래로 끄트머리만 물리고, 글자는 탭 가운데
+    (825·865) 라 어느 쪽도 가려지지 않는다.
+
+    차이가 40 뿐인 것도 의도다 — 열린 것이 "살짝" 왼쪽으로 나와 나머지와 비교만
+    되면 된다.
+  */
+  --hub-tab-tuck: 40px;
+
+  --hub-popup-x: 905px;
+  --hub-popup-y: 195px;
+  --hub-popup-w: 950px;
+  --hub-popup-h: 665px;
+
+  --hub-finish-x: 1490px;
+  --hub-finish-y: 915px;
+  --hub-finish-w: 360px;
+  --hub-finish-h: 80px;
 
   /* ── 결과 화면 (DEC-UI-023) ───────────────────────
      독립 화면이 필드를 덮을 때 쓰는 값. 화면마다 자기 규칙에서 참조한다.
@@ -109,12 +211,89 @@
   --screen-panel-width: 620px;
   --screen-pad: 36px;
 
-  /* ── 대화 오버레이 (DEC-UI-007~010) ──────────────── */
-  --dialogue-width: 760px;
+  /* ── 대화 오버레이 (DEC-UI-007~010, 아트 디렉션 12.2 A4) ──
+     인물은 크게, 대사창은 하단 전폭으로 인물의 하단을 덮는다.
+     선택지는 대사창 안 목록이 아니라 두 인물 사이 말풍선 안이다. */
+  /* 초상화 원본이 1080px 높이다. 이 값이 곧 다섯 인물 공통 배율이다 */
+  /*
+    아래 넷은 `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png`(1920×1080)
+    실측이다. 목업이 그대로 UI 명세다 (아트 디렉션).
+
+      인물      화면 높이의 약 89% — 위에서 잘리고 하단은 대사창이 덮는다
+      대사창    폭 73%, 높이 300, 바닥에서 50
+      말풍선    중심 x 61% (플레이어 쪽으로 치우침), 바닥에서 470
+  */
+  --dialogue-portrait-height: 960px;
+  --dialogue-box-width: 73%;
+  --dialogue-box-height: 300px;
+  /* 말풍선 중심. 가운데가 아니라 플레이어 쪽이다 — 꼬리가 그쪽을 향한다 */
+  --dialogue-balloon-center-x: 61%;
+  /*
+    `choice_balloon.png` 실측 그대로다.
+
+    8/8 낮에 614×535 로 키웠던 적이 있다 — 선택지를 `button_normal` 나무판으로
+    쓰라는 8/6 지시를 맞추려면 안쪽 크림색(450×365)에 판 셋(364)이 안 들어가서다.
+    그날 저녁 팀이 **목업대로 밑줄 친 글자로** 정하면서 판이 빠졌고, 자리가
+    남아 원본 크기로 되돌렸다. 말풍선은 처음부터 글자용으로 그려진 크기다.
+  */
+  --dialogue-balloon-width: 506px;
+  --dialogue-balloon-height: 441px;
+  /*
+    위 확대율로 잰 나무 테두리 두께. 버튼이 크림색 영역 안에만 놓인다.
+
+    **좌우가 다르다.** 오른쪽에 꼬리가 붙어 있어 그쪽 테두리가 더 두껍고,
+    좌우를 같게 주면 버튼이 크림색 한가운데가 아니라 오른쪽으로 밀린다 (8/8).
+  */
+  --dialogue-balloon-inset-top: 28px;
+  --dialogue-balloon-inset-left: 36px;
+  --dialogue-balloon-inset-right: 71px;
+  --dialogue-balloon-inset-bottom: 56px;
+  /* 아래 둘은 그림이 없을 때의 대체 버튼 크기다. 말풍선 안 선택지는 글자라 안 쓴다 */
+  --dialogue-choice-width: 350px;
+  --dialogue-choice-height: 116px;
+  /* 말풍선 안 선택지 글자. 눈금에 없는 값인 이유는 `.dialogue__choice` 주석에 */
+  --dialogue-choice-font: 25px;
+  /*
+    발화자 이름판. `button_normal` 을 비율(3.02:1) 그대로 줄인 크기다.
+    `top` 이 음수라 대사창 위로 그만큼 튀어나온다 — 목업 배치다.
+  */
+  --dialogue-name-width: 260px;
+  --dialogue-name-height: 86px;
+  /*
+    **음수 기준이 대사창 안쪽이다.** 대사창이 `border: 44px` 9-slice 라 절대 위치의
+    기준이 테두리 안쪽(padding box)이고, 판 높이(86)보다 작은 값을 주면 테두리를
+    넘지 못해 대사 글자 위에 얹힌다 (8/8).
+
+    판 전체 높이만큼 올리고 조금 더 빼서, 나무 테두리에 걸쳐 위로 나오게 한다.
+  */
+  --dialogue-name-top: -70px;
+  --dialogue-name-left: 30px;
+  /*
+    말풍선 바닥을 화면 아래에서 얼마나 띄우나. 목업이 470 이다.
+    **대사창이 길어져도 안 가려지는 값이어야 한다** — 대사가 세 줄이면
+    대사창이 위로 자라기 때문이다 (8/8 만복 조우에서 셋째 선택지가 가려졌다).
+  */
+  --dialogue-balloon-lift: 405px;
+  /* 그림 위에 얹는 글자색. 어두운 패널 위(--ui-text)와 밝기가 반대다 */
+  --dialogue-text-on-balloon: #2b2418;
+  --dialogue-subtext-on-balloon: rgba(43, 36, 24, 0.65);
+  --dialogue-text-on-panel: #2b2418;
+  /*
+    발화자 이름은 **나무판 위**다 (A4 목업).
+    크림색 대사창 안에 있을 때 쓰던 갈색(`#6b4a21`)을 그대로 두면 나무 위에서
+    대비가 죽는다. 목업은 흰 글자이고, 여기서는 프로젝트 밝은 글자색을 쓴다.
+  */
+  --dialogue-name-on-plate: #f4ecd0;
+
+  /* ── 항목 아이콘 (C단계, 아트 디렉션 14.8·14.9) ────
+     칸 크기는 표현이라 여기가 원본이다. 그림 자체는 정사각형이므로
+     한 변만 정하면 된다. */
+  --ui-icon-size: 28px;
+  --ui-icon-size-lg: 40px;
 
   /* ── 일차 시작 (DEC-UI-016, DEC-RUN-011) ──────────
      습격 예고 세 종류의 시각 구분. DEC-RUN-011 이 "구분에 쓸 실제 색과 표현은
-     DEC-ART-001 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
+     DEC-ART-004 에서 정한다"로 넘겼는데 아트 디렉션 4.5 색표가 아직 *미정*이다.
      그래서 아래 셋은 **플레이스홀더**이며 기존 토큰을 가리키기만 한다 —
      새 색을 여기서 만들지 않는다. 4.5 가 채워지면 이 세 줄만 바꾼다.
 
@@ -152,16 +331,18 @@
 
   A1 부품은 테두리·홈·크림색 판이 그림 안에 이미 그려져 있다. 글자와 게이지가
   그 안에 정확히 앉아야 하므로 아래 값들은 **에셋에서 잰 실측 좌표**다.
-  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-001) 배율이 없으므로
+  무대가 1920 고정이고 월드 1단위 = 화면 1픽셀이라(DEC-ART-004) 배율이 없으므로
   픽셀이 그대로 맞는다. 에셋이 다시 오면 이 값들을 같이 고친다.
 */
 :root {
   /* 표지판 253×174 — 크림 판 두 칸 */
-  --hud-sign-inset-x: 18px;
-  --hud-sign-top-y: 22px;
-  --hud-sign-top-h: 62px;
-  --hud-sign-bottom-y: 96px;
-  --hud-sign-bottom-h: 60px;
+  /* 판 안 크림 칸 둘. 그림을 디코딩해 픽셀로 잰 값이다 (raid_notice_* 560×101) */
+  --hud-sign-cell-y: 13px;
+  --hud-sign-cell-h: 74px;
+  --hud-sign-day-x: 155px;
+  --hud-sign-day-w: 113px;
+  --hud-sign-raid-x: 276px;
+  --hud-sign-raid-w: 267px;
 
   /* 재배 게이지 911×83.
 
@@ -193,6 +374,107 @@
 
   /* 크림색 판 위의 글자. 무채색 나무 위라 어두워야 읽힌다 (아트 디렉션 4.4) */
   --ui-text-on-panel: #3b2a1c;
+
+  /* ── 한지 판 (공통) ────────────────────────────
+     `panel_border` 9-slice + `panel_texture`. 대사창·정비 팝업·보관함이
+     각자 복사해 쓰던 것을 아래 `.panel--hanji` 한 곳으로 모았다.
+     테두리 그림의 안 늘어나는 모서리가 44px 다 (DEC-ART-004 — 9-slice 는
+     모서리 크기를 함께 정한다).
+
+     **그리는 두께는 원본 모서리(44px)보다 얇아도 된다.** `border-image-slice` 는
+     원본에서 잘라낼 픽셀이고 `border-image-width` 는 화면에 그릴 두께라, 이 값만
+     줄이면 같은 그림이 축소돼 테두리가 얇아진다. 8/9 에 44 → 28 로 줄였다 —
+     44 는 대사창처럼 큰 판에서 정한 값이라 일시정지·회복 퀵메뉴 같은 작은 창에서는
+     나무가 내용보다 두꺼워 보였다. 얇기를 바꾸려면 여기 한 줄만 고친다. */
+  --panel-hanji-slice: 28px;
+  /* 한지 위 글자. 위 --ui-text-on-panel 과 같은 계열이되 종이 쪽이 더 밝아
+     한 단계 진하다. 대사창(#2b2418)·정비(#3a2b1c) 가 따로 정해 둔 값을
+     여기로 합치는 것은 각 화면 주인이 옮길 때 한다 */
+  --panel-hanji-text: #33261a;
+}
+
+/*
+  한지 판 — CSS 로 뜨는 창의 공통 바탕 (아트 디렉션 12.2, `ui/panel.ts`).
+
+  **붙이는 것은 각 화면 주인이 한다.** `applyHanjiPanel(요소)` 를 한 번 부르면
+  그림 주소 둘이 이 요소에 실리고 이 클래스가 켜진다. 화면 쪽 CSS 는 안 고친다 —
+  모달마다 9-slice 를 적으면 이미 세 벌인 복사가 여섯 벌이 되고, 그 순간부터
+  두 사람이 서로의 구획을 열게 된다 (8/8 작업 분담).
+
+  **클래스 이름을 두 번 적은 것은 오타가 아니다.** 명시도를 (0,2,0) 으로 올려
+  화면별 플레이스홀더(`.pause__panel` 의 `background`·`border`)를 이긴다.
+  그 규칙들은 이 파일 뒤쪽에 있어서 같은 (0,1,0) 이면 뒤가 이긴다 — 바로 위
+  `.hud .hud--has-art` 주석이 말하는 것과 같은 자리다. 화면마다 `--has-art`
+  변형을 새로 쓰게 하면 그게 곧 구획을 넘는 작업이 된다.
+
+  그림이 없으면 `ui/panel.ts` 가 클래스를 아예 안 붙이므로 각 화면의
+  플레이스홀더가 그대로 남는다 (`AGENTS.md` 6절).
+*/
+.panel--hanji.panel--hanji {
+  border: var(--panel-hanji-slice) solid transparent;
+  border-radius: 0;
+  border-image-source: var(--panel-hanji-border);
+  /* 원본 픽셀 기준이라 단위가 없다. 그려지는 두께만 위 변수로 조절한다 */
+  border-image-slice: 44;
+  border-image-width: var(--panel-hanji-slice);
+  /* 타일링하지 않는다 — 텍스처 위아래 끝 색차(674)가 가로줄로 드러난다 (8/7) */
+  background-image: var(--panel-hanji-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+
+  /*
+    ── 판 안의 색을 통째로 뒤집는다 ──────────────────────
+
+    **`color` 하나만 바꾸면 글자가 안 보인다.** 자식 규칙들이 `--ui-text`·
+    `--ui-accent` 를 각자 직접 지정하고 있어서 상속이 거기서 끊긴다. 밝은
+    크림색 글자가 밝은 종이 위에 그대로 남는다 (8/8 담당자가 화면에서 잡았다).
+
+    그래서 색을 고치는 게 아니라 **토큰을 이 요소에서 다시 정의한다.** 커스텀
+    프로퍼티는 상속되므로 자식 규칙은 한 줄도 안 고쳐도 따라온다 — 화면 주인이
+    자기 CSS 를 열 필요가 없다는 이 클래스의 전제가 그대로 유지된다.
+    `--day-start-notice-*` 셋처럼 이 토큰들의 별명도 같이 따라온다.
+
+    **바탕이 어두운 판 → 밝은 종이로 뒤집히는 것이므로 명암만 뒤집고 역할은
+    그대로 둔다.** 강조는 강조, 위험은 위험이다.
+  */
+  --ui-text: var(--panel-hanji-text);
+  /* 흐린 글자도 종이 위에서는 읽혀야 한다. 어두운 바탕일 때의 0.55 를 그대로
+     쓰면 한지에서는 거의 사라진다 (8/9 — `타이틀로 돌아가기` 가 안 보였다) */
+  --ui-text-dim: rgba(51, 38, 26, 0.72);
+  --ui-border: rgba(51, 38, 26, 0.42);
+  --ui-border-strong: #6b4f33;
+  /* 종이가 이미 바탕이다. 그 위에 또 판을 깔면 한지가 가려진다 */
+  --ui-bg-panel: transparent;
+  /*
+    칸·입력란처럼 살짝 눌린 자리.
+
+    **0.08 은 종이 위에서 안 보였다** (8/9). 어두운 바탕에서는 그 정도로도
+    칸이 갈렸는데 한지는 밝아서 대비가 안 난다. 버튼이 버튼으로 읽히려면
+    테두리와 바탕이 둘 다 있어야 한다.
+  */
+  --ui-bg-slot: rgba(51, 38, 26, 0.16);
+  /* 임시값 둘 — 아트 디렉션 4.5절 색 코드 8종이 아직 미정이다 (8/8).
+     연두(#c8d94a)와 주홍(#e8613c)은 밝은 종이 위에서 안 읽혀 그대로 못 쓴다.
+     같은 색상 계열을 유지한 채 명도만 내렸다. 시안이 나오면 이 두 줄만 바꾼다 */
+  --ui-accent: #5f6b12;
+  --ui-danger: #b8371a;
+
+  /*
+    별칭 토큰은 여기서 다시 걸어야 한다.
+
+    `--day-start-notice-*` 셋은 `:root` 에서 `var(--ui-text-dim)` 처럼 선언돼
+    있는데, **그 `var()` 는 `:root` 에서 이미 계산돼 밝은 색으로 굳는다.**
+    아래에서 원본 토큰을 바꿔도 늦다 — 굳은 값이 그대로 상속될 뿐이다.
+    8/8 에 일차 시작 화면의 습격 예고 문구가 한지 위에서 안 보여 담당자가 잡았다.
+
+    같은 줄을 여기서 한 번 더 쓰면 이 요소의 값으로 다시 계산된다.
+    **`:root` 에 별칭을 새로 만들면 여기도 같이 늘려야 한다.**
+  */
+  --day-start-notice-none: var(--ui-text-dim);
+  --day-start-notice-raid: var(--ui-text);
+  --day-start-notice-final: var(--ui-accent);
+
+  color: var(--ui-text);
 }
 
 /*
@@ -213,7 +495,8 @@
 /* ── 상단 왼쪽 끝: 표지판 (일차 / 습격 예고) ───── */
 .hud__signboard {
   position: absolute;
-  top: 0;
+  /* 8/9 까지 화면 맨 위(0)에 붙어 있었다. 목업은 다른 부품과 같은 여백을 준다 */
+  top: var(--hud-edge);
   left: var(--hud-edge);
   width: var(--hud-signboard-width);
   height: var(--hud-signboard-height);
@@ -224,11 +507,18 @@
 }
 
 /* 두 칸은 그림 안의 크림 판 위에 정확히 앉는다 */
+/*
+  두 칸이 **가로로** 나란히 앉는다 (A1 목업 8/9).
+
+  8/9 까지는 253×174 표지판에 위·아래로 쌓여 있었다. 새 판(`raid_notice_*`
+  560×101)은 왼쪽에 마을 그림, 그 오른쪽에 크림 칸 둘이 나란한 모양이다.
+  아래 좌표는 그림을 디코딩해 픽셀로 잰 값이다 — 어림값이 아니다.
+*/
 .hud__signboard-day,
 .hud__signboard-raid {
   position: absolute;
-  left: var(--hud-sign-inset-x);
-  right: var(--hud-sign-inset-x);
+  top: var(--hud-sign-cell-y);
+  height: var(--hud-sign-cell-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,24 +527,24 @@
 }
 
 .hud__signboard-day {
-  top: var(--hud-sign-top-y);
-  height: var(--hud-sign-top-h);
+  left: var(--hud-sign-day-x);
+  width: var(--hud-sign-day-w);
   font-size: var(--ui-font-lg);
   font-weight: 700;
   color: var(--ui-text-on-panel);
 }
 
 /*
-  습격 예고 (DEC-UI-017, DEC-RUN-011).
+  습격 예고 (DEC-UI-036, DEC-RUN-011).
 
   재배 모드 내내 상시 노출하고 습격이 없는 날에도 사라지지 않는다.
   문구는 raid_notices.csv 에서 온다 — 임시 문구를 여기에도 TS 에도 넣지 않는다.
 */
 .hud__signboard-raid {
-  top: var(--hud-sign-bottom-y);
-  height: var(--hud-sign-bottom-h);
+  left: var(--hud-sign-raid-x);
+  width: var(--hud-sign-raid-w);
   padding: 0 var(--ui-gap-xs);
-  font-size: var(--ui-font-sm);
+  font-size: var(--ui-font-md);
   color: var(--ui-text-on-panel);
 }
 
@@ -267,11 +557,27 @@
 /* ── 상단 가운데: 남은 재배 시간 게이지 ─────────
    숫자를 넣지 않는다 (A1). 게이지가 줄어드는 것만으로 읽힌다.
    `남은 재배 시간` 글자는 그림에 이미 박혀 있어 DOM 에 두지 않는다. */
+/*
+  남은 재배 시간 게이지.
+
+  **가운데 정렬을 버렸다** (8/9). 좌측 판이 253 → 560 으로 넓어지면서 가운데
+  정렬한 게이지(911)가 504px 에서 시작해 판과 겹쳤다. `DEC-UI-036` 이
+  *"기준 해상도에서 HUD 요소가 서로 겹치지 않게 배치한다"* 로 정했다.
+
+  이제 판 오른쪽에 붙는다 — 목업도 가운데가 아니라 판 다음 자리다.
+  1920 기준으로 16 + 560 + 72 + 911 + 138(톱니) + 16 = 1713 이라 들어간다.
+
+  **판과 톱니 사이의 가운데는 아니다.** 한 번 그렇게 뒀는데 톱니가 작아서
+  남는 구간의 가운데가 목업보다 오른쪽으로 갔다. 판에서 재는 쪽이 맞다.
+
+  세로는 **판의 중심에 맞춘다.** 판이 101, 게이지가 83 이라 둘 다 위 여백에
+  붙이면 게이지가 떠 보인다. 높이 차의 절반만큼 내리므로 판 높이가 바뀌어도
+  따라온다 — 숫자를 다시 계산할 필요가 없다.
+*/
 .hud__timer {
   position: absolute;
-  top: var(--hud-edge);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--hud-edge) + (var(--hud-signboard-height) - var(--hud-timer-height)) / 2);
+  left: calc(var(--hud-edge) + var(--hud-signboard-width) + var(--hud-timer-gap));
   width: var(--hud-timer-width);
   height: var(--hud-timer-height);
   background-image: var(--hud-timer-image);
@@ -341,7 +647,7 @@
 }
 
 /* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
-   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-017, 아트 디렉션 14.2)
+   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-036, 아트 디렉션 14.2)
 
    그림 안에 네 자리가 이미 그려져 있어 flex 로 나누지 않고 각 자리에 앉힌다. */
 .hud__card {
@@ -366,7 +672,7 @@
   display: contents;
 }
 
-/* 이름은 카드 디자인의 일부다. DEC-UI-017 의 공통 요소가 아니다 (아트 디렉션 14.2) */
+/* 이름은 카드 디자인의 일부다. DEC-UI-036 의 공통 요소가 아니다 (아트 디렉션 14.2) */
 .hud__name {
   position: absolute;
   left: var(--hud-card-name-x);
@@ -385,7 +691,7 @@
   text-overflow: ellipsis;
 }
 
-/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-017) ──── */
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-036) ──── */
 .hud__health {
   display: contents;
 }
@@ -408,7 +714,7 @@
 }
 
 /*
-  바 우측 수치 (DEC-UI-017 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
+  바 우측 수치 (DEC-UI-036 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
 
   **현재 체력 하나만 넣는다.** 확정문이 요구하는 것은 `현재 체력`의 수치이고,
   카드 그림의 이 자리가 55px 이라 `100 / 100` 은 애초에 안 들어간다. 최대치는
@@ -433,7 +739,7 @@
   color: var(--ui-text);
 }
 
-/* ── 하단 오른쪽: 퀵슬롯 5칸 + 회복 칸 ──────────
+/* ── 하단 오른쪽: 퀵슬롯 4칸 + 회복 칸 ──────────
    회복 칸이 화면 오른쪽 끝에 닿는다 (A1) */
 .hud__bottom-right {
   position: absolute;
@@ -447,6 +753,19 @@
   display: flex;
   gap: var(--hud-slot-gap);
   align-items: flex-end;
+}
+
+/*
+  칸을 눌러 그 자리를 고른다 (DEC-INPUT-013, 8/9).
+
+  **HUD 는 클릭을 안 받는다** — 필드 클릭 공격을 가로채면 안 되기 때문에
+  `.hud` 가 `pointer-events: none` 이다 (이 파일 위쪽). 누를 수 있어야 하는
+  칸만 되살린다. 회복 칸도 같다.
+*/
+.hud__slot,
+.hud__recovery {
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .hud__slot {
@@ -485,9 +804,82 @@
   opacity: 0.4;
 }
 
-.hud__slot-count {
+/*
+  칸 위 번호판과 오른쪽 아래 수량 배지 (A1 목업 8/9).
+
+  **칸 밖으로 나가는 것이 번호판 하나뿐**이라 `.hud__slot` 의 `overflow: hidden`
+  을 풀고 그 자리를 이름에게 넘겼다. 원래 그 규칙은 긴 무기 이름이 칸을 넘치는
+  것을 막으려던 것이고, 번호판까지 자를 이유는 없다.
+
+  **배지 그림이 아직 없어 판을 CSS 로 그린다.** 그림이 오면
+  `--hud-slot-badge-image` 를 붙이는 규칙 하나만 더하면 교체된다 —
+  지금까지 아트를 붙여 온 방식 그대로다 (AGENTS.md 6절).
+*/
+.hud__slot {
+  position: relative;
+  overflow: visible;
+}
+
+.hud__slot-name {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.hud__slot-index {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  min-width: 30px;
+  padding: 1px 8px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background: var(--hud-badge-dark);
+  color: var(--ui-text);
+  font-size: var(--ui-font-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--ui-text-dim);
+}
+
+/*
+  수량 배지 — 칸 오른쪽 아래 모서리 (전성민 8/9, 46×40).
+
+  **투척 퀵슬롯과 회복 칸이 같은 그림을 쓴다** (팀 결정 8/9). 에셋 메모에는
+  "투척 전용, 회복 칸에 자동 적용하지 말 것" 으로 왔는데 담당자가 같은 것으로
+  정했다 — 같은 뜻의 숫자라 모양이 갈리면 두 칸이 다른 규칙으로 읽힌다.
+
+  숫자는 판 가운데에 앉힌다 — 그림에 이미 자리가 파여 있어 글자를 따로 밀지 않는다.
+*/
+.hud__slot-count {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 46px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  /* 그림이 없을 때의 플레이스홀더. 붙으면 아래 규칙이 덮는다 */
+  border-radius: 5px;
+  background: var(--hud-badge-cream);
+  color: var(--ui-text-on-panel);
+  font-size: var(--ui-font-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  `bindAsset` 이 `hud--has-art` 를 **그 요소 자신에게** 붙이므로 후손 선택자가
+  아니라 같은 요소로 잡는다. 위쪽 `.hud .hud--has-art` 가 이미 배경색과 테두리를
+  지우고 크기·반복을 맞춰 두므로 여기서는 그림만 얹으면 된다.
+*/
+.hud__slot-count.hud--has-art {
+  border-radius: 0;
+  background-image: var(--hud-slot-badge-image);
+}
+
+.hud__slot-count[hidden] {
+  display: none;
 }
 
 /* 모든 투척 무기가 소진되면 퀵슬롯 전체를 비활성화한다 (DEC-UI-002) */
@@ -522,7 +914,7 @@
   color: var(--ui-text);
 }
 
-/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-036) ── */
 /* 안쪽이 크림색 판이라 어두운 글씨다 (퀵슬롯 칸과 반대) */
 .hud__recovery {
   width: var(--hud-recovery-width);
@@ -545,6 +937,32 @@
   color: var(--ui-text-dim);
 }
 
+/*
+  선택된 회복 아이템의 아이콘 (8/9 담당자).
+
+  **퀵슬롯 칸과 같은 규칙이다** — 그림이 있으면 아이콘만 남기고 이름을 숨긴다.
+  칸이 162×166 인데 둘을 같이 두면 아이콘도 글자도 읽을 수 없게 작아진다.
+  그림이 없으면 이름이 그대로 서므로 플레이스홀더가 따로 필요 없다.
+*/
+/* 수량 배지가 모서리에 붙으려면 칸이 위치 기준이어야 한다 */
+.hud__recovery {
+  position: relative;
+}
+
+.hud__recovery-icon {
+  width: 72%;
+  height: 72%;
+  background-image: var(--hud-recovery-icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hud__recovery-icon[hidden],
+.hud__recovery-name[hidden] {
+  display: none;
+}
+
 .hud__recovery.hud--has-art {
   color: var(--ui-text-on-panel);
 }
@@ -555,16 +973,31 @@
   칸 안이 아니라 칸 **위**에 쌓는다. 칸이 154×145 라 안에 넣으면 무기 이름과
   겹치고, `투척 무기 없음` 은 어느 한 칸이 아니라 전체 상태다.
 */
+/*
+  퀵슬롯 상태 알림 두 줄 (DEC-UI-002).
+
+  **화면 위쪽 가운데로 옮겼다.** 8/7까지 퀵슬롯 바로 위(우하단)에 있었는데,
+  던지려고 좌클릭할 때 커서와 눈은 화면 가운데 적을 보고 있어서 오른쪽 아래에
+  뜬 안내를 아무도 못 봤다 (플레이 테스트). 재배 게이지 아래에 두어 시선 안에
+  들어오게 한다.
+*/
+/*
+  화면 위쪽 안내 두 줄 (`투척 무기 없음` · 지원 주민).
+
+  **상단 부품에서 한 칸 더 떨어뜨린다** (8/9). 좌측 판이 커지고 게이지가 그
+  옆으로 오면서 상단이 빽빽해졌는데, 안내가 게이지 바로 밑에 붙어 세 겹으로
+  쌓였다. 판 높이를 기준으로 내리므로 판이 또 바뀌어도 따라온다.
+*/
 .hud__notices {
   position: absolute;
-  right: 0;
-  bottom: var(--hud-recovery-height);
+  top: calc(var(--hud-edge) + var(--hud-signboard-height) + var(--ui-gap-lg) * 2);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--ui-gap-xs);
-  padding: 0 var(--ui-gap-lg) var(--ui-gap-sm);
-  text-align: right;
+  text-align: center;
 }
 
 /* 수풀 위에 글자만 얹히면 안 읽힌다. 문구가 있을 때만 판을 깐다 */
@@ -702,6 +1135,18 @@
   justify-content: center;
   /* 정비 셔터보다 옅다. 여기는 덮는 연출이 아니라 위에 뜨는 창이다 */
   background: rgba(8, 10, 7, 0.72);
+  /*
+    **항상 최상위다** (DEC-UI-022, DEC-UI-026 — 일시정지는 가장 위 층위다).
+
+    8/9 까지 `z-index` 가 없어서 DOM 순서로만 쌓였는데, `main.ts` 가 대화창을
+    일시정지보다 **나중에** 만든다. 그래서 대화 중에 `Esc` 를 누르면 대화창이
+    일시정지 위로 올라오고, 대화창이 화면 전체에 까는 55% 막이 일시정지 판을
+    덮어 **한지가 회색으로 보였다.** 재배·정비에서는 위에 오는 것이 없어
+    같은 판이 멀쩡하게 나왔다.
+
+    튜토리얼 안내(50)와 툴팁·데이터 오류(100)보다 위여야 하므로 200 이다.
+  */
+  z-index: 200;
   font-family: var(--ui-font);
   color: var(--ui-text);
   pointer-events: auto;
@@ -734,6 +1179,7 @@
 }
 
 .pause__menu[hidden],
+.pause__volume[hidden],
 .pause__controls[hidden],
 .pause__confirm[hidden] {
   display: none;
@@ -764,6 +1210,45 @@
 .pause__button--danger {
   border-color: var(--ui-danger);
   color: var(--ui-danger);
+}
+
+/* 음량 세 갈래 (DEC-UI-027). 조작 안내와 같은 접힘 판이다 */
+.pause__volume {
+  display: grid;
+  gap: var(--ui-gap-sm);
+  padding: var(--ui-gap-md) 0;
+  border-top: 1px solid var(--ui-border);
+  font-size: var(--ui-font-sm);
+}
+
+/*
+  이름 · 슬라이더 · 백분율 세 칸.
+
+  백분율 칸을 고정 폭으로 두는 이유는 `100%` → `9%` 로 자릿수가 줄 때 슬라이더가
+  같이 늘어나 손잡이가 손 밑에서 움직이기 때문이다.
+*/
+.pause__volume-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 56px;
+  gap: var(--ui-gap-md);
+  align-items: center;
+}
+
+.pause__volume-label {
+  color: var(--ui-text-dim);
+}
+
+.pause__volume-slider {
+  pointer-events: auto;
+  cursor: pointer;
+  width: 100%;
+  accent-color: var(--ui-accent);
+}
+
+.pause__volume-value {
+  color: var(--ui-accent);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 /* 조작 안내 (DEC-INPUT-001~009). 키는 input/bindings.ts 에서 온다 */
@@ -826,6 +1311,89 @@
   pointer-events: auto;
 }
 
+/*
+  ── A3 목업 배치 (아트 디렉션 12.5.2·12.5.5) ────────────────
+
+  배경은 닫힌 미닫이문 두 짝이다. 각 960×1080 이라 왼쪽·오른쪽에 하나씩 깔면
+  1920 을 정확히 채운다. **가운데 세로 기둥은 그림에 이미 있다** — 코드가 그리지
+  않는다.
+
+  나무·한지 배경 위라 어두운 패널용 크림색 글자가 묻힌다. 아트가 붙은 동안에는
+  글자를 진한 갈색으로 뒤집는다.
+*/
+.hub--has-art {
+  background:
+    var(--hub-shutter-left) left center / 50% 100% no-repeat,
+    var(--hub-shutter-right) right center / 50% 100% no-repeat;
+  color: var(--hub-text-on-art);
+  /* 격자를 버리고 자리를 하나씩 적는다 — 위 :root 의 실측 좌표 주석 참고 */
+  display: block;
+  padding: 0;
+}
+
+/*
+  ── 좌측 상단: 습격 예고 ────────────────────────
+
+  **판 한 장에 텍스트 둘을 얹는다** (8/8 QA). 8/8 밤까지 그림과 문구를 가로로 나눈
+  형제 요소로 뒀는데, 그러면 판의 오른쪽 크림색 두 칸이 남아 돌고 그림만 잘려 보인다.
+
+  `raid_notice_*` 는 560×101 이고 세 부분이다 — 왼쪽 그림 칸, 그리고 세로 선으로
+  갈린 크림색 두 칸. 아래 백분율은 그 PNG 에서 잰 값이다.
+
+    그림     0 ~ 25.9%
+    일차   27.1 ~ 56.3%   (가운데 41.7%)
+    문구   57.5 ~ 98.6%   (가운데 78.0%)
+
+  표시 폭은 보관함과 같은 645 로 맞춘다 (8/8 요청). 높이는 비율을 지켜
+  101 × 645/560 = 116 이다.
+
+  세 화면(재배·정비·습격)의 통일은 작업 16번(최수정)이다 — 여기서 한 것은 정비
+  화면의 판이 잘려 보이던 것을 고친 것까지다.
+*/
+.hub--has-art .hub__raid-notice {
+  position: absolute;
+  left: var(--hub-notice-x);
+  top: var(--hub-notice-y);
+  display: block;
+  width: var(--hub-inv-w);
+  height: calc(var(--hub-inv-w) * 101 / 560);
+}
+
+/* ── 우측 상단: 소지금 · 일시정지 ──────────────── */
+.hub--has-art .hub__top-right {
+  position: absolute;
+  left: var(--hub-money-x);
+  top: var(--hub-money-y);
+}
+
+.hub--has-art .hub__pause {
+  position: absolute;
+  left: calc(var(--hub-pause-x) - var(--hub-money-x));
+  top: calc(var(--hub-pause-y) - var(--hub-money-y));
+  width: 138px;
+  height: 122px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--hub-pause-image) center / contain no-repeat;
+  /* 그림이 곧 이름이다. 글자는 읽는 사람용으로 남기고 화면에서만 뺀다 */
+  text-indent: -9999px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.hub--has-art .hub__pause:hover {
+  filter: brightness(1.1);
+}
+
+/* 아트가 없으면 우측 상단 묶음이 아니라 원래 자리(보관함 머리)로 돌아간다 */
+.hub:not(.hub--has-art) .hub__top-right {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+}
+
 /* 보관함은 상시 표시 영역이다. 팝업이 열려 있어도 계속 보여야 한다 (DEC-UI-020) */
 .hub__inventory {
   grid-row: 1 / 3;
@@ -836,6 +1404,95 @@
   overflow-y: auto;
 }
 
+/*
+  ── 한지 판 안의 스크롤바 (8/8, 작업 17번) ──────────────────
+
+  기본 스크롤바는 밝은 회색이라 종이 위에서 이물질처럼 보인다. 나무 테두리와
+  같은 계열의 갈색으로 맞춘다.
+
+  `scrollbar-color` 가 표준이고 `::-webkit-scrollbar-*` 는 그것을 아직 안 읽는
+  브라우저용이다 — 둘 다 두면 어느 쪽이든 갈색이 나온다.
+*/
+.hub--has-art .hub__inventory,
+.hub__popup--has-art .hub__popup-body,
+.hub__popup--has-art .hub__popup-footer {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hub-scroll-thumb) transparent;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar {
+  width: 10px;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-track,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-track,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-thumb,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-thumb,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-thumb {
+  background: var(--hub-scroll-thumb);
+  border-radius: 5px;
+}
+
+.hub--has-art .hub__inventory::-webkit-scrollbar-thumb:hover,
+.hub__popup--has-art .hub__popup-body::-webkit-scrollbar-thumb:hover,
+.hub__popup--has-art .hub__popup-footer::-webkit-scrollbar-thumb:hover {
+  background: var(--hub-scroll-thumb-hover);
+}
+
+/* 판 그림은 `.panel--hanji` 가 준다 (`ui/panel.ts`). 여기서는 자리와 크기만 정한다 —
+   9-slice 를 화면마다 복사하지 않는다는 8/8 작업 분담대로다 */
+.hub--has-art .hub__inventory {
+  position: absolute;
+  left: var(--hub-inv-x);
+  top: var(--hub-inv-y);
+  width: var(--hub-inv-w);
+  height: var(--hub-inv-h);
+  box-sizing: border-box;
+  /*
+    네 분류가 다 들어가야 한다 (8/8).
+
+    소모품까지 넷이라 위 여백을 테두리 두께만큼 주면 마지막 분류가 넘쳤다.
+    제목 팻말을 판 위쪽에 바짝 붙이고 아래 `--hub-inventory-gap` 으로 분류 간격을
+    줄여 810 안에 넣는다.
+  */
+  padding: 6px var(--ui-gap-lg) var(--ui-gap-sm);
+}
+
+/*
+  보관함 제목 팻말 (A3 목업).
+
+  판 위쪽 나무 테두리에 **물려 있다** — 위로 삐져나오므로 음수 여백을 쓴다.
+  9-slice 테두리가 28px 이라 판 안쪽 좌표가 그만큼 밀려서, 목업의 절대 x(232)
+  에서 판 왼쪽(55)과 테두리(28)를 뺀 값이 여기 들어간다.
+*/
+.hub__inventory-heading {
+  display: none;
+}
+
+.hub--has-art .hub__inventory-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* 판 안쪽 기준이라 목업 절대 x(232) 에서 판 왼쪽(55)과 테두리를 뺀다 */
+  left: calc(var(--hub-inv-heading-x) - var(--panel-hanji-slice));
+  width: var(--hub-inv-heading-w);
+  height: var(--hub-inv-heading-h);
+  /* 제목과 첫 분류(수확물) 사이를 좁힌다 (8/8) — 넷을 다 넣을 자리를 만든다 */
+  margin-bottom: 2px;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-size: 26px;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
 .hub__inventory-group + .hub__inventory-group {
   margin-top: var(--ui-gap-lg);
 }
@@ -844,6 +1501,24 @@
   font-size: var(--ui-font-sm);
   color: var(--ui-text-dim);
   margin-bottom: var(--ui-gap-xs);
+}
+
+/*
+  분류 이름(수확물·재료·무기·소모품)은 한지 위라 검은 글씨다 (8/8 요청).
+
+  `--ui-text-dim` 은 어두운 판 위에서 흐리게 보이라고 만든 값이라 종이 위에서는
+  거의 안 읽힌다. 목업의 크기도 본문보다 크다.
+*/
+.hub--has-art .hub__inventory-title {
+  color: var(--hub-text-on-art);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* 분류 사이 간격. 넷을 810 안에 넣으려면 기본값(--ui-gap-lg)보다 좁아야 한다 */
+.hub--has-art .hub__inventory-group + .hub__inventory-group {
+  margin-top: var(--ui-gap-sm);
 }
 
 .hub__inventory-row {
@@ -862,7 +1537,76 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-017) */
+/*
+  아트가 붙으면 줄 목록이 아니라 **격자 칸**이 된다 (A3 목업).
+
+  칸 그림이 111×113 이고 한 줄에 넷이라 목록 너비가 이 값을 정한다. 수량은
+  칸 그림에 이미 그려진 오른쪽 아래 배지 자리에 앉힌다 — 배지를 코드가 따로
+  그리지 않는다.
+*/
+.hub--has-art .hub__inventory-list {
+  display: grid;
+  grid-template-columns: repeat(4, var(--hub-slot-size));
+  gap: var(--ui-gap-xs);
+}
+
+.hub--has-art .hub__inventory-row {
+  position: relative;
+  display: block;
+  width: var(--hub-slot-size);
+  height: var(--hub-slot-size);
+  padding: 0;
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+/* 빈 분류는 칸을 만들지 않는다. 격자 안에 글자만 남긴다 */
+.hub--has-art .hub__inventory-row--empty {
+  grid-column: 1 / -1;
+  width: auto;
+  height: auto;
+  background: none;
+  font-size: var(--ui-font-sm);
+}
+
+/* 칸 가운데 아이콘. 배지 자리를 비우려고 살짝 위로 올린다 */
+.hub--has-art .hub__inventory-row .icon {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  width: 66%;
+  height: 66%;
+}
+
+/* 그림이 없는 항목만 이름이 대신 선다 (14.8). 칸이 좁아 두 줄까지만 */
+.hub__slot-name {
+  display: none;
+}
+
+.hub--has-art .hub__slot-name {
+  display: block;
+  position: absolute;
+  inset: 12% 12% 26%;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--hub-text-on-art);
+}
+
+/* 수량은 칸 그림의 배지 홈 안이다 (오른쪽 아래) */
+.hub--has-art .hub__inventory-row .hub__count {
+  position: absolute;
+  right: 4%;
+  bottom: 3%;
+  width: 30%;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+}
+
+/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-036) */
 .hub__money {
   display: flex;
   justify-content: space-between;
@@ -872,32 +1616,156 @@
   border-bottom: 1px solid var(--ui-border);
 }
 
-.hub__main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-md);
-  min-height: 0;
+/*
+  소지금 틀 269×113. **엽전 그림이 판 안에 이미 있다** (B2) — 그래서 `소지금`
+  글자를 숨기고 숫자만 얹는다. 판 왼쪽 3분의 1이 엽전 자리라 숫자를 오른쪽으로
+  민다.
+
+  목업에서는 이 판이 보관함 안이 아니라 화면 오른쪽 위에 있다. 지금은 보관함
+  머리에 둔 채 그림만 입힌다 — 옮기려면 `.hub` 격자를 다시 짜야 하고, 그건
+  보관함·팝업 위치까지 함께 움직이는 변경이라 따로 본다.
+*/
+.hub--has-art .hub__money {
+  width: 269px;
+  height: 113px;
+  box-sizing: border-box;
+  border-bottom: none;
+  padding: 0 22px 0 0;
+  margin: 0 auto var(--ui-gap-xs);
+  background: var(--hub-money-plate) center / contain no-repeat;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
 }
 
-.hub__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ui-gap-md);
+.hub--has-art .hub__money-label {
+  display: none;
 }
 
 .hub__title {
   font-size: var(--ui-font-xl);
 }
 
+/* 목업의 소지금 숫자는 판 가운데가 아니라 오른쪽에서 조금 들어와 있다 (8/8 요청) */
+.hub--has-art .hub__money {
+  padding-right: 32px;
+}
+
 /* 습격 예고는 정비 허브에서도 계속 표시한다 (DEC-UI-020) */
 .hub__raid-notice {
   font-size: var(--ui-font-md);
   color: var(--ui-text-dim);
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
 }
 
+/*
+  표지는 그림 자리와 문구 자리로 나뉜다 (B3). 판이 그림을 들고 문구는 옆칸이다 —
+  `DEC-RUN-011` 이 `hud_label` 을 승인 데이터에 두었는데 목업의 판은 그림이 꽉
+  차 문구 자리가 없어서, 아트 디렉션 12.5.3 이 둘을 나누기로 정했다.
+*/
+.hub__raid-plate[hidden] {
+  display: none;
+}
+
+/* 판 그림이 칸 전체를 채운다. 그림이 없으면 숨으므로 글자만 남는다 */
+.hub--has-art .hub__raid-plate {
+  position: absolute;
+  inset: 0;
+  background: var(--hub-raid-plate) center / 100% 100% no-repeat;
+}
+
+/* 크림색 두 칸 위에 각각 앉는다. 위 주석의 백분율이 이 값들의 출처다 */
+.hub--has-art .hub__title,
+.hub--has-art .hub__raid-text {
+  position: absolute;
+  top: 12%;
+  height: 75%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hub-text-on-art);
+  font-size: 26px;
+  font-weight: 700;
+  /* 문구가 칸보다 길면 넘치는 대신 줄인다 — 나무 테두리를 넘어가면 못 읽는다 */
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.hub--has-art .hub__title {
+  left: 27.1%;
+  width: 29.2%;
+}
+
+.hub--has-art .hub__raid-text {
+  left: 57.5%;
+  width: 41.1%;
+  font-size: 22px;
+}
+
+/* ── 기능 버튼 넷 — 팝업 왼쪽에 세로로 (A3 목업) ── */
 .hub__buttons {
   display: flex;
   gap: var(--ui-gap-md);
+}
+
+.hub--has-art .hub__buttons {
+  position: absolute;
+  left: var(--hub-tab-x);
+  top: var(--hub-tab-y);
+  flex-direction: column;
+  /* 목업의 간격은 버튼 높이보다 크다. 자리 간격에서 높이를 뺀 값이 여백이다 */
+  gap: calc(var(--hub-tab-pitch) - var(--hub-tab-h));
+  /* 팝업 테두리에 물려 있으므로 팝업보다 위에 그린다 */
+  z-index: 1;
+}
+
+/*
+  ── 보고 있는 기능만 튀어나온다 (8/8 요청) ─────────────────
+
+  넷을 서랍처럼 다룬다. 열려 있는 것만 왼쪽으로 나와 있고 나머지는 오른쪽으로
+  밀려 팝업 판 **뒤로** 들어간다. 그래서 지금 무엇을 보고 있는지 버튼 줄만
+  봐도 알 수 있다 — 8/8 플레이 테스트의 *"판매·구매·제작 중 무엇이 선택됐는지
+  아래까지 스크롤해야 안다"* 가 이 연출로 해결된다.
+
+  **뒤로 들어가려면 팝업보다 낮아야 한다.** 그래서 버튼 줄의 `z-index` 를 없애고
+  열린 버튼 하나만 팝업 위로 올린다.
+*/
+.hub--has-art .hub__buttons {
+  z-index: auto;
+}
+
+.hub--has-art .hub__button {
+  flex: none;
+  width: var(--hub-tab-w);
+  height: var(--hub-tab-h);
+  /*
+    글자를 **들어가 있을 때 기준으로** 가운데 맞춘다 (8/8).
+
+    밀려 있으면 오른쪽 `--hub-tab-tuck` 만큼이 판 아래로 들어가므로 보이는 폭은
+    `180 - 40 = 140` 이다. 오른쪽에 그만큼 여백을 주면 글자가 그 140 의 가운데에
+    선다 — 버튼 전체의 가운데(90) 가 아니라 70 이다.
+  */
+  padding: 0 var(--hub-tab-tuck) 0 0;
+  /* 밀려 들어간 상태가 기본이다. 끄트머리만 판 아래로 감춘다 */
+  transform: translateX(var(--hub-tab-tuck));
+  transition: transform 180ms ease-out;
+}
+
+.hub--has-art .hub__button--open {
+  transform: translateX(0);
+  /* 열린 것만 판 위로 올라와 테두리에 물린 것처럼 보인다 */
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub--has-art .hub__button {
+    transition: none;
+  }
 }
 
 .hub__button {
@@ -921,6 +1789,67 @@
   cursor: default;
 }
 
+/*
+  기능 버튼과 진행 버튼 모두 `button_normal`(350×116) 한 장이다.
+
+  목업은 넷을 세로로 쌓아 팝업 왼쪽에 붙였는데, 여기서는 가로 한 줄을 유지한다 —
+  세로로 옮기면 팝업 층의 `left` 계산과 보관함 폭이 함께 움직인다. 그림만 먼저
+  입히고 배치는 팝업 자리와 같이 본다.
+*/
+.hub--has-art .hub__button,
+.hub--has-art .hub__finish {
+  border: none;
+  border-radius: 0;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  min-height: 64px;
+}
+
+.hub--has-art .hub__button:hover:not(:disabled),
+.hub--has-art .hub__finish:hover {
+  filter: brightness(1.08);
+}
+
+.hub--has-art .hub__button:active:not(:disabled),
+.hub--has-art .hub__finish:active {
+  filter: brightness(0.94);
+}
+
+/*
+  열려 있는 기능 (8/8 플레이 테스트 — 무엇이 선택됐는지 버튼에서 안 보였다).
+
+  **누른 채로 두는 모양이다.** `:active` 와 같은 방향(어둡게)에 조금 내려 앉히고
+  안쪽 그림자를 더한다 — 눌림은 손을 떼면 사라지지만 이건 팝업이 열려 있는 동안
+  유지되므로, 같은 방향이되 더 분명해야 상태로 읽힌다.
+
+  그림을 바꾸지 않는다. `button_pressed.png` 는 있지만 눌림을 CSS 로 내기로
+  8/6 에 정했고 고정 목록에도 넣지 않았다.
+*/
+.hub__button--open {
+  border-color: var(--ui-border-strong);
+}
+
+.hub--has-art .hub__button--open,
+.hub--has-art .hub__button--open:hover:not(:disabled) {
+  filter: brightness(0.88);
+  transform: translateY(2px);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* ── 하단 진행 버튼 (A3 목업 우측 하단) ────────────
+   문구가 길어 목업이 기능 버튼보다 넓다 (360×80 대 180×64) */
+.hub--has-art .hub__finish {
+  position: absolute;
+  left: var(--hub-finish-x);
+  top: var(--hub-finish-y);
+  width: var(--hub-finish-w);
+  height: var(--hub-finish-h);
+  min-height: 0;
+  padding: 0;
+}
+
 /* 하단 진행 버튼. 문구는 DEC-RUN-006 이 정한 두 가지다 */
 .hub__finish {
   grid-column: 2;
@@ -940,12 +1869,43 @@
    한 번에 하나만, 항상 같은 자리에 연다.
    닫기 버튼으로만 닫힌다 — 바깥 클릭도 Esc 도 안 된다. */
 
+/*
+  팝업 층.
+
+  **클릭을 가로채지 않는다.** `inset: 0` 이라 허브 전체를 덮는데, 여기가 클릭을
+  받으면 뒤의 기능 버튼이 눌리지 않는다 — 판매를 열어 둔 채 구매를 누르면 아무
+  일도 안 일어났다 (전성민 8/7 지적). 층은 자리만 잡고 실제 팝업만 입력을 받는다.
+
+  **바깥 클릭으로 닫히는 것과는 다르다.** `DEC-UI-020` 이 금지한 것은 닫는 경로를
+  더 만드는 것이고, 여기는 닫기 버튼 하나 그대로다. 다른 기능 버튼을 누르면
+  `openPopup` 이 팝업을 갈아 끼운다.
+
+  팝업은 보관함(왼쪽 열)을 가리지 않고 오른쪽 창에만 뜬다 (전성민 8/6).
+*/
 .hub__popup-layer {
   position: absolute;
-  inset: 0;
+  left: calc(var(--hub-inventory-width) + var(--hub-pad) + var(--ui-gap-lg));
+  right: var(--hub-pad);
+  top: var(--hub-pad);
+  bottom: var(--hub-pad);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+/* 아트가 붙으면 층이 목업의 팝업 자리를 그대로 차지한다 */
+.hub--has-art .hub__popup-layer {
+  left: var(--hub-popup-x);
+  top: var(--hub-popup-y);
+  right: auto;
+  bottom: auto;
+  width: var(--hub-popup-w);
+  height: var(--hub-popup-h);
+}
+
+.hub__popup {
+  pointer-events: auto;
 }
 
 .hub__popup {
@@ -959,6 +1919,106 @@
   padding: var(--ui-gap-lg);
   box-sizing: border-box;
   gap: var(--ui-gap-md);
+}
+
+/*
+  ── 팝업은 한지 판 **두 장**이다 (A3 목업) ─────────────────
+
+  왼쪽 판이 목록과 상세, 오른쪽 판이 수량·총액·실행이다. 8/8까지 한 판에
+  위(목록)·아래(실행)로 쌓여 있었다.
+
+  **세 모달을 안 고치고 배치만 바뀌었다.** `createPopupShell` 이 이미 `body` 와
+  `footer` 를 나눠 주고 있었고, 판매·구매·제작이 `body` 에 목록+상세를,
+  `footer` 에 수량+실행을 넣고 있었다 — 목업의 두 판과 그대로 대응한다.
+  가로로 눕히는 것만으로 끝난 것은 그 경계가 이미 맞았기 때문이다.
+
+  판 그림은 `body`·`footer` 가 각자 `.panel--hanji` 로 받는다. 껍데기(`root`)는
+  자리만 잡으므로 배경이 없다.
+*/
+.hub__popup--has-art {
+  /* 머리줄이 이 요소를 기준으로 눕는다. 없으면 기준이 팝업 층으로 올라간다 —
+     8/8 에 퀵슬롯 이름이 팝업 전체를 덮어 클릭을 먹은 것과 같은 실수다 */
+  position: relative;
+  flex-direction: row;
+  align-items: stretch;
+  border: none;
+  background: none;
+  padding: 0;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--hub-text-on-art);
+}
+
+/*
+  왼쪽 판: 목록과 상세.
+
+  여백이 테두리 두께(28px)보다 넉넉해야 한다 (8/8 요청) — 나무 테두리 그림이
+  안쪽으로 파고들어서 `slice` 만큼만 주면 글자가 나무에 붙는다. 위쪽은 제목이
+  겹쳐 뜨는 자리라 한 번 더 내린다.
+*/
+.hub__popup--has-art .hub__popup-body {
+  flex: 0 0 48%;
+  box-sizing: border-box;
+  /*
+    위 여백을 72 → 28 로 줄였다 (8/8).
+
+    72 는 팝업 머리줄이 겹쳐 뜰 때 그 자리를 비워 둔 값이었는데, 머리줄을 안
+    그리기로 하면서(탭이 같은 말을 한다) 아무것도 없는 공백으로 남았다.
+    제작의 `투척 무기` 제목이 판 한참 아래에서 시작하던 것이 이것 때문이다.
+  */
+  padding: 28px var(--ui-gap-lg) var(--ui-gap-lg) 44px;
+  overflow-y: auto;
+}
+
+/* 오른쪽 판: 수량 물음·증감·계산 결과·실행. 실행 버튼이 아래에 앉도록 세로로 쌓는다 */
+.hub__popup--has-art .hub__popup-footer {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  /* 왼쪽 판과 같은 이유로 테두리 두께보다 넉넉히 준다 */
+  padding: 28px 44px var(--ui-gap-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+  overflow-y: auto;
+}
+
+/*
+  실행 버튼과 그 위 한 덩어리를 판 아래쪽에 붙인다 (8/8).
+
+  **총액·거래 후 보유는 증감 줄 아래가 아니라 실행 버튼 바로 위다.** 확정하기
+  직전에 읽는 숫자라 버튼 옆에 있어야 구조가 안정적이다. 편성의 *"칸을 비워도
+  수량은 줄지 않는다"* 도 같은 이유로 `칸 비우기` 바로 위다.
+
+  빈 공간을 어디에 줄지는 `margin-top: auto` 가 정한다. 열에서 그것을 가진 **첫**
+  요소가 남는 높이를 전부 먹으므로, 아래 둘에 같이 걸어도 앞선 것만 벌어진다 —
+  판매는 `총액` 이 먼저고, 편성은 안내가 먼저다. 제작은 `필요 재료` 가 증감 줄에
+  붙어 있어야 해서 그 뒤의 안내가 벌어진다.
+*/
+.hub__popup--has-art .hub__totals,
+.hub__popup--has-art .hub__preview {
+  margin-top: auto;
+}
+
+.hub__popup--has-art .hub__action {
+  width: 350px;
+  flex: none;
+}
+
+/*
+  머리줄을 그리지 않는다 (8/8).
+
+  제목이 `판매`·`구매`·`제작`·`퀵슬롯 편성` 인데 **왼쪽 탭이 이미 같은 말을
+  하고 있다.** 열린 탭이 튀어나와 있으므로 판 안에 한 번 더 적으면 같은 단어가
+  나란히 둘이 된다. 닫기 버튼도 붙이지 않으므로(위 `createPopupShell` 주석)
+  머리줄에 남는 것이 없다.
+
+  DOM 에서 지우지 않고 숨기는 이유는 되돌릴 자리를 남겨 두려는 것이다 —
+  `DEC-UI-020` 의 닫기 버튼 조항이 아직 정리되지 않았다.
+*/
+.hub__popup--has-art .hub__popup-header {
+  display: none;
 }
 
 .hub__popup-header {
@@ -1009,6 +2069,21 @@
 
 .hub__row--selected {
   border-color: var(--ui-border-strong);
+}
+
+/*
+  고른 항목 (8/8 플레이 테스트 — 무엇을 골랐는지 아래까지 봐야 알 수 있었다).
+
+  그림이 붙으면 **1px 테두리만으로는 안 보인다.** 줄이 한지 위의 어두운 판이라
+  크림색 실선 한 줄이 묻힌다. 바탕을 밝히고 왼쪽에 굵은 세로 막대를 넣는다.
+
+  **테두리 두께는 안 바꾼다** — 1px 이 2px 이 되면 그 줄만 1px 씩 밀려서
+  목록 전체가 흔들린다. 막대는 `box-shadow: inset` 이라 자리를 안 먹는다.
+*/
+.hub__popup--has-art .hub__row--selected {
+  background: var(--hub-row-selected-bg);
+  border-color: var(--hub-row-selected-edge);
+  box-shadow: inset 4px 0 0 var(--hub-row-selected-edge);
 }
 
 .hub__row:disabled {
@@ -1131,9 +2206,135 @@
   color: var(--ui-danger);
 }
 
-/* ── 투척 퀵슬롯 편성 (DEC-UI-021, DEC-RESOURCE-015) ─
-   다섯 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
-   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 다섯 칸을 가리키지만
+/* ── 항목 아이콘 (C단계) ──────────────────────────
+   보관함·상점·제작·퀵슬롯이 같이 쓴다. 그림이 없으면 요소 자체가 안 만들어지므로
+   빈 칸 규칙이 필요 없다 (ui/icon.ts). */
+
+.icon {
+  width: var(--ui-icon-size);
+  height: var(--ui-icon-size);
+  flex: 0 0 auto;
+  background-image: var(--icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.icon--lg {
+  width: var(--ui-icon-size-lg);
+  height: var(--ui-icon-size-lg);
+}
+
+/* 퀵슬롯 칸을 꽉 채운다. 칸 그림 위에 얹히므로 여백을 조금 둔다 */
+.icon--slot {
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+/* HUD 퀵슬롯 칸 안의 아이콘. 그림이 없으면 숨고 이름이 대신 나온다 (DEC-UI-002) */
+.hud__slot-icon {
+  width: 70%;
+  height: 70%;
+  background-image: var(--icon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hud__slot-icon[hidden],
+.hud__slot-name[hidden] {
+  display: none;
+}
+
+/* 목록 행과 입력 표에서 아이콘과 이름을 붙여 놓는다 */
+.hub__detail-input {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+/* 상세의 머리 — 큰 아이콘과 이름 (14.9 공통 구조) */
+.hub__detail-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  margin-bottom: var(--ui-gap-sm);
+}
+
+.hub__detail-heading .hub__detail-title {
+  margin-bottom: 0;
+}
+
+/* ─────────────────────────────────────────────────
+   마우스를 올렸을 때 뜨는 안내 (아트 디렉션 14.8, 14.9)
+
+   보관함 칸과 상점·제작 목록이 같이 쓴다. 항목의 이름·설명·수치가 여기로 간다.
+   DEC-UI-034 이 보관함에 상시를 요구하는 것은 네 분류의 구분 표시까지이고
+   이름·설명·수치는 별개 문장이라 상시가 아니다.
+
+   커서를 따라다니므로 `position: fixed` 다 — 팝업 안에 갇히면 잘린다.
+   ───────────────────────────────────────────────── */
+
+.tip[hidden] {
+  display: none;
+}
+
+.tip {
+  position: fixed;
+  z-index: 100;
+  max-width: 280px;
+  padding: var(--ui-gap-sm) var(--ui-gap-md);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: #171c12;
+  color: var(--ui-text);
+  font-family: var(--ui-font);
+  font-size: var(--ui-font-md);
+  /* 안내가 커서를 가로채면 mouseleave 가 끝없이 반복된다 */
+  pointer-events: none;
+}
+
+.tip__name {
+  font-size: var(--ui-font-lg);
+  margin-bottom: var(--ui-gap-xs);
+}
+
+.tip__description[hidden],
+.tip__stats[hidden],
+.tip__note[hidden] {
+  display: none;
+}
+
+.tip__description {
+  margin: 0 0 var(--ui-gap-sm);
+  color: var(--ui-text-dim);
+  line-height: 1.6;
+}
+
+.tip__stat {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-gap-lg);
+  font-variant-numeric: tabular-nums;
+  padding: 1px 0;
+}
+
+.tip__stat-label {
+  color: var(--ui-text-dim);
+}
+
+/* 수치가 아닌 한 줄. 잠긴 레시피의 해금 진행도가 여기로 온다 */
+.tip__note {
+  margin-top: var(--ui-gap-xs);
+  color: var(--ui-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 투척 퀵슬롯 편성 (DEC-UI-034, DEC-RESOURCE-015) ─
+   네 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
+   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 네 칸을 가리키지만
    한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 규칙이 갈린다. */
 
 .hub__slots {
@@ -1142,25 +2343,362 @@
   margin-bottom: var(--ui-gap-md);
 }
 
-/* 팝업 닫기 버튼 (DEC-UI-020).
-   `asset.ui.close_button` 이 B단계라 파일이 없어 아직 글자 버튼이다 */
-.hub__close {
-  pointer-events: auto;
+/*
+  수량 증감 (A3 목업, B4). `step_minus` 79×61 · `step_plus` 79×58 로 높이가
+  미세하게 다르지만 같은 칸에 `contain` 으로 넣어 가운데를 맞춘다.
+
+  8/8까지 이 자리가 `<input type="number">` 였다 — `DEC-UI-025` 의 마우스 전용
+  규칙 위반이었고, 예외는 `DEC-UI-030` 이 정한 이름 입력 하나뿐이다.
+*/
+.hub__qty {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+}
+
+.hub__step {
+  width: 79px;
+  height: 61px;
+  padding: 0;
+  border: none;
+  background: var(--hub-step-image) center / contain no-repeat;
   cursor: pointer;
-  padding: var(--ui-gap-xs) var(--ui-gap-md);
+}
+
+/* 그림이 없으면 글자로 대신한다 — 빈 칸이면 무엇을 누르는지 알 수 없다 */
+.hub__step:not([style*='--hub-step-image']) {
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius);
   background: var(--ui-bg-panel);
   color: var(--ui-text);
-  font-family: var(--ui-font);
+  font-size: var(--ui-font-lg);
+}
+
+.hub__step--minus:not([style*='--hub-step-image'])::after {
+  content: '−';
+}
+
+.hub__step--plus:not([style*='--hub-step-image'])::after {
+  content: '+';
+}
+
+.hub__step:hover {
+  filter: brightness(1.1);
+}
+
+.hub__step:active {
+  filter: brightness(0.92);
+}
+
+.hub__qty-value {
+  min-width: 56px;
+  text-align: center;
+  font-size: 38px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+  ── 수량 물음 + 증감 줄 (A3 목업) ─────────────────────────
+
+  물음이 증감 줄 **위**에 선다. 8/8까지 증감 줄만 있어서 그 숫자가 무엇의 개수인지
+  판 안에 적혀 있지 않았다. 문구는 각 모달이 자기 동사로 넘긴다 —
+  판매 `몇 개 파시겠습니까?` · 구매 `몇 개 사시겠습니까?` · 제작 `몇 개 제작하시겠습니까?`
+*/
+.hub__qty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+}
+
+.hub__qty-prompt {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.hub__popup--has-art .hub__qty-prompt {
+  color: var(--hub-text-on-art);
+}
+
+/*
+  계산 결과와 필요 재료 — 증감 줄 아래다 (8/8 요청).
+
+  숫자를 누르면서 총액·필요 수량이 바뀌는 것을 눈으로 따라갈 수 있어야 해서,
+  왼쪽 판이 아니라 증감 줄 바로 아래에 둔다.
+*/
+.hub__totals,
+.hub__needs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-xs);
   font-size: var(--ui-font-md);
 }
 
-.hub__close:hover {
-  border-color: var(--ui-border-strong);
+.hub__popup--has-art .hub__totals,
+.hub__popup--has-art .hub__needs {
+  color: var(--hub-text-on-art);
+}
+
+/*
+  ── 상점 목록 한 줄 — 나무 칸 + 두 줄 (A3 목업, 8/8) ────────
+
+    [나무 칸]  고추
+               (엽전) 8   보유 0
+
+  칸 넷이 판 높이에 맞으므로 칸 크기가 보관함(111)보다 조금 작다.
+*/
+.hub__popup--has-art .hub__row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  text-align: left;
+  /* 어두운 칸 배경(--ui-bg-slot)은 종이 위에서 이물질로 보인다. 종이보다
+     살짝 진한 면으로 바꿔 모서리 둥근 상자만 남긴다 */
+  background: rgba(120, 84, 48, 0.14);
+  border-color: rgba(58, 43, 28, 0.2);
+  color: var(--hub-text-on-art);
+}
+
+.hub__popup--has-art .hub__row:hover:not(:disabled) {
+  border-color: var(--hub-row-selected-edge);
+}
+
+/* 나무 칸이 이미 있는 줄은 그 판이 곧 테두리다. 상자를 한 겹 더 두지 않는다 */
+.hub__popup--has-art .hub__row:has(.hub__row-slot) {
+  background: none;
+  border-color: transparent;
+}
+
+.hub__row-slot {
+  position: relative;
+  flex: none;
+  width: var(--hub-row-slot-size);
+  height: var(--hub-row-slot-size);
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+.hub__row-slot .icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 66%;
+  height: 66%;
+}
+
+.hub__row-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hub__popup--has-art .hub__row-name {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.hub__row-price {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-sm);
+  font-size: var(--ui-font-md);
+}
+
+/*
+  아랫줄의 엽전 그림 33×32 (8/9 반입).
+
+  `money_plate` 안에 그려진 엽전은 판과 한 덩어리라 떼어 쓸 수 없어 낱개 파일을
+  따로 받았다. **그림이 없으면 칸이 0 폭이라 숫자가 바로 선다** — 빈 사각형을
+  두면 "그림이 깨졌나" 로 읽힌다. 파일이 다시 없어지면 그 상태로 돌아간다.
+*/
+.hub__coin {
+  flex: none;
+  width: 0;
+  height: 26px;
+  background: var(--hub-coin-image) center / contain no-repeat;
+}
+
+.hub__coin[style*='--hub-coin-image'] {
+  /* 원본 33×32 라 거의 정사각형이다. 높이에 맞춰 폭을 준다 */
+  width: 27px;
+}
+
+.hub__row-unit {
+  font-weight: 700;
+}
+
+.hub__row-held {
+  color: var(--ui-text-dim);
+}
+
+.hub__popup--has-art .hub__row-held {
+  /* 종이 위에서는 흐린 회색이 안 읽힌다. 갈색 계열로 한 단계만 연하게 */
+  color: rgba(58, 43, 28, 0.72);
+}
+
+/*
+  ── 판 안의 제목과 구분선 (편성 팝업, A3 목업) ──────────────
+
+  팝업 머리줄을 그리지 않으므로 판마다 자기 제목을 들고, 아래 가로줄로 목록과
+  나눈다. 편성은 두 판이 다른 것을 다루므로(칸 / 무기) 제목이 둘 필요하다.
+*/
+.hub__pane-title {
+  font-size: 24px;
+  font-weight: 700;
+  /* 판 가운데다 (8/8). 왼쪽 정렬이면 나무 테두리 쪽으로 쏠려 보인다 */
+  text-align: center;
+}
+
+.hub__popup--has-art .hub__pane-title {
+  color: var(--hub-text-on-art);
+}
+
+/* 목록이 비었을 때의 한 줄. 없는 것을 지어내지 않고 없다고만 적는다 */
+.hub__pane-empty {
+  padding: var(--ui-gap-lg) 0;
+  text-align: center;
+  font-size: var(--ui-font-md);
+  color: var(--ui-text-dim);
+}
+
+.hub__popup--has-art .hub__pane-empty {
+  color: rgba(58, 43, 28, 0.7);
+}
+
+.hub__pane-rule {
+  height: 1px;
+  background: var(--ui-border);
+  margin: var(--ui-gap-sm) 0 var(--ui-gap-md);
+}
+
+.hub__popup--has-art .hub__pane-rule {
+  background: rgba(58, 43, 28, 0.35);
+}
+
+/* ── 편성 왼쪽 판: 칸 넷이 세로로 ──────────────── */
+.hub__popup--has-art .hub__slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+}
+
+.hub__popup--has-art .hub__slot {
+  flex: none;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap-md);
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.hub__slot-plate {
+  position: relative;
+  flex: none;
+  width: var(--hub-row-slot-size);
+  height: var(--hub-row-slot-size);
+  background: var(--hub-slot-image) center / contain no-repeat;
+}
+
+/* 편성된 무기 그림이 판 위에 올라간다. 빈 칸이면 이 겹이 비어 있다 */
+.hub__slot-plate::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 66%;
+  height: 66%;
+  background: var(--hub-slot-icon) center / contain no-repeat;
+}
+
+/* 번호는 반투명 판 위에 얹어 무기 그림과 겹쳐도 읽히게 한다 */
+.hub__popup--has-art .hub__slot-index {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 1;
+  min-width: 24px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(28, 20, 12, 0.6);
+  color: #fdf6e3;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hub__slot-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hub__popup--has-art .hub__slot-name {
+  /* 보관함 칸의 이름과 클래스가 같아 그쪽 절대 배치를 되돌린다 */
+  position: static;
+  inset: auto;
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+}
+
+/* ── 편성 오른쪽 판: 무기 목록 세로 ──────────────── */
+.hub__weapon-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  width: 100%;
+}
+
+.hub__popup--has-art .hub__qty-value {
+  color: var(--hub-text-on-art);
+}
+
+/* 잠긴 레시피 표시 (B2, DEC-UI-006). 자물쇠 86×105 */
+.hub__lock--has-art {
+  width: 30px;
+  height: 36px;
+  background: var(--hub-lock-image) center / contain no-repeat;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+
+/* 팝업 안쪽 글자도 한지 위라 뒤집는다 */
+.hub__popup--has-art .hub__row-sub,
+.hub__popup--has-art .hub__popup-group-title,
+.hub__popup--has-art .hub__popup-title,
+.hub__popup--has-art .hub__detail-title,
+.hub__popup--has-art .hub__row-name,
+.hub__popup--has-art .hub__preview {
+  color: var(--hub-text-on-art);
+}
+
+/* 실행 버튼은 팻말 한 장이다 (A3 목업의 `판매한다`) */
+.hub__popup--has-art .hub__action {
+  border: none;
+  border-radius: 0;
+  background: var(--hub-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  min-height: 64px;
 }
 
 .hub__slot {
+  /* **아래 `.hub--has-art .hub__slot-name` 이 이 칸을 기준으로 눕는다.**
+     여기 `relative` 가 없으면 기준이 `.hub__popup-layer` 로 올라가서, 칸 안에
+     들어가야 할 이름 다섯 장이 팝업 전체 크기로 펼쳐진다. 투명하고 글자만
+     보이므로 화면에서는 "무기 목록이 안 눌린다" 로만 나타난다 (8/8).
+     보관함 칸(`.hub__inventory-row`)은 같은 구조인데 `relative` 가 있었다. */
+  position: relative;
   flex: 1;
   min-height: var(--hub-slot-min-height);
   padding: var(--ui-gap-sm);
@@ -1185,7 +2723,23 @@
   border-width: 2px;
 }
 
-/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-021) */
+/*
+  고른 칸 (8/8 — 항목 줄과 같은 문제였다).
+
+  **테두리 색만으로는 안 보인다.** 그리고 위 기본 규칙처럼 두께를 2px 로 늘리면
+  그 칸만 1px 씩 줄어 네 칸 줄이 흔들린다. 그림이 있을 때는 두께를 되돌리고
+  안쪽 테두리와 바탕으로 낸다 — 둘 다 자리를 안 먹는다.
+
+  항목 줄은 왼쪽 막대인데 여기는 **사방 테두리**다. 칸이 정사각형에 가까워서
+  한쪽만 칠하면 어디를 고른 건지가 덜 읽힌다.
+*/
+.hub--has-art .hub__slot--selected {
+  border-width: 1px;
+  background: var(--hub-row-selected-bg);
+  box-shadow: inset 0 0 0 3px var(--hub-row-selected-edge);
+}
+
+/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-034) */
 .hub__slot--empty .hub__slot-name {
   color: var(--ui-text-dim);
 }
@@ -1199,7 +2753,7 @@
   color: var(--ui-danger);
 }
 
-/* `1~5` 입력과 같은 번호다 (DEC-INPUT-006) */
+/* `1~4` 입력과 같은 번호다 (DEC-INPUT-013) */
 .hub__slot-index {
   color: var(--ui-text-dim);
 }
@@ -1226,11 +2780,6 @@
 .dialogue {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: var(--ui-gap-lg);
-  box-sizing: border-box;
   /* 필드가 비치는 정지 표시 (DEC-UI-010) */
   background: rgba(8, 10, 7, 0.55);
   font-family: var(--ui-font);
@@ -1238,17 +2787,111 @@
   pointer-events: auto;
 }
 
-.dialogue__panel {
-  width: var(--dialogue-width);
-  max-width: 100%;
-  padding: var(--ui-gap-lg);
+/*
+  무대 — 두 인물과 그 사이의 선택지 말풍선 (A4).
+
+  **대사창보다 아래 층이다.** 목업이 하단 대사창으로 두 인물의 하단을 덮는 모양이라
+  무대를 화면 전체 높이로 두고 대사창을 그 위에 얹는다. 무대 바닥을 화면 바닥에
+  붙여야 인물이 대사창 뒤에서 서 있는 것처럼 보인다.
+
+  그림이 없는 쪽은 칸이 통째로 숨으므로 한 사람만 있어도 줄이 무너지지 않는다.
+*/
+.dialogue__stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  /*
+    **`space-evenly` 가 아니다.** 말풍선이 흐름에서 빠지면서 남은 것은 인물
+    둘뿐이고, 목업은 둘을 양 끝에 붙인다. `space-evenly` 로 두면 말풍선 자리를
+    나눠 갖던 때의 간격이 남아 인물이 가운데로 몰린다.
+  */
+  justify-content: space-between;
+  padding: 0 var(--ui-gap-lg);
   box-sizing: border-box;
+}
+
+/*
+  말하는 주민과 플레이어.
+
+  **`contain` 이 아니라 `auto 100%` 다.** 초상화 다섯 장은 전부 높이 1080px 이고
+  폭만 493~727 로 다른데(투명 여백이 키·체격의 정렬 정보다), `contain` 은 칸에
+  맞춰 넣느라 **폭이 넓은 만복과 플레이어를 더 작게** 만든다. 높이를 기준으로
+  같은 배율을 걸어야 다섯이 같은 키 비율로 선다 (전성민 8/7).
+
+  같은 이유로 투명 여백을 트림하지 않는다 — 그 여백이 정렬 정보다.
+
+  칸 폭은 가장 넓은 만복(727/1080 = 0.673)이 잘리지 않게 잡는다. `auto 100%` 는
+  칸보다 넓으면 좌우가 잘리므로 여유를 둔다.
+
+  바닥을 화면 바닥에 붙여 대사창이 하단을 덮게 한다.
+*/
+.dialogue__portrait {
+  width: calc(var(--dialogue-portrait-height) * 0.72);
+  height: var(--dialogue-portrait-height);
+  flex: 0 0 auto;
+  background-image: var(--portrait-image);
+  background-size: auto 100%;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+}
+
+.dialogue__portrait[hidden] {
+  display: none;
+}
+
+/*
+  플레이어는 오른쪽에 선다.
+
+  **좌우 반전을 걸지 않는다. 앞으로도 걸지 않는다.** `DEC-ART-004` 가 좌우를 실제
+  그림 두 장으로 확정해서 캔버스·CSS 반전은 쓰지 않는다. 마주 보는 방향은
+  `portrait` 를 그릴 때 맞춰서 나온다 (전성민 8/7 회신).
+
+  8/6까지 여기 "반전이 DEC-ART-001 의 허용 범위인지 미결" 이라고 적혀 있었다.
+  그 DEC 는 폐기됐고(001 → 002 → 003 → 004) 미결도 아니다.
+*/
+.dialogue__portrait--player {
+  background-position: bottom center;
+}
+
+/*
+  대사창 — 화면 하단 전폭. **두 인물의 하단을 덮는다** (A4).
+
+  무대(`.dialogue__stage`)보다 위 층이다. 목업이 그 겹침으로 인물이 대사창 뒤에
+  서 있는 모양을 만든다.
+
+  `panel_border` 는 9-slice 로 늘리고 `panel_texture` 는 늘려서 깐다 —
+  타일링하면 위아래 끝 색차(674)가 가로줄로 드러난다 (최수정 8/7).
+*/
+.dialogue__panel {
+  position: absolute;
+  left: 50%;
+  bottom: var(--ui-gap-lg);
+  transform: translateX(-50%);
+  width: var(--dialogue-box-width);
+  min-height: var(--dialogue-box-height);
+  box-sizing: border-box;
+  padding: var(--ui-gap-lg) var(--ui-gap-lg) var(--ui-gap-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-sm);
+  /* 그림이 없을 때의 플레이스홀더 */
   border: 1px solid var(--ui-border-strong);
   border-radius: var(--ui-radius);
   background: var(--ui-bg-panel);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-gap-md);
+}
+
+.dialogue--has-art .dialogue__panel {
+  border: 44px solid transparent;
+  border-radius: 0;
+  border-image-source: var(--dialogue-panel-border);
+  border-image-slice: 44;
+  border-image-width: 44px;
+  background-image: var(--dialogue-panel-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  color: var(--dialogue-text-on-panel);
 }
 
 .dialogue__speaker {
@@ -1256,57 +2899,221 @@
   color: var(--ui-accent);
 }
 
-/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 선택지가 사라진다 */
+/*
+  발화자 이름판 (전성민 8/6 조립 지시 — `발화자 이름판: button_normal`).
+
+  **대사창 위로 튀어나온 나무판이다.** 지시는 그림만 정했고 자리는 A4 목업이
+  보여준다 — 대사창 왼쪽 위 모서리에 걸쳐 위로 조금 나온다.
+
+  `position: absolute` 라 흐름에서 빠지고, 그만큼 대사 본문이 위로 올라온다.
+  대사창은 이미 `position: absolute` 라 여기가 기준이 된다.
+
+  크기는 `button_normal.png`(350×116) 비율 그대로 줄인 것이다 — 3.02:1.
+*/
+.dialogue--has-art .dialogue__speaker {
+  position: absolute;
+  top: var(--dialogue-name-top);
+  left: var(--dialogue-name-left);
+  width: var(--dialogue-name-width);
+  height: var(--dialogue-name-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--dialogue-name-image);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: var(--dialogue-name-on-plate);
+}
+
+/* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 말풍선이 사라진다 */
 .dialogue__text {
   margin: 0;
-  font-size: var(--ui-font-lg);
+  font-size: var(--ui-font-xl);
   line-height: 1.7;
-  min-height: 3.4em;
+  min-height: 2.6em;
 }
 
+/*
+  선택지 말풍선 — 두 인물 **사이**에 뜬다 (A4).
+
+  **말풍선 하나에 버튼 셋이다.** 8/6까지는 선택지마다 말풍선을 하나씩 9-slice 로
+  늘려 썼는데 목업과 다르다. 그림 크기(506×441)가 버튼 350×116 세 개에 맞춰
+  나왔으므로 늘리지 않고 원래 크기로 둔다 — 늘리면 꼬리가 뭉개진다.
+*/
 .dialogue__choices {
+  /*
+    **흐름에서 뺀다.** 인물 사이에 flex 항목으로 두면 초상화 폭에 따라 말풍선이
+    좌우로 흔들렸다 — 영순(493)과 만복(727)에서 위치가 달라 보인 것이 그 때문이다
+    (8/8). 목업은 인물과 무관하게 고정된 자리에 있다.
+  */
+  position: absolute;
+  left: var(--dialogue-balloon-center-x);
+  transform: translateX(-50%);
+  bottom: var(--dialogue-balloon-lift);
+  width: var(--dialogue-balloon-width);
+  height: var(--dialogue-balloon-height);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  /*
+    **`center` 가 아니라 `space-evenly` 다.** 목업은 선택지 셋이 말풍선 안에 고르게
+    퍼져 있고(간격 약 100px) 가운데로 몰려 있지 않다. 나무판을 쓸 때는 판이 자리를
+    채워서 `center` 로도 비슷했는데, 글자로 바뀌면서 셋이 가운데에 붙었다 (8/8).
+  */
+  justify-content: space-evenly;
   gap: var(--ui-gap-sm);
+  box-sizing: border-box;
+  /* 나무 테두리 안쪽에만 버튼을 둔다. 아래·오른쪽이 두꺼운 것은 꼬리 몫이다 */
+  padding: var(--dialogue-balloon-inset-top) var(--dialogue-balloon-inset-right)
+    var(--dialogue-balloon-inset-bottom) var(--dialogue-balloon-inset-left);
+  background-image: var(--dialogue-balloon-image);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-/* 선택지는 마우스 클릭으로 고른다 (DEC-UI-008) */
+.dialogue__choices[hidden] {
+  display: none;
+}
+
+/*
+  선택지 버튼 (DEC-UI-008 — 마우스 클릭으로 고른다).
+
+  그림 크기 그대로 둔다. 문장이 길면 글자가 줄어드는 대신 두 줄로 접힌다 —
+  버튼을 늘리면 말풍선 안에서 셋이 안 맞는다.
+*/
 .dialogue__choice {
+  width: var(--dialogue-choice-width);
+  min-height: var(--dialogue-choice-height);
   display: flex;
   flex-direction: column;
-  gap: var(--ui-gap-xs);
-  padding: var(--ui-gap-md);
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--ui-gap-xs) var(--ui-gap-lg);
+  box-sizing: border-box;
   border: 1px solid var(--ui-border);
-  border-left-width: 4px;
   border-radius: var(--ui-radius);
   background: var(--ui-bg-slot);
   color: var(--ui-text);
   font-family: var(--ui-font);
   font-size: var(--ui-font-md);
-  text-align: left;
-  line-height: 1.6;
+  text-align: center;
+  line-height: 1.4;
   cursor: pointer;
 }
 
+/*
+  선택지는 **나무판이 아니라 밑줄 친 글자다** (A4 목업, 팀 결정 8/8).
+
+  8/6 조립 지시는 `일반 선택지: button_normal` 이었지만 두 에셋의 실측이 그것을
+  배제했다 — 말풍선 안쪽이 450×365 인데 나무판 셋이 116×3 + 간격 = 364 라 여유가
+  1px 도 없었다. 말풍선을 614×535 로 키워 억지로 맞췄더니 이번엔 대사창이 세 줄로
+  자랄 때 아래가 가렸다. 목업은 처음부터 글자였고 말풍선은 그 크기로 그려졌다.
+
+  그래서 **말풍선을 원본 506×441 로 되돌린다.** 판이 빠져 자리가 남는다.
+*/
+.dialogue--has-art .dialogue__choice {
+  border: none;
+  border-radius: 0;
+  background: none;
+  width: auto;
+  min-height: 0;
+  padding: var(--ui-gap-xs) var(--ui-gap-sm);
+  /*
+    **글자 크기 눈금(17/20/26/38)에 없는 값이다.**
+
+    목업은 선택지가 대사 본문과 비슷한 크기(38px)인데 그대로는 못 쓴다 —
+    목업 문구가 `안물안궁`·`아저씨 뭐하세요?` 같은 짧은 자리표시라서다. 승인
+    문구는 `동생들 이야기를 묻는다`(11자)라 38px 이면 말풍선 안에서 줄바꿈된다
+    (안쪽 폭 399, 좌우 여백 빼면 383 인데 11자 × 38 = 418).
+
+    30px 이면 11자가 330 이라 들어가고 26px(`--ui-font-lg`)보다 목업에 가깝다.
+    눈금에 넣지 않은 것은 이 한 자리에서만 쓰는 값이기 때문이다.
+  */
+  font-size: var(--dialogue-choice-font);
+  /* 밑줄을 아래 `::after` 로 그린다 — hover 때 다시 그어지게 하려면 늘였다 줄일
+     수 있는 요소여야 한다. `border-bottom` 은 그렇게 못 한다 */
+  position: relative;
+  /*
+    **말풍선 위에서는 글자색이 뒤집힌다.** 기본 `--ui-text` 는 어두운 패널 위에
+    쓰는 크림색이라 밝은 한지 위에 얹으면 안 읽힌다 (8/6 플레이 테스트).
+  */
+  color: var(--dialogue-text-on-balloon);
+}
+
+/*
+  목업의 밑줄. 글자만 두면 누를 수 있는 것으로 안 읽힌다.
+
+  **`::after` 인 이유는 hover 때 다시 그어지게 하려는 것이다** (팀 요청 8/8).
+  평소에는 다 그어져 있고(`scaleX(1)`), 마우스를 올릴 때마다 왼쪽에서 오른쪽으로
+  한 번 다시 그린다. `border-bottom` 으로는 이 재생이 안 된다.
+
+  `animation` 을 `:hover` 에 거는 것이라 **올릴 때마다 처음부터 다시 돈다** —
+  `transition` 이면 한 번 끝난 뒤 다시 안 그어진다.
+*/
+.dialogue--has-art .dialogue__choice::after {
+  content: '';
+  position: absolute;
+  left: var(--ui-gap-sm);
+  right: var(--ui-gap-sm);
+  bottom: 0;
+  height: 2px;
+  background: currentColor;
+  transform-origin: left center;
+}
+
+.dialogue--has-art .dialogue__choice:hover:not(:disabled)::after {
+  animation: dialogue-underline 0.22s ease-out;
+}
+
+@keyframes dialogue-underline {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 그림이 없을 때는 예전처럼 테두리로 구분한다 */
 .dialogue__choice:hover:not(:disabled) {
   border-color: var(--ui-border-strong);
 }
 
+/* 눌림은 그림이 아니라 CSS 로 낸다 — button_pressed 는 고정 목록에 없다 (8/6) */
+.dialogue__choice:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.dialogue--has-art .dialogue__choice-offer {
+  /* 보조 줄도 같이 뒤집는다. 안 하면 수량 안내만 안 보인다 */
+  color: var(--dialogue-subtext-on-balloon);
+}
+
 /*
-  세 선택지를 시각적으로 구분한다 (DEC-UI-007).
+  총수량이 모자란 자원 협상 (DEC-UI-008 — 흐리게만 하고 안내를 덧붙이지 않는다).
 
-  **자리 순서로만 구분한다.** 기능(공감·설득 / 자원 협상 / 위협·대립)은 뷰에 오지도
-  않으므로 이 색이 기능 이름을 드러내지 않는다. 색을 기능에 묶으면 그 순간
-  "빨간 게 위협"이라는 태그가 되어 확정문이 금지한 것과 같아진다.
+  그림이 있으면 `button_disabled` 한 장으로 갈린다. 투명도만으로는 말풍선 위에서
+  덜 드러나서 비활성 그림을 따로 받았다.
 */
-.dialogue__choice[data-slot='0'] { border-left-color: var(--ui-accent); }
-.dialogue__choice[data-slot='1'] { border-left-color: var(--ui-border-strong); }
-.dialogue__choice[data-slot='2'] { border-left-color: var(--ui-text-dim); }
-
-/* 총수량이 모자란 자원 협상. 흐리게만 하고 안내 문구를 덧붙이지 않는다 (DEC-UI-008) */
 .dialogue__choice:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/*
+  **`button_disabled` 그림을 쓰지 않는다.** 8/6 지시는 나무판 두 장으로 활성·비활성을
+  갈랐는데, 선택지가 글자가 되면서 얹을 판이 없어졌다 (팀 결정 8/8).
+  `DEC-UI-008` 이 요구하는 것은 *"흐리게만 하고 안내를 덧붙이지 않는다"* 이므로
+  글자와 밑줄을 같이 흐리게 해서 지킨다.
+*/
+.dialogue--has-art .dialogue__choice:disabled {
+  opacity: 1;
+  /* 밑줄이 `currentColor` 라 글자색만 흐리면 줄도 같이 흐려진다 */
+  color: var(--dialogue-subtext-on-balloon);
 }
 
 /* 제안 수량·현재 총수량·무작위 소비 사실 한 줄 (DEC-UI-008) */
@@ -1315,20 +3122,145 @@
   color: var(--ui-text-dim);
 }
 
-.dialogue__proceed {
+/*
+  읽고 넘긴다는 표시 (DEC-UI-035).
+
+  **버튼이 아니다.** 8/8까지는 확인 버튼이었는데, 확정문이 읽기 진행을 클릭과
+  스페이스 둘 다로 열면서 "다음이 있다는 표시를 두되 조작 번호나 키 이름을
+  드러내지 않게 한다" 로 바뀌었다. 그래서 글자가 없고 누르는 자리도 아니다 —
+  대사창 전체가 누르는 자리이므로 이 표시는 클릭을 받지 않는다.
+
+  깜빡이게 두는 이유는 **멈춰 있는 화살표가 장식으로 읽히기 때문**이다.
+*/
+.dialogue__advance {
   align-self: flex-end;
-  padding: var(--ui-gap-sm) var(--ui-gap-lg);
-  border: 1px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius);
-  background: var(--ui-bg-panel);
-  color: var(--ui-text);
-  font-family: var(--ui-font);
-  font-size: var(--ui-font-md);
-  cursor: pointer;
+  width: 0;
+  height: 0;
+  margin: var(--ui-gap-sm) var(--ui-gap-md) 0 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 14px solid var(--ui-text-dim);
+  pointer-events: none;
+  animation: dialogue-advance 1.1s ease-in-out infinite;
 }
 
-.dialogue__proceed[hidden] {
+.dialogue--has-art .dialogue__advance {
+  border-top-color: var(--dialogue-text-on-panel);
+}
+
+.dialogue__advance[hidden] {
   display: none;
+}
+
+@keyframes dialogue-advance {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(3px);
+  }
+}
+
+/* 말하지 않는 쪽은 어둡게 (19번, 8/8). 딤 전용 그림이 오면 이 규칙만 갈아 끼운다 */
+.dialogue__portrait--dim {
+  filter: brightness(0.45) saturate(0.7);
+}
+
+/*
+  등장 연출 — 주민 → 플레이어 → 대사창 (DEC-ART-005).
+
+  **프레임 애니메이션이 아니라 위치와 투명도다.** 확정문이 *"움직임은 코드가
+  위치·크기·투명도로 표현한다"* 로 열어 둔 수단이라 새 그림이 필요 없다.
+
+  셋이 같이 나타나면 누가 말하는 자리인지가 한 번에 뭉쳐 보인다. 순서를 두면
+  시선이 왼쪽 → 오른쪽으로 옮겨간 뒤 대사창에 앉는다.
+
+  **총 길이가 dialogue-modal.ts 의 `ENTER_MS`(980) 와 맞아야 한다.** 여기가 더
+  길면 연출이 끝나기 전에 선택지가 열리고, 짧으면 다 끝난 화면이 입력을 안 받는
+  구간이 생긴다. 플레이어 지연 220 + 대사창 지연 600 + 길이 380 = 980 이다.
+
+  8/9 에 620 → 980 으로 늘렸다. **"순차로 들어오나?" 하는 순간 이미 끝나 있었다** —
+  세 단계가 서로를 밀고 들어와서 한 덩어리로 보였다. 인물 사이 간격(140 → 220)과
+  대사창 시작점(420 → 600)을 벌려 단계가 각각 읽히게 했다.
+
+  `transform` 과 `opacity` 만 건드려서 매 프레임 레이아웃을 다시 계산하지 않는다.
+*/
+.dialogue--entering .dialogue__portrait {
+  animation: dialogue-enter-left 380ms ease-out both;
+}
+
+.dialogue--entering .dialogue__portrait--player {
+  animation: dialogue-enter-right 380ms ease-out 220ms both;
+}
+
+.dialogue--entering .dialogue__panel {
+  animation: dialogue-enter-panel 380ms ease-out 600ms both;
+}
+
+/* 연출 중에는 선택지 말풍선이 아직 없다. 화살표는 판을 따라가되 자리는 그대로다 */
+.dialogue--entering .dialogue__advance {
+  animation: dialogue-enter-fade 380ms ease-out 600ms both;
+}
+
+@keyframes dialogue-enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(-90px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dialogue-enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(90px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/*
+  대사창은 **화면 아래에서 올라온다.**
+
+  8/9 까지 24px 이었는데 그 거리로는 "떠오른다" 가 아니라 "살짝 흔들린다" 로
+  읽혔다. 대사창 높이의 절반 이상을 움직여야 아래에서 들어온 것으로 보인다.
+
+  **가로 가운데 정렬(`translateX(-50%)`)을 키프레임 안에 같이 적는다.**
+  `transform` 은 속성 하나라 애니메이션이 그 값을 통째로 덮는다. 세로만 적으면
+  연출 동안 판이 오른쪽으로 반 폭 밀려 있다가 클래스가 빠지는 순간 왼쪽으로
+  미끄러진다 — 8/9 에 담당자가 *"우측에서 올라왔다가 다시 왼쪽으로 슬라이드된다"*
+  로 잡은 것이 이것이다.
+*/
+@keyframes dialogue-enter-panel {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--dialogue-box-height) * 0.9));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/*
+  화살표는 대사창 안에 있어 판과 같이 떠오른다. 자리를 옮기면 안 되므로
+  투명도만 맞춘다 — 여기에 판의 이동을 또 걸면 두 번 움직인다.
+*/
+@keyframes dialogue-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─────────────────────────────────────────────────
@@ -1781,10 +3713,19 @@
    일시정지 화면이 아직 뼈대라 위를 덮어 주는 것이 없다. 그래서 "지금은 못 누른다"
    를 여기서 직접 드러낸다 — 일시정지 화면이 생기면 이 흐림은 다시 볼 값이다.
    ───────────────────────────────────────────────── */
+/*
+  입력을 소유하지 않은 오버레이 (DEC-UI-026).
+
+  **입력만 끈다. 표시는 그대로 둔다.** 확정문이 *"가장 위 오버레이가 입력을
+  독점하고 아래 층위는 **표시만** 남는다"* 로 정했고 흐리게 하라는 말은 없다.
+
+  8/9 까지 `opacity: 0.45` 와 `saturate(0.6)` 이 걸려 있었다. 그래서 정비나
+  대화 중에 `Esc` 를 누르면 **그 화면이 반투명해져 뒤 필드가 비쳤다** —
+  일시정지 배경이 이미 72% 로 덮는데 그 아래가 또 45% 라 두 겹이 겹쳤다.
+  담당자가 *"일시정지 시 뒷 필드가 투명해진다"* 로 잡은 자리다.
+*/
 .is-inert {
   pointer-events: none;
-  opacity: 0.45;
-  filter: saturate(0.6);
 }
 
 /* ─────────────────────────────────────────────────
@@ -1829,12 +3770,117 @@
 
 /* ── 타이틀 ────────────────────────────────────── */
 
-/* 로고 에셋(asset.logo.*)으로 바뀔 자리다. 교체는 아트 통합에서 한다 */
+/* 로고 그림이 없을 때만 보이는 플레이스홀더 제목 */
 .title__name {
   margin: 0;
   font-size: 44px;
   font-weight: 700;
   letter-spacing: 0.12em;
+}
+
+/*
+  ── A0 배치 (전성민 8/8 목업) ──────────────────────────────
+
+  아래 좌표는 `assets/source/phase-a/A0_title_screen_mockup.png` 에서 잰 **실측값**
+  이다. 무대가 1920×1080 고정이고 배율이 없어(DEC-ART-004) 픽셀이 그대로 맞는다.
+
+  배경 `bg_title` 은 1672×941 로 16:9 라 무대에 정확히 늘어난다. **오른쪽 기둥은
+  배경 그림에 이미 들어 있다** — 코드가 그리는 것은 그 받침 위에 얹는 팻말뿐이다.
+*/
+.title--has-art {
+  background: var(--title-background) center / cover no-repeat;
+  /* 가운데 정렬 판을 쓰지 않는다. 로고와 팻말이 각자 실측 좌표에 앉는다 */
+  display: block;
+}
+
+.title__logo {
+  position: absolute;
+  left: 165px;
+  top: 248px;
+  width: 1052px;
+  height: 214px;
+  background: var(--title-logo-image) center / contain no-repeat;
+}
+
+/*
+  팻말은 `button_normal`(350×116) 을 그대로 얹는다. 기둥 중심이 x 1590 이라
+  왼쪽이 1590 - 175 = 1415 다.
+
+  `--title-sign-bottom-y` 는 두 번째 받침이다. 지금은 아무것도 앉지 않는다 —
+  `DEC-UI-030` 이 타이틀 입력을 하나로 못 박아 `게임 종료` 팻말을 넣지 못했다
+  (`ui/title.ts` 머리말). 값을 남겨 두는 이유는 그 결정이 바뀌면 좌표를 다시
+  재지 않기 위해서다.
+*/
+:root {
+  --title-sign-x: 1415px;
+  --title-sign-top-y: 402px;
+  --title-sign-bottom-y: 626px;
+}
+
+.title--has-art .title__start {
+  position: absolute;
+  left: var(--title-sign-x);
+  top: var(--title-sign-top-y);
+  width: 350px;
+  height: 116px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--title-sign-image) center / contain no-repeat;
+  /* 나무 팻말 위라 패널용 크림색은 묻힌다. 목업의 흰 글자를 따른다 */
+  color: #fdf6e3;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.title--has-art .title__start:hover {
+  /*
+    **배경을 다시 선언해야 한다.** 아래 `.title__start:hover` 가 그림 없는 빌드용
+    으로 `background: var(--ui-bg-slot)` 을 걸어 두는데, 여기서 `filter` 만 쓰면
+    `background` 는 그 규칙으로 떨어져 팻말 위에 반투명 회색 판이 얹힌다 (8/8).
+    선택자 우선순위는 이쪽이 높지만 **선언하지 않은 속성은 넘어오지 않는다.**
+  */
+  background: var(--title-sign-image) center / contain no-repeat;
+  /* 팻말 그림을 바꾸지 않고 밝기만 올린다 — `button_pressed` 는 :active 로 쓰지
+     않기로 8/6 에 정했고, 여기도 같은 이유로 그림을 늘리지 않는다 */
+  filter: brightness(1.08);
+}
+
+.title--has-art .title__start:active {
+  filter: brightness(0.94);
+}
+
+/*
+  누르면 짧게 흔들린 뒤 진입한다 (전성민 8/8).
+
+  기둥에 못 하나로 매달린 팻말이라 좌우가 아니라 **회전**으로 흔든다. 시간은
+  `ui/title.ts` 의 `SHAKE_MS` 와 같아야 한다 — 그쪽이 이 시간이 지나면 무조건
+  진행하는 안전망을 걸어 둔다.
+*/
+@keyframes title-sign-shake {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(-3.5deg); }
+  35% { transform: rotate(2.6deg); }
+  55% { transform: rotate(-1.8deg); }
+  75% { transform: rotate(1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.title__start--shaking {
+  animation: title-sign-shake 360ms ease-in-out;
+  /* 못 자리를 축으로 돈다. 가운데를 축으로 하면 팻말이 통째로 기운다 */
+  transform-origin: 50% 8%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 코드에서도 걸러내지만, 여기서도 막아 둔다 */
+  .title__start--shaking {
+    animation: none;
+  }
 }
 
 /* ── 이름 입력 ─────────────────────────────────── */
@@ -1883,7 +3929,23 @@
 /* 안내는 화면 위쪽 가운데. 재배 게이지는 튜토리얼에서 숨으므로 그 자리를 쓴다 */
 .tutorial__guide {
   position: absolute;
-  top: var(--hud-edge);
+  /*
+    상단 HUD 띠와 겹치지 않게 **조금 내린다** (8/9 담당자).
+
+    8/9 까지 화면 맨 위였는데 좌측 판이 560×101 로 커지면서 안내판이 그 띠와
+    같은 높이에 섰다. 처음엔 띠 아래로 완전히 내렸더니 너무 내려왔다.
+
+    **판 아래 끝에 거의 붙인다.** 판이 세로로 `16~117` 을 차지하는데, 판 바로
+    아래(117)까지 내리면 안내가 밭 쪽으로 너무 내려앉는다. 판 높이의 0.7 이면
+    아래 끝에 가까워 어긋난 정렬로는 안 보이면서 상단 띠보다는 낮다.
+
+    **띠 아래까지 안 내려도 되는 이유**는 튜토리얼에서 재배 시간 게이지가
+    숨기 때문이다 (`DEC-RUN-003` — 튜토리얼에 시간제한이 없다). 안내판이 서는
+    화면 가로 가운데가 평소에는 게이지 자리인데 튜토리얼에서는 비어 있다.
+
+    판 높이 기준이라 판이 또 바뀌어도 따라온다. 배수만 고치면 위아래로 움직인다.
+  */
+  top: calc(var(--hud-edge) + var(--hud-signboard-height) * 0.7);
   left: 50%;
   transform: translateX(-50%);
   width: var(--screen-panel-width);
@@ -1900,6 +3962,19 @@
   text-align: center;
 }
 
+/*
+  정비 안내는 아래로 내린다.
+
+  허브가 열린 채 안내가 위쪽 가운데에 있으면 기능 버튼(판매·구매·제작·편성)을
+  덮어 그 조작 자체를 할 수 없다 — 안내가 시키는 일을 안내가 막고 있었다
+  (8/7 플레이 테스트). 허브 하단은 진행 버튼이 오른쪽 끝에만 있어 비어 있고,
+  팝업은 세로 가운데에 뜨므로 겹치지 않는다.
+*/
+.tutorial__guide--low {
+  top: auto;
+  bottom: var(--hud-edge);
+}
+
 .tutorial__guide[hidden],
 .tutorial__finished[hidden] {
   display: none;
@@ -1912,9 +3987,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+  안내 문구.
+
+  **8/9 에 `lg`(26px)에서 `md`(20px)로 줄였다.** 튜토리얼이 8단계로 늘면서 문구가
+  길어졌다 — 제일 긴 것이 76자라 26px 로는 안내판이 화면을 크게 차지한다.
+  안내는 밭 위에 얹히는 것이라(`tutorial.ts` 머리 주석) 커질수록 가려진다.
+*/
 .tutorial__text {
   margin: 0;
-  font-size: var(--ui-font-lg);
+  font-size: var(--ui-font-md);
   line-height: 1.6;
 }
 
@@ -1996,7 +4078,7 @@
 }
 
 /* ─────────────────────────────────────────────────
-   회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008)
+   회복 퀵메뉴 (DEC-UI-037, DEC-INPUT-008)
 
    `Q` 를 누르고 있는 동안에만 뜬다. 닫기 버튼이 없다 — 손을 떼면 닫힌다.
    필드를 덮지 않고 아래쪽에 붙는다. 퀵슬롯 옆의 회복 칸이 무엇을 고르고
@@ -2012,7 +4094,18 @@
   inset: 0;
   display: flex;
   align-items: flex-end;
-  justify-content: center;
+  /*
+    **회복 칸 바로 위**에 붙인다 (8/9 담당자).
+
+    8/9 까지 화면 가로 가운데였다. 고르는 대상이 오른쪽 아래 칸인데 목록이
+    화면 한가운데 뜨면 시선이 두 번 움직이고, 퀵슬롯 위를 지나가서 무엇을
+    고르는 목록인지도 흐려진다.
+
+    오른쪽 여백은 회복 칸이 화면 끝에 닿는 만큼(`--hud-edge`)만 둔다 —
+    칸과 목록의 오른쪽 선이 맞아야 둘이 한 덩어리로 읽힌다.
+  */
+  justify-content: flex-end;
+  padding-right: var(--hud-edge);
   /* 퀵슬롯·회복 칸 위에 뜬다. 회복 칸이 둘 중 높다 (166 대 145) */
   padding-bottom: calc(var(--hud-recovery-height) + var(--ui-gap-lg));
   box-sizing: border-box;
@@ -2034,7 +4127,7 @@
   pointer-events: auto;
 }
 
-/* 느려진 상태임을 알린다 (DEC-UI-001) */
+/* 느려진 상태임을 알린다 (DEC-UI-037) */
 .recovery-menu__notice {
   margin: 0;
   font-size: var(--ui-font-sm);
@@ -2069,7 +4162,7 @@
   border-color: var(--ui-border);
 }
 
-/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-001) */
+/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-037) */
 .recovery-menu__item--selected {
   border-color: var(--ui-border-strong);
   border-width: 2px;

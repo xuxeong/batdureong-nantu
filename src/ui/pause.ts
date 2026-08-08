@@ -4,9 +4,14 @@
 //
 //   계속하기 / 음량 설정 / 조작 안내 다시 보기 / 타이틀로 돌아가기
 //
-// **음량은 만들지 않는다.** 같은 확정문이 *"오디오를 구현하지 않는 빌드에서는
-// 음량 항목을 표시하지 않는다"* 로 정했고 오디오 서브시스템이 아직 없다(6절 P2).
-// 자리만 비워 두지도 않는다 — 확정문이 "표시하지 않는다" 이지 "비워 둔다" 가 아니다.
+// **음량은 2026-08-08 에 들어왔다.** 같은 확정문의 *"오디오를 구현하지 않는
+// 빌드에서는 음량 항목을 표시하지 않는다"* 를 근거로 미뤄 뒀던 자리인데,
+// `audio/sfx.ts`·`audio/bgm.ts` 가 생기면서 그 전제가 없어졌다. 전체·배경음·
+// 효과음 셋을 확정문 그대로 둔다.
+//
+// **`mixer` 를 안 넘기면 여전히 표시하지 않는다.** 확정문이 "비워 둔다" 가 아니라
+// "표시하지 않는다" 라 자리도 만들지 않는다 — 오디오 없는 빌드가 다시 생기면
+// 이 인자를 빼는 것으로 확정문을 지킬 수 있다.
 //
 // **런을 처음부터 다시 시작하는 입력을 두지 않는다.** 확정문이 명시로 금지했다.
 // 타이틀로 돌아간 뒤 새 런을 시작하는 것이 유일한 경로다.
@@ -26,8 +31,10 @@
 // 스스로 선언했으므로(DEC-INPUT-001) 거기서 역으로 끌어온다. 바인딩을 바꾸면
 // 안내가 따라오고, 안 따라오면 안내가 거짓말을 한다.
 
+import type { Mixer, VolumeChannel } from '../audio/mixer.ts'
 import { KEY_BINDINGS, MOUSE_BINDINGS, QUICKSLOT_KEYS } from '../input/bindings.ts'
 import type { InputAction } from '../input/bindings.ts'
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface PauseHandlers {
@@ -35,6 +42,11 @@ export interface PauseHandlers {
   onResume(): void
   /** 타이틀로 돌아간다. **확인을 거친 뒤에만** 불린다 (DEC-UI-027) */
   onReturnToTitle(): void
+  /**
+   * 음량 조절. **없으면 음량 항목 자체를 그리지 않는다** — 오디오를 구현하지
+   * 않는 빌드의 처리를 확정문 그대로 두기 위해서다 (DEC-UI-027).
+   */
+  mixer?: Mixer
 }
 
 export interface PauseScreen {
@@ -106,8 +118,25 @@ function controlRows(): { keys: string; what: string }[] {
 
 const TITLE = '일시정지'
 const RESUME_LABEL = '계속하기'
+const VOLUME_LABEL = '음량 설정'
 const CONTROLS_LABEL = '조작 안내'
 const TITLE_LABEL = '타이틀로 돌아가기'
+
+/** 확정문의 "전체, 배경음, 효과음" 순서를 그대로 쓴다 (DEC-UI-027) */
+const VOLUME_ROWS: { channel: VolumeChannel; label: string }[] = [
+  { channel: 'master', label: '전체' },
+  { channel: 'bgm', label: '배경음' },
+  { channel: 'sfx', label: '효과음' },
+]
+
+/**
+ * 슬라이더 눈금.
+ *
+ * 0~100 정수로 다루고 `mixer` 에 0~1 로 넘긴다. 화면에 백분율을 같이 적는 것은
+ * **끝까지 내렸는지 조금 남았는지가 손잡이 위치만으로는 안 갈리기 때문**이다 —
+ * 소리가 안 나는 이유를 여기서 찾게 된다.
+ */
+const VOLUME_STEPS = 100
 
 /**
  * 타이틀 복귀 확인 (DEC-UI-027 — "현재 런이 사라지므로 확인 절차를 둔다").
@@ -123,6 +152,8 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
   root.hidden = true
 
   const panel = el('div', 'pause__panel')
+  // 한지 판 (팀 결정 8/8). 그림이 없으면 아무것도 안 하고 아래 플레이스홀더가 남는다.
+  applyHanjiPanel(panel)
   panel.append(el('h2', 'pause__title', TITLE))
 
   // ── 기본 메뉴 ────────────────────────────────────
@@ -132,13 +163,49 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
   resume.type = 'button'
   resume.addEventListener('click', () => handlers.onResume())
 
+  const volumeToggle = el('button', 'pause__button', VOLUME_LABEL)
+  volumeToggle.type = 'button'
+
   const controlsToggle = el('button', 'pause__button', CONTROLS_LABEL)
   controlsToggle.type = 'button'
 
   const toTitle = el('button', 'pause__button pause__button--quiet', TITLE_LABEL)
   toTitle.type = 'button'
 
-  menu.append(resume, controlsToggle, toTitle)
+  // 오디오가 없는 빌드에서는 버튼도 두지 않는다 (DEC-UI-027).
+  if (handlers.mixer === undefined) volumeToggle.remove()
+  menu.append(resume, volumeToggle, controlsToggle, toTitle)
+
+  // ── 음량 (DEC-UI-027) ────────────────────────────
+  const volume = el('div', 'pause__volume')
+  volume.hidden = true
+  const mixer = handlers.mixer
+  if (mixer !== undefined) {
+    for (const row of VOLUME_ROWS) {
+      const line = el('div', 'pause__volume-row')
+      const slider = el('input', 'pause__volume-slider')
+      slider.type = 'range'
+      slider.min = '0'
+      slider.max = String(VOLUME_STEPS)
+      slider.step = '1'
+      slider.value = String(Math.round(mixer.get(row.channel) * VOLUME_STEPS))
+      slider.setAttribute('aria-label', row.label)
+
+      const readout = el('span', 'pause__volume-value', `${slider.value}%`)
+      slider.addEventListener('input', () => {
+        const steps = Number(slider.value)
+        mixer.set(row.channel, steps / VOLUME_STEPS)
+        readout.textContent = `${steps}%`
+      })
+
+      line.append(el('span', 'pause__volume-label', row.label), slider, readout)
+      volume.appendChild(line)
+    }
+
+    volumeToggle.addEventListener('click', () => {
+      volume.hidden = !volume.hidden
+    })
+  }
 
   // ── 조작 안내 (다시 보기) ────────────────────────
   const controls = el('div', 'pause__controls')
@@ -172,7 +239,7 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
     confirm.hidden = false
   })
 
-  panel.append(menu, controls, confirm)
+  panel.append(menu, volume, controls, confirm)
   root.appendChild(panel)
   container.appendChild(root)
 
@@ -189,6 +256,7 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
       // 처음 열 때만 되돌린다. 확인을 띄운 채 닫았다가 다시 열면 "돌아간다" 가
       // 먼저 보이고, 그 버튼은 런을 지운다.
       menu.hidden = false
+      volume.hidden = true
       controls.hidden = true
       confirm.hidden = true
       root.hidden = false

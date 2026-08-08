@@ -26,6 +26,7 @@
 // 이 파일은 화면만 만든다. 흐름 전진은 호출하는 쪽이 한다.
 
 import type { NightResultText } from '../data/types.ts'
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface NightResultView {
@@ -111,6 +112,8 @@ export function createNightResult(
   root.hidden = true
 
   const panel = el('div', 'night-result__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
   const text = el('p', 'night-result__text')
 
   const continueButton = el('button', 'night-result__continue', CONTINUE_LABEL)

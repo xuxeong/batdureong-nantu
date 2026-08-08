@@ -20,6 +20,7 @@
 // 빌드하는 것뿐이다. 다시 시도 버튼을 두면 눌러도 같은 실패가 나서, 고칠 수
 // 있다는 인상만 준다.
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface DataErrorDetail {
@@ -69,6 +70,8 @@ export function createDataError(container: HTMLElement): DataErrorScreen {
   root.hidden = true
 
   const panel = el('div', 'data-error__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
   panel.append(el('h1', 'data-error__title', TITLE), el('p', 'data-error__text', GENERAL_TEXT))
 
   // 상세 목록은 개발 빌드에서만 만든다. 만들어 두고 숨기면 DOM 에 남아

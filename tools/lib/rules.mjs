@@ -1116,7 +1116,7 @@ export const RULES = {
   // ── 에셋 연결 ─────────────────────────────────────────────────────────
   'content_asset.id_section_matches_role'({ report, h }) {
     // asset.<구간>.<이름> 의 구간과 asset_role 은 같은 값이다.
-    // DEC-ART-001 이 "asset_role 로 사용할 수 있는 구간은" 이라고 써서 둘을 같은 것으로 둔다.
+    // DEC-ART-004 가 "asset_role 로 사용할 수 있는 구간은" 이라고 써서 둘을 같은 것으로 둔다.
     for (const r of h.rows('content_assets.csv')) {
       const role = h.val(r, 'asset_role')
       const id = h.val(r, 'asset_id')
@@ -1129,7 +1129,7 @@ export const RULES = {
           line: r.lineNumber,
           field: 'asset_id',
           problem: `구간이 asset_role 과 다르다. asset_role 은 \`${role}\` 인데 ID 는 \`${section}\` 구간이다`,
-          basis: 'DEC-ART-001 · 논리 에셋 ID 의 구간과 asset_role 은 같은 값을 쓴다',
+          basis: 'DEC-ART-004 · 논리 에셋 ID 의 구간과 asset_role 은 같은 값을 쓴다',
           fix: `\`asset.${role}.<이름>\` 으로 고치거나 asset_role 을 \`${section}\` 으로 고친다`,
         })
       }
@@ -1469,7 +1469,9 @@ export const RULES = {
         }
       }
       // specific_resident_relationship 은 관계 키 목록이 결정로그에 없어 검사하지 않는다.
-      // schema/enums.json 의 open_questions 참조.
+      // **어디에도 적혀 있지 않다** — 2026-08-07 기준 enums.json 의 open_questions 는
+      // 비어 있고 이 항목이 올라간 적이 없다. 목록을 만들려면 관계 키를 무엇으로 둘지가
+      // 기획 결정이라 여기서 채우지 않는다 (AGENTS.md 2절 — 문서에 답이 없으면 보고한다).
     }
   },
 
