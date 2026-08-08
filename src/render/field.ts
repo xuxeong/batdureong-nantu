@@ -545,6 +545,37 @@ export function createFieldRenderer(
     // 맞은 직후에는 빠르게 깜빡인다. **한 번 흐려졌다 돌아오는 것이 아니라
     // 여러 번 껌뻑여야** 맞았다는 신호로 읽힌다 — 한 번이면 그리기가 튄 것처럼
     // 보인다. 투명도는 `DEC-ART-004` 가 허용한 표현이다.
+    /*
+      조준선 (`DEC-UI-031`). 8/7 까지 확정 규칙이 없어 근거 없이 그려지던 것을
+      그날 밤 확정문으로 만들었다 — 길이는 충돌 반경의 4.5배, 제출 빌드에도 남긴다.
+
+      **플레이어보다 먼저 그린다** (8/9 담당자). 선이 캐릭터 위를 지나가면 몸통을
+      가로지르는 줄로 보여서, 조준을 돌릴 때 캐릭터가 아니라 선이 주인공이 된다.
+      밑에 두면 선이 발밑에서 뻗어 나가는 모양이 되고 캐릭터가 위에 남는다.
+
+      **붉은색을 쓰지 않는다.** 확정문이 *"밭 안의 수확 가능 작물과 경쟁하지
+      않도록"* 으로 이유까지 적었다 — 고추와 토마토가 붉은 계열이다.
+      색은 `layout.css` 에서 오고 여기 값을 쓰지 않는다(같은 확정문). 두 겹인
+      것은 밝은 흙과 어두운 수풀 양쪽에서 다 보이게 하려는 것이다.
+    */
+    const aimLength = radius * 4.5
+    const aimToX = screen.x + Math.cos(view.aimAngle) * aimLength
+    const aimToY = screen.y + Math.sin(view.aimAngle) * aimLength
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = aimOutline
+    ctx.lineWidth = 5
+    ctx.beginPath()
+    ctx.moveTo(screen.x, screen.y)
+    ctx.lineTo(aimToX, aimToY)
+    ctx.stroke()
+    ctx.strokeStyle = aimLine
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(screen.x, screen.y)
+    ctx.lineTo(aimToX, aimToY)
+    ctx.stroke()
+    ctx.lineCap = 'butt'
+
     const hit = view.playerHit ?? 0
     ctx.save()
     if (hit > 0) ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.cos(hit * Math.PI * 5))
@@ -650,37 +681,23 @@ export function createFieldRenderer(
       ctx.textAlign = 'start'
     }
 
-    // 조준선 (`DEC-UI-031`). 8/7 까지 확정 규칙이 없어 근거 없이 그려지던 것을
-    // 그날 밤 확정문으로 만들었다 — 길이는 충돌 반경의 4.5배, 제출 빌드에도 남긴다.
-    //
-    // **붉은색을 쓰지 않는다.** 확정문이 *"밭 안의 수확 가능 작물과 경쟁하지
-    // 않도록"* 으로 이유까지 적었다 — 고추와 토마토가 붉은 계열이다.
-    // 색은 `layout.css` 에서 오고 여기 값을 쓰지 않는다(같은 확정문). 두 겹인
-    // 것은 밝은 흙과 어두운 수풀 양쪽에서 다 보이게 하려는 것이다.
-    const aimLength = radius * 4.5
-    const aimToX = screen.x + Math.cos(view.aimAngle) * aimLength
-    const aimToY = screen.y + Math.sin(view.aimAngle) * aimLength
-    ctx.lineCap = 'round'
-    ctx.strokeStyle = aimOutline
-    ctx.lineWidth = 5
-    ctx.beginPath()
-    ctx.moveTo(screen.x, screen.y)
-    ctx.lineTo(aimToX, aimToY)
-    ctx.stroke()
-    ctx.strokeStyle = aimLine
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo(screen.x, screen.y)
-    ctx.lineTo(aimToX, aimToY)
-    ctx.stroke()
-    ctx.lineCap = 'butt'
+    /*
+      상호작용 안내 (DEC-INPUT-003).
 
-    // 상호작용 안내 (DEC-INPUT-003). 실제 HUD 는 8/3 에 DOM 으로 올라온다.
+      **머리 위로 올린다.** 8/9 까지 판정 반경(18~24) 기준이라 `E — 심기` 가
+      캐릭터 가슴팍에 얹혀 있었다. 스프라이트는 120~154px 이라 반경의 서너 배다 —
+      8/7 에 체력 막대를 같은 이유로 올렸는데(3-B-0) 이 문구는 그때 같이 안 봤다.
+
+      그림이 없으면 도형으로 그리므로 그때는 판정 반경이 맞다.
+    */
     if (view.actionPrompt) {
+      const playerImage = images.get(view.playerAsset)
+      const promptTop =
+        screen.y - (playerImage === null ? radius : playerImage.naturalHeight / 2) - 14
       ctx.font = '14px sans-serif'
       ctx.textAlign = 'center'
       ctx.fillStyle = '#f4ecd0'
-      ctx.fillText(view.actionPrompt, screen.x, screen.y - radius - 12)
+      ctx.fillText(view.actionPrompt, screen.x, promptTop)
       ctx.textAlign = 'start'
     }
 

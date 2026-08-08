@@ -1255,6 +1255,32 @@ let hostileFacing: Facing = null
  */
 let hostileAttackRemaining = 0
 
+/** 지원 주민이 방금 공격했다는 표시가 남은 초. 적대 쪽과 같은 길이를 쓴다 */
+let allyAttackRemaining = 0
+
+/**
+ * 야생동물이 작물을 먹는 소리 — "챱챱챱" (8/9 담당자).
+ *
+ * 회복 시작음 한 장을 세 번 겹쳐 낸다. **파일을 세 개 만들지 않는 이유**는
+ * 같은 소리의 반복이 필요한 것이지 다른 소리 셋이 필요한 게 아니기 때문이다.
+ * `sfx.play()` 가 매번 새 `Audio` 를 만들어서 겹쳐 나는 것이 이미 보장된다.
+ *
+ * 간격은 화면 표시가 아니라 소리의 리듬이라 `layout.css` 가 아니라 여기 있다.
+ */
+const CHOMP_COUNT = 3
+/**
+ * 간격. **8/9 에 110 → 240 으로 늘렸다** — 110 은 씹는 소리가 아니라 연사음으로
+ * 들렸다. 사람이 세 번 씹는 속도에 가까워야 "챱챱챱" 으로 읽힌다.
+ */
+const CHOMP_GAP_MS = 240
+
+function playChomp(): void {
+  for (let i = 0; i < CHOMP_COUNT; i += 1) {
+    if (i === 0) sfx.play(SOUND_ASSET.recoveryStart)
+    else window.setTimeout(() => sfx.play(SOUND_ASSET.recoveryStart), i * CHOMP_GAP_MS)
+  }
+}
+
 /** 교체 스프라이트가 보이는 시간. 표현이라 승인 데이터가 아니다 */
 const ATTACK_SPRITE_SECONDS = 0.2
 
@@ -1355,6 +1381,7 @@ function resetBob(): void {
   hostileBob = null
   hostileFacing = null
   hostileAttackRemaining = 0
+  allyAttackRemaining = 0
   // 인스턴스 ID 로 들고 있어서 새 런이 같은 키를 다시 쓴다
   hitFlashes.clear()
   wildlifeHeadings.clear()
@@ -1403,6 +1430,9 @@ function advanceCombatFeedback(dt: number): void {
   }
   if (hostileAttackRemaining > 0) {
     hostileAttackRemaining = Math.max(0, hostileAttackRemaining - dt)
+  }
+  if (allyAttackRemaining > 0) {
+    allyAttackRemaining = Math.max(0, allyAttackRemaining - dt)
   }
   if (playerHitRemaining > 0) {
     playerHitRemaining = Math.max(0, playerHitRemaining - dt)
@@ -1497,6 +1527,10 @@ function updateRaid(dt: number): void {
     // 공격 순간 교체 스프라이트 (DEC-ART-004). 이 이벤트는 8/3부터 나오고 있었는데
     // 듣는 쪽이 없어서 공격이 화면에 아무 흔적도 남기지 않았다.
     if (event.type === 'attacked') hostileAttackRemaining = ATTACK_SPRITE_SECONDS
+    // 만복의 엽전만 실제 투사체다 (DEC-CONTENT-008 — 나머지 지원 공격은 즉시
+    // 확정 피해라 던지는 것이 없다). 플레이어 투척과 같은 소리를 쓴다 — 같은
+    // 동작이고, 던지는 사람마다 소리를 가르는 규칙이 없다.
+    if (event.type === 'projectileFired') sfx.play(SOUND_ASSET.throw)
     if (event.type !== 'playerDamaged') continue
     run.health = Math.max(0, run.health - event.amount)
     bus.emit('combat.playerDamaged', { amount: event.amount, remainingHealth: run.health })
@@ -1521,6 +1555,11 @@ function updateRaid(dt: number): void {
   if (allySupport !== null && hostileTarget !== null) {
     const damage = allySupport.update(dt)
     if (damage !== null) {
+      // 공격 자세 교체 (DEC-ART-005 — 주민이 공격하는 순간 스프라이트 1장).
+      // 적대 주민에는 8/7 에 붙였는데 지원 주민이 빠져 있었다. **지원 공격은
+      // 투사체가 없어서**(DEC-CONTENT-008) 자세가 안 바뀌면 밝은 테두리만 있는
+      // 사람이 가만히 서 있는 동안 상대 체력이 줄어드는 것으로 보인다.
+      allyAttackRemaining = ATTACK_SPRITE_SECONDS
       for (const event of combat.applySupportDamage(hostileTarget.entity.instanceId, damage)) {
         // 지원 공격은 투사체가 없으므로(DEC-CONTENT-008) **명중 표시가 유일한
         // 흔적이다.** 확정문이 "필요한 것은 시각적인 발사·명중 효과뿐" 이라고
@@ -3501,6 +3540,10 @@ function hudView() {
     // **ID 가 아니라 표시 이름이다.** 8/5까지 `selectedId` 를 그대로 넘겨서,
     // 선택돼 있어도 화면에 `recovery_item.honey_banana` 가 뜰 자리였다.
     recoveryName: selectedRecoveryName(),
+    // 선택된 회복 아이템의 아이콘. 퀵슬롯과 같은 표에서 온다 (8/9)
+    recoveryIcon: run?.pouch.selectedId === null || run?.pouch.selectedId === undefined
+      ? undefined
+      : itemIcons.get(run.pouch.selectedId),
     // 소진 자동 전환 강조와 빈 발사 안내 (DEC-UI-002)
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
@@ -3589,6 +3632,11 @@ const loop = createGameLoop(
           })
         }
         if (event.type === 'cropEaten') {
+          // 먹는 소리 (8/9 담당자). 회복 시작음을 그대로 쓴다 — 둘 다 무언가를
+          // 먹는 짧은 소리이고, 야생동물 전용 소리를 따로 만들지 않기로 했다.
+          // **세 번 겹쳐 낸다.** 한 번이면 "챱" 하나라 한 입 문 것처럼 들리는데
+          // 실제로는 작물 하나를 통째로 없애는 사건이다.
+          playChomp()
           // 먹힌 작물은 보관함에 넣지 않는다 (DEC-FARM-006).
           // 여기서 수확 처리를 부르면 잃은 작물이 오히려 쌓인다.
           //
@@ -3683,7 +3731,13 @@ const loop = createGameLoop(
                 x: allySupport.x,
                 y: allySupport.y,
                 attackFlash: allySupport.attackFlash,
-                assetId: residentSprites.get(allySupport.residentId),
+                // 공격 중에는 공격 자세로 갈아 끼운다 (DEC-ART-005). 방향은 null 이다 —
+                // 지원 주민은 제자리에서 쏘므로 좌우로 향할 방향이 없다.
+                assetId: characterSprite(
+                  residentAssets.get(allySupport.residentId),
+                  null,
+                  allyAttackRemaining > 0,
+                ),
               },
         // 확정 UI 규칙이 없어 개발 빌드에만 보인다 (field.ts 주석 참고).
         // 렌더는 0~1 을 받는다 — 초를 그대로 넘기면 대기시간이 바뀔 때 호가 한 바퀴를 넘는다.

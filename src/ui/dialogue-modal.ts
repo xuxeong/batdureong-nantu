@@ -244,9 +244,54 @@ export function createDialogueModal(
     return pages
   }
 
+  /**
+   * 등장 연출 (`DEC-ART-005` — 움직임은 위치·크기·투명도로).
+   *
+   * 주민 → 플레이어 → 대사창 순으로 들어온다. **셋이 같이 나타나면 누가 말하는
+   * 자리인지가 한 번에 뭉쳐 보인다.** 순서를 두면 시선이 왼쪽에서 오른쪽으로
+   * 옮겨간 뒤 대사창에 앉는다.
+   *
+   * 프레임 애니메이션이 아니라 위치와 투명도만 쓰므로 확정문 안이다. 실제 값은
+   * `layout.css` 에 있고 여기서는 **언제 끝나는지만** 안다 — 둘이 어긋나면
+   * 연출이 끝나기 전에 입력이 열리거나, 끝났는데 화면이 안 받는다.
+   */
+  const ENTER_MS = 980
+  let entering = false
+  let enterTimer: number | null = null
+
+  function beginEnter(): void {
+    entering = true
+    root.classList.add('dialogue--entering')
+    if (enterTimer !== null) window.clearTimeout(enterTimer)
+    enterTimer = window.setTimeout(finishEnter, ENTER_MS)
+  }
+
+  /**
+   * 연출을 끝낸다. 시간이 다 됐거나 플레이어가 넘겼거나.
+   *
+   * **넘기기 입력이 연출을 건너뛴다.** `DEC-UI-008` 이 순차 출력에 대해
+   * *"진행 중 입력하면 즉시 전체를 표시한다"* 로 정한 것과 같은 성질이다 —
+   * 기다리게 만드는 연출은 두 번째 판부터 방해가 된다.
+   */
+  function finishEnter(): void {
+    if (enterTimer !== null) {
+      window.clearTimeout(enterTimer)
+      enterTimer = null
+    }
+    entering = false
+    root.classList.remove('dialogue--entering')
+  }
+
   /** 지금 화면에서 넘기기 입력이 할 일 */
   function advanceRead(): void {
     if (root.hidden) return
+
+    // 연출 중이면 그것부터 끝낸다. 같은 입력이 연출도 끝내고 선택지까지 열면
+    // 대사를 읽을 틈 없이 두 단계가 지나간다.
+    if (entering) {
+      finishEnter()
+      return
+    }
 
     // 반응 대사를 읽는 중이면 장을 넘기고, 마지막이면 흐름을 진행시킨다.
     if (reactionPages.length > 0) {
@@ -402,10 +447,11 @@ export function createDialogueModal(
         return
       }
 
-      // 새 대화다. 시작 대사를 아직 안 읽은 상태로 되돌린다.
+      // 새 대화다. 시작 대사를 아직 안 읽은 상태로 되돌리고 등장 연출을 건다.
       reactionPages = []
       reactionPage = 0
       openingRead = false
+      beginEnter()
 
       text.textContent = view.openingText
       // 시작 대사도 주민이 말한다.
@@ -426,6 +472,8 @@ export function createDialogueModal(
       root.hidden = true
       // 다음에 열릴 때 이전 대화가 한 프레임 비치지 않게 한다
       builtSignature = ''
+      // 연출 중에 닫히면 타이머가 남아 다음 대화의 연출을 끊는다.
+      finishEnter()
     },
 
     setInteractive(interactive) {
@@ -435,6 +483,7 @@ export function createDialogueModal(
 
     destroy() {
       window.removeEventListener('keydown', onKeyDown)
+      finishEnter()
       root.remove()
     },
   }

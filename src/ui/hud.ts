@@ -70,6 +70,13 @@ export interface HudView {
   quickslots: readonly QuickslotView[]
   /** 선택된 회복 아이템 이름. 사용 가능한 것이 없으면 null */
   recoveryName: string | null
+  /**
+   * 선택된 회복 아이템의 `asset.icon.*` (8/9 담당자).
+   *
+   * 퀵슬롯 칸과 같은 규칙이다 — 그림이 있으면 아이콘만 남기고 이름을 숨긴다.
+   * 칸이 162×166 이라 아이콘과 이름을 같이 두면 둘 다 작아진다.
+   */
+  recoveryIcon?: string
 
   /**
    * 소진으로 자동 전환돼 새로 선택된 칸 (DEC-UI-002, DEC-INPUT-007).
@@ -230,6 +237,10 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   const bottomRight = el('div', 'hud__bottom-right')
   const quickslots = el('div', 'hud__quickslots')
   const recovery = el('div', 'hud__recovery')
+  // 퀵슬롯 칸과 같은 구조다 — 아이콘이 있으면 그것만, 없으면 이름이 대신 선다.
+  const recoveryIcon = el('div', 'hud__recovery-icon')
+  const recoveryName = el('div', 'hud__recovery-name')
+  recovery.append(recoveryIcon, recoveryName)
   bindAsset(recovery, '--hud-recovery-image', UI_ASSET.recoverySlot)
   bottomRight.append(quickslots, recovery)
 
@@ -348,7 +359,15 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       }
 
       // 문구는 DEC-RESOURCE-017 확정 원문을 그대로 쓴다
-      recovery.textContent = view.recoveryName ?? '회복 아이템 없음'
+      recoveryName.textContent = view.recoveryName ?? '회복 아이템 없음'
+
+      // 아이콘이 있으면 그것만 남긴다 (퀵슬롯 칸과 같은 규칙).
+      const recoveryIconUrl = assetCssUrl(view.recoveryIcon)
+      recoveryIcon.hidden = recoveryIconUrl === null
+      recoveryName.hidden = recoveryIconUrl !== null
+      if (recoveryIconUrl !== null) {
+        recoveryIcon.style.setProperty('--hud-recovery-icon-image', recoveryIconUrl)
+      }
     },
 
     setVisible(visible) {
