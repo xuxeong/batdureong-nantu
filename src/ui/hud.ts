@@ -249,7 +249,11 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   const recoveryName = el('div', 'hud__recovery-name')
   // 수량 배지는 퀵슬롯 칸과 같은 클래스를 쓴다 (A1 목업 8/9) — 같은 뜻의 숫자라
   // 모양이 갈리면 안 된다.
+  // 퀵슬롯과 **같은 배지 그림**을 쓴다 (팀 결정 8/9). 에셋 메모에는 "투척 전용,
+  // 회복 칸에 자동 적용하지 말 것" 으로 왔는데 담당자가 같은 것으로 정했다 —
+  // 같은 뜻의 숫자라 모양이 갈리면 두 칸이 다른 규칙으로 읽힌다.
   const recoveryCount = el('div', 'hud__slot-count')
+  bindAsset(recoveryCount, '--hud-slot-badge-image', UI_ASSET.quickslotCountBadge)
   recovery.append(recoveryIcon, recoveryName, recoveryCount)
   bindAsset(recovery, '--hud-recovery-image', UI_ASSET.recoverySlot)
   bottomRight.append(quickslots, recovery)
@@ -283,6 +287,7 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       const slotIcon = el('div', 'hud__slot-icon')
       const slotName = el('div', 'hud__slot-name')
       const count = el('div', 'hud__slot-count')
+      bindAsset(count, '--hud-slot-badge-image', UI_ASSET.quickslotCountBadge)
       /*
         칸 위 번호판 (A1 목업 8/9).
 
