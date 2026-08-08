@@ -4064,6 +4064,23 @@ bus.on('recovery.started', () => sfx.play(SOUND_ASSET.recoveryStart))
 bus.on('recovery.completed', () => sfx.play(SOUND_ASSET.recoveryComplete))
 
 bus.on('dialogue.opened', () => sfx.play(SOUND_ASSET.dialogueOpen))
+bus.on('run.failed', () => sfx.play(SOUND_ASSET.runFailed))
+bus.on('ending.decided', () => sfx.play(SOUND_ASSET.endingDecided))
+
+/**
+ * 일차 시작 스팅어 (`DEC-RUN-011`).
+ *
+ * 오늘 밤에 무엇이 오는지를 소리로도 알린다. **일차가 아니라 승인 일정의
+ * `raid_type` 으로 고른다** — 화면에 뜨는 예고 문구를 고르는 기준과 같아야
+ * 소리와 글이 어긋나지 않는다.
+ */
+bus.on('screen.changed', ({ screen }) => {
+  if (screen !== 'day_start') return
+  const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
+  if (raidType === 'final_raid') sfx.play(SOUND_ASSET.dayStartFinal)
+  else if (raidType === 'raid') sfx.play(SOUND_ASSET.dayStartRaid)
+  else sfx.play(SOUND_ASSET.dayStartNone)
+})
 bus.on('encounter.finished', ({ finalOutcome }) => {
   // 막타일 때만이다. 공감·협상·영입·퇴각은 죽인 것이 아니다 (DEC-RESIDENT-052).
   if (finalOutcome === 'killed') sfx.play(SOUND_ASSET.residentDefeat)

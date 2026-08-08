@@ -265,6 +265,25 @@ export const SOUND_ASSET = {
   wildlifeDefeat: 'asset.sfx.wildlife_defeat',
   /** 주민을 죽여서 조우가 끝났다 */
   residentDefeat: 'asset.sfx.resident_defeat',
+
+  /**
+   * 일차 시작 화면의 습격 예고 스팅어 셋 (`DEC-RUN-011`, 전성민 8/8).
+   *
+   * **화면 전환음과 별개다.** 전환음은 "화면이 바뀌었다" 이고 이쪽은 "오늘 밤에
+   * 무엇이 오는가" 라 서로 다른 정보다. 원래 습격 예고 3종과 일차 시작 1종으로
+   * 나뉘어 있던 것을 하나로 합친 결과다.
+   *
+   * `none` 과 `raid` 는 같은 소리를 쓴다 — 파일 둘이 내용이 같고 의도된 재사용이다.
+   * ID 를 나눠 두면 나중에 갈라도 코드가 안 바뀐다.
+   */
+  dayStartNone: 'asset.sfx.day_start_none',
+  dayStartRaid: 'asset.sfx.day_start_raid',
+  dayStartFinal: 'asset.sfx.day_start_final',
+
+  /** 런이 실패한 순간의 스팅어. `defeat.mp3`(배경음)와 별개로 둔다 */
+  runFailed: 'asset.sfx.run_failed',
+  /** 엔딩이 확정된 순간의 스팅어 */
+  endingDecided: 'asset.sfx.ending_decided',
 } as const
 
 for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {

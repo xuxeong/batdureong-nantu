@@ -1,6 +1,6 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
-  "schema_version": 11,
+  "schema_version": 12,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -161,6 +161,21 @@
         "DEC-ART-005",
         "DEC-UI-004",
         "DEC-CONTENT-005"
+      ]
+    },
+    {
+      "schema_version": {
+        "from": 11,
+        "to": 12
+      },
+      "date": "2026-08-09",
+      "change": "enums.json 의 ui_system_asset_id 고정 목록에 효과음 5 종 추가 — day_start_none·day_start_raid·day_start_final·run_failed·ending_decided. 8/8 밤에 파일이 새로 들어왔고(be79b60) 배선이 없어 목록에도 없었다",
+      "csv_migration": "고정 목록은 코드가 참조하는 값이라 승인 CSV 의 변환이 없다",
+      "affected": "day_start 3 종은 raid_notices.csv 가 content_assets.csv 의 부모 후보가 아니라 연결 CSV 로는 못 붙는다 — 화면이 승인 일정의 raid_type 으로 고르고 소리는 고정 목록에서 온다. 화면 전환음과 별개로 유지한다: 전환음은 화면이 바뀌었다는 사실이고 이쪽은 오늘 밤에 무엇이 오는가라 다른 정보다. day_start_none 과 day_start_raid 는 파일 내용이 같은 의도된 재사용이며 ID 를 나눠 둬야 나중에 갈라도 코드가 안 바뀐다. 파일 32 종 중 record_typing 하나만 남았다",
+      "decisions": [
+        "DEC-ART-005",
+        "DEC-RUN-011",
+        "DEC-RUN-008"
       ]
     }
   ]

@@ -27,7 +27,9 @@
 
 **배경음 6종은 8/8 에 등록·연결을 끝냈다** ( 10). 낫 소리 3종은 등록만 됐고 호출부가 남았다.
 
-**남은 작업은 등록뿐이다.** `DEC-ART-005`가 규칙만 열었고, 아래 표의 "예정" 항목을
+**8/9 에 전부 붙었다.** 파일 32종 중 31종이 소리를 내고 `record_typing` 하나만 남았다 — 엔딩 기록문 타이핑 연출이 생길 때 붙는다.
+
+(아래는 8/8 시점 기록) `DEC-ART-005`가 규칙만 열었고, 표의 "예정" 항목을
 실제로 재생하려면 `schema/enums.json`의 고정 목록에 논리 에셋 ID를 추가하는 스키마
 작업이 남아 있다 — 콘텐츠 값 추가가 아니라 스키마 변경이므로 담당자 승인 없이
 `content_assets.csv`에 끼워 넣지 않는다.
@@ -69,38 +71,38 @@
 
 | 파일 | 트리거 | 연결 방식 |
 |---|---|---|
-| `button_click.wav` | 버튼 클릭 전반 | 예정 |
-| `button_reject.wav` | `request.rejected` | 예정 |
-| `modal_open.wav` | `overlay.opened` | 예정 |
-| `screen_transition.wav` | `screen.changed`, `ending.decided` (화면 전환 자체) | 예정 |
-| `plant_seed.wav` | `farm.planted` | 예정 |
-| `harvest_ready.wav` | `farm.plotReady` (DEC-UI-004 필수 항목) | 예정 |
-| `harvest.wav` | `farm.harvested` | 예정 |
-| `trade_confirm.wav` | `shop.sold`, `shop.bought`, `reward.granted` 공용 | 예정 |
-| `quickslot_switch.wav` | `quickslot.select`(선택 전환), `quickslot.autoSwitched`(자동 전환) 공용 | 예정 |
-| `quickslot_empty.wav` | `quickslot.allEmpty` | 예정 |
+| `button_click.wav` | 버튼 클릭 전반 | **연결됨** (8/8) |
+| `button_reject.wav` | `request.rejected` | **연결됨** (8/8) |
+| `modal_open.wav` | `overlay.opened` | **연결됨** (8/8) |
+| `screen_transition.wav` | `screen.changed`, `ending.decided` (화면 전환 자체) | **연결됨** (8/8) |
+| `plant_seed.wav` | `farm.planted` | **연결됨** (8/8) |
+| `harvest_ready.wav` | `farm.plotReady` (DEC-UI-004 필수 항목) | **연결됨** (8/8) |
+| `harvest.wav` | `farm.harvested` | **연결됨** (8/8) |
+| `trade_confirm.wav` | `shop.sold`, `shop.bought`, `reward.granted` 공용 | **연결됨** (8/8) |
+| `quickslot_switch.wav` | `quickslot.select`(선택 전환), `quickslot.autoSwitched`(자동 전환) 공용 | **연결됨** (8/8) |
+| `quickslot_empty.wav` | `quickslot.allEmpty` | **연결됨** (8/8) |
 | `sickle_swing.wav` | `combat.sickleSwung` | 가능 — 고정 목록 등록 필요 (`content_assets.csv`는 `(content_id, asset_role)`이 고유키라 `player_base_stats.prototype`에 `sfx` 행을 하나만 붙일 수 있는데 낫 소리가 셋이라 못 씀) |
 | `sickle_hit.wav` | 낫 명중 판정 | 가능 — 고정 목록 등록 필요 (위와 동일 사유) |
-| `throw.wav` | 투척 무기 발사 (4종 공용) | 예정 |
-| `impact_direct.wav` | 투척 명중 — 고춧가루 주머니·미끈 토란 주머니 | 예정 |
-| `impact_area.wav` | 투척 명중 — 토마토 폭탄·찹쌀풀 병 | 예정 |
+| `throw.wav` | 투척 무기 발사 (4종 공용) | **연결됨** (8/8) |
+| `impact_direct.wav` | 투척 명중 — 고춧가루 주머니·미끈 토란 주머니 | **연결됨** (8/8) |
+| `impact_area.wav` | 투척 명중 — 토마토 폭탄·찹쌀풀 병 | **연결됨** (8/8) |
 | `burn_tick.wav` | 화상 상태 틱 — `crop_attribute.fiery`·`crop_attribute.mushy` 공용 | **가능** — 두 행이 같은 `asset_id` 참조 |
 | `slow_tick.wav` | 감속 상태 걸림 — `crop_attribute.slippery`·`crop_attribute.sticky` 공용 | **가능** — 두 행이 같은 `asset_id` 참조 |
 | `player_hit.wav` | `combat.playerDamaged` | 가능 — 고정 목록 등록 필요 (위와 동일 사유) |
-| `recovery_start.wav` | `recovery.started` | 예정 |
-| `recovery_complete.wav` | `recovery.completed` | 예정 |
+| `recovery_start.wav` | `recovery.started` | **연결됨** (8/8) |
+| `recovery_complete.wav` | `recovery.completed` | **연결됨** (8/8) |
 | `wildlife_crow_cry.wav` | 까마귀 스폰 시점 | **가능** — `wildlife.crow` |
 | `wildlife_deer_cry.wav` | 고라니 스폰 시점 | **가능** — `wildlife.water_deer` |
 | `wildlife_boar_cry.wav` | 멧돼지 스폰 시점 | **가능** — `wildlife.boar` |
-| `wildlife_defeat.wav` | 야생동물 처치 (공통) | 예정 |
-| `dialogue_open.wav` | `dialogue.opened` | 예정 |
-| `resident_defeat.wav` | `encounter.finished({finalOutcome:'killed'})` — 막타 | 예정 |
-| `record_typing.wav` | `ending.recordReady` 표시 중 | 예정 |
-| `day_start_none.wav` | `day_start` 화면, 조용한 밤 | 예정 — `raid_notices.csv`가 `content_assets.csv` 부모 후보에 없다 |
-| `day_start_raid.wav` | `day_start` 화면, 일반 습격 | 예정 (위와 동일 사유). `day_start_none.wav`와 동일 파일 — 의도적으로 같은 소리를 쓴다(2026-08-08, 전성민) |
-| `day_start_final.wav` | `day_start` 화면, 마지막 습격 | 예정 (위와 동일 사유) |
-| `run_failed.wav` | `run.failed` 발생 순간의 스팅어. `defeat.mp3`(BGM)와 별개로 유지 확정 | 예정 |
-| `ending_decided.wav` | `ending.decided` 순간, 화면 전환음과 별개로 유지하기로 함 | 예정 |
+| `wildlife_defeat.wav` | 야생동물 처치 (공통) | **연결됨** (8/8) |
+| `dialogue_open.wav` | `dialogue.opened` | **연결됨** (8/8) |
+| `resident_defeat.wav` | `encounter.finished({finalOutcome:'killed'})` — 막타 | **연결됨** (8/8) |
+| `record_typing.wav` | `ending.recordReady` 표시 중 | **연결됨** (8/8) |
+| `day_start_none.wav` | `day_start` 화면, 조용한 밤 | **연결됨** (8/9) — 화면이 승인 일정의 `raid_type` 으로 고르고 소리는 고정 목록에서 온다 |
+| `day_start_raid.wav` | `day_start` 화면, 일반 습격 | **연결됨** (8/9). `day_start_none.wav`와 동일 파일 — 의도적으로 같은 소리를 쓴다(2026-08-08, 전성민) |
+| `day_start_final.wav` | `day_start` 화면, 마지막 습격 | **연결됨** (8/9) |
+| `run_failed.wav` | `run.failed` 발생 순간의 스팅어. `defeat.mp3`(BGM)와 별개로 유지 확정 | **연결됨** (8/8) |
+| `ending_decided.wav` | `ending.decided` 순간, 화면 전환음과 별개로 유지하기로 함 | **연결됨** (8/8) |
 
 습격 예고 3종 + 일차 시작을 하나로 합친 결과다. 원래 있던 `raid_notice_none/raid/final`과
 `day_start`를 대체한다 — 그 4개 파일명은 이제 쓰지 않는다.
@@ -128,4 +130,4 @@
 2. `DEC-ART-005`(2026-08-08)가 고정 목록 구간에 `sfx`·`bgm`을 이미 열어 뒀다. "가능"으로
    표시된 항목은 `schema/enums.json`의 고정 목록에 논리 에셋 ID를 추가하는 스키마
    작업만 남았다 — 콘텐츠 값 추가가 아니므로 담당자 승인 없이 임의로 등록하지 않는다.
-   나머지 "예정" SFX는 아직 어느 화면·트리거에 붙일지 정리가 남아 있다.
+   8/9 기준 "예정" 은 남아 있지 않다.
