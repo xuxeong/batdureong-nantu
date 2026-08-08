@@ -172,7 +172,10 @@ export function createDialogueModal(
   bindUi(panel, '--dialogue-panel-border', UI_ASSET.panelBorder)
   bindUi(panel, '--dialogue-panel-texture', UI_ASSET.panelTexture)
 
+  // 발화자 이름판은 대사창 위로 튀어나온 나무판이다 (전성민 8/6 조립 지시 —
+  // `발화자 이름판: button_normal`, 자리는 A4 목업). 선택지와 같은 그림을 쓴다.
   const speaker = el('div', 'dialogue__speaker')
+  bindUi(speaker, '--dialogue-name-image', UI_ASSET.buttonNormal)
   const text = el('p', 'dialogue__text')
 
   const proceed = el('button', 'dialogue__proceed', PROCEED_LABEL)

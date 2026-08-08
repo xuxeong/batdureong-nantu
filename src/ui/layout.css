@@ -139,31 +139,45 @@
   /* 말풍선 중심. 가운데가 아니라 플레이어 쪽이다 — 꼬리가 그쪽을 향한다 */
   --dialogue-balloon-center-x: 61%;
   /*
-    말풍선은 `choice_balloon.png`(506×441)를 **비율 그대로 확대**한 값이다.
-    `background-size: contain` 이라 비율만 지키면 꼬리가 안 뭉개진다.
+    `choice_balloon.png` 실측 그대로다.
 
-    실측 크기로 두면 안쪽 크림색 영역이 450×365 인데 버튼 셋이 116×3 + 간격 =
-    364 라 **여유가 1px 도 없었다.** 자원 협상 버튼은 보조 줄(`수확물 N개
-    (보유 M)…`)이 붙어 더 커지므로 셋째 버튼이 말풍선 밖으로 나갔다 (8/8).
-
-    버튼을 줄이지 않고 말풍선을 키운다 — 버튼은 `button_normal.png` 실측
-    350×116 이고 그림 크기를 코드가 뒤집지 않는다 (`DEC-ART-004`).
+    8/8 낮에 614×535 로 키웠던 적이 있다 — 선택지를 `button_normal` 나무판으로
+    쓰라는 8/6 지시를 맞추려면 안쪽 크림색(450×365)에 판 셋(364)이 안 들어가서다.
+    그날 저녁 팀이 **목업대로 밑줄 친 글자로** 정하면서 판이 빠졌고, 자리가
+    남아 원본 크기로 되돌렸다. 말풍선은 처음부터 글자용으로 그려진 크기다.
   */
-  --dialogue-balloon-width: 614px;
-  --dialogue-balloon-height: 535px;
+  --dialogue-balloon-width: 506px;
+  --dialogue-balloon-height: 441px;
   /*
     위 확대율로 잰 나무 테두리 두께. 버튼이 크림색 영역 안에만 놓인다.
 
     **좌우가 다르다.** 오른쪽에 꼬리가 붙어 있어 그쪽 테두리가 더 두껍고,
     좌우를 같게 주면 버튼이 크림색 한가운데가 아니라 오른쪽으로 밀린다 (8/8).
   */
-  --dialogue-balloon-inset-top: 34px;
-  --dialogue-balloon-inset-left: 44px;
-  --dialogue-balloon-inset-right: 86px;
-  --dialogue-balloon-inset-bottom: 68px;
-  /* 아래 둘은 assets/final/ui/button_normal.png 실측값이다 */
+  --dialogue-balloon-inset-top: 28px;
+  --dialogue-balloon-inset-left: 36px;
+  --dialogue-balloon-inset-right: 71px;
+  --dialogue-balloon-inset-bottom: 56px;
+  /* 아래 둘은 그림이 없을 때의 대체 버튼 크기다. 말풍선 안 선택지는 글자라 안 쓴다 */
   --dialogue-choice-width: 350px;
   --dialogue-choice-height: 116px;
+  /* 말풍선 안 선택지 글자. 눈금에 없는 값인 이유는 `.dialogue__choice` 주석에 */
+  --dialogue-choice-font: 25px;
+  /*
+    발화자 이름판. `button_normal` 을 비율(3.02:1) 그대로 줄인 크기다.
+    `top` 이 음수라 대사창 위로 그만큼 튀어나온다 — 목업 배치다.
+  */
+  --dialogue-name-width: 260px;
+  --dialogue-name-height: 86px;
+  /*
+    **음수 기준이 대사창 안쪽이다.** 대사창이 `border: 44px` 9-slice 라 절대 위치의
+    기준이 테두리 안쪽(padding box)이고, 판 높이(86)보다 작은 값을 주면 테두리를
+    넘지 못해 대사 글자 위에 얹힌다 (8/8).
+
+    판 전체 높이만큼 올리고 조금 더 빼서, 나무 테두리에 걸쳐 위로 나오게 한다.
+  */
+  --dialogue-name-top: -70px;
+  --dialogue-name-left: 30px;
   /*
     말풍선 바닥을 화면 아래에서 얼마나 띄우나. 목업이 470 이다.
     **대사창이 길어져도 안 가려지는 값이어야 한다** — 대사가 세 줄이면
@@ -174,7 +188,12 @@
   --dialogue-text-on-balloon: #2b2418;
   --dialogue-subtext-on-balloon: rgba(43, 36, 24, 0.65);
   --dialogue-text-on-panel: #2b2418;
-  --dialogue-name-on-panel: #6b4a21;
+  /*
+    발화자 이름은 **나무판 위**다 (A4 목업).
+    크림색 대사창 안에 있을 때 쓰던 갈색(`#6b4a21`)을 그대로 두면 나무 위에서
+    대비가 죽는다. 목업은 흰 글자이고, 여기서는 프로젝트 밝은 글자색을 쓴다.
+  */
+  --dialogue-name-on-plate: #f4ecd0;
 
   /* ── 항목 아이콘 (C단계, 아트 디렉션 14.8·14.9) ────
      칸 크기는 표현이라 여기가 원본이다. 그림 자체는 정사각형이므로
@@ -1883,8 +1902,31 @@
   color: var(--ui-accent);
 }
 
+/*
+  발화자 이름판 (전성민 8/6 조립 지시 — `발화자 이름판: button_normal`).
+
+  **대사창 위로 튀어나온 나무판이다.** 지시는 그림만 정했고 자리는 A4 목업이
+  보여준다 — 대사창 왼쪽 위 모서리에 걸쳐 위로 조금 나온다.
+
+  `position: absolute` 라 흐름에서 빠지고, 그만큼 대사 본문이 위로 올라온다.
+  대사창은 이미 `position: absolute` 라 여기가 기준이 된다.
+
+  크기는 `button_normal.png`(350×116) 비율 그대로 줄인 것이다 — 3.02:1.
+*/
 .dialogue--has-art .dialogue__speaker {
-  color: var(--dialogue-name-on-panel);
+  position: absolute;
+  top: var(--dialogue-name-top);
+  left: var(--dialogue-name-left);
+  width: var(--dialogue-name-width);
+  height: var(--dialogue-name-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--dialogue-name-image);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  color: var(--dialogue-name-on-plate);
 }
 
 /* 시작 대사와 반응 대사가 같은 자리에 온다. 반응이 오면 말풍선이 사라진다 */
@@ -1918,7 +1960,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /*
+    **`center` 가 아니라 `space-evenly` 다.** 목업은 선택지 셋이 말풍선 안에 고르게
+    퍼져 있고(간격 약 100px) 가운데로 몰려 있지 않다. 나무판을 쓸 때는 판이 자리를
+    채워서 `center` 로도 비슷했는데, 글자로 바뀌면서 셋이 가운데에 붙었다 (8/8).
+  */
+  justify-content: space-evenly;
   gap: var(--ui-gap-sm);
   box-sizing: border-box;
   /* 나무 테두리 안쪽에만 버튼을 둔다. 아래·오른쪽이 두꺼운 것은 꼬리 몫이다 */
@@ -1961,19 +2008,80 @@
   cursor: pointer;
 }
 
+/*
+  선택지는 **나무판이 아니라 밑줄 친 글자다** (A4 목업, 팀 결정 8/8).
+
+  8/6 조립 지시는 `일반 선택지: button_normal` 이었지만 두 에셋의 실측이 그것을
+  배제했다 — 말풍선 안쪽이 450×365 인데 나무판 셋이 116×3 + 간격 = 364 라 여유가
+  1px 도 없었다. 말풍선을 614×535 로 키워 억지로 맞췄더니 이번엔 대사창이 세 줄로
+  자랄 때 아래가 가렸다. 목업은 처음부터 글자였고 말풍선은 그 크기로 그려졌다.
+
+  그래서 **말풍선을 원본 506×441 로 되돌린다.** 판이 빠져 자리가 남는다.
+*/
 .dialogue--has-art .dialogue__choice {
   border: none;
   border-radius: 0;
-  background-image: var(--dialogue-button-image);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  background: none;
+  width: auto;
+  min-height: 0;
+  padding: var(--ui-gap-xs) var(--ui-gap-sm);
+  /*
+    **글자 크기 눈금(17/20/26/38)에 없는 값이다.**
+
+    목업은 선택지가 대사 본문과 비슷한 크기(38px)인데 그대로는 못 쓴다 —
+    목업 문구가 `안물안궁`·`아저씨 뭐하세요?` 같은 짧은 자리표시라서다. 승인
+    문구는 `동생들 이야기를 묻는다`(11자)라 38px 이면 말풍선 안에서 줄바꿈된다
+    (안쪽 폭 399, 좌우 여백 빼면 383 인데 11자 × 38 = 418).
+
+    30px 이면 11자가 330 이라 들어가고 26px(`--ui-font-lg`)보다 목업에 가깝다.
+    눈금에 넣지 않은 것은 이 한 자리에서만 쓰는 값이기 때문이다.
+  */
+  font-size: var(--dialogue-choice-font);
+  /* 밑줄을 아래 `::after` 로 그린다 — hover 때 다시 그어지게 하려면 늘였다 줄일
+     수 있는 요소여야 한다. `border-bottom` 은 그렇게 못 한다 */
+  position: relative;
   /*
     **말풍선 위에서는 글자색이 뒤집힌다.** 기본 `--ui-text` 는 어두운 패널 위에
-    쓰는 크림색이라 밝은 버튼에 얹으면 안 읽힌다 (8/6 플레이 테스트).
+    쓰는 크림색이라 밝은 한지 위에 얹으면 안 읽힌다 (8/6 플레이 테스트).
   */
   color: var(--dialogue-text-on-balloon);
 }
 
+/*
+  목업의 밑줄. 글자만 두면 누를 수 있는 것으로 안 읽힌다.
+
+  **`::after` 인 이유는 hover 때 다시 그어지게 하려는 것이다** (팀 요청 8/8).
+  평소에는 다 그어져 있고(`scaleX(1)`), 마우스를 올릴 때마다 왼쪽에서 오른쪽으로
+  한 번 다시 그린다. `border-bottom` 으로는 이 재생이 안 된다.
+
+  `animation` 을 `:hover` 에 거는 것이라 **올릴 때마다 처음부터 다시 돈다** —
+  `transition` 이면 한 번 끝난 뒤 다시 안 그어진다.
+*/
+.dialogue--has-art .dialogue__choice::after {
+  content: '';
+  position: absolute;
+  left: var(--ui-gap-sm);
+  right: var(--ui-gap-sm);
+  bottom: 0;
+  height: 2px;
+  background: currentColor;
+  transform-origin: left center;
+}
+
+.dialogue--has-art .dialogue__choice:hover:not(:disabled)::after {
+  animation: dialogue-underline 0.22s ease-out;
+}
+
+@keyframes dialogue-underline {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 그림이 없을 때는 예전처럼 테두리로 구분한다 */
 .dialogue__choice:hover:not(:disabled) {
   border-color: var(--ui-border-strong);
 }
@@ -1999,8 +2107,15 @@
   cursor: default;
 }
 
+/*
+  **`button_disabled` 그림을 쓰지 않는다.** 8/6 지시는 나무판 두 장으로 활성·비활성을
+  갈랐는데, 선택지가 글자가 되면서 얹을 판이 없어졌다 (팀 결정 8/8).
+  `DEC-UI-008` 이 요구하는 것은 *"흐리게만 하고 안내를 덧붙이지 않는다"* 이므로
+  글자와 밑줄을 같이 흐리게 해서 지킨다.
+*/
 .dialogue--has-art .dialogue__choice:disabled {
   opacity: 1;
+  /* 밑줄이 `currentColor` 라 글자색만 흐리면 줄도 같이 흐려진다 */
   color: var(--dialogue-subtext-on-balloon);
 }
 

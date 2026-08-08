@@ -30,6 +30,8 @@ import { createStageTimer } from './systems/stage-timer.ts'
 import type { StageTimer } from './systems/stage-timer.ts'
 import { createCombat } from './systems/combat.ts'
 import type { CombatEvent, CombatSystem, CombatTarget } from './systems/combat.ts'
+import { headingStep, walkStep } from './render/motion.ts'
+import type { Facing } from './render/motion.ts'
 import { createWildlife } from './systems/wildlife.ts'
 import type { WildlifeSystem } from './systems/wildlife.ts'
 import { createResidentCombat } from './systems/resident-combat.ts'
@@ -1128,14 +1130,7 @@ const BOB_MOVING_SPEED = 4
  * **걸음 속도를 실제 이동 속도에 비례시킨다.** 고정 주기로 두면 회복 중이거나
  * 둔화가 걸려 느리게 걸을 때도 같은 박자로 튀어서 미끄러지는 것처럼 보인다.
  */
-/**
- * 좌·우 교체 스프라이트를 쓸 방향. 정면이면 null (`DEC-ART-004`).
- *
- * 확정문이 *"좌·우 이동 방향에 따라 교체하는 스프라이트"* 와
- * *"상하 이동과 정지 상태는 기존 정면 스프라이트를 그대로 쓴다"* 로 나눠서,
- * 가로 이동이 세로보다 클 때만 방향이 생긴다.
- */
-type Facing = 'left' | 'right' | null
+/* 방향과 위상 계산은 `render/motion.ts` 에 있다 — 그 파일만 테스트가 붙는다 */
 
 /**
  * 좌표 변화로 이동을 판정해 위상과 방향을 낸다. 멈췄으면 위상이 null 이다.
@@ -1155,26 +1150,15 @@ function advanceBob(
     return { phase: null, facing: null }
   }
 
-  const dx = x - prev.x
-  const dy = y - prev.y
-  const speed = dt > 0 ? Math.hypot(dx, dy) / dt : 0
+  const step = walkStep(prev.phase, x - prev.x, y - prev.y, dt, runConfig.moveSpeed, {
+    stepSeconds: BOB_STEP_SECONDS,
+    movingSpeed: BOB_MOVING_SPEED,
+  })
   prev.x = x
   prev.y = y
-
-  if (speed < BOB_MOVING_SPEED) {
-    // 멈추면 착지 자세로 되돌린다. 공중에서 굳으면 떠 있는 것처럼 보인다.
-    prev.phase = 0
-    return { phase: null, facing: null }
-  }
-
-  const rate = speed / runConfig.moveSpeed / BOB_STEP_SECONDS
-  prev.phase = (prev.phase + dt * rate) % 1
-  // 세로가 더 크면 정면이다. 방향을 남겨 두지 않는 이유는 확정문이 정지와
-  // 상하를 정면으로 묶었기 때문이다 — 마지막 방향을 기억하면 위로 걸을 때
-  // 직전 좌우 그림이 남는다.
-  const facing: Facing =
-    Math.abs(dx) <= Math.abs(dy) ? null : dx < 0 ? 'left' : 'right'
-  return { phase: prev.phase, facing }
+  // 멈추면 착지 자세로 되돌린다. 공중에서 굳으면 떠 있는 것처럼 보인다.
+  prev.phase = step.phase ?? 0
+  return step
 }
 
 /**
@@ -1218,12 +1202,16 @@ function advanceWildlifeHeadings(dt: number): void {
       continue
     }
 
-    const dx = runtime.entity.x - prev.x
-    const dy = runtime.entity.y - prev.y
+    // 멈춰 있으면 각도를 그대로 둔다 (확정문 — 마지막 이동 방향 유지).
+    prev.angle = headingStep(
+      prev.angle,
+      runtime.entity.x - prev.x,
+      runtime.entity.y - prev.y,
+      dt,
+      BOB_MOVING_SPEED,
+    )
     prev.x = runtime.entity.x
     prev.y = runtime.entity.y
-    // 멈춰 있으면 각도를 그대로 둔다 (확정문 — 마지막 이동 방향 유지).
-    if (dt > 0 && Math.hypot(dx, dy) / dt >= BOB_MOVING_SPEED) prev.angle = Math.atan2(dy, dx)
   }
 
   // 사라진 개체는 버린다. 인스턴스 ID 가 재사용되면 직전 개체의 방향을 물려받는다.
