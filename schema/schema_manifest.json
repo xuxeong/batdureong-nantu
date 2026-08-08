@@ -1,6 +1,6 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
-  "schema_version": 16,
+  "schema_version": 17,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -230,6 +230,20 @@
       "decisions": [
         "DEC-CONTENT-025",
         "DEC-UI-020"
+      ]
+    },
+    {
+      "schema_version": {
+        "from": 16,
+        "to": 17
+      },
+      "date": "2026-08-09",
+      "change": "enums.json 의 ui_system_asset_id 고정 목록에 asset.font.griun_x_hangeul_equal 추가. font 구간에 들어가는 첫 값이다 — DEC-ART-004 가 이 목록의 구간으로 ui·logo·hud·font 넷을 열어 뒀는데 font 는 비어 있었다",
+      "csv_migration": "고정 목록은 코드가 참조하는 값이라 승인 CSV 의 변환이 없다",
+      "affected": "**TTF 를 그대로 넣는다. WOFF2 로 변환하지 않는다** — 라이선스(griun.co.kr/license)가 임베딩은 허용하지만 폰트 파일의 수정을 금지하고, 폰트 안의 저작권 문구도 수정에 서면 허가를 요구한다. 형식 변환·서브셋이 여기 걸린다. 그래서 assets/README.md 의 '폰트 WOFF2' 규칙에 예외를 적었다. 1.4MB 라 변환 이득(약 0.7MB)이 라이선스 위험을 살 만큼 크지 않다. src/render/assets.ts 의 glob 에 ttf 확장자를 더해야 URL 이 잡히고, 캔버스(src/render/field.ts)는 CSS 를 안 거치므로 ctx.font 를 따로 바꿔야 하며 첫 그리기 전에 로딩이 끝나야 한다 — 안 그러면 조용히 시스템 폰트로 그려진다",
+      "decisions": [
+        "DEC-ART-004",
+        "DEC-ART-005"
       ]
     }
   ]

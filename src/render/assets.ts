@@ -50,7 +50,7 @@ const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
  * 동작한다. `assets/` 는 `publicDir`(= `public/`) 밖이라 정적 경로로 fetch 할 수 없다 —
  * `generated/runtime/` 을 읽는 `data/loader.ts` 와 같은 이유다.
  */
-const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg,wav,mp3}', {
+const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg,wav,mp3,ttf}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -214,6 +214,25 @@ export const UI_ASSET = {
 } as const
 
 /**
+ * 본문 폰트의 논리 에셋 ID (`DEC-ART-004`).
+ *
+ * **WOFF2 가 아니라 TTF 다.** 저장소 관례(`assets/README.md`)는 WOFF2 지만
+ * 이 폰트는 라이선스가 파일 수정을 금지해서 변환할 수 없다. 자세한 것은
+ * `docs/submission/CREDITS.md` 와 `schema_manifest` 16→17 에 적었다.
+ *
+ * **CSS `@font-face` 를 쓰지 않는 이유.** `src:` 는 CSS 변수를 못 읽어서 경로를
+ * 스타일시트에 직접 적어야 하는데, 그러면 경로를 아는 곳이 이 파일 말고 하나 더
+ * 생긴다. 대신 `ui/font.ts` 가 이 ID 로 URL 을 받아 `FontFace` 로 등록한다.
+ */
+export const FONT_ASSET = {
+  /** 화면 전체의 본문·제목. 굵기 하나뿐이라 역할을 나누지 않는다 */
+  body: 'asset.font.griun_x_hangeul_equal',
+} as const
+
+/** `@font-face` 와 `ctx.font` 가 함께 쓰는 이름. 파일이 없으면 아래 대체 폰트로 내려간다 */
+export const FONT_FAMILY = 'GriunXHangeul Equal'
+
+/**
  * 배경음의 논리 에셋 ID (`DEC-ART-005`).
  *
  * **`UI_ASSET` 과 같은 자리다.** 2026-08-08 에 `DEC-ART-004` 를 폐기·대체하면서
@@ -321,7 +340,11 @@ export const SOUND_ASSET = {
   recordTyping: 'asset.sfx.record_typing',
 } as const
 
-for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {
+for (const id of [
+  ...Object.values(BGM_ASSET),
+  ...Object.values(SOUND_ASSET),
+  ...Object.values(FONT_ASSET),
+]) {
   if (UI_ASSET_IDS.includes(id)) continue
   throw new Error(
     `${id} 가 schema/enums.json 의 ui_system_asset_id 고정 목록에 없다. ` +

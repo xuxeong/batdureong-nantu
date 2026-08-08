@@ -20,9 +20,23 @@
 //
 // 좌표 변환은 전부 camera.ts 를 거친다. 여기서 직접 곱하지 않는다.
 
-import { UI_ASSET, type AssetImages } from './assets.ts'
+import { FONT_FAMILY, UI_ASSET, type AssetImages } from './assets.ts'
 import { WORLD_TO_PIXEL } from './camera.ts'
 import type { Camera, Vec2 } from './camera.ts'
+
+/**
+ * 캔버스용 폰트 문자열 (DEC-ART-004).
+ *
+ * **캔버스는 CSS 를 거치지 않아서 `--ui-font` 가 닿지 않는다.** 여기서 따로
+ * 만들어 줘야 필드 글자만 시스템 폰트로 남는다.
+ *
+ * 대체 폰트를 남겨 두는 이유는 `--ui-font` 와 같다 — 적재 전이나 실패 시에도
+ * 글자는 그려져야 한다. 다만 캔버스는 실패를 알리지 않고 조용히 대체 폰트로
+ * 그리므로, 첫 그리기 전에 `ui/font.ts` 의 적재를 기다린다.
+ */
+function canvasFont(size: number, bold = false): string {
+  return `${bold ? 'bold ' : ''}${size}px '${FONT_FAMILY}', sans-serif`
+}
 
 /**
  * 경작지 한 칸의 그리기용 표현.
@@ -678,7 +692,7 @@ export function createFieldRenderer(
     // 수확 획득 표시 — 사라지면서 위로 떠오른다 (DEC-UI-018)
     for (const popup of view.harvestPopups ?? []) {
       const at = camera.worldToScreen(popup)
-      ctx.font = 'bold 16px sans-serif'
+      ctx.font = canvasFont(16, true)
       ctx.textAlign = 'center'
       ctx.fillStyle = `rgba(242, 227, 74, ${popup.life.toFixed(3)})`
       ctx.fillText(
@@ -714,7 +728,7 @@ export function createFieldRenderer(
         ctx.fillRect(left, top, width * progress, height)
 
         // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
-        ctx.font = '12px sans-serif'
+        ctx.font = canvasFont(12)
         ctx.textAlign = 'center'
         ctx.fillStyle = '#f4ecd0'
         ctx.fillText('Q — 취소', screen.x, top - 4)
@@ -751,7 +765,7 @@ export function createFieldRenderer(
         ctx.fillRect(grooveX, grooveTop + grooveH - fillH, grooveW, fillH)
 
         // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
-        ctx.font = '12px sans-serif'
+        ctx.font = canvasFont(12)
         ctx.textAlign = 'center'
         ctx.fillStyle = '#f4ecd0'
         ctx.fillText('Q — 취소', left + gw / 2, top - 6)
@@ -772,7 +786,7 @@ export function createFieldRenderer(
       const playerImage = images.get(view.playerAsset)
       const promptTop =
         screen.y - (playerImage === null ? radius : playerImage.naturalHeight / 2) - 14
-      ctx.font = '14px sans-serif'
+      ctx.font = canvasFont(14)
       ctx.textAlign = 'center'
       ctx.fillStyle = '#f4ecd0'
       ctx.fillText(view.actionPrompt, screen.x, promptTop)
@@ -1085,7 +1099,7 @@ export function createFieldRenderer(
     // 높이(160)의 차이가 20px 뿐이라, 아랫줄의 라벨이 윗줄 칸에 닿는다.
     // 흙 위에 밝은 글씨라 배경이 밝은 작물에서 묻히므로 그림자를 깐다.
     if (plot.cropLabel !== null) {
-      ctx.font = 'bold 13px sans-serif'
+      ctx.font = canvasFont(13, true)
       ctx.textAlign = 'center'
       ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'
       ctx.fillText(plot.cropLabel, center.x + 1, center.y - halfH + 27)

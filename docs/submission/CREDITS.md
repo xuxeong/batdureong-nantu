@@ -139,7 +139,16 @@
 
 | 폰트 | 용도 | 배포처 | 웹 임베딩 | 라이선스 |
 |---|---|---|---|---|
-| 시스템 기본 글꼴 | 게임 UI 본문 | 사용자 운영체제 | 별도 임베딩 없음 | 해당 없음 |
+| GriunXHangeul Equal Regular (`assets/final/font/griun_x_hangeul_equal.ttf`) | 게임 UI 본문·제목 전체와 필드 캔버스 글자 | TypeE. Corp. / Griun Type Design Team · <https://www.griun.co.kr> | **허용** — 라이선스표의 "임베딩: 웹사이트 및 프로그램 서버 내 폰트 탑재" 항목이 사용 가능 | <https://www.griun.co.kr/license> · 상업적 이용 허용, **폰트 파일의 수정·복제·배포 및 유료 판매 불가** |
+| 시스템 기본 글꼴 | 위 폰트를 받지 못했을 때의 대체 | 사용자 운영체제 | 별도 임베딩 없음 | 해당 없음 |
+
+**`.ttf` 를 그대로 넣은 이유.** 저장소 관례(`assets/README.md`)는 WOFF2 지만 이 폰트는
+라이선스가 **파일 수정을 금지**한다. 형식 변환과 서브셋이 여기 걸린다. 폰트 파일 안의
+저작권 문구도 같은 말을 한다 — *"Modification of this file requires prior written
+permission from TypeE. Corp."* 서면 허가를 받지 않았으므로 원본 형식을 유지한다.
+파일이 1.4MB 라 변환으로 아끼는 약 0.7MB 는 라이선스 위험을 감수할 이유가 못 된다.
+
+폰트 안의 임베딩 권한 비트(OS/2 `fsType`)는 `0x0008` = 편집 가능 임베딩 허용이다.
 
 ## 오픈소스 라이브러리
 

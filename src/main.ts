@@ -16,6 +16,7 @@ import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
 import { fillPlayerName, subjectParticle } from './ui/korean.ts'
+import { loadBodyFont } from './ui/font.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -4519,9 +4520,23 @@ if (isDevBuild) {
 // 이미 떠 있는데, 승인 데이터가 없는 타이틀은 눌러도 갈 곳이 없다.
 loadingScreen.show()
 
-void bootData().then((ok) => {
+/*
+  폰트를 승인 데이터와 나란히 받는다 (DEC-ART-004).
+
+  **캔버스 때문에 기다린다.** DOM 은 폰트가 늦게 와도 알아서 다시 그리지만,
+  캔버스는 `ctx.font` 를 쓰는 순간의 상태로 한 번 그리고 만다 — 아직 안 받았으면
+  경고 없이 시스템 폰트로 그려진다. 첫 프레임 전에 끝나 있어야 한다.
+
+  `loadBodyFont()` 는 실패해도 예외를 던지지 않고 `false` 를 준다. 폰트가 없다고
+  게임을 막지 않는다 — 대체 폰트로 글자는 그대로 나온다.
+*/
+void Promise.all([bootData(), loadBodyFont()]).then(([ok, fontLoaded]) => {
   booting = false
   loadingScreen.hide()
+
+  if (isDevBuild && !fontLoaded) {
+    console.info('[폰트] 본문 폰트를 받지 못했다. 대체 폰트로 그린다')
+  }
 
   if (!ok) {
     // 부팅할 수 없으면 데이터 오류 화면이고 여기서 끝이다 (DEC-UI-024).
