@@ -155,8 +155,14 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
         el('div', 'hub__row-sub', String(weapon.count)),
       )
 
-      // 이미 다른 칸에 편성된 무기는 표시하되 고를 수 없다 (DEC-UI-021)
-      if (weapon.assignedElsewhere) {
+      // 이미 다른 칸에 편성된 무기는 표시하되 고를 수 없다 (DEC-UI-021).
+      //
+      // **지금 고른 칸에 들어 있는 것은 "다른 칸" 이 아니다.** `quickslotView()` 의
+      // `assignedElsewhere` 는 어느 칸이든 편성돼 있으면 참이라(`slots.includes`)
+      // 방금 이 칸에 넣은 무기까지 회색으로 죽었다 — 넣자마자 못 고르게 되니
+      // 편성이 안 된 것처럼 보였다 (8/8). 뷰는 고른 칸을 모르므로 여기서 뺀다.
+      const assignedHere = view.slots[selectedIndex]?.weaponId === weapon.id
+      if (weapon.assignedElsewhere && !assignedHere) {
         button.disabled = true
         button.appendChild(el('div', 'hub__row-sub', '다른 칸'))
       } else {

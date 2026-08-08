@@ -1658,6 +1658,12 @@
 }
 
 .hub__slot {
+  /* **아래 `.hub--has-art .hub__slot-name` 이 이 칸을 기준으로 눕는다.**
+     여기 `relative` 가 없으면 기준이 `.hub__popup-layer` 로 올라가서, 칸 안에
+     들어가야 할 이름 다섯 장이 팝업 전체 크기로 펼쳐진다. 투명하고 글자만
+     보이므로 화면에서는 "무기 목록이 안 눌린다" 로만 나타난다 (8/8).
+     보관함 칸(`.hub__inventory-row`)은 같은 구조인데 `relative` 가 있었다. */
+  position: relative;
   flex: 1;
   min-height: var(--hub-slot-min-height);
   padding: var(--ui-gap-sm);
