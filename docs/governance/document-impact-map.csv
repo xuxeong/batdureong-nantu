@@ -23,3 +23,5 @@ exact,DEC-UI-031,4|13|15,11,local,필드 조준선의 표시·길이·색 또는
 exact,DEC-UI-032,13|15,11,local,타이틀 화면 입력 항목이 바뀔 때,DEC-UI-030 대체 — 게임 종료 대신 음량 설정 입력을 둔다
 exact,DEC-CONTENT-025,14|15,4|5|6|17,connected,튜토리얼 안내 구조 또는 순서 규칙이 바뀔 때,DEC-CONTENT-023 대체 — step_order 가 순서의 단일 원본
 exact,DEC-ART-003,6|14|16,3|6|9|10|17,connected,야생동물 회전 또는 논리 에셋·교체 파이프라인이 바뀔 때,DEC-ART-002 대체 — 야생동물은 bob 없이 이동 방향으로 기존 스프라이트를 회전한다
+exact,DEC-ART-004,3|4|8|14|16,3|6|9|10|17,connected,아트 리소스 공통 규격 또는 제작 파이프라인이 바뀔 때,DEC-ART-003 대체 — 폐기(2026-08-08) — 대체는 DEC-ART-005
+exact,DEC-ART-005,3|4|8|14|16,3|6|9|10|17,connected,고정 목록 구간 또는 sfx·bgm 등록 규칙이 바뀔 때,DEC-ART-004 대체 — 고정 목록에 sfx·bgm 구간 추가

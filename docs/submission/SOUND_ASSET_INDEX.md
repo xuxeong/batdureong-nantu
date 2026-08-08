@@ -15,24 +15,30 @@
 효과음은 비압축이 디코딩 지연에 유리하다는 근거를 반영했다. 지금 있는 파일들의
 확장자를 그대로 쓰면 된다. 더 손댈 것 없음.
 
-## 막혀 있는 것
+## 해결됨 — sfx·bgm이 UI·시스템 고정 목록에 없던 문제
 
-### sfx·bgm이 UI·시스템 고정 목록에 없다
+`DEC-ART-004`는 콘텐츠에 안 붙는 UI·시스템 에셋을 `schema/enums.json`의 고정 목록으로
+관리하되 그 목록이 쓸 수 있는 구간을 `ui`, `logo`, `hud`, `font` 넷으로 못박아 `sfx`·
+`bgm`이 이 목록 대상이 아니었다. 2026-08-08에 `DEC-ART-005`로 대체해 그 목록이 쓸 수
+있는 구간에 `bgm`·`sfx`를 추가했다 — 콘텐츠에 안 붙는 에셋뿐 아니라, `content_assets.csv`의
+고유키 `(content_id, asset_role)` 제약으로 한 콘텐츠에 여러 효과음을 못 붙이는 경우
+(낫 소리 3종처럼 부모가 `player_base_stats.prototype` 하나로 몰린 경우)도 이 고정 목록으로
+등록한다.
 
-`DEC-ART-004`은 콘텐츠에 안 붙는 UI·시스템 에셋을 `schema/enums.json`의 고정 목록으로
-관리하되 그 목록이 쓸 수 있는 구간을 `ui`, `logo`, `hud`, `font` 넷으로 못박았다. `sfx`·
-`bgm`은 이 목록 대상이 아니다.
+**남은 작업은 등록뿐이다.** `DEC-ART-005`가 규칙만 열었고, 아래 표의 "예정" 항목을
+실제로 재생하려면 `schema/enums.json`의 고정 목록에 논리 에셋 ID를 추가하는 스키마
+작업이 남아 있다 — 콘텐츠 값 추가가 아니라 스키마 변경이므로 담당자 승인 없이
+`content_assets.csv`에 끼워 넣지 않는다.
 
 **재생 코드는 막혀 있지 않다** (2026-08-08). 효과음은 `src/audio/sfx.ts`, 배경음은
 `src/audio/bgm.ts`, 음량 세 갈래(`DEC-UI-027`)는 `src/audio/mixer.ts` 와 일시정지
-화면에 들어가 있다. 셋 다 논리 에셋 ID 를 받을 뿐이라 아래 대체가 어느 안으로
-확정되든 그대로 쓴다. **남는 것은 ID 등록과 호출부 한 줄씩이다.**
+화면에 들어가 있다. 셋 다 논리 에셋 ID 를 받을 뿐이라 고정 목록 등록이 끝나는 대로
+그대로 쓴다. **남는 것은 ID 등록과 호출부 한 줄씩이다.**
 
-문제는 아래 SFX·BGM 대부분이 특정 작물·무기·주민·야생동물에 안 붙는 **시스템 레벨
-사운드**라는 것이다 — 붙일 `content_id`가 없다. 콘텐츠에 자연스럽게 붙는 것(플레이어
-낫 소리, 야생동물 울음, 작물 속성 상태음)만 오늘 당장 `content_assets.csv`로 연결할 수
-있고, 나머지는 `DEC-ART-004`의 고정 목록 구간에 `sfx`·`bgm`을 추가하는 작은 폐기·대체가
-있어야 연결된다. 아래 표의 "연결 방식"이 이걸 구분한다.
+콘텐츠에 자연스럽게 붙고 (content_id, asset_role) 충돌이 없는 것(야생동물 울음, 작물
+속성 상태음)은 이미 `content_assets.csv`로 연결했다. 나머지 SFX·BGM은 특정 작물·무기·
+주민·야생동물에 안 붙거나(시스템 레벨 사운드) 낫 소리처럼 부모가 몰려 있어 고정 목록
+경로로 간다. 아래 표의 "연결 방식"이 이걸 구분한다.
 
 ---
 
@@ -42,12 +48,12 @@
 
 | 상황 | 파일 | 트리거 | 연결 방식 |
 |---|---|---|---|
-| 타이틀 화면 | `title.mp3` | `screen.changed` → `title` | 예정 (고정 목록에 `bgm` 추가 필요) |
-| 재배 + 정비 공용 | `farm.mp3` | `field.entered({mode:'farming'})`, `overlay.opened({overlay:'maintenance_hub'})` | 예정 |
-| 습격 전투(일반) | `raid.mp3` | `field.entered({mode:'raid'})`, 2~4일차 | 예정 |
-| 마지막 습격(이장 결투) | `boss.mp3` | `field.entered({mode:'raid'})`, 5일차 | 예정 |
-| 런 실패 화면 | `defeat.mp3` | `run.failed` → `screen.changed({screen:'run_failed'})` | 예정 |
-| 엔딩 화면 공용 | `ending.mp3` | `ending.decided` (화면 진입 시점) | 예정 |
+| 타이틀 화면 | `title.mp3` | `screen.changed` → `title` | 가능 — `DEC-ART-005` 확정, 고정 목록 등록 필요 |
+| 재배 + 정비 공용 | `farm.mp3` | `field.entered({mode:'farming'})`, `overlay.opened({overlay:'maintenance_hub'})` | 가능 — 고정 목록 등록 필요 |
+| 습격 전투(일반) | `raid.mp3` | `field.entered({mode:'raid'})`, 2~4일차 | 가능 — 고정 목록 등록 필요 |
+| 마지막 습격(이장 결투) | `boss.mp3` | `field.entered({mode:'raid'})`, 5일차 | 가능 — 고정 목록 등록 필요 |
+| 런 실패 화면 | `defeat.mp3` | `run.failed` → `screen.changed({screen:'run_failed'})` | 가능 — 고정 목록 등록 필요 |
+| 엔딩 화면 공용 | `ending.mp3` | `ending.decided` (화면 진입 시점) | 가능 — 고정 목록 등록 필요 |
 
 전투 전 대화·투항 대화는 별도 BGM이 없다 — 진입 시점에 이미 흐르던 트랙(`raid.mp3` 또는
 `boss.mp3`)을 그대로 유지한다. 조우 결과·밤 결과 화면의 BGM은 **아직 미정** — 직전 트랙
@@ -71,14 +77,14 @@
 | `trade_confirm.wav` | `shop.sold`, `shop.bought`, `reward.granted` 공용 | 예정 |
 | `quickslot_switch.wav` | `quickslot.select`(선택 전환), `quickslot.autoSwitched`(자동 전환) 공용 | 예정 |
 | `quickslot_empty.wav` | `quickslot.allEmpty` | 예정 |
-| `sickle_swing.wav` | `combat.sickleSwung` | **가능** — `player_base_stats.prototype` |
-| `sickle_hit.wav` | 낫 명중 판정 | **가능** — `player_base_stats.prototype` |
+| `sickle_swing.wav` | `combat.sickleSwung` | 가능 — 고정 목록 등록 필요 (`content_assets.csv`는 `(content_id, asset_role)`이 고유키라 `player_base_stats.prototype`에 `sfx` 행을 하나만 붙일 수 있는데 낫 소리가 셋이라 못 씀) |
+| `sickle_hit.wav` | 낫 명중 판정 | 가능 — 고정 목록 등록 필요 (위와 동일 사유) |
 | `throw.wav` | 투척 무기 발사 (4종 공용) | 예정 |
 | `impact_direct.wav` | 투척 명중 — 고춧가루 주머니·미끈 토란 주머니 | 예정 |
 | `impact_area.wav` | 투척 명중 — 토마토 폭탄·찹쌀풀 병 | 예정 |
 | `burn_tick.wav` | 화상 상태 틱 — `crop_attribute.fiery`·`crop_attribute.mushy` 공용 | **가능** — 두 행이 같은 `asset_id` 참조 |
 | `slow_tick.wav` | 감속 상태 걸림 — `crop_attribute.slippery`·`crop_attribute.sticky` 공용 | **가능** — 두 행이 같은 `asset_id` 참조 |
-| `player_hit.wav` | `combat.playerDamaged` | **가능** — `player_base_stats.prototype` |
+| `player_hit.wav` | `combat.playerDamaged` | 가능 — 고정 목록 등록 필요 (위와 동일 사유) |
 | `recovery_start.wav` | `recovery.started` | 예정 |
 | `recovery_complete.wav` | `recovery.completed` | 예정 |
 | `wildlife_crow_cry.wav` | 까마귀 스폰 시점 | **가능** — `wildlife.crow` |
@@ -127,6 +133,7 @@
 ## 수정할 때
 
 1. 이 문서의 파일명 또는 트리거 이벤트명을 지정한다.
-2. "연결 방식"이 예정인 항목을 실제로 연결하려면 먼저 `DEC-ART-004`의 폐기·대체(고정
-   목록에 `sfx`·`bgm` 추가)가 있어야 한다 — 그 전에 `content_assets.csv`나
-   `schema/enums.json`을 임의로 고치지 않는다.
+2. `DEC-ART-005`(2026-08-08)가 고정 목록 구간에 `sfx`·`bgm`을 이미 열어 뒀다. "가능"으로
+   표시된 항목은 `schema/enums.json`의 고정 목록에 논리 에셋 ID를 추가하는 스키마
+   작업만 남았다 — 콘텐츠 값 추가가 아니므로 담당자 승인 없이 임의로 등록하지 않는다.
+   나머지 "예정" SFX는 아직 어느 화면·트리거에 붙일지 정리가 남아 있다.
