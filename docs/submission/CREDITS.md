@@ -55,7 +55,7 @@
 | `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
-| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | A4 대화·조우 결과에 공용하는 플레이어·주민 초상화 5종. 공통 1080px 높이와 투명 여백으로 인물간 상대 크기를 유지 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 직접 상반신 크롭·투명화 | 프로젝트 책임자 작업(편집 도구 미기재) | `assets/source/phase-f/crops/` 5종에서 파생 | 해당 없음 (AI 생성) |
+| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | A4 대화·조우 결과에 공용하는 플레이어·주민 초상화 5종. 공통 1080px 높이와 투명 여백으로 인물간 상대 크기를 유지 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 Figma에서 직접 상반신 크롭·투명화하고 QA 후 여백·배치를 재조정 | Figma | `assets/source/phase-f/crops/` 5종에서 파생 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v1 (구).png` | A4 전투 전 대화 UI의 폐기된 크로마키 배치 원본 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-A-013` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 실제 구현 배치에 맞춘 A4 최종 목업. LD 일러스트와 필드 딤은 합성 전이라 생략 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | Figma | A4 v1과 기존 B단계 UI 부품을 참고해 직접 제작 | 해당 없음 (내부 제작) |
 | `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | A4 선택지 말풍선 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-014` 전문 참조 | 해당 없음 (AI 생성) |
@@ -69,13 +69,18 @@
 | `assets/source/phase-f/character/{player,yeongsun,manbok,geumrye,village_head}_field_five_pose_sheet_chroma.png` | 플레이어·주민 4명의 정면·후면·좌·우·공격 포즈 원본 시트 5장 | AI 생성·반복 보정·프로젝트 책임자 선별 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-F-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/field_sprite_{left,right,attack}/{player,yeongsun,manbok,geumrye,village_head}.png` | 5포즈 원본 시트에서 분리한 좌·우 이동 및 공격 교체 스프라이트 15장 | AI 생성 + 프로젝트 책임자 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-F-002` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-d/bg_title_v3.png`, `assets/final/ui/bg_title.png` | 누런 하늘·언덕 너머 시골 마을·우측 팻말 기둥으로 구성한 타이틀 화면 배경 원본과 최종본 | AI 생성·반복 보정·프로젝트 책임자 선별·최종 저장 | GPT Image (Codex 내장, 모델명 비공개) | 아트 디렉션 14.3.1절 및 제작 대화 참조 | 해당 없음 (AI 생성) |
+| `assets/final/cutscene/{neighbors,beyond_fence,silent_field,new_family,empty_village_master,global_fallback}.png` | 승인 엔딩 6종에 대응하는 전체 화면 배경 컷신 | `bg_title.png`를 기준으로 AI 편집·반복 선별한 뒤 프로젝트 책임자가 Figma에서 최종 편집·QA | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-001` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/bg_day_start.png` | 1~5일차 시작 화면 공용 배경 | `bg_title.png`를 기준으로 AI 편집한 뒤 프로젝트 책임자가 Figma에서 최종 편집·QA | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-002` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/day_start_scroll.png` | 2~5일차 시작 화면의 농장 일지 두루마리 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-003` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/ending_record_board.png` | 엔딩 기록문을 표시하는 대자보 게시판 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-004` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/player_status_card.png` | 재배·습격 하단 좌측 플레이어 상태 카드 | 기존 A1 HUD 부품을 프로젝트 책임자가 QA 후 재조정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup_v2.png`, `A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 타이틀·재배·습격 화면의 2026-08-09 QA 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 정비 화면 판매·제작·편성 2상태의 QA 최신 배치 목업 4장 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
-| `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 1일차와 2~5일차 시작 화면의 배치 전용 임시 아트 목업 2장 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 두루마리 등 최종 에셋 미반영. 배치만 참고 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 1일차와 2~5일차 시작 화면의 배치 전용 임시 아트 목업 2장 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 배치만 참고. 최종 배경·두루마리는 `bg_day_start.png`·`day_start_scroll.png`로 별도 반영 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png`, `A7_night_result_mockup_v1.png` | 창호지 셔터 공용 배경을 사용한 조우 결과·밤 결과 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
-| `assets/source/phase-a/A8_ending_mockup_v1.png` | 엔딩 화면의 배치 전용 임시 아트 목업 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 대자보 게시판과 엔딩 컷신 미반영. 배치만 참고 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A8_ending_mockup_v1.png` | 엔딩 화면의 배치 전용 임시 아트 목업 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 배치만 참고. 최종 게시판·컷신은 `ending_record_board.png`와 컷신 6종으로 별도 반영 | 해당 없음 (내부 제작) |
 
 ## 사운드 · BGM
 
@@ -1519,6 +1524,76 @@ village head: a forward bare-fist punch with the other hand guarding
 
 최종 채택본은 캐릭터별 원본 시트 5장이다. 정면은 기존 승인본 대조용, 후면은 원본 보존용이며,
 프로젝트 책임자가 Figma에서 좌·우·공격 칸만 분리·투명화해 최종 에셋 15장으로 만든다.
+
+### IMG-G-001 — 타이틀 배경 변주형 엔딩 컷신 6종
+
+`assets/final/ui/bg_title.png`를 공통 편집 기준으로 삼았다. 공통 지시는 아래와 같다.
+
+```text
+Edit the provided title background into a full-screen ending background while preserving its
+wide rural village, fields, distant mountains, hand-drawn cartoon linework, muted earthy palette,
+and paper-like texture. Remove the entire wooden signpost and its shadow from the right side.
+Do not add titles, captions, buttons, panels, borders, or other UI. Keep open, calm areas where
+ending text and a notice-board UI can remain readable. Change only the environmental story cue
+specified for the selected ending.
+```
+
+엔딩별 추가 지시는 다음과 같다.
+
+```text
+neighbors: soft sunlight descends from the sky toward the village and fields; no people
+beyond_fence: keep a bright title-like sky; small distant human figures emerge from the village
+and watch from beyond the fields, too far away to identify
+silent_field: use a dim, overcast sky and an empty, inactive village; no people
+new_family: place exactly four small-to-medium distant residents near the village, based on
+Yeongsun, Manbok, the village head, and Geumrye; omit facial details, preserve recognizable
+costume color blocks, and show all four actively welcoming the player with waving or open arms
+empty_village_master: the village has burned away; show charred foundations, collapsed beams,
+ash, small embers, and thin smoke; no people
+global_fallback: remove only the signpost and its shadow; otherwise preserve the title background
+```
+
+초기의 인물 중심 컷신 시안은 타이틀 화면과 시각적 연속성이 약해 폐기했다. `new_family`는
+군중 수·인물 크기·복식 식별·환영 동작을 단계적으로 보정했으며, 프로젝트 책임자가 최종
+채택본 6장을 Figma에서 편집·QA해 `assets/final/cutscene/`에 저장했다.
+
+### IMG-G-002 — 일차 시작 배경
+
+```text
+Edit assets/final/ui/bg_title.png. Remove the entire wooden signpost and its shadow. Preserve the
+same village, fields, mountains, framing, linework, palette, and texture. Change only the sky to
+an early morning shortly after sunrise: the land is already bright, the horizon is pale gold and
+peach, and a faint blue-gray trace of night remains in the upper sky. No people, text, UI, panels,
+or new objects.
+```
+
+프로젝트 책임자가 Figma에서 최종 편집·QA해 `assets/final/ui/bg_day_start.png`로 저장했다.
+
+### IMG-G-003 — 일차 시작 농장 일지 두루마리
+
+```text
+Create one standalone traditional Korean hanging scroll for a hand-drawn game UI. Use aged warm
+cream paper, simple wooden rollers, dry irregular ink outlines, restrained two-step shading, and
+a large completely blank center for dynamic farm-diary text. Match the existing Joseon-era wood
+and hanji UI. No writing, symbols, characters, scenery, cast shadow, or extra objects. Use a flat
+bright-green chroma background with generous padding for later cutout.
+```
+
+프로젝트 책임자가 Figma에서 누끼와 최종 편집을 해 `assets/final/ui/day_start_scroll.png`로
+저장했다.
+
+### IMG-G-004 — 엔딩 기록문 대자보 게시판
+
+```text
+Create one standalone traditional Korean village notice board for a hand-drawn game UI. Use a
+simple wooden roof and frame around one large blank paper writing surface for dynamic ending text.
+Match the existing Joseon-era wooden UI with dry irregular outlines, muted brown wood, warm cream
+paper, and restrained two-step shading. No writing, symbols, characters, scenery, cast shadow, or
+extra objects. Use a flat bright-green chroma background with generous padding for later cutout.
+```
+
+프로젝트 책임자가 Figma에서 누끼와 최종 편집을 해 `assets/final/ui/ending_record_board.png`로
+저장했다.
 
 ### SND-BGM-001 — 타이틀 (`farm.mp3`와 프롬프트 공유)
 
