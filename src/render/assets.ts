@@ -18,10 +18,15 @@
 // `projectile` 은 8/6 에, `portrait` 은 8/7 에, `logo`·`field_sprite_left/right/attack` 과
 // `bgm`·`sfx` 는 8/8 에 채워졌다.
 //
-// **`bgm`·`sfx` 는 파일만 있고 아직 아무도 부르지 않는다.** 이 파일의 glob 이 이미지
-// 확장자만 잡으므로 `URL_BY_ID` 에도 없다 — 소리는 `Image` 가 아니라 `Audio` 라
-// 적재 방식이 다르고, 무엇보다 시스템 레벨 사운드를 가리킬 자리가 없다
-// (`docs/submission/SOUND_ASSET_INDEX.md` 의 "막혀 있는 것").
+// **`sfx` 는 2026-08-08 에 일부가 연결됐다** — 야생동물 울음 3, 화상·감속 4.
+// glob 이 `wav`·`mp3` 도 잡으므로 `URL_BY_ID` 에 들어오고, 재생은 `Image` 가 아니라
+// `Audio` 라 `src/audio/` 가 따로 맡는다 (`assetUrl()` 로 주소만 받아 간다).
+//
+// 나머지 SFX 19종과 BGM 6종은 아직 못 붙는다 — 붙일 콘텐츠 부모가 없어서 고정
+// 목록으로 가야 하는데 `DEC-ART-004` 가 그 목록의 구간을 `ui`·`logo`·`hud`·`font`
+// 로 한정했다 (`docs/submission/SOUND_ASSET_INDEX.md` 의 "막혀 있는 것").
+// 낫 소리 3종은 부모가 `player_base_stats` 하나로 몰려 `(content_id, asset_role)`
+// 고유키에 걸린다 — 한 콘텐츠에 같은 역할은 하나뿐이다.
 // `effect` 는 빈 구간이 아니라 **Canvas 2D 코드 구현 대상**이라 PNG 가 오지 않고,
 // `font` 는 시스템 폰트를 쓰기로 해 파일을 만들지 않는다 (전성민 8/7).
 // 그래서 **없는 것은 오류가 아니라 null 이고**
@@ -45,7 +50,7 @@ const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
  * 동작한다. `assets/` 는 `publicDir`(= `public/`) 밖이라 정적 경로로 fetch 할 수 없다 —
  * `generated/runtime/` 을 읽는 `data/loader.ts` 와 같은 이유다.
  */
-const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg}', {
+const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg,wav,mp3}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -193,6 +198,17 @@ for (const id of Object.values(UI_ASSET)) {
 /** 논리 에셋 ID 로 파일이 실제로 있는지. 화면을 그리기 전에 물어볼 때 쓴다 */
 export function hasAssetFile(assetId: string | null | undefined): boolean {
   return assetId !== null && assetId !== undefined && URL_BY_ID.has(assetId)
+}
+
+/**
+ * 논리 에셋 ID 의 번들 URL. 파일이 없으면 null.
+ *
+ * **`assetCssUrl()` 과 달리 `url("…")` 로 감싸지 않는다.** 소리는 CSS 가 아니라
+ * `Audio` 가 받으므로 주소 그대로여야 한다 (`src/audio/`).
+ */
+export function assetUrl(assetId: string | null | undefined): string | null {
+  if (assetId === null || assetId === undefined) return null
+  return URL_BY_ID.get(assetId) ?? null
 }
 
 /**

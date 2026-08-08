@@ -32,6 +32,7 @@ import { createCombat } from './systems/combat.ts'
 import type { CombatEvent, CombatSystem, CombatTarget } from './systems/combat.ts'
 import { headingStep, walkStep } from './render/motion.ts'
 import type { Facing } from './render/motion.ts'
+import { createSfx } from './audio/sfx.ts'
 import { createWildlife } from './systems/wildlife.ts'
 import type { WildlifeSystem } from './systems/wildlife.ts'
 import { createResidentCombat } from './systems/resident-combat.ts'
@@ -826,6 +827,13 @@ async function bootData(): Promise<boolean> {
 
     throwablesById = new Map((data.throwable_weapons ?? []).map((w) => [w.id, w]))
 
+    // 작물 속성 효과가 낼 소리 (mechanicSfx 주석 참고). 붙은 것만 들어간다.
+    mechanicSfx = new Map(
+      (data.crop_attributes ?? [])
+        .filter((a) => a.assets?.sfx !== undefined)
+        .map((a) => [a.combat_mechanic_key, a.assets!.sfx!]),
+    )
+
     const weapons = data.throwable_weapons ?? []
     combat = createCombat({
       stats: data.player_base_stats![0],
@@ -1205,6 +1213,10 @@ function advanceWildlifeHeadings(dt: number): void {
     const prev = wildlifeHeadings.get(id)
     if (prev === undefined) {
       wildlifeHeadings.set(id, { angle: HEADING_REST, x: runtime.entity.x, y: runtime.entity.y })
+      // **이 개체를 처음 본 프레임이다.** 나타날 때 한 번 운다 — `wildlife.csv` 의
+      // `sfx` 는 종류별 울음이고, 출현이 그 소리가 붙을 가장 자연스러운 순간이다.
+      // 여기서 내는 이유는 출현을 알리는 별도 이벤트가 없어서다.
+      sfx.play(runtime.species.assets?.sfx)
       continue
     }
 
@@ -1253,6 +1265,23 @@ const ATTACK_SPRITE_SECONDS = 0.2
 const hitFlashes = new Map<string, number>()
 const IMPACT_FLASH_SECONDS = 0.22
 
+/** 효과음. 파일이 없으면 조용히 넘어간다 (src/audio/sfx.ts) */
+const sfx = createSfx()
+
+/**
+ * 작물 속성 효과가 낼 소리. `combat_mechanic_key` → 논리 에셋 ID.
+ *
+ * **효과에는 속성 ID 가 없고 `mechanicKey` 만 있다** (`systems/combat.ts`).
+ * 그런데 같은 기전을 쓰는 속성 둘이 같은 파일을 가리키므로(화끈함·짓무름 →
+ * `burn_tick`, 미끄러움·끈적함 → `slow_tick`) 기전으로 골라도 모호하지 않다.
+ * **속성마다 다른 소리를 주게 되면 이 map 이 먼저 깨진다** — 그때는 효과가
+ * 속성 ID 를 들고 다녀야 한다.
+ */
+let mechanicSfx = new Map<string, string>()
+
+/** 둔화가 방금 걸린 것을 잡으려고 직전 상태를 들고 있는다 */
+const slowedBefore = new Set<string>()
+
 /**
  * 명중 표시를 켠다. **`combat` 의 이벤트를 받는 곳은 전부 이걸 부른다.**
  *
@@ -1267,7 +1296,11 @@ const IMPACT_FLASH_SECONDS = 0.22
  */
 function noteHitFlash(event: CombatEvent): void {
   if (event.type !== 'damaged') return
-  if (event.overTime === true) return
+  if (event.overTime === true) {
+    // 지속 피해 틱은 화면 표시를 안 켜는 대신 소리로 알린다 (DEC-CONTENT-013).
+    sfx.play(mechanicSfx.get('damage_over_time'))
+    return
+  }
   if (event.targetId === undefined) return
   hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
 }
@@ -1301,6 +1334,8 @@ function resetBob(): void {
   // 인스턴스 ID 로 들고 있어서 새 런이 같은 키를 다시 쓴다
   hitFlashes.clear()
   wildlifeHeadings.clear()
+  // 안 지우면 새 런의 첫 프레임에 이미 둔화된 것으로 읽혀 소리를 건너뛴다
+  slowedBefore.clear()
   playerHitRemaining = 0
   // 튜토리얼을 건너뛰거나 런이 끝나면 대기 중인 완료 알림을 버린다.
   // 안 버리면 본 런 1일차에서 뒤늦게 튜토리얼 단계가 완료된다.
@@ -1360,6 +1395,25 @@ function advanceCombatFeedback(dt: number): void {
       completeTutorialStep('use_throwable')
     }
   }
+
+  // 둔화가 **방금 걸린** 순간에만 소리를 낸다 (DEC-CONTENT-013).
+  //
+  // 지속 피해와 달리 둔화에는 틱이 없어서 알릴 순간이 걸리는 때뿐이다. 걸려 있는
+  // 동안 계속 내면 소음이 되고, 효과를 거는 이벤트가 따로 없어 상태 전이로 잡는다.
+  const slowNow = new Set<string>()
+  for (const runtime of wildlife?.instances ?? []) {
+    if (runtime.entity.effects.some((e) => e.mechanicKey === 'movement_slow')) {
+      slowNow.add(runtime.entity.instanceId)
+    }
+  }
+  if (hostile !== null && hostile.entity.effects.some((e) => e.mechanicKey === 'movement_slow')) {
+    slowNow.add(hostile.entity.instanceId)
+  }
+  for (const id of slowNow) {
+    if (!slowedBefore.has(id)) sfx.play(mechanicSfx.get('movement_slow'))
+  }
+  slowedBefore.clear()
+  for (const id of slowNow) slowedBefore.add(id)
 }
 
 /** 전환 강조가 남은 경작지. plot_id → 남은 초 */

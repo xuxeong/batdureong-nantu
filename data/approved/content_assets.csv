@@ -61,3 +61,10 @@ resident.yeongsun,field_sprite_attack,asset.field_sprite_attack.yeongsun
 resident.manbok,field_sprite_attack,asset.field_sprite_attack.manbok
 resident.geumrye,field_sprite_attack,asset.field_sprite_attack.geumrye
 resident.village_head,field_sprite_attack,asset.field_sprite_attack.village_head
+wildlife.crow,sfx,asset.sfx.wildlife_crow_cry
+wildlife.water_deer,sfx,asset.sfx.wildlife_deer_cry
+wildlife.boar,sfx,asset.sfx.wildlife_boar_cry
+crop_attribute.fiery,sfx,asset.sfx.burn_tick
+crop_attribute.mushy,sfx,asset.sfx.burn_tick
+crop_attribute.slippery,sfx,asset.sfx.slow_tick
+crop_attribute.sticky,sfx,asset.sfx.slow_tick
