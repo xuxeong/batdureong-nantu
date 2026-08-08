@@ -91,9 +91,9 @@ export const UI_ASSET = {
   fieldFrameFront: 'asset.ui.field_frame_front',
   /** `E` 대상 경작지 강조 틀 (DEC-UI-018) */
   plotHighlight: 'asset.ui.plot_highlight',
-  /** 일차와 습격 예고가 한 틀 (DEC-UI-033, DEC-RUN-011) */
+  /** 일차와 습격 예고가 한 틀 (DEC-UI-036, DEC-RUN-011) */
   signboard: 'asset.ui.signboard',
-  /** 숫자 없는 가로 게이지 (DEC-UI-033) */
+  /** 숫자 없는 가로 게이지 (DEC-UI-036) */
   farmingTimer: 'asset.ui.farming_timer',
   /** 초상화·이름·체력 바가 한 틀 */
   playerStatusCard: 'asset.ui.player_status_card',
@@ -114,7 +114,7 @@ export const UI_ASSET = {
    * 세로라 캐릭터 옆에 세운다 — 8/9 까지는 머리 위 가로 막대였다.
    */
   healGauge: 'asset.ui.heal_gauge',
-  /** 선택된 회복 아이템 칸 (DEC-UI-033) */
+  /** 선택된 회복 아이템 칸 (DEC-UI-036) */
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',

@@ -61,20 +61,25 @@
   --ui-font-lg: 26px;
   --ui-font-xl: 38px;
 
-  /* ── HUD (DEC-UI-033, A1 확정 배치) ─────────────
+  /* ── HUD (DEC-UI-036, A1 확정 배치) ─────────────
      아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-004 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
   --hud-edge: 16px;
 
   /* 표지판 253×174 — 위칸 일차 / 아래칸 습격 예고 */
-  --hud-signboard-width: 253px;
-  --hud-signboard-height: 174px;
+  /* 좌측 상단 판 (A1 목업 8/9 — raid_notice_* 560×101).
+     8/9 까지 253×174 짜리 signboard 였는데 목업이 가로로 긴 판 하나다 */
+  --hud-signboard-width: 560px;
+  --hud-signboard-height: 101px;
 
   /* 퀵슬롯 번호판·수량 배지 (A1 목업 8/9). 배지 그림이 오기 전의 판 색이다 —
      그림이 붙으면 이 둘은 안 쓰이고 배경 그림이 대신한다 */
   --hud-badge-dark: rgba(58, 40, 26, 0.92);
   --hud-badge-cream: #efe3c2;
+
+  /* 좌측 판과 게이지 사이. 목업에서 눈으로 맞춘 값이라 여기 하나만 고치면 된다 */
+  --hud-timer-gap: 72px;
 
   /* 재배 시간 게이지 911×83 — 숫자 없음 */
   --hud-timer-width: 911px;
@@ -263,11 +268,13 @@
 */
 :root {
   /* 표지판 253×174 — 크림 판 두 칸 */
-  --hud-sign-inset-x: 18px;
-  --hud-sign-top-y: 22px;
-  --hud-sign-top-h: 62px;
-  --hud-sign-bottom-y: 96px;
-  --hud-sign-bottom-h: 60px;
+  /* 판 안 크림 칸 둘. 그림을 디코딩해 픽셀로 잰 값이다 (raid_notice_* 560×101) */
+  --hud-sign-cell-y: 13px;
+  --hud-sign-cell-h: 74px;
+  --hud-sign-day-x: 155px;
+  --hud-sign-day-w: 113px;
+  --hud-sign-raid-x: 276px;
+  --hud-sign-raid-w: 267px;
 
   /* 재배 게이지 911×83.
 
@@ -420,7 +427,8 @@
 /* ── 상단 왼쪽 끝: 표지판 (일차 / 습격 예고) ───── */
 .hud__signboard {
   position: absolute;
-  top: 0;
+  /* 8/9 까지 화면 맨 위(0)에 붙어 있었다. 목업은 다른 부품과 같은 여백을 준다 */
+  top: var(--hud-edge);
   left: var(--hud-edge);
   width: var(--hud-signboard-width);
   height: var(--hud-signboard-height);
@@ -431,11 +439,18 @@
 }
 
 /* 두 칸은 그림 안의 크림 판 위에 정확히 앉는다 */
+/*
+  두 칸이 **가로로** 나란히 앉는다 (A1 목업 8/9).
+
+  8/9 까지는 253×174 표지판에 위·아래로 쌓여 있었다. 새 판(`raid_notice_*`
+  560×101)은 왼쪽에 마을 그림, 그 오른쪽에 크림 칸 둘이 나란한 모양이다.
+  아래 좌표는 그림을 디코딩해 픽셀로 잰 값이다 — 어림값이 아니다.
+*/
 .hud__signboard-day,
 .hud__signboard-raid {
   position: absolute;
-  left: var(--hud-sign-inset-x);
-  right: var(--hud-sign-inset-x);
+  top: var(--hud-sign-cell-y);
+  height: var(--hud-sign-cell-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -444,24 +459,24 @@
 }
 
 .hud__signboard-day {
-  top: var(--hud-sign-top-y);
-  height: var(--hud-sign-top-h);
+  left: var(--hud-sign-day-x);
+  width: var(--hud-sign-day-w);
   font-size: var(--ui-font-lg);
   font-weight: 700;
   color: var(--ui-text-on-panel);
 }
 
 /*
-  습격 예고 (DEC-UI-033, DEC-RUN-011).
+  습격 예고 (DEC-UI-036, DEC-RUN-011).
 
   재배 모드 내내 상시 노출하고 습격이 없는 날에도 사라지지 않는다.
   문구는 raid_notices.csv 에서 온다 — 임시 문구를 여기에도 TS 에도 넣지 않는다.
 */
 .hud__signboard-raid {
-  top: var(--hud-sign-bottom-y);
-  height: var(--hud-sign-bottom-h);
+  left: var(--hud-sign-raid-x);
+  width: var(--hud-sign-raid-w);
   padding: 0 var(--ui-gap-xs);
-  font-size: var(--ui-font-sm);
+  font-size: var(--ui-font-md);
   color: var(--ui-text-on-panel);
 }
 
@@ -474,11 +489,27 @@
 /* ── 상단 가운데: 남은 재배 시간 게이지 ─────────
    숫자를 넣지 않는다 (A1). 게이지가 줄어드는 것만으로 읽힌다.
    `남은 재배 시간` 글자는 그림에 이미 박혀 있어 DOM 에 두지 않는다. */
+/*
+  남은 재배 시간 게이지.
+
+  **가운데 정렬을 버렸다** (8/9). 좌측 판이 253 → 560 으로 넓어지면서 가운데
+  정렬한 게이지(911)가 504px 에서 시작해 판과 겹쳤다. `DEC-UI-036` 이
+  *"기준 해상도에서 HUD 요소가 서로 겹치지 않게 배치한다"* 로 정했다.
+
+  이제 판 오른쪽에 붙는다 — 목업도 가운데가 아니라 판 다음 자리다.
+  1920 기준으로 16 + 560 + 72 + 911 + 138(톱니) + 16 = 1713 이라 들어간다.
+
+  **판과 톱니 사이의 가운데는 아니다.** 한 번 그렇게 뒀는데 톱니가 작아서
+  남는 구간의 가운데가 목업보다 오른쪽으로 갔다. 판에서 재는 쪽이 맞다.
+
+  세로는 **판의 중심에 맞춘다.** 판이 101, 게이지가 83 이라 둘 다 위 여백에
+  붙이면 게이지가 떠 보인다. 높이 차의 절반만큼 내리므로 판 높이가 바뀌어도
+  따라온다 — 숫자를 다시 계산할 필요가 없다.
+*/
 .hud__timer {
   position: absolute;
-  top: var(--hud-edge);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--hud-edge) + (var(--hud-signboard-height) - var(--hud-timer-height)) / 2);
+  left: calc(var(--hud-edge) + var(--hud-signboard-width) + var(--hud-timer-gap));
   width: var(--hud-timer-width);
   height: var(--hud-timer-height);
   background-image: var(--hud-timer-image);
@@ -548,7 +579,7 @@
 }
 
 /* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
-   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-033, 아트 디렉션 14.2)
+   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-036, 아트 디렉션 14.2)
 
    그림 안에 네 자리가 이미 그려져 있어 flex 로 나누지 않고 각 자리에 앉힌다. */
 .hud__card {
@@ -573,7 +604,7 @@
   display: contents;
 }
 
-/* 이름은 카드 디자인의 일부다. DEC-UI-033 의 공통 요소가 아니다 (아트 디렉션 14.2) */
+/* 이름은 카드 디자인의 일부다. DEC-UI-036 의 공통 요소가 아니다 (아트 디렉션 14.2) */
 .hud__name {
   position: absolute;
   left: var(--hud-card-name-x);
@@ -592,7 +623,7 @@
   text-overflow: ellipsis;
 }
 
-/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-033) ──── */
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-036) ──── */
 .hud__health {
   display: contents;
 }
@@ -615,7 +646,7 @@
 }
 
 /*
-  바 우측 수치 (DEC-UI-033 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
+  바 우측 수치 (DEC-UI-036 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
 
   **현재 체력 하나만 넣는다.** 확정문이 요구하는 것은 `현재 체력`의 수치이고,
   카드 그림의 이 자리가 55px 이라 `100 / 100` 은 애초에 안 들어간다. 최대치는
@@ -802,7 +833,7 @@
   color: var(--ui-text);
 }
 
-/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-033) ── */
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-036) ── */
 /* 안쪽이 크림색 판이라 어두운 글씨다 (퀵슬롯 칸과 반대) */
 .hud__recovery {
   width: var(--hud-recovery-width);
@@ -869,9 +900,16 @@
   뜬 안내를 아무도 못 봤다 (플레이 테스트). 재배 게이지 아래에 두어 시선 안에
   들어오게 한다.
 */
+/*
+  화면 위쪽 안내 두 줄 (`투척 무기 없음` · 지원 주민).
+
+  **상단 부품에서 한 칸 더 떨어뜨린다** (8/9). 좌측 판이 커지고 게이지가 그
+  옆으로 오면서 상단이 빽빽해졌는데, 안내가 게이지 바로 밑에 붙어 세 겹으로
+  쌓였다. 판 높이를 기준으로 내리므로 판이 또 바뀌어도 따라온다.
+*/
 .hud__notices {
   position: absolute;
-  top: calc(var(--hud-edge) + var(--hud-timer-height) + var(--ui-gap-md));
+  top: calc(var(--hud-edge) + var(--hud-signboard-height) + var(--ui-gap-lg) * 2);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1336,7 +1374,7 @@
   color: var(--hub-text-on-art);
 }
 
-/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-033) */
+/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-036) */
 .hub__money {
   display: flex;
   justify-content: space-between;
