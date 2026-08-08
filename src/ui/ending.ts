@@ -117,6 +117,17 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
         view.record.state === 'pending' ? RECORD_PENDING_LABEL : view.record.text
       record.classList.toggle('ending__record--pending', view.record.state === 'pending')
 
+      /*
+        기록문이 오는 동안 타이틀로 못 돌아가게 한다.
+
+        아침 일지와 달리 여기서 넘어가면 **런이 끝난다.** 다시 볼 방법이 없으므로
+        기다리지 않고 누르면 그 판의 엔딩 기록문을 영영 못 본다.
+
+        생성 실패도 승인된 `fallback_record_text` 로 즉시 `ready` 가 되므로
+        (`DEC-CONTENT-011`) 잠기는 것은 생성이 진행 중인 동안뿐이다.
+      */
+      returnButton.disabled = view.record.state === 'pending'
+
       if (view.fear === null) {
         fear.remove()
         return

@@ -158,8 +158,24 @@ export function createDayStart(
 
       if (view.journal === null) {
         journal.remove()
+        // 1일차에는 기다릴 일지가 없다. 앞 일차에서 잠근 채로 왔을 수 있으니 푼다.
+        continueButton.disabled = false
         return
       }
+
+      /*
+        일지가 오는 동안 진행 버튼을 잠근다.
+
+        안 잠그면 생성이 끝나기 전에 눌러서 **그날 일지를 아예 못 보고** 넘어간다.
+        LLM 응답이 0.6~1.7초라 잠깐이지만, 빠르게 누르는 플레이어에게는 일지가
+        있다 없다 한다 — 매번 다른 화면이 나오는 셈이다.
+
+        `DEC-JOURNAL-003` 의 *"일지 생성 실패는 일차 진행을 막지 않는다"* 와
+        충돌하지 않는다. 그 문장은 **실패**를 말하는데, 실패하면 승인된 폴백
+        문구가 즉시 채워져 `ready` 가 되므로 여기서 잠기는 시간이 없다.
+        잠기는 것은 생성이 아직 진행 중인 동안뿐이다.
+      */
+      continueButton.disabled = view.journal.state === 'pending'
 
       // 대기 표시와 완성 일지가 같은 자리를 쓴다 (DEC-UI-028).
       // 폴백인지 아닌지로 모양을 바꾸지 않는다 — 이 화면은 그 구분을 받지도 않는다.
@@ -167,8 +183,7 @@ export function createDayStart(
         view.journal.state === 'pending' ? JOURNAL_PENDING_LABEL : view.journal.text
       journal.classList.toggle('day-start__journal--pending', view.journal.state === 'pending')
 
-      // 진행 버튼 앞에 둔다. 일지 생성이 끝나지 않아도 진행은 막지 않는다
-      // (DEC-JOURNAL-003).
+      // 진행 버튼 앞에 둔다.
       if (journal.parentElement === null) panel.insertBefore(journal, continueButton)
     },
 

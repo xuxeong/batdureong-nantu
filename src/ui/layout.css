@@ -3552,8 +3552,20 @@
   cursor: pointer;
 }
 
-.day-start__continue:hover {
+.day-start__continue:hover:not(:disabled) {
   background: var(--ui-bg-slot);
+}
+
+/*
+  일지·기록문이 오는 동안 잠긴 상태 (day-start.ts, ending.ts).
+
+  흐리게 만드는 것은 눌러도 안 된다는 사실을 보이게 하려는 것이다. 모양이
+  그대로면 반응 없는 고장으로 읽힌다. 정비 화면의 잠긴 버튼과 같은 값을 쓴다.
+*/
+.day-start__continue:disabled,
+.ending__return:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ─────────────────────────────────────────────────
