@@ -21,6 +21,7 @@
 // `DEC-UI-001` 이 "느려진 상태임을 알 수 있게 한다" 고 했다. 그 표시가 아래
 // `SLOW_NOTICE` 다 — 감속 자체는 화면 매니저가 건다 (`syncSimulation`).
 
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 export interface RecoveryMenuItem {
@@ -77,6 +78,8 @@ export function createRecoveryMenu(
   root.hidden = true
 
   const panel = el('div', 'recovery-menu__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
   const notice = el('p', 'recovery-menu__notice', SLOW_NOTICE)
   const list = el('div', 'recovery-menu__list')
 

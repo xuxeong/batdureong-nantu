@@ -21,6 +21,7 @@
 // 이 파일은 화면만 만든다. 흐름 전진과 일지 생성은 호출하는 쪽이 한다.
 
 import type { RaidNotice, RaidType } from '../data/types.ts'
+import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
 /**
@@ -128,6 +129,8 @@ export function createDayStart(
   root.hidden = true
 
   const panel = el('div', 'day-start__panel')
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+  applyHanjiPanel(panel)
 
   const day = el('h1', 'day-start__day')
   const notice = el('p', 'day-start__notice')

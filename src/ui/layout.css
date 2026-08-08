@@ -61,7 +61,7 @@
   --ui-font-lg: 26px;
   --ui-font-xl: 38px;
 
-  /* ── HUD (DEC-UI-017, A1 확정 배치) ─────────────
+  /* ── HUD (DEC-UI-033, A1 확정 배치) ─────────────
      아래 크기는 전부 assets/final/ui/ 의 **실측값**이다. DEC-ART-004 이 월드
      1단위 = 화면 1픽셀로 정해서 에셋 크기가 곧 화면 크기다. 여기서 줄이면
      그림이 다시 축소돼 아트가 정한 크기를 CSS 가 뒤집는다. */
@@ -86,14 +86,16 @@
   --hud-health-height: 26px;
 
   /* 퀵슬롯 154×145 · 회복 칸 162×166.
-     5칸(770) + 회복(162) = 932px 이라 1920 하단에 들어간다. */
+     4칸(616) + 회복(162) = 778px 이라 1920 하단에 들어간다.
+     8/8 에 5칸(770+162=932)에서 줄었다 — `DEC-INPUT-013`. 칸 그림 크기는
+     그대로고 개수만 줄었으므로 하단 오른쪽이 154px 만큼 덜 찬다. */
   --hud-slot-width: 154px;
   --hud-slot-height: 145px;
   --hud-recovery-width: 162px;
   --hud-recovery-height: 166px;
   --hud-slot-gap: 0px;
 
-  /* ── 정비 허브 (DEC-UI-020, DEC-UI-021) ─────────
+  /* ── 정비 허브 (DEC-UI-020, DEC-UI-034) ─────────
      셔터 불투명도를 0.94 에서 올렸다. `DEC-UI-020` 이 셔터를 "필드를 덮는" 것으로
      정했는데, 0.94 로는 뒤의 필드 HUD 가 비친다. 8/5에는 HUD 부품이 작아 "거의
      안 보인다" 로 넘어갔지만, A1 배치에서 표지판이 253×174 로 커지면서 허브의
@@ -292,6 +294,93 @@
 
   /* 크림색 판 위의 글자. 무채색 나무 위라 어두워야 읽힌다 (아트 디렉션 4.4) */
   --ui-text-on-panel: #3b2a1c;
+
+  /* ── 한지 판 (공통) ────────────────────────────
+     `panel_border` 9-slice + `panel_texture`. 대사창·정비 팝업·보관함이
+     각자 복사해 쓰던 것을 아래 `.panel--hanji` 한 곳으로 모았다.
+     테두리 그림의 안 늘어나는 모서리가 44px 다 (DEC-ART-004 — 9-slice 는
+     모서리 크기를 함께 정한다). */
+  --panel-hanji-slice: 44px;
+  /* 한지 위 글자. 위 --ui-text-on-panel 과 같은 계열이되 종이 쪽이 더 밝아
+     한 단계 진하다. 대사창(#2b2418)·정비(#3a2b1c) 가 따로 정해 둔 값을
+     여기로 합치는 것은 각 화면 주인이 옮길 때 한다 */
+  --panel-hanji-text: #33261a;
+}
+
+/*
+  한지 판 — CSS 로 뜨는 창의 공통 바탕 (아트 디렉션 12.2, `ui/panel.ts`).
+
+  **붙이는 것은 각 화면 주인이 한다.** `applyHanjiPanel(요소)` 를 한 번 부르면
+  그림 주소 둘이 이 요소에 실리고 이 클래스가 켜진다. 화면 쪽 CSS 는 안 고친다 —
+  모달마다 9-slice 를 적으면 이미 세 벌인 복사가 여섯 벌이 되고, 그 순간부터
+  두 사람이 서로의 구획을 열게 된다 (8/8 작업 분담).
+
+  **클래스 이름을 두 번 적은 것은 오타가 아니다.** 명시도를 (0,2,0) 으로 올려
+  화면별 플레이스홀더(`.pause__panel` 의 `background`·`border`)를 이긴다.
+  그 규칙들은 이 파일 뒤쪽에 있어서 같은 (0,1,0) 이면 뒤가 이긴다 — 바로 위
+  `.hud .hud--has-art` 주석이 말하는 것과 같은 자리다. 화면마다 `--has-art`
+  변형을 새로 쓰게 하면 그게 곧 구획을 넘는 작업이 된다.
+
+  그림이 없으면 `ui/panel.ts` 가 클래스를 아예 안 붙이므로 각 화면의
+  플레이스홀더가 그대로 남는다 (`AGENTS.md` 6절).
+*/
+.panel--hanji.panel--hanji {
+  border: var(--panel-hanji-slice) solid transparent;
+  border-radius: 0;
+  border-image-source: var(--panel-hanji-border);
+  /* 원본 픽셀 기준이라 단위가 없다. 그려지는 두께만 위 변수로 조절한다 */
+  border-image-slice: 44;
+  border-image-width: var(--panel-hanji-slice);
+  /* 타일링하지 않는다 — 텍스처 위아래 끝 색차(674)가 가로줄로 드러난다 (8/7) */
+  background-image: var(--panel-hanji-texture);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+
+  /*
+    ── 판 안의 색을 통째로 뒤집는다 ──────────────────────
+
+    **`color` 하나만 바꾸면 글자가 안 보인다.** 자식 규칙들이 `--ui-text`·
+    `--ui-accent` 를 각자 직접 지정하고 있어서 상속이 거기서 끊긴다. 밝은
+    크림색 글자가 밝은 종이 위에 그대로 남는다 (8/8 담당자가 화면에서 잡았다).
+
+    그래서 색을 고치는 게 아니라 **토큰을 이 요소에서 다시 정의한다.** 커스텀
+    프로퍼티는 상속되므로 자식 규칙은 한 줄도 안 고쳐도 따라온다 — 화면 주인이
+    자기 CSS 를 열 필요가 없다는 이 클래스의 전제가 그대로 유지된다.
+    `--day-start-notice-*` 셋처럼 이 토큰들의 별명도 같이 따라온다.
+
+    **바탕이 어두운 판 → 밝은 종이로 뒤집히는 것이므로 명암만 뒤집고 역할은
+    그대로 둔다.** 강조는 강조, 위험은 위험이다.
+  */
+  --ui-text: var(--panel-hanji-text);
+  --ui-text-dim: rgba(51, 38, 26, 0.62);
+  --ui-border: rgba(51, 38, 26, 0.3);
+  --ui-border-strong: #6b4f33;
+  /* 종이가 이미 바탕이다. 그 위에 또 판을 깔면 한지가 가려진다 */
+  --ui-bg-panel: transparent;
+  /* 칸·입력란처럼 살짝 눌린 자리. 종이보다 조금 어둡기만 하면 된다 */
+  --ui-bg-slot: rgba(51, 38, 26, 0.08);
+  /* 임시값 둘 — 아트 디렉션 4.5절 색 코드 8종이 아직 미정이다 (8/8).
+     연두(#c8d94a)와 주홍(#e8613c)은 밝은 종이 위에서 안 읽혀 그대로 못 쓴다.
+     같은 색상 계열을 유지한 채 명도만 내렸다. 시안이 나오면 이 두 줄만 바꾼다 */
+  --ui-accent: #5f6b12;
+  --ui-danger: #b8371a;
+
+  /*
+    별칭 토큰은 여기서 다시 걸어야 한다.
+
+    `--day-start-notice-*` 셋은 `:root` 에서 `var(--ui-text-dim)` 처럼 선언돼
+    있는데, **그 `var()` 는 `:root` 에서 이미 계산돼 밝은 색으로 굳는다.**
+    아래에서 원본 토큰을 바꿔도 늦다 — 굳은 값이 그대로 상속될 뿐이다.
+    8/8 에 일차 시작 화면의 습격 예고 문구가 한지 위에서 안 보여 담당자가 잡았다.
+
+    같은 줄을 여기서 한 번 더 쓰면 이 요소의 값으로 다시 계산된다.
+    **`:root` 에 별칭을 새로 만들면 여기도 같이 늘려야 한다.**
+  */
+  --day-start-notice-none: var(--ui-text-dim);
+  --day-start-notice-raid: var(--ui-text);
+  --day-start-notice-final: var(--ui-accent);
+
+  color: var(--ui-text);
 }
 
 /*
@@ -344,7 +433,7 @@
 }
 
 /*
-  습격 예고 (DEC-UI-017, DEC-RUN-011).
+  습격 예고 (DEC-UI-033, DEC-RUN-011).
 
   재배 모드 내내 상시 노출하고 습격이 없는 날에도 사라지지 않는다.
   문구는 raid_notices.csv 에서 온다 — 임시 문구를 여기에도 TS 에도 넣지 않는다.
@@ -440,7 +529,7 @@
 }
 
 /* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
-   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-017, 아트 디렉션 14.2)
+   초상화 자리 · 이름 · 체력 바 + 바 우측 수치 (DEC-UI-033, 아트 디렉션 14.2)
 
    그림 안에 네 자리가 이미 그려져 있어 flex 로 나누지 않고 각 자리에 앉힌다. */
 .hud__card {
@@ -465,7 +554,7 @@
   display: contents;
 }
 
-/* 이름은 카드 디자인의 일부다. DEC-UI-017 의 공통 요소가 아니다 (아트 디렉션 14.2) */
+/* 이름은 카드 디자인의 일부다. DEC-UI-033 의 공통 요소가 아니다 (아트 디렉션 14.2) */
 .hud__name {
   position: absolute;
   left: var(--hud-card-name-x);
@@ -484,7 +573,7 @@
   text-overflow: ellipsis;
 }
 
-/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-017) ──── */
+/* ── 체력 (게이지 바 + 우측 수치, DEC-UI-033) ──── */
 .hud__health {
   display: contents;
 }
@@ -507,7 +596,7 @@
 }
 
 /*
-  바 우측 수치 (DEC-UI-017 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
+  바 우측 수치 (DEC-UI-033 — "게이지 바와 수치를 함께 표시, 바 우측에 수치").
 
   **현재 체력 하나만 넣는다.** 확정문이 요구하는 것은 `현재 체력`의 수치이고,
   카드 그림의 이 자리가 55px 이라 `100 / 100` 은 애초에 안 들어간다. 최대치는
@@ -532,7 +621,7 @@
   color: var(--ui-text);
 }
 
-/* ── 하단 오른쪽: 퀵슬롯 5칸 + 회복 칸 ──────────
+/* ── 하단 오른쪽: 퀵슬롯 4칸 + 회복 칸 ──────────
    회복 칸이 화면 오른쪽 끝에 닿는다 (A1) */
 .hud__bottom-right {
   position: absolute;
@@ -621,7 +710,7 @@
   color: var(--ui-text);
 }
 
-/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-017) ── */
+/* ── 선택된 회복 아이템 (퀵슬롯 옆, DEC-UI-033) ── */
 /* 안쪽이 크림색 판이라 어두운 글씨다 (퀵슬롯 칸과 반대) */
 .hud__recovery {
   width: var(--hud-recovery-width);
@@ -1117,7 +1206,7 @@
   color: var(--hub-text-on-art);
 }
 
-/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-017) */
+/* 소지금은 정비 단계에서만 표시한다 (DEC-UI-033) */
 .hub__money {
   display: flex;
   justify-content: space-between;
@@ -1601,7 +1690,7 @@
    마우스를 올렸을 때 뜨는 안내 (아트 디렉션 14.8, 14.9)
 
    보관함 칸과 상점·제작 목록이 같이 쓴다. 항목의 이름·설명·수치가 여기로 간다.
-   DEC-UI-021 이 보관함에 상시를 요구하는 것은 네 분류의 구분 표시까지이고
+   DEC-UI-034 이 보관함에 상시를 요구하는 것은 네 분류의 구분 표시까지이고
    이름·설명·수치는 별개 문장이라 상시가 아니다.
 
    커서를 따라다니므로 `position: fixed` 다 — 팝업 안에 갇히면 잘린다.
@@ -1662,9 +1751,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 투척 퀵슬롯 편성 (DEC-UI-021, DEC-RESOURCE-015) ─
-   다섯 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
-   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 다섯 칸을 가리키지만
+/* ── 투척 퀵슬롯 편성 (DEC-UI-034, DEC-RESOURCE-015) ─
+   네 칸을 항상 모두 표시하고 빈 칸도 빈 상태로 보인다.
+   HUD 의 퀵슬롯(.hud__slot)과 클래스를 나눈다 — 같은 네 칸을 가리키지만
    한쪽은 필드에서 읽는 표시이고 한쪽은 정비에서 누르는 버튼이라 규칙이 갈린다. */
 
 .hub__slots {
@@ -1832,7 +1921,7 @@
   고른 칸 (8/8 — 항목 줄과 같은 문제였다).
 
   **테두리 색만으로는 안 보인다.** 그리고 위 기본 규칙처럼 두께를 2px 로 늘리면
-  그 칸만 1px 씩 줄어 다섯 칸 줄이 흔들린다. 그림이 있을 때는 두께를 되돌리고
+  그 칸만 1px 씩 줄어 네 칸 줄이 흔들린다. 그림이 있을 때는 두께를 되돌리고
   안쪽 테두리와 바탕으로 낸다 — 둘 다 자리를 안 먹는다.
 
   항목 줄은 왼쪽 막대인데 여기는 **사방 테두리**다. 칸이 정사각형에 가까워서
@@ -1844,7 +1933,7 @@
   box-shadow: inset 0 0 0 3px var(--hub-row-selected-edge);
 }
 
-/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-021) */
+/* 빈 칸도 빈 상태로 표시한다 (DEC-UI-034) */
 .hub__slot--empty .hub__slot-name {
   color: var(--ui-text-dim);
 }
@@ -1858,7 +1947,7 @@
   color: var(--ui-danger);
 }
 
-/* `1~5` 입력과 같은 번호다 (DEC-INPUT-006) */
+/* `1~4` 입력과 같은 번호다 (DEC-INPUT-013) */
 .hub__slot-index {
   color: var(--ui-text-dim);
 }
@@ -2227,36 +2316,51 @@
   color: var(--ui-text-dim);
 }
 
-/* 반응 대사를 읽고 넘어가는 버튼. 선택지와 같은 그림을 쓴다 */
-.dialogue__proceed {
+/*
+  읽고 넘긴다는 표시 (DEC-UI-035).
+
+  **버튼이 아니다.** 8/8까지는 확인 버튼이었는데, 확정문이 읽기 진행을 클릭과
+  스페이스 둘 다로 열면서 "다음이 있다는 표시를 두되 조작 번호나 키 이름을
+  드러내지 않게 한다" 로 바뀌었다. 그래서 글자가 없고 누르는 자리도 아니다 —
+  대사창 전체가 누르는 자리이므로 이 표시는 클릭을 받지 않는다.
+
+  깜빡이게 두는 이유는 **멈춰 있는 화살표가 장식으로 읽히기 때문**이다.
+*/
+.dialogue__advance {
   align-self: flex-end;
-  padding: var(--ui-gap-sm) var(--ui-gap-lg);
-  border: 1px solid var(--ui-border-strong);
-  border-radius: var(--ui-radius);
-  background: var(--ui-bg-panel);
-  color: var(--ui-text);
-  font-family: var(--ui-font);
-  font-size: var(--ui-font-md);
-  cursor: pointer;
+  width: 0;
+  height: 0;
+  margin: var(--ui-gap-sm) var(--ui-gap-md) 0 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 14px solid var(--ui-text-dim);
+  pointer-events: none;
+  animation: dialogue-advance 1.1s ease-in-out infinite;
 }
 
-.dialogue--has-art .dialogue__proceed {
-  min-width: calc(var(--dialogue-choice-width) * 0.6);
-  min-height: calc(var(--dialogue-choice-height) * 0.7);
-  border: none;
-  border-radius: 0;
-  background-image: var(--dialogue-button-image);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  color: var(--dialogue-text-on-balloon);
+.dialogue--has-art .dialogue__advance {
+  border-top-color: var(--dialogue-text-on-panel);
 }
 
-.dialogue--has-art .dialogue__proceed:active {
-  transform: translateY(2px);
-}
-
-.dialogue__proceed[hidden] {
+.dialogue__advance[hidden] {
   display: none;
+}
+
+@keyframes dialogue-advance {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(3px);
+  }
+}
+
+/* 말하지 않는 쪽은 어둡게 (19번, 8/8). 딤 전용 그림이 오면 이 규칙만 갈아 끼운다 */
+.dialogue__portrait--dim {
+  filter: brightness(0.45) saturate(0.7);
 }
 
 /* ─────────────────────────────────────────────────

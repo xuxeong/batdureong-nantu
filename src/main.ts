@@ -11,13 +11,14 @@
 import { createEventBus } from './core/bus.ts'
 import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
+import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { createAssetImages, UI_ASSET } from './render/assets.ts'
+import { BGM_ASSET, SOUND_ASSET, createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -241,7 +242,7 @@ let dialogue: {
 let dialogueChoicesById = new Map<string, import('./data/types.ts').DialogueChoice>()
 
 /**
- * 항목별 설명과 수치 (`DEC-UI-021`, 아트 디렉션 14.8·14.9).
+ * 항목별 설명과 수치 (`DEC-UI-034`, 아트 디렉션 14.8·14.9).
  *
  * 보관함·상점·제작 목록이 **같은 사전을 본다.** 세 화면이 각자 만들면 같은 아이템이
  * 화면마다 다른 수치를 보여줄 수 있다. 값은 전부 승인 데이터에서 오고 설명 문장에서
@@ -312,7 +313,7 @@ let allySupport: AllySupport | null = null
 /**
  * 습격 진입 시 "누가 지원하는지" 안내 (DEC-UI-012).
  *
- * `DEC-UI-017` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
+ * `DEC-UI-033` 의 필드 HUD 공통 요소 목록에는 없지만 `DEC-UI-012` 가
  * *"습격 전투에 진입할 때 어느 주민이 지원하는지 알린다"* 로 따로 확정했다.
  * 잠깐 떴다 사라지는 알림이라 자리를 상시로 잡지 않는다.
  */
@@ -1318,6 +1319,12 @@ function noteHitFlash(event: CombatEvent): void {
     sfx.play(mechanicSfx.get('damage_over_time'))
     return
   }
+  // 투척 명중음도 여기서 낸다. 이 함수가 `damaged` 를 받는 네 경로의 유일한
+  // 합류점이라, 발행 지점에 붙이면 그중 하나는 반드시 빠진다.
+  // `impactMode` 가 없는 것은 낫과 지원 주민 공격이라 투척음을 내지 않는다.
+  if (event.impactMode === 'area') sfx.play(SOUND_ASSET.impactArea)
+  else if (event.impactMode === 'direct') sfx.play(SOUND_ASSET.impactDirect)
+
   if (event.targetId === undefined) return
   hitFlashes.set(event.targetId, IMPACT_FLASH_SECONDS)
 }
@@ -2569,6 +2576,8 @@ function onTargetKilled(targetId: string): void {
     return
   }
 
+  // 야생동물 처치는 공통 소리 하나다 (종류를 가르지 않는다).
+  sfx.play(SOUND_ASSET.wildlifeDefeat)
   wildlife?.remove(targetId)
 }
 
@@ -2588,6 +2597,12 @@ function onSickle(): void {
   // 휘두른 것 자체가 조작 성공이다 — 명중과 무관하다 (DEC-RUN-003).
   // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
   bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
+
+  // 휘두름과 명중을 따로 낸다 (DEC-ART-005). 빗나간 휘두름에도 소리가 나야
+  // 사거리를 소리로도 배운다. 여러 대상을 맞혀도 명중음은 한 번이다 —
+  // 대상 수만큼 겹치면 한 번의 휘두름이 여러 번 때린 것처럼 들린다.
+  sfx.play(SOUND_ASSET.sickleSwing)
+  if (result.hits.length > 0) sfx.play(SOUND_ASSET.sickleHit)
 
   for (const hit of result.hits) {
     // 낫은 `swingSickle()` 이 명중을 그 자리에서 돌려주므로 `combat.update()` 의
@@ -2645,14 +2660,19 @@ const input = createInput(renderer.canvas, {
   onInteract,
   onThrow,
   onSickle,
-  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-006).
+  // 선택은 재배·습격 중에도 할 수 있다. 편성만 정비 단계 전용이다 (DEC-INPUT-013).
+  // 선택 전환음은 여기서 낸다 (DEC-ART-005). **버스를 못 쓴다** —
+  // `quickslot.select` 는 시스템 이벤트가 아니라 입력 의도라 `bus.on` 이 안 받는다.
+  // 소진 자동 전환(`quickslot.autoSwitched`)은 시스템 이벤트라 그쪽에 붙어 있다.
   onQuickslotSelect: (index) => {
     if (combat === null || run === null) return
     combat.selectSlot(run, index)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onQuickslotCycle: (dir) => {
     if (combat === null || run === null) return
     combat.cycleSlot(run, dir > 0 ? 1 : -1)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onRecoverShortPress: () => onRecoverPressed(),
   // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
@@ -2784,7 +2804,7 @@ function finishTutorial(): void {
  * 현재 안내를 화면에 맞춘다.
  *
  * `stage` 가 `maintenance` 면 정비 허브를 연다 — 팔고 사고 만드는 것은 거기서만
- * 할 수 있다 (`DEC-INPUT-006` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
+ * 할 수 있다 (`DEC-INPUT-013` — 정비 단계에서만 편성·거래). 다른 단계면 닫는다.
  */
 function syncTutorial(): void {
   if (tutorial === null) return
@@ -2895,7 +2915,7 @@ const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
 function syncScreens(): void {
   const screen = scenes.currentScreen()
 
-  // HUD 는 **필드 공통** 요소다 (DEC-UI-017). 독립 화면은 필드를 대체하는 전환이라
+  // HUD 는 **필드 공통** 요소다 (DEC-UI-033). 독립 화면은 필드를 대체하는 전환이라
   // (DEC-UI-014) HUD 를 남기지 않는다. 독립 화면의 배경이 완전 불투명이 아니라서
   // 그냥 두면 엔딩·런 실패 화면 위로 체력과 일차가 비친다.
   //
@@ -3320,7 +3340,7 @@ function buildPopup(popup: string): HTMLElement {
   return root
 }
 
-/** 편성 팝업이 그릴 내용 (DEC-UI-021) */
+/** 편성 팝업이 그릴 내용 (DEC-UI-034) */
 function quickslotView(): QuickslotView {
   const slots = run?.quickslots.slots ?? []
   const held = run?.resources.throwables ?? {}
@@ -3348,7 +3368,7 @@ function quickslotView(): QuickslotView {
 }
 
 /**
- * 퀵슬롯 편성 (DEC-RESOURCE-014, DEC-INPUT-006).
+ * 퀵슬롯 편성 (DEC-RESOURCE-019, DEC-INPUT-013).
  *
  * **수량을 옮기지 않는다.** 칸은 무기 종류만 보관함에 연결하므로 여기서 바뀌는 것은
  * `slots` 배열 하나뿐이고 보관함은 그대로다.
@@ -3364,7 +3384,7 @@ function assignQuickslot(slotIndex: number, weaponId: string | null): void {
   if (weaponId !== null && slots.some((id, i) => id === weaponId && i !== slotIndex)) {
     console.warn(
       `[정비] ${weaponId} 는 이미 다른 칸에 편성돼 있다. ` +
-        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-014).',
+        '같은 종류를 여러 칸에 두지 않는다 (DEC-RESOURCE-019).',
     )
     return
   }
@@ -3383,7 +3403,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
       id,
       name: displayNames.get(id) ?? id,
       count,
-      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-021, 아트 디렉션 14.8)
+      // 설명과 수치는 마우스를 올렸을 때 뜬다 (DEC-UI-034, 아트 디렉션 14.8)
       description: itemDescriptions.get(id),
       stats: itemStats.get(id),
       icon: itemIcons.get(id),
@@ -3399,7 +3419,7 @@ function rowsOf(store: ItemStore): InventoryRow[] {
 const raidNoticeErrorsReported = new Set<RaidType>()
 
 /**
- * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-017).
+ * HUD·정비 허브가 쓰는 습격 예고 **짧은 표지** (DEC-RUN-011, DEC-UI-033).
  *
  * 일차 시작 화면의 문장(`opening_text`)과 같은 행에서 온다 — 둘은 같은 정보를
  * 길이만 달리 전달한다. 8/5까지 이 자리가 `null` 고정이었고 주석은 "승인되면
@@ -3489,7 +3509,7 @@ function hudView() {
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
-    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-017). 습격 모드에서는 표시하지
+    // 습격 예고는 **재배 모드 전용 요소**다 (DEC-UI-033). 습격 모드에서는 표시하지
     // 않는다 — 그날 밤 습격이 이미 시작됐으므로 예고할 것이 남아 있지 않다.
     raidNoticeLabel: inFarmingStage() ? raidNoticeLabelOf(run?.dayNumber ?? 1) : null,
   }
@@ -3677,7 +3697,7 @@ const loop = createGameLoop(
                 range: runConfig.sickleRange,
                 life: sickleSwing.remaining / SICKLE_SWING_SECONDS,
               },
-        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-017). 0~1 로 넘긴다.
+        // 회복 사용 게이지는 플레이어 옆에 그린다 (DEC-UI-033). 0~1 로 넘긴다.
         recovery:
           run?.recovering == null
             ? null
@@ -3970,6 +3990,130 @@ function beginNightResult(): void {
   }
 }
 
+/**
+ * 배경음 전환 (DEC-ART-005, `docs/submission/SOUND_ASSET_INDEX.md`).
+ *
+ * ── 안 바꾸는 것이 기본이다 ────────────────────────────────
+ *
+ * **아래에 없는 화면은 흐르던 트랙을 그대로 둔다.** 조우 결과·밤 결과의 배경음은
+ * 아직 정해지지 않았고(직전 트랙 유지인지 전용 트랙인지), 전투 전 대화와 투항
+ * 대화는 *"진입 시점에 이미 흐르던 트랙을 그대로 유지한다"* 로 정해져 있다.
+ * 정해지지 않은 자리에 임의로 트랙을 고르면 그게 곧 결정이 된다.
+ *
+ * ── 재배와 정비가 같은 트랙이다 ────────────────────────────
+ *
+ * 정비 허브는 화면 전환이 아니라 필드 위 오버레이라 `screen.changed` 가 오지
+ * 않는다. 그런데 같은 `farm` 트랙이므로 **아무것도 안 해도 이어진다** — 여기서
+ * `overlay.opened` 를 따로 듣지 않는 이유다. `bgm.play()` 가 같은 ID 를 무시하는
+ * 것과 맞물려, 재배 → 정비 → 다음 날 재배가 한 곡으로 이어진다.
+ */
+function bgmForScreen(screen: ScreenId): string | null {
+  if (screen === 'title' || screen === 'name_input') return BGM_ASSET.title
+  if (screen === 'run_failed') return BGM_ASSET.defeat
+  if (screen === 'ending') return BGM_ASSET.ending
+  return null
+}
+
+bus.on('screen.changed', ({ screen }) => {
+  const track = bgmForScreen(screen)
+  if (track !== null) bgm.play(track)
+})
+
+/**
+ * 부팅 시점의 화면에도 트랙을 건다.
+ *
+ * **첫 `screen.changed` 는 이 구독보다 먼저 지나간다.** `createSceneManager()` 가
+ * 만들어지는 그 자리에서 `apply(INITIAL_STEP)` 을 부르고, 그게 타이틀의
+ * `screen.changed` 를 발행한다 — 위 구독은 180줄 뒤에 등록되므로 못 듣는다.
+ *
+ * 놓치면 **대기 중인 트랙이 없어서 화면을 눌러도 아무 일이 안 일어난다.**
+ * 자동 재생 거부는 거부된 트랙을 기억했다가 첫 조작에 다시 트는 구조인데,
+ * 애초에 요청이 없었으니 기억할 것도 없다. 8/8 에 담당자가 *"타이틀에서 아무
+ * 데나 눌러도 안 나고 버튼을 눌러야 난다"* 로 잡았다 — 버튼을 누르면 다음
+ * 화면의 `screen.changed` 가 와서 그제야 걸렸던 것이다.
+ */
+const bootTrack = bgmForScreen(scenes.currentScreen() ?? 'title')
+if (bootTrack !== null) bgm.play(bootTrack)
+
+/*
+  효과음 배선 (DEC-ART-005).
+
+  **전부 버스 구독이다.** 소리를 내는 조건을 발행 지점마다 적으면 발행자가 하나
+  더 생길 때 빠진다 — 8/7 에 명중 표시로 네 번 반복한 자리다 (3-B-1).
+  낫 소리만 예외인데 `swingSickle()` 이 이벤트가 아니라 반환값이라 구조가 다르다.
+*/
+bus.on('screen.changed', () => sfx.play(SOUND_ASSET.screenTransition))
+bus.on('overlay.opened', () => sfx.play(SOUND_ASSET.modalOpen))
+bus.on('request.rejected', () => sfx.play(SOUND_ASSET.buttonReject))
+
+bus.on('farm.planted', () => sfx.play(SOUND_ASSET.plantSeed))
+bus.on('farm.harvested', () => sfx.play(SOUND_ASSET.harvest))
+// `DEC-UI-004` 가 "수확 가능으로 바뀔 때 짧은 효과음" 을 확정문으로 요구한다.
+bus.on('farm.plotReady', () => sfx.play(SOUND_ASSET.harvestReady))
+
+// 판매·구매·보상이 같은 소리다. 셋 다 "받았다" 는 같은 사실을 알린다.
+bus.on('shop.sold', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('shop.bought', () => sfx.play(SOUND_ASSET.tradeConfirm))
+bus.on('reward.granted', () => sfx.play(SOUND_ASSET.tradeConfirm))
+
+bus.on('quickslot.autoSwitched', () => sfx.play(SOUND_ASSET.quickslotSwitch))
+bus.on('quickslot.allEmpty', () => sfx.play(SOUND_ASSET.quickslotEmpty))
+bus.on('combat.throwableSpent', () => sfx.play(SOUND_ASSET.throw))
+
+bus.on('recovery.started', () => sfx.play(SOUND_ASSET.recoveryStart))
+bus.on('recovery.completed', () => sfx.play(SOUND_ASSET.recoveryComplete))
+
+bus.on('dialogue.opened', () => sfx.play(SOUND_ASSET.dialogueOpen))
+bus.on('run.failed', () => sfx.play(SOUND_ASSET.runFailed))
+bus.on('ending.decided', () => sfx.play(SOUND_ASSET.endingDecided))
+
+/**
+ * 일차 시작 스팅어 (`DEC-RUN-011`).
+ *
+ * 오늘 밤에 무엇이 오는지를 소리로도 알린다. **일차가 아니라 승인 일정의
+ * `raid_type` 으로 고른다** — 화면에 뜨는 예고 문구를 고르는 기준과 같아야
+ * 소리와 글이 어긋나지 않는다.
+ */
+bus.on('screen.changed', ({ screen }) => {
+  if (screen !== 'day_start') return
+  const raidType = raidTypeOfDay(run?.dayNumber ?? 1)
+  if (raidType === 'final_raid') sfx.play(SOUND_ASSET.dayStartFinal)
+  else if (raidType === 'raid') sfx.play(SOUND_ASSET.dayStartRaid)
+  else sfx.play(SOUND_ASSET.dayStartNone)
+})
+bus.on('encounter.finished', ({ finalOutcome }) => {
+  // 막타일 때만이다. 공감·협상·영입·퇴각은 죽인 것이 아니다 (DEC-RESIDENT-052).
+  if (finalOutcome === 'killed') sfx.play(SOUND_ASSET.residentDefeat)
+})
+
+/*
+  버튼 클릭음은 버스가 아니라 DOM 에 건다.
+
+  누를 수 있는 것이 화면마다 흩어져 있고 그 전부가 이벤트를 쏘지는 않는다 —
+  조작 안내 펼치기나 팝업 닫기처럼 게임 상태를 안 바꾸는 버튼이 그렇다.
+  버튼마다 손으로 붙이면 다음에 만드는 버튼이 반드시 빠진다.
+
+  **막힌 버튼은 울리지 않는다.** `disabled` 는 클릭 이벤트가 아예 안 오고,
+  눌렀는데 거절된 경우는 `request.rejected` 가 따로 거절음을 낸다.
+*/
+uiRoot.addEventListener('click', (event) => {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest('button') === null) return
+  sfx.play(SOUND_ASSET.buttonClick)
+})
+
+bus.on('field.entered', ({ mode }) => {
+  if (mode !== 'raid') {
+    bgm.play(BGM_ASSET.farm)
+    return
+  }
+  // 마지막 습격만 다른 곡이다. 일차가 아니라 승인 일정의 raid_type 으로 가른다 —
+  // "5일차" 는 지금 일정이 그럴 뿐이고 코드가 알 값이 아니다 (DEC-RUN-011).
+  const final = raidTypeOfDay(run?.dayNumber ?? 1) === 'final_raid'
+  bgm.play(final ? BGM_ASSET.boss : BGM_ASSET.raid)
+})
+
 // 일지 준비와 밤 결과 문구 선택을 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫
 // 그리기가 지난 값을 그대로 쓰고 한 박자 늦게 바뀐다.
 bus.on('screen.changed', beginDayStart)
@@ -4067,7 +4211,7 @@ bus.on('shop.sold', () => completeTutorialStep('sell_crop'))
 bus.on('shop.bought', () => completeTutorialStep('buy_material'))
 bus.on('craft.made', () => completeTutorialStep('craft_item'))
 // 편성 확정만 듣는다. 요청(`quickslot.assign`)은 중복 편성으로 거절될 수 있어
-// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-014).
+// 아무것도 안 바뀐 채 다음 안내로 넘어간다 (DEC-RESOURCE-019).
 bus.on('quickslot.assigned', () => completeTutorialStep('assign_quickslot'))
 bus.on('combat.sickleSwung', () => completeTutorialStep('use_sickle'))
 // 투척만 곧바로 알리지 않는다. 마지막 단계라 완료되는 순간 종료 화면이 필드를
@@ -4091,6 +4235,10 @@ bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
 bus.on('combat.playerDamaged', () => {
   playerHitRemaining = PLAYER_HIT_SECONDS
 })
+// 깜빡임의 짝이 되는 소리 (DEC-ART-005). **발행 지점이 아니라 여기에 붙인다** —
+// `combat.playerDamaged` 를 내는 곳이 습격(주민)과 재배(야생동물) 둘이라 발행
+// 쪽에 붙이면 한쪽을 빠뜨린다. 8/7 에 명중 표시로 정확히 그 실수를 했다 (3-B-1).
+bus.on('combat.playerDamaged', () => sfx.play(SOUND_ASSET.playerHit))
 
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)

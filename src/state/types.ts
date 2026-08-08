@@ -57,18 +57,27 @@ export interface Resources {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 투척 퀵슬롯 (DEC-INPUT-006, DEC-RESOURCE-014 ~ 016)
+// 투척 퀵슬롯 (DEC-INPUT-013, DEC-RESOURCE-019, DEC-RESOURCE-015, DEC-RESOURCE-016)
 // ─────────────────────────────────────────────────────────────
 
-/** 퀵슬롯은 5칸으로 고정한다 (DEC-INPUT-006) */
-export const THROWABLE_QUICKSLOT_COUNT = 5
+/**
+ * 퀵슬롯은 4칸으로 고정한다 (DEC-INPUT-013).
+ *
+ * **8/8 에 5칸에서 줄였다.** 승인된 투척 무기가 4종이라 5칸은 어떻게 편성해도
+ * 한 칸이 항상 빈다 — 빈 칸을 허용하는 것과 채울 수 없는 칸을 두는 것은 다르다.
+ * 칸 수를 여기 하나로 두는 이유는 HUD·편성 팝업·키 배정이 전부 이 값을 따라야
+ * 하기 때문이다. 다만 **키는 `input/bindings.ts` 가 따로 들고 있다** — 배치표가
+ * 유일한 원본이라(`DEC-INPUT-001`) 여기서 만들 수 없다. 둘이 갈리면 5번 키가
+ * 없는 칸을 가리키므로 아래 검사로 막는다.
+ */
+export const THROWABLE_QUICKSLOT_COUNT = 4
 
 /**
  * 퀵슬롯 편성. 칸마다 무기 **종류 ID만** 담는다. 비어 있으면 null.
  *
  * 수량은 여기 없다 — Resources.throwables 를 본다 (DEC-RESOURCE-002).
  * 수량이 0이 돼도 편성은 자동 해제하지 않고 사용 불가 상태로만 둔다 (DEC-RESOURCE-015).
- * 같은 종류를 여러 칸에 중복 편성할 수 없다 (DEC-RESOURCE-014).
+ * 같은 종류를 여러 칸에 중복 편성할 수 없다 (DEC-RESOURCE-019).
  */
 export interface ThrowableQuickslots {
   /** 길이 THROWABLE_QUICKSLOT_COUNT 고정 */

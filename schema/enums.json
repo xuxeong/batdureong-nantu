@@ -1,11 +1,15 @@
 {
   "$comment": "콘텐츠 담당자가 새로 만들거나 수정할 수 없는 고정 허용 목록. 각 항목의 values는 source에 적힌 DEC가 열거한 값을 그대로 옮긴 것이다. 새 값의 추가는 데이터 행 추가가 아니라 시스템·스키마 변경으로 처리한다.",
-
   "content_status": {
     "source": "DEC-CONTENT-001",
-    "values": ["draft", "in_review", "approved", "needs_review", "retired"]
+    "values": [
+      "draft",
+      "in_review",
+      "approved",
+      "needs_review",
+      "retired"
+    ]
   },
-
   "kind": {
     "source": "DEC-CONTENT-002 ~ DEC-CONTENT-017, DEC-CONTENT-019, DEC-CONTENT-021",
     "values": [
@@ -37,13 +41,15 @@
       "fear_increment"
     ]
   },
-
   "stage": {
     "source": "DEC-CONTENT-025",
     "$comment": "튜토리얼 단계가 속한 구간. DEC-RUN-003 이 정한 재배 → 전투 → 정비 순서를 따른다.",
-    "values": ["farming", "combat", "maintenance"]
+    "values": [
+      "farming",
+      "combat",
+      "maintenance"
+    ]
   },
-
   "completion_key": {
     "source": "DEC-CONTENT-025",
     "$comment": "튜토리얼 단계의 완료를 코드가 판정하는 고정 시스템 키. 콘텐츠 담당자가 새로 만들 수 없고 추가는 스키마와 구현 변경으로 처리한다.",
@@ -58,7 +64,6 @@
       "assign_quickslot"
     ]
   },
-
   "asset_role": {
     "source": "DEC-ART-004",
     "$comment": "콘텐츠 에셋 연결 CSV 의 역할이자 논리 에셋 ID `asset.<구간>.<이름>` 의 구간이다. 둘은 같은 값을 쓴다. UI·시스템 에셋은 어떤 콘텐츠에도 속하지 않으므로 이 목록이 아니라 별도 고정 목록으로 관리한다 — 아래 ui_system_asset_id 다 (2026-08-05 신설). field_sprite_left·field_sprite_right·field_sprite_attack 은 2026-08-07 에 DEC-ART-001 폐기·DEC-ART-002 대체로 더했다 (그 002 는 같은 날 밤 DEC-ART-003, 다시 DEC-ART-004 로 대체됐다) — 낫 스윙·주민 공격·좌우 이동 방향 전환에 한해 프레임 교체 스프라이트를 허용하면서 생긴 구간이다. field_sprite 부모(플레이어·주민)에만 쓴다.",
@@ -81,10 +86,9 @@
       "field_sprite_attack"
     ]
   },
-
   "ui_system_asset_id": {
-    "source": "DEC-ART-004",
-    "$comment": "어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋의 논리 에셋 ID 고정 목록. 콘텐츠 연결 CSV(content_assets.csv)의 asset_role 로는 관리할 수 없다 — ui 구간이 asset_role 목록에 없기 때문이다. 반대로 asset.background.prototype_field 는 background 가 asset_role 에 있고 maps.csv 가 부모라서 이 목록이 아니라 content_assets.csv 행으로 간다. 새 ID 추가는 데이터 행 추가가 아니라 스키마 변경으로 처리한다. 목록은 허용되는 ID 를 정하는 것이지 파일 존재를 뜻하지 않는다 — 아래 bg_* 아홉과 logo.title 은 파일보다 먼저 등록했다. 반대로 asset.ui.resident_hp_gauge 는 2026-08-08 에 목록에서 뺐다: 적 체력은 캐릭터 머리 위 Canvas 막대로 그리고 별도 이미지를 만들지 않기로 확정돼(A2 목업 기준) 파일도 배선도 생기지 않는다. asset.ui.heal_gauge 는 남긴다 — 막힌 것은 그것을 돌려 적 체력바로 쓰는 것이지 회복 사용 게이지(DEC-UI-017) 용도가 아니다. 반대 방향도 마찬가지다: assets/final/ui/ 에 파일이 있어도 이 목록에 없으면 src/render/assets.ts 가 그 ID 를 쓰는 코드를 거부한다. 2026-08-07 에 panel_border·panel_texture·button_normal·button_disabled 를 더했다 — A4 대화 화면을 목업대로 조립하려면 대사창이 panel_border+panel_texture 9-slice 이고 발화자 이름판·선택지가 button_normal, 비활성 선택지가 button_disabled 이기 때문이다. 넷 다 DEC-ART-001 이 ui 구간에 허용한 범주(패널·버튼) 안이라 DEC 변경 없이 스키마 수정으로 끝난다. button_pressed 는 파일이 있지만 넣지 않았다 — 눌림 상태는 CSS :active 로 처리한다. 화면 배경 9종(bg_*)과 타이틀 로고는 2026-08-07 밤에 **파일보다 먼저** 등록했다. DEC-ART-004 가 '화면 배경, 타이틀 로고' 를 이 고정 목록의 ui·logo 구간으로 정했는데, 같은 날 UI 부품 16장이 목록에 없어 파일이 와 있는데도 못 붙는 일이 있었다. 8/8 촬영 전에 배경이 도착하므로 그 왕복을 없애려고 이름을 먼저 합의하고 등록했다. **등록은 필요조건이지 충분조건이 아니다** — 각 화면이 그 ID 를 실제로 참조해야 그림이 나온다. 파일명이 달라지면 이 목록의 해당 줄을 고친다. 2026-08-08 에 정비 화면 부품 11 종을 더했다 — item_slot·item_slot_badge·money_plate·lock_icon(B2 시트), step_plus·step_minus(B4 시트), shutter_left·shutter_right(B5, 각 960×1080 으로 합치면 1920×1080 인 닫힌 미닫이문이 A3 목업의 배경이다), raid_notice_none/raid/final(B3, 정비 화면의 예고 표지는 그림 자리와 문구 자리가 나뉘어 money_plate 와 같은 구조다). 열한 개 모두 DEC-ART-004 가 ui 구간에 허용한 범주(패널·버튼·아이콘·셔터·HUD 틀) 안이라 DEC 변경 없이 스키마 수정으로 끝난다. 파일은 8/6~8/7 에 이미 와 있었는데 목록에 없어 정비·상점·제작·편성 네 화면이 8/8 까지 아트 없이 남아 있었다 — 이 주석이 위에서 말한 '등록은 필요조건' 의 실제 사례다.",
+    "source": "DEC-ART-005",
+    "$comment": "어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋의 논리 에셋 ID 고정 목록. 콘텐츠 연결 CSV(content_assets.csv)의 asset_role 로는 관리할 수 없다 — ui 구간이 asset_role 목록에 없기 때문이다. 반대로 asset.background.prototype_field 는 background 가 asset_role 에 있고 maps.csv 가 부모라서 이 목록이 아니라 content_assets.csv 행으로 간다. 새 ID 추가는 데이터 행 추가가 아니라 스키마 변경으로 처리한다. 목록은 허용되는 ID 를 정하는 것이지 파일 존재를 뜻하지 않는다 — 아래 bg_* 아홉과 logo.title 은 파일보다 먼저 등록했다. 반대로 asset.ui.resident_hp_gauge 는 2026-08-08 에 목록에서 뺐다: 적 체력은 캐릭터 머리 위 Canvas 막대로 그리고 별도 이미지를 만들지 않기로 확정돼(A2 목업 기준) 파일도 배선도 생기지 않는다. asset.ui.heal_gauge 는 남긴다 — 막힌 것은 그것을 돌려 적 체력바로 쓰는 것이지 회복 사용 게이지(DEC-UI-017) 용도가 아니다. 반대 방향도 마찬가지다: assets/final/ui/ 에 파일이 있어도 이 목록에 없으면 src/render/assets.ts 가 그 ID 를 쓰는 코드를 거부한다. 2026-08-07 에 panel_border·panel_texture·button_normal·button_disabled 를 더했다 — A4 대화 화면을 목업대로 조립하려면 대사창이 panel_border+panel_texture 9-slice 이고 발화자 이름판·선택지가 button_normal, 비활성 선택지가 button_disabled 이기 때문이다. 넷 다 DEC-ART-001 이 ui 구간에 허용한 범주(패널·버튼) 안이라 DEC 변경 없이 스키마 수정으로 끝난다. button_pressed 는 파일이 있지만 넣지 않았다 — 눌림 상태는 CSS :active 로 처리한다. 화면 배경 9종(bg_*)과 타이틀 로고는 2026-08-07 밤에 **파일보다 먼저** 등록했다. DEC-ART-004 가 '화면 배경, 타이틀 로고' 를 이 고정 목록의 ui·logo 구간으로 정했는데, 같은 날 UI 부품 16장이 목록에 없어 파일이 와 있는데도 못 붙는 일이 있었다. 8/8 촬영 전에 배경이 도착하므로 그 왕복을 없애려고 이름을 먼저 합의하고 등록했다. **등록은 필요조건이지 충분조건이 아니다** — 각 화면이 그 ID 를 실제로 참조해야 그림이 나온다. 파일명이 달라지면 이 목록의 해당 줄을 고친다. 2026-08-08 에 정비 화면 부품 11 종을 더했다 — item_slot·item_slot_badge·money_plate·lock_icon(B2 시트), step_plus·step_minus(B4 시트), shutter_left·shutter_right(B5, 각 960×1080 으로 합치면 1920×1080 인 닫힌 미닫이문이 A3 목업의 배경이다), raid_notice_none/raid/final(B3, 정비 화면의 예고 표지는 그림 자리와 문구 자리가 나뉘어 money_plate 와 같은 구조다). 열한 개 모두 DEC-ART-004 가 ui 구간에 허용한 범주(패널·버튼·아이콘·셔터·HUD 틀) 안이라 DEC 변경 없이 스키마 수정으로 끝난다. 파일은 8/6~8/7 에 이미 와 있었는데 목록에 없어 정비·상점·제작·편성 네 화면이 8/8 까지 아트 없이 남아 있었다 — 이 주석이 위에서 말한 '등록은 필요조건' 의 실제 사례다. 2026-08-08 에 DEC-ART-005 로 bgm·sfx 구간이 열려 배경음 6종과 낫 소리 3종을 더했다 — 배경음은 화면·단계에 붙어 부모 콘텐츠가 없고, 낫 소리는 부모가 player_base_stats.prototype 하나로 몰리는데 content_assets 고유키가 (content_id, asset_role) 이라 한 콘텐츠에 sfx 를 하나만 붙일 수 있어서다. 이미 content_assets.csv 로 붙은 야생동물 울음 3종과 화상·감속 2종은 그대로 두고 여기에 넣지 않는다. 같은 날 효과음 18종을 더 더해 파일이 있는 27종 중 26종이 등록됐다 — 8/8 밤에 새로 온 5종(일차 시작 예고 3·런 실패·엔딩 확정 스팅어)까지 더해 파일 32종 중 31종이 등록됐다 — 남은 record_typing 은 엔딩 기록문 타이핑 연출이 생길 때 더한다.",
     "values": [
       "asset.ui.field_frame_front",
       "asset.ui.player_status_card",
@@ -122,10 +126,41 @@
       "asset.ui.bg_run_failed",
       "asset.ui.bg_ending",
       "asset.ui.bg_pause",
-      "asset.logo.title"
+      "asset.logo.title",
+      "asset.bgm.boss",
+      "asset.bgm.defeat",
+      "asset.bgm.ending",
+      "asset.bgm.farm",
+      "asset.bgm.raid",
+      "asset.bgm.title",
+      "asset.sfx.player_hit",
+      "asset.sfx.sickle_hit",
+      "asset.sfx.sickle_swing",
+      "asset.sfx.button_click",
+      "asset.sfx.button_reject",
+      "asset.sfx.modal_open",
+      "asset.sfx.screen_transition",
+      "asset.sfx.plant_seed",
+      "asset.sfx.harvest_ready",
+      "asset.sfx.harvest",
+      "asset.sfx.trade_confirm",
+      "asset.sfx.quickslot_switch",
+      "asset.sfx.quickslot_empty",
+      "asset.sfx.throw",
+      "asset.sfx.impact_direct",
+      "asset.sfx.impact_area",
+      "asset.sfx.recovery_start",
+      "asset.sfx.recovery_complete",
+      "asset.sfx.dialogue_open",
+      "asset.sfx.wildlife_defeat",
+      "asset.sfx.resident_defeat",
+      "asset.sfx.day_start_none",
+      "asset.sfx.day_start_raid",
+      "asset.sfx.day_start_final",
+      "asset.sfx.run_failed",
+      "asset.sfx.ending_decided"
     ]
   },
-
   "system_result_id": {
     "source": "DEC-CONTENT-009",
     "values": [
@@ -138,7 +173,6 @@
       "system_result.surrender.resume_combat"
     ]
   },
-
   "judgement_rule_id": {
     "source": "DEC-CONTENT-009",
     "values": [
@@ -146,23 +180,34 @@
       "dialogue_judgement_rule.personality_resource_offer"
     ]
   },
-
   "dialogue_phase": {
     "source": "DEC-CONTENT-009",
-    "values": ["precombat", "surrender"]
+    "values": [
+      "precombat",
+      "surrender"
+    ]
   },
-
   "choice_function": {
     "source": "DEC-CONTENT-009",
-    "precombat": ["empathy", "resource_negotiation", "threat"],
-    "surrender": ["recruit", "retreat_reward", "resume_combat"]
+    "precombat": [
+      "empathy",
+      "resource_negotiation",
+      "threat"
+    ],
+    "surrender": [
+      "recruit",
+      "retreat_reward",
+      "resume_combat"
+    ]
   },
-
   "combat_state": {
     "source": "DEC-CONTENT-009",
-    "values": ["weakened", "normal", "enraged"]
+    "values": [
+      "weakened",
+      "normal",
+      "enraged"
+    ]
   },
-
   "combat_modifier_id": {
     "source": "DEC-CONTENT-009",
     "values": [
@@ -171,7 +216,6 @@
       "resident_combat_modifier.enraged"
     ]
   },
-
   "final_outcome": {
     "source": "DEC-RESIDENT-052",
     "values": [
@@ -182,57 +226,79 @@
       "killed"
     ]
   },
-
   "combat_mechanic_key": {
     "source": "DEC-CONTENT-013",
-    "values": ["damage_over_time", "movement_slow"]
+    "values": [
+      "damage_over_time",
+      "movement_slow"
+    ]
   },
-
   "attack_pattern_key": {
     "source": "DEC-CONTENT-008",
-    "values": ["melee_chase", "ranged_chase"]
+    "values": [
+      "melee_chase",
+      "ranged_chase"
+    ]
   },
-
   "target_mode": {
     "source": "DEC-CONTENT-007",
-    "values": ["crop_first", "player_only"]
+    "values": [
+      "crop_first",
+      "player_only"
+    ]
   },
-
   "impact_mode": {
     "source": "DEC-CONTENT-005",
-    "values": ["direct", "area"]
+    "values": [
+      "direct",
+      "area"
+    ]
   },
-
   "resource_kind": {
     "source": "DEC-CONTENT-010",
-    "values": ["money", "crop", "material", "throwable_weapon", "recovery_item"]
+    "values": [
+      "money",
+      "crop",
+      "material",
+      "throwable_weapon",
+      "recovery_item"
+    ]
   },
-
   "currency_id": {
     "source": "DEC-CONTENT-010",
-    "values": ["currency.money"]
+    "values": [
+      "currency.money"
+    ]
   },
-
   "result_kind": {
     "source": "DEC-CONTENT-015",
-    "values": ["throwable_weapon", "recovery_item"]
+    "values": [
+      "throwable_weapon",
+      "recovery_item"
+    ]
   },
-
   "input_kind": {
     "source": "DEC-CONTENT-015",
-    "values": ["crop", "material"]
+    "values": [
+      "crop",
+      "material"
+    ]
   },
-
   "unlock_type": {
     "source": "DEC-CONTENT-015",
-    "values": ["base", "crop_mastery"]
+    "values": [
+      "base",
+      "crop_mastery"
+    ]
   },
-
   "raid_type": {
     "source": "DEC-CONTENT-002",
-    "values": ["none", "raid", "final_raid"]
+    "values": [
+      "none",
+      "raid",
+      "final_raid"
+    ]
   },
-
   "point_role": {
     "source": "DEC-CONTENT-016",
     "values": [
@@ -243,12 +309,13 @@
       "wildlife_spawn"
     ]
   },
-
   "info_type": {
     "source": "DEC-CONTENT-017",
-    "values": ["basic", "core"]
+    "values": [
+      "basic",
+      "core"
+    ]
   },
-
   "condition_type": {
     "source": "DEC-CONTENT-011",
     "values": [
@@ -260,24 +327,37 @@
       "dominant_crop_attribute"
     ]
   },
-
   "comparison": {
     "source": "DEC-CONTENT-011",
-    "values": ["eq", "gte", "lte"]
+    "values": [
+      "eq",
+      "gte",
+      "lte"
+    ]
   },
-
   "relationship_state": {
     "source": "DEC-CONTENT-022",
     "$comment": "주민 관계 상태 여섯 가지의 데이터 키. unformed 는 조우 해결 전의 초기 상태다. ending_conditions 의 specific_resident_relationship 이 target_value 로 여섯 개를 모두 쓴다.",
-    "values": ["unformed", "friendly", "trade", "companion", "coercive", "severed"]
+    "values": [
+      "unformed",
+      "friendly",
+      "trade",
+      "companion",
+      "coercive",
+      "severed"
+    ]
   },
-
   "relationship_count_subject": {
     "source": "DEC-CONTENT-011, DEC-CONTENT-022",
     "$comment": "relationship_state 와 달리 unformed 를 포함하지 않는다. 해결되지 않은 주민의 수는 엔딩 조건으로 쓰지 않는다 (DEC-CONTENT-022).",
-    "values": ["friendly", "trade", "companion", "coercive", "severed"]
+    "values": [
+      "friendly",
+      "trade",
+      "companion",
+      "coercive",
+      "severed"
+    ]
   },
-
   "important_action_count_subject": {
     "source": "DEC-CONTENT-011",
     "values": [
@@ -291,7 +371,6 @@
       "resident_killed"
     ]
   },
-
   "specific_resident_outcome_target": {
     "source": "DEC-CONTENT-011",
     "values": [
@@ -302,19 +381,25 @@
       "killed"
     ]
   },
-
   "placeholder": {
     "source": "DEC-PIPELINE-013",
     "$comment": "작업용 CSV와 승인 후보에서만 허용. 승인 CSV에는 남을 수 없다.",
-    "values": ["AUTO", "TBD"]
+    "values": [
+      "AUTO",
+      "TBD"
+    ]
   },
-
   "forbidden_empty_marker": {
     "source": "DEC-PIPELINE-013",
     "$comment": "빈 값을 이 표기로 대신할 수 없다.",
-    "values": ["null", "NULL", "N/A", "없음", "-"]
+    "values": [
+      "null",
+      "NULL",
+      "N/A",
+      "없음",
+      "-"
+    ]
   },
-
   "$open_questions_comment": "UI·시스템 에셋 ID 고정 목록은 2026-08-05 에 ui_system_asset_id 로 넣었다. A1 에셋 19종이 도착해 '실제 화면과 에셋이 나올 때' 라는 조건이 충족됐다. logo·hud·font 구간의 ID 는 아직 파일도 확정 ID 도 없어 넣지 않았다 — 필요할 때 같은 절차로 이 목록에 추가한다 (DEC-ART-004).",
   "open_questions": []
 }

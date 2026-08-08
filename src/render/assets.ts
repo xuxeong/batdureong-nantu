@@ -91,16 +91,16 @@ export const UI_ASSET = {
   fieldFrameFront: 'asset.ui.field_frame_front',
   /** `E` 대상 경작지 강조 틀 (DEC-UI-018) */
   plotHighlight: 'asset.ui.plot_highlight',
-  /** 일차와 습격 예고가 한 틀 (DEC-UI-017, DEC-RUN-011) */
+  /** 일차와 습격 예고가 한 틀 (DEC-UI-033, DEC-RUN-011) */
   signboard: 'asset.ui.signboard',
-  /** 숫자 없는 가로 게이지 (DEC-UI-017) */
+  /** 숫자 없는 가로 게이지 (DEC-UI-033) */
   farmingTimer: 'asset.ui.farming_timer',
   /** 초상화·이름·체력 바가 한 틀 */
   playerStatusCard: 'asset.ui.player_status_card',
   /** 투척 퀵슬롯 빈 칸 / 선택된 칸 (DEC-UI-002) */
   quickslot: 'asset.ui.quickslot',
   quickslotSelected: 'asset.ui.quickslot_selected',
-  /** 선택된 회복 아이템 칸 (DEC-UI-017) */
+  /** 선택된 회복 아이템 칸 (DEC-UI-033) */
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',
@@ -185,6 +185,114 @@ export const UI_ASSET = {
   raidNoticeRaid: 'asset.ui.raid_notice_raid',
   raidNoticeFinal: 'asset.ui.raid_notice_final',
 } as const
+
+/**
+ * 배경음의 논리 에셋 ID (`DEC-ART-005`).
+ *
+ * **`UI_ASSET` 과 같은 자리다.** 2026-08-08 에 `DEC-ART-004` 를 폐기·대체하면서
+ * 고정 목록이 쓸 수 있는 구간에 `bgm`·`sfx` 가 열렸다. 배경음은 화면·단계에
+ * 붙는 소리라 어떤 콘텐츠에도 속하지 않아 `content_assets.csv` 로는 관리할 수 없다.
+ *
+ * **어느 화면에 어느 트랙인지는 여기 없다.** 그 판단은 `main.ts` 가 하고 이
+ * 파일은 이름만 준다 — `audio/bgm.ts` 가 경로를 모르는 것과 같은 이유다.
+ */
+export const BGM_ASSET = {
+  /** 타이틀 화면 */
+  title: 'asset.bgm.title',
+  /** 재배와 정비 공용. 두 단계가 이어지는 동안 트랙을 끊지 않는다 */
+  farm: 'asset.bgm.farm',
+  /** 습격 전투 (2~4일차) */
+  raid: 'asset.bgm.raid',
+  /** 마지막 습격 — 이장 결투 (5일차) */
+  boss: 'asset.bgm.boss',
+  /** 런 실패 화면 */
+  defeat: 'asset.bgm.defeat',
+  /** 엔딩 화면 공용 */
+  ending: 'asset.bgm.ending',
+} as const
+
+/**
+ * 콘텐츠에 붙일 수 없는 효과음의 논리 에셋 ID (`DEC-ART-005`).
+ *
+ * **셋뿐인 이유가 있다.** 효과음 대부분은 부모 콘텐츠가 있어 `content_assets.csv`
+ * 로 붙는다(야생동물 울음 3·화상 2·감속 2). 낫 소리 셋은 부모가
+ * `player_base_stats.prototype` 하나로 몰리는데 그 표의 고유키가
+ * `(content_id, asset_role)` 이라 **한 콘텐츠에 `sfx` 는 하나뿐**이다.
+ * 그래서 이 셋만 고정 목록으로 온다.
+ *
+ * 나머지 효과음 19종은 아직 어느 트리거에 붙일지 정리가 안 끝나 등록하지 않았다
+ * (`docs/submission/SOUND_ASSET_INDEX.md`). 여기 이름을 먼저 적어 두지 않는다 —
+ * 목록에 없는 ID 는 아래 검사가 거절한다.
+ */
+export const SOUND_ASSET = {
+  /** 휘두르는 순간. 명중과 무관하게 난다 */
+  sickleSwing: 'asset.sfx.sickle_swing',
+  /** 낫이 실제로 맞았을 때 */
+  sickleHit: 'asset.sfx.sickle_hit',
+  /** 플레이어가 맞았을 때. 피격 깜빡임의 짝이다 */
+  playerHit: 'asset.sfx.player_hit',
+
+  /** 버튼 클릭 전반. 어느 화면이든 같은 소리다 */
+  buttonClick: 'asset.sfx.button_click',
+  /** 눌렸지만 거절된 것 (`request.rejected`) */
+  buttonReject: 'asset.sfx.button_reject',
+  /** 오버레이가 열릴 때 */
+  modalOpen: 'asset.sfx.modal_open',
+  /** 독립 화면 전환 */
+  screenTransition: 'asset.sfx.screen_transition',
+
+  plantSeed: 'asset.sfx.plant_seed',
+  /** 수확 가능으로 바뀌는 순간. `DEC-UI-004` 가 요구하는 소리다 */
+  harvestReady: 'asset.sfx.harvest_ready',
+  harvest: 'asset.sfx.harvest',
+  /** 판매·구매·보상 획득 공용 */
+  tradeConfirm: 'asset.sfx.trade_confirm',
+
+  /** 퀵슬롯 선택 전환과 소진 자동 전환 공용 */
+  quickslotSwitch: 'asset.sfx.quickslot_switch',
+  /** 던질 것이 하나도 안 남았다 */
+  quickslotEmpty: 'asset.sfx.quickslot_empty',
+  throw: 'asset.sfx.throw',
+  /** 투척 명중 — `impact_mode` 로 가른다 (DEC-CONTENT-005) */
+  impactDirect: 'asset.sfx.impact_direct',
+  impactArea: 'asset.sfx.impact_area',
+
+  recoveryStart: 'asset.sfx.recovery_start',
+  recoveryComplete: 'asset.sfx.recovery_complete',
+
+  dialogueOpen: 'asset.sfx.dialogue_open',
+  /** 야생동물 처치 (공통) */
+  wildlifeDefeat: 'asset.sfx.wildlife_defeat',
+  /** 주민을 죽여서 조우가 끝났다 */
+  residentDefeat: 'asset.sfx.resident_defeat',
+
+  /**
+   * 일차 시작 화면의 습격 예고 스팅어 셋 (`DEC-RUN-011`, 전성민 8/8).
+   *
+   * **화면 전환음과 별개다.** 전환음은 "화면이 바뀌었다" 이고 이쪽은 "오늘 밤에
+   * 무엇이 오는가" 라 서로 다른 정보다. 원래 습격 예고 3종과 일차 시작 1종으로
+   * 나뉘어 있던 것을 하나로 합친 결과다.
+   *
+   * `none` 과 `raid` 는 같은 소리를 쓴다 — 파일 둘이 내용이 같고 의도된 재사용이다.
+   * ID 를 나눠 두면 나중에 갈라도 코드가 안 바뀐다.
+   */
+  dayStartNone: 'asset.sfx.day_start_none',
+  dayStartRaid: 'asset.sfx.day_start_raid',
+  dayStartFinal: 'asset.sfx.day_start_final',
+
+  /** 런이 실패한 순간의 스팅어. `defeat.mp3`(배경음)와 별개로 둔다 */
+  runFailed: 'asset.sfx.run_failed',
+  /** 엔딩이 확정된 순간의 스팅어 */
+  endingDecided: 'asset.sfx.ending_decided',
+} as const
+
+for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {
+  if (UI_ASSET_IDS.includes(id)) continue
+  throw new Error(
+    `${id} 가 schema/enums.json 의 ui_system_asset_id 고정 목록에 없다. ` +
+      '새 ID 추가는 데이터 행 추가가 아니라 스키마 변경이다 (DEC-ART-005)',
+  )
+}
 
 for (const id of Object.values(UI_ASSET)) {
   if (UI_ASSET_IDS.includes(id)) continue
