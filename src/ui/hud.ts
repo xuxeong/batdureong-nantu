@@ -195,6 +195,21 @@ const DAY_SUFFIX = '일차'
 export interface HudHandlers {
   /** 일시정지·설정 아이콘. Esc 와 같은 화면을 연다 (DEC-UI-036) */
   onPause(): void
+  /**
+   * 퀵슬롯 칸을 눌렀다. 그 자리를 선택한다 (`DEC-INPUT-013`).
+   *
+   * **키와 같은 일을 한다.** `1~4` 가 위치를 직접 고르는 입력이고 칸을 누르는
+   * 것도 같은 뜻이다 — `DEC-UI-035` 가 *"무엇을 고르는 조작은 마우스로만"* 이라
+   * 오히려 마우스 쪽이 본류다. 수량이 0이어도 선택은 된다.
+   */
+  onSelectSlot(index: number): void
+  /**
+   * 회복 칸을 눌렀다. 회복 퀵메뉴를 연다 (`DEC-UI-037`).
+   *
+   * `Q` 길게와 같은 메뉴이고 닫는 방법만 다르다 — 이쪽은 정해진 시간이 지나면
+   * 스스로 닫힌다. 손을 떼는 순간이 없기 때문이다.
+   */
+  onOpenRecoveryMenu(): void
 }
 
 export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
@@ -280,6 +295,17 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   bindAsset(recoveryCount, '--hud-slot-badge-image', UI_ASSET.quickslotCountBadge)
   recovery.append(recoveryIcon, recoveryName, recoveryCount)
   bindAsset(recovery, '--hud-recovery-image', UI_ASSET.recoverySlot)
+  /*
+    회복 칸을 눌러 퀵메뉴를 연다 (DEC-UI-037). 퀵슬롯 칸과 같은 이유로 이 칸만
+    클릭을 되살린다.
+
+    **이 클릭은 위로 안 올려보낸다.** 부르는 쪽이 "메뉴 밖 클릭이면 닫는다" 를
+    `window` 에서 듣는데, 여는 클릭이 거기까지 올라가면 열자마자 닫힌다.
+  */
+  recovery.addEventListener('click', (event) => {
+    event.stopPropagation()
+    handlers.onOpenRecoveryMenu()
+  })
   bottomRight.append(quickslots, recovery)
 
   // 퀵슬롯 상태 문구 둘. 자리를 나눠 둔다 (DEC-UI-002).
@@ -327,6 +353,18 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       */
       const index = el('div', 'hud__slot-index', String(slotNodes.length + 1))
       slot.append(slotIcon, slotName, count, index)
+      /*
+        칸을 눌러 그 자리를 고른다 (`DEC-UI-037` 과 같은 8/9 요청, `DEC-INPUT-013`).
+
+        **HUD 는 클릭을 안 받는다** — 필드 클릭 공격을 가로채면 안 되기 때문에
+        `.hud` 가 `pointer-events: none` 이다. 그래서 이 칸만 되살린다.
+
+        번호는 `slotNodes.length` 로 굳힌다. 만들 때 자리가 정해지고 그 뒤로는
+        안 바뀌므로, 렌더마다 다시 세면 같은 값을 두 곳에서 계산하게 된다.
+      */
+      const slotIndex = slotNodes.length
+      slot.addEventListener('click', () => handlers.onSelectSlot(slotIndex))
+
       quickslots.appendChild(slot)
       slotNodes.push({ root: slot, icon: slotIcon, name: slotName, count })
     }

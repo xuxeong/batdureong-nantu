@@ -755,6 +755,19 @@
   align-items: flex-end;
 }
 
+/*
+  칸을 눌러 그 자리를 고른다 (DEC-INPUT-013, 8/9).
+
+  **HUD 는 클릭을 안 받는다** — 필드 클릭 공격을 가로채면 안 되기 때문에
+  `.hud` 가 `pointer-events: none` 이다 (이 파일 위쪽). 누를 수 있어야 하는
+  칸만 되살린다. 회복 칸도 같다.
+*/
+.hud__slot,
+.hud__recovery {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 .hud__slot {
   width: var(--hud-slot-width);
   height: var(--hud-slot-height);
@@ -4065,7 +4078,7 @@
 }
 
 /* ─────────────────────────────────────────────────
-   회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008)
+   회복 퀵메뉴 (DEC-UI-037, DEC-INPUT-008)
 
    `Q` 를 누르고 있는 동안에만 뜬다. 닫기 버튼이 없다 — 손을 떼면 닫힌다.
    필드를 덮지 않고 아래쪽에 붙는다. 퀵슬롯 옆의 회복 칸이 무엇을 고르고
@@ -4114,7 +4127,7 @@
   pointer-events: auto;
 }
 
-/* 느려진 상태임을 알린다 (DEC-UI-001) */
+/* 느려진 상태임을 알린다 (DEC-UI-037) */
 .recovery-menu__notice {
   margin: 0;
   font-size: var(--ui-font-sm);
@@ -4149,7 +4162,7 @@
   border-color: var(--ui-border);
 }
 
-/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-001) */
+/* 현재 선택된 항목을 명확히 강조한다 (DEC-UI-037) */
 .recovery-menu__item--selected {
   border-color: var(--ui-border-strong);
   border-width: 2px;

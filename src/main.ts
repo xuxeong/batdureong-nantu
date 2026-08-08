@@ -14,6 +14,7 @@ import { createSceneManager } from './scenes/manager.ts'
 import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
+import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
 import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
@@ -2726,7 +2727,7 @@ const input = createInput(renderer.canvas, {
     sfx.play(SOUND_ASSET.quickslotSwitch)
   },
   onRecoverShortPress: () => onRecoverPressed(),
-  // 회복 퀵메뉴 (DEC-UI-001, DEC-INPUT-008).
+  // 회복 퀵메뉴 (DEC-UI-037, DEC-INPUT-008).
   //
   // `Q` 를 누르고 있는 동안에만 열린다. 오버레이로 올리면 화면 매니저가 시간을
   // 늦춘다 — 다른 오버레이처럼 멈추지 않는 것이 확정 규칙이다 (`syncSimulation`).
@@ -2764,7 +2765,88 @@ bus.on('data.error', ({ summary, detail }) => {
 
 const hud: Hud = createHud(uiRoot, {
   onPause: () => scenes.handleEscape(),
+
+  // 칸을 눌러 그 자리를 고른다 (DEC-INPUT-013). `1~4` 키와 같은 일이다.
+  onSelectSlot: (index) => {
+    if (combat === null || run === null) return
+    combat.selectSlot(run, index)
+    sfx.play(SOUND_ASSET.quickslotSwitch)
+  },
+
+  onOpenRecoveryMenu: () => openRecoveryMenuByClick(),
 })
+
+/**
+ * 마우스로 연 회복 퀵메뉴는 **스스로 닫힌다** (`DEC-UI-037`).
+ *
+ * `Q` 길게와 달리 손을 떼는 순간이 없어서 닫을 계기가 없다. 그대로 두면
+ * `DEC-INPUT-008` 이 정한 "열려 있는 동안 게임 전체 속도를 크게 낮춘다" 가
+ * 끝나지 않는다.
+ *
+ * 시간은 조작 반응성이지 밸런스 수치가 아니라 승인 데이터에 두지 않는다 —
+ * `Q` 길게 판정 시간을 `input/bindings.ts` 에 둔 것과 같은 종류다.
+ */
+const RECOVERY_MENU_CLICK_MS = 2600
+let recoveryMenuTimer: number | null = null
+
+/**
+ * 다른 입력이 들어오면 시간이 남아 있어도 닫는다 (`DEC-UI-037`).
+ *
+ * 타이머만 두면 **움직이려는 사람이 시간이 다 가기를 기다려야 하고**, 그동안
+ * 화면은 느린 채다 (`DEC-INPUT-008`). 뭔가를 눌렀다는 건 이미 다음 일을 하려는
+ * 것이므로 메뉴를 붙잡을 이유가 없다.
+ *
+ * **키와 클릭을 둘 다 본다.** 클릭은 `click` 으로 듣는다 — `pointerdown` 으로
+ * 들으면 메뉴 항목을 누를 때 그 항목의 처리보다 먼저 닫혀서 선택이 사라진다.
+ * `click` 은 항목에서 위로 올라오므로 `onSelect` 가 먼저 돌고, 그때 이미 닫혀
+ * 있어 여기서는 아무 일도 안 한다.
+ *
+ * 여는 클릭(회복 칸)은 `hud.ts` 가 위로 안 올려보낸다. 안 그러면 열자마자 닫힌다.
+ */
+function onInputWhileRecoveryMenu(): void {
+  if (recoveryMenuTimer !== null) closeRecoveryMenuByClick()
+}
+
+/**
+ * 이 키가 닫아야 하는 입력인가.
+ *
+ * **아무 키나가 아니라 배치표에 있는 필드 조작 키만** 본다. 키 목록을 여기
+ * 나열하지 않는 이유는 `DEC-INPUT-001` 이 `input/bindings.ts` 를 유일한 배치표로
+ * 정했기 때문이다 — 두 곳에 적으면 배치를 바꿀 때 한쪽이 남는다.
+ *
+ * **`Esc` 는 뺀다.** `DEC-UI-022`·`DEC-INPUT-009` 가 `Esc` 를 일시정지로 정해
+ * 뒀는데, 여기서 먼저 잡으면 메뉴만 닫히고 일시정지가 안 뜬다.
+ */
+function closesRecoveryMenu(code: string): boolean {
+  if (QUICKSLOT_KEYS.includes(code)) return true
+  const action = KEY_BINDINGS[code]
+  return action !== undefined && action !== 'escape'
+}
+
+function onKeyWhileRecoveryMenu(event: KeyboardEvent): void {
+  if (closesRecoveryMenu(event.code)) onInputWhileRecoveryMenu()
+}
+
+function closeRecoveryMenuByClick(): void {
+  if (recoveryMenuTimer !== null) {
+    window.clearTimeout(recoveryMenuTimer)
+    recoveryMenuTimer = null
+  }
+  window.removeEventListener('keydown', onKeyWhileRecoveryMenu)
+  window.removeEventListener('click', onInputWhileRecoveryMenu)
+  scenes.closeOverlay('recovery_quickmenu')
+}
+
+function openRecoveryMenuByClick(): void {
+  // 이미 열려 있으면 시계를 새로 감는다. 다시 누른 것은 더 보겠다는 뜻이다.
+  if (recoveryMenuTimer !== null) window.clearTimeout(recoveryMenuTimer)
+  else {
+    window.addEventListener('keydown', onKeyWhileRecoveryMenu)
+    window.addEventListener('click', onInputWhileRecoveryMenu)
+  }
+  scenes.openOverlay('recovery_quickmenu')
+  recoveryMenuTimer = window.setTimeout(closeRecoveryMenuByClick, RECOVERY_MENU_CLICK_MS)
+}
 
 const hub: MaintenanceHub = createMaintenanceHub(uiRoot, {
   // 필드 HUD 의 일시정지 버튼과 같은 경로다 (A3 목업의 우측 상단 톱니바퀴)
@@ -2906,13 +2988,16 @@ function completeTutorialStep(key: TutorialCompletionKey): void {
 
 // 일차 시작 화면 (DEC-UI-016). 결과 화면 2종과 층위가 다르다 — 하루의 끝이 아니라
 // 시작이고, 자동으로 넘어가지 않는 것은 같지만 일지 영역이 있고 없고가 갈린다.
-// 회복 퀵메뉴 (DEC-UI-001). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
+// 회복 퀵메뉴 (DEC-UI-037). 고르기만 하고 소비하지 않는다 (DEC-INPUT-008).
 const recoveryMenu: RecoveryMenu = createRecoveryMenu(uiRoot, {
   onSelect: (itemId) => {
     if (run === null) return
     // **선택만 바꾼다.** 사용 시작은 `Q` 를 짧게 누를 때다.
     run.pouch.selectedId = itemId
     if (isDevBuild) console.info(`[회복] 선택 변경 — ${itemId}`)
+    // 마우스로 연 퀵메뉴는 고르는 순간 닫는다 (DEC-UI-037). 고른 뒤에는 더 볼
+    // 것이 없고, 느려진 시간이 남아 있으면 그것이 이득이 된다.
+    if (recoveryMenuTimer !== null) closeRecoveryMenuByClick()
   },
 })
 
