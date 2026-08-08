@@ -11,13 +11,14 @@
 import { createEventBus } from './core/bus.ts'
 import { createGameLoop } from './core/loop.ts'
 import { createSceneManager } from './scenes/manager.ts'
+import type { ScreenId } from './core/events.ts'
 import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { subjectParticle } from './ui/korean.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { createAssetImages, UI_ASSET } from './render/assets.ts'
+import { BGM_ASSET, SOUND_ASSET, createAssetImages, UI_ASSET } from './render/assets.ts'
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -2589,6 +2590,12 @@ function onSickle(): void {
   // 튜토리얼의 `use_sickle` 안내가 이 이벤트로 넘어간다.
   bus.emit('combat.sickleSwung', { hitCount: result.hits.length })
 
+  // 휘두름과 명중을 따로 낸다 (DEC-ART-005). 빗나간 휘두름에도 소리가 나야
+  // 사거리를 소리로도 배운다. 여러 대상을 맞혀도 명중음은 한 번이다 —
+  // 대상 수만큼 겹치면 한 번의 휘두름이 여러 번 때린 것처럼 들린다.
+  sfx.play(SOUND_ASSET.sickleSwing)
+  if (result.hits.length > 0) sfx.play(SOUND_ASSET.sickleHit)
+
   for (const hit of result.hits) {
     // 낫은 `swingSickle()` 이 명중을 그 자리에서 돌려주므로 `combat.update()` 의
     // `damaged` 를 타지 않는다. 충격선을 여기서 따로 켠다.
@@ -3970,6 +3977,46 @@ function beginNightResult(): void {
   }
 }
 
+/**
+ * 배경음 전환 (DEC-ART-005, `docs/submission/SOUND_ASSET_INDEX.md`).
+ *
+ * ── 안 바꾸는 것이 기본이다 ────────────────────────────────
+ *
+ * **아래에 없는 화면은 흐르던 트랙을 그대로 둔다.** 조우 결과·밤 결과의 배경음은
+ * 아직 정해지지 않았고(직전 트랙 유지인지 전용 트랙인지), 전투 전 대화와 투항
+ * 대화는 *"진입 시점에 이미 흐르던 트랙을 그대로 유지한다"* 로 정해져 있다.
+ * 정해지지 않은 자리에 임의로 트랙을 고르면 그게 곧 결정이 된다.
+ *
+ * ── 재배와 정비가 같은 트랙이다 ────────────────────────────
+ *
+ * 정비 허브는 화면 전환이 아니라 필드 위 오버레이라 `screen.changed` 가 오지
+ * 않는다. 그런데 같은 `farm` 트랙이므로 **아무것도 안 해도 이어진다** — 여기서
+ * `overlay.opened` 를 따로 듣지 않는 이유다. `bgm.play()` 가 같은 ID 를 무시하는
+ * 것과 맞물려, 재배 → 정비 → 다음 날 재배가 한 곡으로 이어진다.
+ */
+function bgmForScreen(screen: ScreenId): string | null {
+  if (screen === 'title' || screen === 'name_input') return BGM_ASSET.title
+  if (screen === 'run_failed') return BGM_ASSET.defeat
+  if (screen === 'ending') return BGM_ASSET.ending
+  return null
+}
+
+bus.on('screen.changed', ({ screen }) => {
+  const track = bgmForScreen(screen)
+  if (track !== null) bgm.play(track)
+})
+
+bus.on('field.entered', ({ mode }) => {
+  if (mode !== 'raid') {
+    bgm.play(BGM_ASSET.farm)
+    return
+  }
+  // 마지막 습격만 다른 곡이다. 일차가 아니라 승인 일정의 raid_type 으로 가른다 —
+  // "5일차" 는 지금 일정이 그럴 뿐이고 코드가 알 값이 아니다 (DEC-RUN-011).
+  const final = raidTypeOfDay(run?.dayNumber ?? 1) === 'final_raid'
+  bgm.play(final ? BGM_ASSET.boss : BGM_ASSET.raid)
+})
+
 // 일지 준비와 밤 결과 문구 선택을 **화면 반영보다 먼저** 등록한다. 뒤에 두면 첫
 // 그리기가 지난 값을 그대로 쓰고 한 박자 늦게 바뀐다.
 bus.on('screen.changed', beginDayStart)
@@ -4091,6 +4138,10 @@ bus.on('combat.playerDamaged', () => cancelRecovery('damaged'))
 bus.on('combat.playerDamaged', () => {
   playerHitRemaining = PLAYER_HIT_SECONDS
 })
+// 깜빡임의 짝이 되는 소리 (DEC-ART-005). **발행 지점이 아니라 여기에 붙인다** —
+// `combat.playerDamaged` 를 내는 곳이 습격(주민)과 재배(야생동물) 둘이라 발행
+// 쪽에 붙이면 한쪽을 빠뜨린다. 8/7 에 명중 표시로 정확히 그 실수를 했다 (3-B-1).
+bus.on('combat.playerDamaged', () => sfx.play(SOUND_ASSET.playerHit))
 
 bus.on('overlay.opened', syncInputLock)
 bus.on('overlay.closed', syncInputLock)

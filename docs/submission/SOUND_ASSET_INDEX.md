@@ -25,6 +25,8 @@
 (낫 소리 3종처럼 부모가 `player_base_stats.prototype` 하나로 몰린 경우)도 이 고정 목록으로
 등록한다.
 
+**배경음 6종은 8/8 에 등록·연결을 끝냈다** ( 10). 낫 소리 3종은 등록만 됐고 호출부가 남았다.
+
 **남은 작업은 등록뿐이다.** `DEC-ART-005`가 규칙만 열었고, 아래 표의 "예정" 항목을
 실제로 재생하려면 `schema/enums.json`의 고정 목록에 논리 에셋 ID를 추가하는 스키마
 작업이 남아 있다 — 콘텐츠 값 추가가 아니라 스키마 변경이므로 담당자 승인 없이
@@ -48,12 +50,12 @@
 
 | 상황 | 파일 | 트리거 | 연결 방식 |
 |---|---|---|---|
-| 타이틀 화면 | `title.mp3` | `screen.changed` → `title` | 가능 — `DEC-ART-005` 확정, 고정 목록 등록 필요 |
-| 재배 + 정비 공용 | `farm.mp3` | `field.entered({mode:'farming'})`, `overlay.opened({overlay:'maintenance_hub'})` | 가능 — 고정 목록 등록 필요 |
-| 습격 전투(일반) | `raid.mp3` | `field.entered({mode:'raid'})`, 2~4일차 | 가능 — 고정 목록 등록 필요 |
-| 마지막 습격(이장 결투) | `boss.mp3` | `field.entered({mode:'raid'})`, 5일차 | 가능 — 고정 목록 등록 필요 |
-| 런 실패 화면 | `defeat.mp3` | `run.failed` → `screen.changed({screen:'run_failed'})` | 가능 — 고정 목록 등록 필요 |
-| 엔딩 화면 공용 | `ending.mp3` | `ending.decided` (화면 진입 시점) | 가능 — 고정 목록 등록 필요 |
+| 타이틀 화면 | `title.mp3` | `screen.changed` → `title` | **연결됨** (8/8) — `screen.changed` |
+| 재배 + 정비 공용 | `farm.mp3` | `field.entered({mode:'farming'})`, `overlay.opened({overlay:'maintenance_hub'})` | **연결됨** (8/8) |
+| 습격 전투(일반) | `raid.mp3` | `field.entered({mode:'raid'})`, 2~4일차 | **연결됨** (8/8) |
+| 마지막 습격(이장 결투) | `boss.mp3` | `field.entered({mode:'raid'})`, 5일차 | **연결됨** (8/8) |
+| 런 실패 화면 | `defeat.mp3` | `run.failed` → `screen.changed({screen:'run_failed'})` | **연결됨** (8/8) |
+| 엔딩 화면 공용 | `ending.mp3` | `ending.decided` (화면 진입 시점) | **연결됨** (8/8) |
 
 전투 전 대화·투항 대화는 별도 BGM이 없다 — 진입 시점에 이미 흐르던 트랙(`raid.mp3` 또는
 `boss.mp3`)을 그대로 유지한다. 조우 결과·밤 결과 화면의 BGM은 **아직 미정** — 직전 트랙

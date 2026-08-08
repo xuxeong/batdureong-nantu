@@ -186,6 +186,61 @@ export const UI_ASSET = {
   raidNoticeFinal: 'asset.ui.raid_notice_final',
 } as const
 
+/**
+ * 배경음의 논리 에셋 ID (`DEC-ART-005`).
+ *
+ * **`UI_ASSET` 과 같은 자리다.** 2026-08-08 에 `DEC-ART-004` 를 폐기·대체하면서
+ * 고정 목록이 쓸 수 있는 구간에 `bgm`·`sfx` 가 열렸다. 배경음은 화면·단계에
+ * 붙는 소리라 어떤 콘텐츠에도 속하지 않아 `content_assets.csv` 로는 관리할 수 없다.
+ *
+ * **어느 화면에 어느 트랙인지는 여기 없다.** 그 판단은 `main.ts` 가 하고 이
+ * 파일은 이름만 준다 — `audio/bgm.ts` 가 경로를 모르는 것과 같은 이유다.
+ */
+export const BGM_ASSET = {
+  /** 타이틀 화면 */
+  title: 'asset.bgm.title',
+  /** 재배와 정비 공용. 두 단계가 이어지는 동안 트랙을 끊지 않는다 */
+  farm: 'asset.bgm.farm',
+  /** 습격 전투 (2~4일차) */
+  raid: 'asset.bgm.raid',
+  /** 마지막 습격 — 이장 결투 (5일차) */
+  boss: 'asset.bgm.boss',
+  /** 런 실패 화면 */
+  defeat: 'asset.bgm.defeat',
+  /** 엔딩 화면 공용 */
+  ending: 'asset.bgm.ending',
+} as const
+
+/**
+ * 콘텐츠에 붙일 수 없는 효과음의 논리 에셋 ID (`DEC-ART-005`).
+ *
+ * **셋뿐인 이유가 있다.** 효과음 대부분은 부모 콘텐츠가 있어 `content_assets.csv`
+ * 로 붙는다(야생동물 울음 3·화상 2·감속 2). 낫 소리 셋은 부모가
+ * `player_base_stats.prototype` 하나로 몰리는데 그 표의 고유키가
+ * `(content_id, asset_role)` 이라 **한 콘텐츠에 `sfx` 는 하나뿐**이다.
+ * 그래서 이 셋만 고정 목록으로 온다.
+ *
+ * 나머지 효과음 19종은 아직 어느 트리거에 붙일지 정리가 안 끝나 등록하지 않았다
+ * (`docs/submission/SOUND_ASSET_INDEX.md`). 여기 이름을 먼저 적어 두지 않는다 —
+ * 목록에 없는 ID 는 아래 검사가 거절한다.
+ */
+export const SOUND_ASSET = {
+  /** 휘두르는 순간. 명중과 무관하게 난다 */
+  sickleSwing: 'asset.sfx.sickle_swing',
+  /** 낫이 실제로 맞았을 때 */
+  sickleHit: 'asset.sfx.sickle_hit',
+  /** 플레이어가 맞았을 때. 피격 깜빡임의 짝이다 */
+  playerHit: 'asset.sfx.player_hit',
+} as const
+
+for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {
+  if (UI_ASSET_IDS.includes(id)) continue
+  throw new Error(
+    `${id} 가 schema/enums.json 의 ui_system_asset_id 고정 목록에 없다. ` +
+      '새 ID 추가는 데이터 행 추가가 아니라 스키마 변경이다 (DEC-ART-005)',
+  )
+}
+
 for (const id of Object.values(UI_ASSET)) {
   if (UI_ASSET_IDS.includes(id)) continue
   // 목록에서 빠진 ID 는 스키마 변경으로 다시 넣어야 한다. 코드가 임의로 쓰지 않는다.
