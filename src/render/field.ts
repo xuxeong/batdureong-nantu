@@ -695,22 +695,68 @@ export function createFieldRenderer(
     // 힌트가 없으면 취소가 되는지 화면에서 알 수 없다 — 8/5 플레이 테스트에서
     // 담당자가 그걸 확인하지 못했다.
     if (view.recovery !== null && view.recovery !== undefined) {
-      const width = radius * 3
-      const height = 6
-      const left = screen.x - width / 2
-      const top = screen.y - radius - 18
+      const progress = Math.max(0, Math.min(1, view.recovery.progress))
+      const gauge = images.get(UI_ASSET.healGauge)
+      const playerImage = images.get(view.playerAsset)
+      // 그림이 없으면 판정 반경이 기준이다. 있으면 스프라이트 옆에 세운다.
+      const halfWide = playerImage === null ? radius : playerImage.naturalWidth / 2
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
-      ctx.fillRect(left, top, width, height)
-      ctx.fillStyle = '#cfe07a'
-      ctx.fillRect(left, top, width * Math.max(0, Math.min(1, view.recovery.progress)), height)
+      if (gauge === null) {
+        // 그림이 없을 때의 가로 막대. 8/9 까지 이것만 있었다.
+        const width = radius * 3
+        const height = 6
+        const left = screen.x - width / 2
+        const top = screen.y - radius - 18
 
-      // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
-      ctx.font = '12px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillStyle = '#f4ecd0'
-      ctx.fillText('Q — 취소', screen.x, top - 4)
-      ctx.textAlign = 'start'
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+        ctx.fillRect(left, top, width, height)
+        ctx.fillStyle = '#cfe07a'
+        ctx.fillRect(left, top, width * progress, height)
+
+        // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#f4ecd0'
+        ctx.fillText('Q — 취소', screen.x, top - 4)
+        ctx.textAlign = 'start'
+      } else {
+        /*
+          세로 게이지 (`DEC-UI-032` — 플레이어 캐릭터 **바로 옆**에 표시).
+
+          그림이 38×139 라 세로다. 8/9 까지 머리 위 가로 막대였는데 확정문도
+          그림도 옆을 가리킨다.
+
+          **채움을 틀 위에 그린다.** 처음에 밑에 깔았더니 아무것도 안 보였다 —
+          이 그림은 홈이 뚫려 있지 않고 **안쪽까지 알파 255 인 불투명 나무판**
+          이다. 그래서 홈 좌표를 코드가 알아야 한다.
+
+          아래 비율은 그림을 열어 픽셀로 잰 값이다 (x 12~24 · y 8~129).
+          그림이 다시 나오면 같은 방법으로 다시 재야 한다 — 어림값이 아니다.
+
+          **아래에서 위로 찬다.** 회복은 채워지는 것이라 위로 자라는 쪽이 읽힌다.
+        */
+        const gw = gauge.naturalWidth
+        const gh = gauge.naturalHeight
+        const left = screen.x - halfWide - gw - 8
+        const top = screen.y - gh / 2
+
+        ctx.drawImage(gauge, left, top, gw, gh)
+
+        const grooveX = left + gw * (12 / 38)
+        const grooveW = gw * (13 / 38)
+        const grooveTop = top + gh * (8 / 139)
+        const grooveH = gh * (121 / 139)
+        const fillH = grooveH * progress
+        ctx.fillStyle = '#cfe07a'
+        ctx.fillRect(grooveX, grooveTop + grooveH - fillH, grooveW, fillH)
+
+        // 조작만 가리키는 라벨이라 코드에 둔다 (DEC-UI-029)
+        ctx.font = '12px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = '#f4ecd0'
+        ctx.fillText('Q — 취소', left + gw / 2, top - 6)
+        ctx.textAlign = 'start'
+      }
     }
 
     /*
