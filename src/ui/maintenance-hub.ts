@@ -102,6 +102,14 @@ export interface HubView {
    * 플레이어가 스스로 파는 것을 막지 못한다.
    */
   lockedPopups: readonly HubPopupId[]
+  /**
+   * 지금 열려 있는 팝업. 없으면 null.
+   *
+   * **어느 기능을 보고 있는지 버튼에서 알 수 있어야 한다.** 8/8 플레이 테스트에서
+   * *"판매·구매·제작 중 무엇이 선택됐는지 아래까지 스크롤해야 안다"* 가 나왔다.
+   * 팝업 제목이 있긴 하지만 그건 팝업 안이고, 버튼 줄만 보고는 구분이 없었다.
+   */
+  openPopup: HubPopupId | null
 }
 
 export interface HubHandlers {
@@ -340,9 +348,11 @@ export function createMaintenanceHub(
       finish.hidden = !view.canFinish
 
       // 잠긴 기능은 회색으로 남긴다. 비활성 그림이 있으면 같이 바꾼다.
+      // 열려 있는 기능은 눌린 채로 둔다 — 어느 것을 보고 있는지 버튼에서 알린다.
       for (const [id, button] of buttonNodes) {
         const locked = view.lockedPopups.includes(id)
         button.disabled = locked
+        button.classList.toggle('hub__button--open', view.openPopup === id)
         paint(
           button,
           '--hub-button-image',

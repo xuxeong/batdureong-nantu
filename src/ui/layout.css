@@ -102,6 +102,16 @@
   --hub-shutter: rgba(10, 8, 6, 0.985);
   /* 나무·한지 위에서는 크림색 글자가 묻힌다. A3 목업의 진한 갈색을 쓴다 */
   --hub-text-on-art: #3a2b1c;
+  /*
+    고른 항목의 바탕과 테두리 (8/8).
+
+    **크림색을 얹으면 밝기만 달라져 구분이 약하다.** 줄이 한지 위의 어두운 판이라
+    거기에 크림을 얹으면 연한 노란색이 될 뿐이고, 안 고른 줄과 색상이 같다.
+    나무색 계열로 바꾸면 한지 위에서 색상 자체가 갈린다 — 집어 올린 나무 조각처럼
+    읽힌다. 아트 디렉션 4.5 절의 색 코드가 아직 미정이라 여기 값이 임시 기준이다.
+  */
+  --hub-row-selected-bg: rgba(150, 96, 44, 0.62);
+  --hub-row-selected-edge: #d9a05b;
   /* 보관함 칸 그림 111×113 (배지 포함). 한 줄에 넷 */
   --hub-slot-size: 111px;
   --hub-pad: 28px;
@@ -1205,6 +1215,27 @@
   filter: brightness(0.94);
 }
 
+/*
+  열려 있는 기능 (8/8 플레이 테스트 — 무엇이 선택됐는지 버튼에서 안 보였다).
+
+  **누른 채로 두는 모양이다.** `:active` 와 같은 방향(어둡게)에 조금 내려 앉히고
+  안쪽 그림자를 더한다 — 눌림은 손을 떼면 사라지지만 이건 팝업이 열려 있는 동안
+  유지되므로, 같은 방향이되 더 분명해야 상태로 읽힌다.
+
+  그림을 바꾸지 않는다. `button_pressed.png` 는 있지만 눌림을 CSS 로 내기로
+  8/6 에 정했고 고정 목록에도 넣지 않았다.
+*/
+.hub__button--open {
+  border-color: var(--ui-border-strong);
+}
+
+.hub--has-art .hub__button--open,
+.hub--has-art .hub__button--open:hover:not(:disabled) {
+  filter: brightness(0.88);
+  transform: translateY(2px);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
 /* 하단 진행 버튼. 문구는 DEC-RUN-006 이 정한 두 가지다 */
 .hub__finish {
   grid-column: 2;
@@ -1328,6 +1359,21 @@
 
 .hub__row--selected {
   border-color: var(--ui-border-strong);
+}
+
+/*
+  고른 항목 (8/8 플레이 테스트 — 무엇을 골랐는지 아래까지 봐야 알 수 있었다).
+
+  그림이 붙으면 **1px 테두리만으로는 안 보인다.** 줄이 한지 위의 어두운 판이라
+  크림색 실선 한 줄이 묻힌다. 바탕을 밝히고 왼쪽에 굵은 세로 막대를 넣는다.
+
+  **테두리 두께는 안 바꾼다** — 1px 이 2px 이 되면 그 줄만 1px 씩 밀려서
+  목록 전체가 흔들린다. 막대는 `box-shadow: inset` 이라 자리를 안 먹는다.
+*/
+.hub__popup--has-art .hub__row--selected {
+  background: var(--hub-row-selected-bg);
+  border-color: var(--hub-row-selected-edge);
+  box-shadow: inset 4px 0 0 var(--hub-row-selected-edge);
 }
 
 .hub__row:disabled {
@@ -1740,6 +1786,22 @@
 .hub__slot--selected {
   border-color: var(--ui-border-strong);
   border-width: 2px;
+}
+
+/*
+  고른 칸 (8/8 — 항목 줄과 같은 문제였다).
+
+  **테두리 색만으로는 안 보인다.** 그리고 위 기본 규칙처럼 두께를 2px 로 늘리면
+  그 칸만 1px 씩 줄어 다섯 칸 줄이 흔들린다. 그림이 있을 때는 두께를 되돌리고
+  안쪽 테두리와 바탕으로 낸다 — 둘 다 자리를 안 먹는다.
+
+  항목 줄은 왼쪽 막대인데 여기는 **사방 테두리**다. 칸이 정사각형에 가까워서
+  한쪽만 칠하면 어디를 고른 건지가 덜 읽힌다.
+*/
+.hub--has-art .hub__slot--selected {
+  border-width: 1px;
+  background: var(--hub-row-selected-bg);
+  box-shadow: inset 0 0 0 3px var(--hub-row-selected-edge);
 }
 
 /* 빈 칸도 빈 상태로 표시한다 (DEC-UI-021) */
@@ -2722,6 +2784,13 @@
 }
 
 .title--has-art .title__start:hover {
+  /*
+    **배경을 다시 선언해야 한다.** 아래 `.title__start:hover` 가 그림 없는 빌드용
+    으로 `background: var(--ui-bg-slot)` 을 걸어 두는데, 여기서 `filter` 만 쓰면
+    `background` 는 그 규칙으로 떨어져 팻말 위에 반투명 회색 판이 얹힌다 (8/8).
+    선택자 우선순위는 이쪽이 높지만 **선언하지 않은 속성은 넘어오지 않는다.**
+  */
+  background: var(--title-sign-image) center / contain no-repeat;
   /* 팻말 그림을 바꾸지 않고 밝기만 올린다 — `button_pressed` 는 :active 로 쓰지
      않기로 8/6 에 정했고, 여기도 같은 이유로 그림을 늘리지 않는다 */
   filter: brightness(1.08);

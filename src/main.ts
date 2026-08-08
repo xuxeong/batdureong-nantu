@@ -68,7 +68,7 @@ import type { JournalBaseline, RunState } from './state/types.ts'
 import { createHud } from './ui/hud.ts'
 import type { Hud } from './ui/hud.ts'
 import { createMaintenanceHub, createPopupShell } from './ui/maintenance-hub.ts'
-import type { InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
+import type { HubPopupId, InventoryRow, MaintenanceHub } from './ui/maintenance-hub.ts'
 import { createNightResult, selectNightResultText } from './ui/night-result.ts'
 import type { NightResultScreen, NightResultSelection } from './ui/night-result.ts'
 import { createTitle } from './ui/title.ts'
@@ -197,8 +197,14 @@ let run: RunState | null = null
 let economy: Economy | null = null
 /** 보관함 표시 이름을 찾기 위한 통합 사전. 분류가 달라도 조회는 한 곳에서 한다 */
 let displayNames = new Map<string, string>()
-/** 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020) */
-let openPopup: string | null = null
+/**
+ * 지금 열려 있는 정비 팝업. 한 번에 하나만 연다 (DEC-UI-020).
+ *
+ * **`string` 이 아니라 `HubPopupId` 다.** 넷으로 고정된 값인데 느슨하게 두면
+ * 오타가 검사에 안 걸린다 — `buildPopup()` 의 마지막 갈래가 "팝업 종류가 늘었는데
+ * 화면을 안 붙인 것" 을 잡으라고 있는데, 타입이 좁으면 그 전에 걸린다.
+ */
+let openPopup: HubPopupId | null = null
 /**
  * 열려 있는 팝업을 갱신하는 함수. 닫혀 있으면 null.
  *
@@ -3365,6 +3371,8 @@ function hubView() {
     // 완료할 수 없다. **데이터에서 단계를 뺀 것으로는 플레이어가 스스로 파는
     // 것을 못 막는다** — 8/6 에 "45% 막힘" 으로 잡았던 구멍의 화면 쪽이다.
     lockedPopups: inTutorial() ? (['sell'] as const) : [],
+    // 어느 기능을 보고 있는지 버튼에서 알린다 (8/8 플레이 테스트).
+    openPopup,
   }
 }
 
