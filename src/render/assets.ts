@@ -298,6 +298,14 @@ export const SOUND_ASSET = {
   runFailed: 'asset.sfx.run_failed',
   /** 엔딩이 확정된 순간의 스팅어 */
   endingDecided: 'asset.sfx.ending_decided',
+
+  /**
+   * 글자가 찍히는 소리 (`DEC-UI-008` 순차 출력).
+   *
+   * **글자마다 내지 않는다.** 28ms 간격으로 매 글자 내면 초당 36번이라 소리가
+   * 아니라 잡음이 된다. 부르는 쪽이 몇 글자에 한 번만 낸다.
+   */
+  recordTyping: 'asset.sfx.record_typing',
 } as const
 
 for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {

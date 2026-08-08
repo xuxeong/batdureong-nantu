@@ -95,6 +95,13 @@ export interface DialogueHandlers {
   choose(choiceId: string): void
   /** 반응 대사를 읽고 다음으로. 앞으로만 간다 */
   proceed(): void
+  /**
+   * 글자가 몇 자 찍힐 때마다 한 번 불린다 (`DEC-UI-008` 순차 출력).
+   *
+   * **이 파일은 소리를 모른다.** 논리 에셋 ID 도 `sfx` 도 여기 두지 않는다 —
+   * 어느 소리인지는 부르는 쪽(`main.ts`)이 정한다. 안 넘기면 소리가 없다.
+   */
+  onType?(): void
 }
 
 export interface DialogueModal {
@@ -280,6 +287,77 @@ export function createDialogueModal(
     }
     entering = false
     root.classList.remove('dialogue--entering')
+    // 연출이 끝나야 찍기 시작한다. 같이 시작하면 인물이 들어오는 동안 대사가
+    // 다 지나가서 두 연출이 겹쳐 보인다 (8/9 담당자).
+    runTyping()
+  }
+
+  /*
+    순차 출력 (`DEC-UI-008` — "대사는 순차 출력 연출을 사용할 수 있으며,
+    진행 중 입력하면 즉시 전체를 표시한다").
+
+    확정문이 **"사용할 수 있으며"** 로 열어 둔 선택 사항이고, 8/9 에 켰다.
+    한 글자씩 찍는 동안에도 **넘기기 입력을 받으면 즉시 전체가 뜬다** — 두 번째
+    판부터는 이미 읽은 대사를 기다리게 하면 안 된다.
+
+    간격은 화면 표시 속도라 확정문에 없다. 한글은 한 글자에 담긴 정보가 많아
+    라틴 문자보다 느리게 찍어야 읽힌다 — 28ms 면 초당 36자쯤이다.
+  
+    **찍는 중에도 멈출 수 있어야 한다.** `setInterval` 은 게임 루프와 무관하게
+    돌아서, 처음엔 일시정지 중에도 대사가 계속 찍혔다 (8/9 담당자가 잡았다).
+    타이머를 껐다 켜도 진행이 유지되도록 `shown` 을 밖에 둔다.
+
+    **등장 연출이 끝난 뒤에 찍는다.** 같이 시작하면 인물이 들어오는 동안 대사가
+    다 지나가서 두 연출이 겹쳐 보인다. 연출이 끝나면 `finishEnter()` 가 켠다.
+  */
+  const TYPE_MS = 28
+  /** 소리를 내는 간격(글자 수). 28ms × 4 라 초당 아홉 번쯤이다 */
+  const TYPE_SOUND_EVERY = 4
+  let typeTimer: number | null = null
+  let typingFull = ''
+  let typingShown = 0
+  /** 아직 다 안 찍혔다. 타이머가 멈춰 있어도 참일 수 있다 */
+  let typingActive = false
+  /** 입력을 소유하고 있는가. 일시정지가 겹치면 false 다 (DEC-UI-026) */
+  let interactive = true
+
+  function stopTyping(): void {
+    if (typeTimer === null) return
+    window.clearInterval(typeTimer)
+    typeTimer = null
+  }
+
+  /** 조건이 맞으면 타이머를 켠다. 이미 켜져 있거나 다 찍혔으면 아무 일도 없다 */
+  function runTyping(): void {
+    if (typeTimer !== null || !typingActive) return
+    if (entering || !interactive || root.hidden) return
+    typeTimer = window.setInterval(() => {
+      typingShown += 1
+      text.textContent = typingFull.slice(0, typingShown)
+      // 몇 글자에 한 번만 소리를 낸다. 매 글자면 초당 36번이라 잡음이 된다.
+      if (typingShown % TYPE_SOUND_EVERY === 0) handlers.onType?.()
+      if (typingShown >= typingFull.length) {
+        typingActive = false
+        stopTyping()
+      }
+    }, TYPE_MS)
+  }
+
+  /** 남은 글자를 한 번에 다 보여준다. 넘기기 입력이 부른다 */
+  function finishTyping(): void {
+    stopTyping()
+    typingActive = false
+    typingShown = typingFull.length
+    text.textContent = typingFull
+  }
+
+  function startTyping(full: string): void {
+    stopTyping()
+    typingFull = full
+    typingShown = 0
+    typingActive = full !== ''
+    text.textContent = ''
+    runTyping()
   }
 
   /** 지금 화면에서 넘기기 입력이 할 일 */
@@ -293,11 +371,18 @@ export function createDialogueModal(
       return
     }
 
+    // 찍는 중이면 먼저 다 보여준다 (`DEC-UI-008` — "진행 중 입력하면 즉시 전체를
+    // 표시한다"). 한 입력이 대사를 완성하고 장까지 넘기면 읽을 틈이 없다.
+    if (typingActive) {
+      finishTyping()
+      return
+    }
+
     // 반응 대사를 읽는 중이면 장을 넘기고, 마지막이면 흐름을 진행시킨다.
     if (reactionPages.length > 0) {
       if (reactionPage < reactionPages.length - 1) {
         reactionPage += 1
-        text.textContent = reactionPages[reactionPage] ?? ''
+        startTyping(reactionPages[reactionPage] ?? '')
         return
       }
       handlers.proceed()
@@ -436,7 +521,7 @@ export function createDialogueModal(
       if (view.reaction !== null) {
         reactionPages = paginate(view.reaction)
         reactionPage = 0
-        text.textContent = reactionPages[0] ?? ''
+        startTyping(reactionPages[0] ?? '')
         // 말풍선을 통째로 숨긴다. 빈 말풍선이 인물 사이에 남으면
         // 아직 고를 것이 있는 것처럼 보인다.
         choiceList.replaceChildren()
@@ -453,7 +538,7 @@ export function createDialogueModal(
       openingRead = false
       beginEnter()
 
-      text.textContent = view.openingText
+      startTyping(view.openingText)
       // 시작 대사도 주민이 말한다.
       setSpeakingSide('resident')
 
@@ -472,18 +557,32 @@ export function createDialogueModal(
       root.hidden = true
       // 다음에 열릴 때 이전 대화가 한 프레임 비치지 않게 한다
       builtSignature = ''
-      // 연출 중에 닫히면 타이머가 남아 다음 대화의 연출을 끊는다.
+      // 연출·타이핑 중에 닫히면 타이머가 남아 다음 대화를 끊는다.
       finishEnter()
+      stopTyping()
     },
 
-    setInteractive(interactive) {
+    setInteractive(next) {
       // 입력만 끈다. 표시는 그대로 남는다 (DEC-UI-026).
-      root.classList.toggle('is-inert', !interactive)
+      interactive = next
+      root.classList.toggle('is-inert', !next)
+
+      /*
+        **찍는 것도 같이 멈춘다.** `setInterval` 은 게임 루프와 무관해서, 8/9 에
+        일시정지를 겹쳐도 대사가 계속 찍혔다. 필드는 멈추는데 대사만 흐르면
+        일시정지가 무엇을 멈추는지 화면이 거짓말을 한다.
+
+        진행은 `typingShown` 에 남아 있어 다시 켜면 이어서 찍는다 — 처음부터
+        다시 찍거나 통째로 뛰어넘지 않는다.
+      */
+      if (next) runTyping()
+      else stopTyping()
     },
 
     destroy() {
       window.removeEventListener('keydown', onKeyDown)
       finishEnter()
+      stopTyping()
       root.remove()
     },
   }

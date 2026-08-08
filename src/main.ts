@@ -2951,6 +2951,9 @@ const pauseScreen: PauseScreen = createPause(uiRoot, {
 const dialogueModal: DialogueModal = createDialogueModal(uiRoot, {
   choose: chooseDialogue,
   proceed: proceedDialogue,
+  // 순차 출력의 타자 소리 (DEC-UI-008). 대화창은 어느 소리인지 모르고
+  // "몇 자 찍혔다" 만 알린다 — 논리 에셋 ID 는 이쪽 자리다.
+  onType: () => sfx.play(SOUND_ASSET.recordTyping),
 })
 
 /**
