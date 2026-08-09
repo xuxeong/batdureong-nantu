@@ -3633,6 +3633,11 @@ function hubView() {
     lockedPopups: inTutorial() ? (['sell'] as const) : [],
     // 어느 기능을 보고 있는지 버튼에서 알린다 (8/8 플레이 테스트).
     openPopup,
+    // 습격이 오는 밤에 이 상태로 나가려 하면 화면이 한 번 묻는다 (작업 7번).
+    // 칸이 아예 없으면(런 없음) 묻지 않는다 — 빈 배열의 every 는 참이라서다.
+    quickslotsEmpty:
+      (run?.quickslots.slots.length ?? 0) > 0 &&
+      (run?.quickslots.slots ?? []).every((id) => id === null),
   }
 }
 
