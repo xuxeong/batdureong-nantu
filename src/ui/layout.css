@@ -25,6 +25,21 @@
   --ui-gap-lg: 20px;
   --ui-radius: 6px;
 
+  /*
+    버튼 반응은 **밝기로만 준다** (8/10).
+
+    8/9까지는 hover 에 `background: var(--ui-bg-slot)` 을 걸었다. 그림 없는
+    빌드에서는 그게 유일한 반응이라 맞았는데, 팻말 그림이 깔린 버튼에서는
+    **그림 위에 회색 판이 얹혔다.** 우선순위가 높은 `--has-art` 규칙이 있어도
+    거기서 `background` 를 다시 선언하지 않으면 이 값이 그대로 떨어진다 —
+    선언하지 않은 속성은 넘어오지 않기 때문이다 (타이틀 팻말, 8/8).
+
+    `filter` 는 그려진 결과에 걸리므로 **그림이든 색이든 똑같이 밝아진다.**
+    그래서 아트 유무로 규칙을 나눌 필요가 없어진다.
+  */
+  --ui-hover-brightness: 1.08;
+  --ui-active-brightness: 0.94;
+
   /* ── 기준 해상도 (DEC-UI-025) ────────────────── */
   --ui-base-width: 1920px;
   --ui-base-height: 1080px;
@@ -648,7 +663,7 @@
 }
 
 .hud__settings:hover {
-  filter: brightness(1.15);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* ── 하단 왼쪽 끝: 플레이어 상태 카드 ───────────
@@ -1495,7 +1510,7 @@
 }
 
 .hub--has-art .hub__pause:hover {
-  filter: brightness(1.1);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* 아트가 없으면 우측 상단 묶음이 아니라 원래 자리(보관함 머리)로 돌아간다 */
@@ -1921,12 +1936,12 @@
 
 .hub--has-art .hub__button:hover:not(:disabled),
 .hub--has-art .hub__finish:hover {
-  filter: brightness(1.08);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 .hub--has-art .hub__button:active:not(:disabled),
 .hub--has-art .hub__finish:active {
-  filter: brightness(0.94);
+  filter: brightness(var(--ui-active-brightness));
 }
 
 /*
@@ -2266,7 +2281,7 @@
 }
 
 .hub__action:hover:not(:disabled) {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* 불가능한 거래·제작은 눌리지 않는다 (DEC-UI-005, DEC-UI-006) */
@@ -2502,11 +2517,11 @@
 }
 
 .hub__step:hover {
-  filter: brightness(1.1);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 .hub__step:active {
-  filter: brightness(0.92);
+  filter: brightness(var(--ui-active-brightness));
 }
 
 .hub__qty-value {
@@ -3440,7 +3455,7 @@
 }
 
 .night-result__continue:hover {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* ─────────────────────────────────────────────────
@@ -3571,7 +3586,7 @@
 }
 
 .encounter-result__continue:hover {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* ─────────────────────────────────────────────────
@@ -3667,7 +3682,7 @@
 }
 
 .day-start__continue:hover:not(:disabled) {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /*
@@ -3743,7 +3758,7 @@
 }
 
 .run-failed__return:hover {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* ─────────────────────────────────────────────────
@@ -3831,7 +3846,7 @@
 }
 
 .ending__return:hover {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /* ─────────────────────────────────────────────────
@@ -3983,7 +3998,7 @@
 }
 
 .title--has-art .title__settings:hover {
-  filter: brightness(1.08);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /*
@@ -4017,21 +4032,17 @@
   font-weight: 700;
 }
 
-.title--has-art .title__start:hover {
-  /*
-    **배경을 다시 선언해야 한다.** 아래 `.title__start:hover` 가 그림 없는 빌드용
-    으로 `background: var(--ui-bg-slot)` 을 걸어 두는데, 여기서 `filter` 만 쓰면
-    `background` 는 그 규칙으로 떨어져 팻말 위에 반투명 회색 판이 얹힌다 (8/8).
-    선택자 우선순위는 이쪽이 높지만 **선언하지 않은 속성은 넘어오지 않는다.**
-  */
-  background: var(--title-sign-image) center / contain no-repeat;
-  /* 팻말 그림을 바꾸지 않고 밝기만 올린다 — `button_pressed` 는 :active 로 쓰지
-     않기로 8/6 에 정했고, 여기도 같은 이유로 그림을 늘리지 않는다 */
-  filter: brightness(1.08);
-}
+/*
+  8/9까지 여기 `.title--has-art .title__start:hover` 가 `background` 를 다시
+  선언하고 있었다. 아래 묶음 규칙의 회색을 덮어쓰기 위한 우회였는데, 그 회색이
+  없어져서 필요가 없어졌다. hover 는 이제 묶음 규칙 하나가 맡는다.
 
-.title--has-art .title__start:active {
-  filter: brightness(0.94);
+  누름은 여기 남는다 — 묶음 쪽에 `:active` 가 없다. 팻말 그림을 바꾸지 않고
+  밝기만 내린다. `button_pressed` 는 `:active` 로 쓰지 않기로 8/6 에 정했고,
+  여기도 같은 이유로 그림을 늘리지 않는다.
+*/
+.title__start:active {
+  filter: brightness(var(--ui-active-brightness));
 }
 
 /*
@@ -4228,7 +4239,7 @@
 .name-input__confirm:hover,
 .tutorial__skip:hover,
 .tutorial__continue:hover {
-  background: var(--ui-bg-slot);
+  filter: brightness(var(--ui-hover-brightness));
 }
 
 /*
@@ -4571,10 +4582,6 @@
   font-size: 28px;
   font-weight: 700;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
-}
-
-.day-start--has-art .day-start__continue:hover:not(:disabled) {
-  filter: brightness(1.08);
 }
 
 .day-start--has-art .day-start__continue:disabled {
