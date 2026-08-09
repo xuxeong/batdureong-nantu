@@ -260,6 +260,22 @@
   */
   --dialogue-panel-pad-y: 24px;
   --dialogue-panel-pad-x: 40px;
+  /*
+    나무 테두리를 그리는 두께 (8/10).
+
+    `border-image-slice: 44` 는 **원본에서 잘라 올 구간**이라 그대로 둔다 —
+    실측한 테두리 그림이 39px 이라 44 가 맞는 값이다. 화면에 그릴 때의 두께만
+    줄이면 같은 그림이 축소돼 얇아진다. slice 를 건드리면 테두리가 잘린다.
+  */
+  --dialogue-frame-width: 30px;
+  /*
+    발화자 이름 글자 (8/10).
+
+    이름판이 260×86 인데 글자가 26px(`--ui-font-lg`)이라 판에 비해 작았다.
+    본문이 38px 이라 이름이 본문보다 한참 작게 보이기도 했다. 이름은 길어야
+    네 글자라 34px 이어도 260px 폭에 넉넉히 들어간다.
+  */
+  --dialogue-name-font: 34px;
   /* 말풍선 중심. 가운데가 아니라 플레이어 쪽이다 — 꼬리가 그쪽을 향한다 */
   --dialogue-balloon-center-x: 61%;
   /*
@@ -3054,11 +3070,11 @@
 }
 
 .dialogue--has-art .dialogue__panel {
-  border: 44px solid transparent;
+  border: var(--dialogue-frame-width) solid transparent;
   border-radius: 0;
   border-image-source: var(--dialogue-panel-border);
   border-image-slice: 44;
-  border-image-width: 44px;
+  border-image-width: var(--dialogue-frame-width);
   background-image: var(--dialogue-panel-texture);
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -3084,6 +3100,7 @@
 */
 .dialogue--has-art .dialogue__speaker {
   position: absolute;
+  font-size: var(--dialogue-name-font);
   top: var(--dialogue-name-top);
   left: var(--dialogue-name-left);
   width: var(--dialogue-name-width);
