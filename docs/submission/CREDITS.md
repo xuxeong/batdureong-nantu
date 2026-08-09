@@ -93,6 +93,10 @@
 `assets/final/bgm/`·`assets/final/sfx/`의 실제 상태와 게임 내 트리거는
 `docs/submission/SOUND_ASSET_INDEX.md`에서 관리한다. 이 표는 크레딧 기록 전용이다.
 
+**모든 효과음·배경음은 VARCO Sound 생성분을 Audacity로 후처리(피치·음량(Amplify)·
+페이드 인·아웃·구간 자르기)한 뒤 최종 반입했다.** 아래 표의 제작 방법 `AI 생성`은 이
+후처리를 포함한 값으로 읽는다.
+
 ### BGM
 
 | 파일 | 용도 | 제작 방법 | 도구 | 프롬프트 / 출처 | 라이선스 |
