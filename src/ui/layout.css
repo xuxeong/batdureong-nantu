@@ -4641,8 +4641,9 @@ body {
   height: 1106px;
   background: var(--day-start-scroll) top center / contain no-repeat;
   /* 글은 종이의 위쪽 3분의 1에 앉는다. 아래는 빈 종이와 말린 축이다.
-     왼쪽 여백을 90 → 150 으로 — 글이 종이 왼쪽 끝에 붙어 보였다 (8/9 폴리싱) */
-  padding: 150px 120px 0 150px;
+     좌우 여백을 150 으로 맞췄다 — 왼쪽은 8/9(끝에 붙어 보임), 오른쪽은 8/10 에
+     같은 지적을 받았다. 족자 종이의 안쪽 폭 기준 양쪽 대칭이다. */
+  padding: 150px 150px 0;
   box-sizing: border-box;
 }
 
