@@ -3817,7 +3817,10 @@ const loop = createGameLoop(
           // 자주 일어난다.
           noteHitFlash(event)
           if (event.type === 'killed' && event.targetId !== undefined) {
-            wildlife?.remove(event.targetId)
+            // `onTargetKilled` 를 거친다 — 처치음이 거기 있다 (8/9). 여기서
+            // `wildlife.remove` 를 직접 부르던 동안 낫 처치만 소리가 나고
+            // 투척 처치는 조용했다. 같은 죽음이 경로마다 다르게 들리면 안 된다.
+            onTargetKilled(event.targetId)
           }
           // 지속 피해도 적대 전환의 계기다 (DEC-CONTENT-007 — 플레이어 공격으로
           // 피해를 받으면). 투척 무기의 지속 피해는 플레이어 공격이다.
@@ -3966,10 +3969,12 @@ const loop = createGameLoop(
         // 팝업에 닫기 버튼이 없어졌고 기능 버튼 넷이 갈아 끼우는 방식이라,
         // 아무것도 열려 있지 않으면 오른쪽 두 판이 빈 종이로 남는다.
         //
-        // **잠긴 기능은 열지 않는다.** 튜토리얼이 판매를 막아 두는데(수확물을
-        // 팔아 버리면 제작 안내를 완료할 수 없다) 그때 자동으로 열면 막아 둔
-        // 것을 화면이 먼저 펼쳐 보이는 셈이다.
-        if (openPopup === null && !inTutorial()) {
+        // **튜토리얼에서도 연다** (8/9 — 8/8에는 판매가 잠겨 있어 제외했었다).
+        // 안 열면 튜토리얼의 첫 정비가 빈 종이 두 장으로 시작한다. 판매 탭이
+        // 잠겨 있어 구매를 누르는 순간 되돌아올 수 없으므로 노출은 첫 화면
+        // 한 번뿐이지만, **팝업 안의 판매 버튼은 살아 있다** — 수확물을 다
+        // 팔면 제작 안내가 막히는 그 구멍이 이 한 화면만큼 다시 열린다.
+        if (openPopup === null) {
           openPopup = 'sell'
           hub.setPopup(buildPopup('sell'))
         }
@@ -4374,12 +4379,31 @@ bus.on('screen.changed', beginNightResult)
 */
 const shutter = createShutterTransition(uiRoot)
 
+/**
+ * 직전 필드가 튜토리얼이었나.
+ *
+ * 튜토리얼에서 곧장 오는 1일차 시작은 문을 열지 않고 즉시 바뀐다 (8/9) —
+ * 그 앞에 열릴 창호지가 없다. 문이 열리는 일차 시작은 밤·조우 결과처럼 닫힌
+ * 창호지 화면에서 오는 경우다. 튜토리얼은 화면이 아니라 필드라
+ * (`scenes/manager.ts`) 화면 기록으로는 못 가르고 필드에 들어설 때 표시해 둔다.
+ */
+let fromTutorialField = false
+bus.on('field.entered', () => {
+  fromTutorialField = inTutorial()
+})
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
 bus.on('screen.changed', ({ screen }) => {
   // 그림이 없거나 움직임을 꺼 뒀으면 그 자리에서 `syncScreens` 를 부르고
   // 끝난다. 이미 연출 중이면 false 라 아래 즉시 경로로 떨어진다.
-  if (screen === 'day_start' && shutter.openOver(syncScreens)) return
+  if (screen === 'day_start') {
+    const instant = fromTutorialField
+    fromTutorialField = false
+    if (!instant && shutter.openOver(syncScreens)) return
+    syncScreens()
+    return
+  }
   if (screen === 'encounter_result' && shutter.closeThen(syncScreens)) return
   syncScreens()
 })
