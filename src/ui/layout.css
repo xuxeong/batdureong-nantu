@@ -1805,17 +1805,27 @@
   background: var(--hub-raid-plate) center / 100% 100% no-repeat;
 }
 
-/* 크림색 두 칸 위에 각각 앉는다. 위 주석의 백분율이 이 값들의 출처다 */
+/*
+  크림색 두 칸 위에 각각 앉는다 — **재배 HUD 와 같은 자리다** (8/9 폴리싱).
+
+  아래 백분율은 `.hud` 의 실측 픽셀(판 560×101 기준: 일차 x155 w113 ·
+  문구 x276 w267 · 칸 y13 h74)을 비율로 옮긴 것이다. 판 크기만 다르고
+  (여긴 보관함 폭 645) 안의 자리는 같아야 두 화면이 같은 표지로 읽힌다.
+  `.hud` 값은 **참고만 했다** — 그쪽 구획은 건드리지 않는다.
+*/
 .hub--has-art .hub__title,
 .hub--has-art .hub__raid-text {
   position: absolute;
-  top: 12%;
-  height: 75%;
+  top: 12.87%;
+  height: 73.27%;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  line-height: 1.1;
   color: var(--hub-text-on-art);
-  font-size: 26px;
+  /* 판이 재배(560)보다 1.15배라 글자도 같이 키운다 */
+  font-size: calc(var(--ui-font-lg) * 1.15);
   font-weight: 700;
   /* 문구가 칸보다 길면 넘치는 대신 줄인다 — 나무 테두리를 넘어가면 못 읽는다 */
   overflow: hidden;
@@ -1823,14 +1833,15 @@
 }
 
 .hub--has-art .hub__title {
-  left: 27.1%;
-  width: 29.2%;
+  left: 27.68%;
+  width: 20.18%;
 }
 
 .hub--has-art .hub__raid-text {
-  left: 57.5%;
-  width: 41.1%;
-  font-size: 22px;
+  left: 49.29%;
+  width: 47.68%;
+  font-size: calc(var(--ui-font-md) * 1.15);
+  font-weight: 400;
 }
 
 /* ── 기능 버튼 넷 — 팝업 왼쪽에 세로로 (A3 목업) ── */
@@ -2658,6 +2669,19 @@
 .hub__coin[style*='--hub-coin-image'] {
   /* 원본 33×32 라 거의 정사각형이다. 높이에 맞춰 폭을 준다 */
   width: 27px;
+}
+
+/*
+  총액·거래 후 줄의 숫자 폭을 고정한다 (8/9 폴리싱 — "엽전 아이콘 x 위치 고정").
+
+  숫자가 오른쪽 정렬로 폭이 변하면 그 왼쪽에 선 엽전이 줄마다 좌우로 움직였다
+  (총액 32 와 거래 후 4 처럼 자릿수가 다르다). 숫자 칸을 고정 폭으로 두면
+  엽전이 늘 같은 x 에 선다.
+*/
+.hub__totals .hub__row-price > span:last-child {
+  min-width: 64px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .hub__row-unit {
@@ -4548,8 +4572,9 @@
   width: 830px;
   height: 1106px;
   background: var(--day-start-scroll) top center / contain no-repeat;
-  /* 글은 종이의 위쪽 3분의 1에 앉는다. 아래는 빈 종이와 말린 축이다 */
-  padding: 150px 120px 0 90px;
+  /* 글은 종이의 위쪽 3분의 1에 앉는다. 아래는 빈 종이와 말린 축이다.
+     왼쪽 여백을 90 → 150 으로 — 글이 종이 왼쪽 끝에 붙어 보였다 (8/9 폴리싱) */
+  padding: 150px 120px 0 150px;
   box-sizing: border-box;
 }
 
@@ -4979,4 +5004,43 @@
 .hub__confirm-button:hover {
   background: rgba(255, 242, 220, 1);
   border-color: rgba(58, 43, 28, 0.8);
+}
+
+/* ─────────────────────────────────────────────────
+   8/10 폴리싱 — B 구획 (.tutorial · .ending · .run-failed)
+   ───────────────────────────────────────────────── */
+
+/*
+  건너뛰고 시작 — 어두운 판에서 크림 상자로 (8/9 폴리싱 "버튼 색깔?").
+
+  필드 위에 뜨는 버튼인데 혼자 어두운 회색 판이라 아트가 붙은 화면들과
+  겉돌았다. 결과 화면들의 확인 버튼과 같은 크림 상자로 맞춘다 — "답을
+  고르는 자리" 신호가 게임 전체에서 한 가지 모양이 된다.
+*/
+.tutorial .tutorial__skip {
+  border: 2px solid rgba(58, 43, 28, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 248, 236, 0.9);
+  color: var(--hub-text-on-art);
+  font-weight: 700;
+}
+
+.tutorial .tutorial__skip:hover {
+  background: rgba(255, 242, 220, 1);
+  border-color: rgba(58, 43, 28, 0.8);
+}
+
+/*
+  엔딩 배경 — 그 엔딩의 컷신 (8/9 폴리싱, ui/ending.ts).
+
+  판은 한지 그대로다. 컷신 위에 종이가 뜨는 것이 목업의 구도이고,
+  글이 그림과 섞이면 기록문을 읽을 수 없다.
+*/
+.ending--has-art {
+  background: var(--ending-cutscene) center / cover no-repeat;
+}
+
+/* 런 실패 배경 — 전용 그림(bg_run_failed) 또는 공용 폴백 컷신 (ui/run-failed.ts) */
+.run-failed--has-art {
+  background: var(--run-failed-background) center / cover no-repeat;
 }
