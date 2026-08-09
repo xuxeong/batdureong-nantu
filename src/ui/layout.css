@@ -683,7 +683,8 @@ body {
   top: var(--hud-timer-track-y);
   height: var(--hud-timer-track-h);
   width: calc(var(--hud-timer-track-w) * var(--hud-timer-ratio, 0));
-  border-radius: 999px;
+  /* 홈 그림이 네모라 알약형(999px)이면 네 귀가 빈다 (8/10) — 각지게 꽉 채운다 */
+  border-radius: 0;
   background: var(--ui-accent);
   transition: width 120ms linear;
 }
