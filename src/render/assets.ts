@@ -211,6 +211,22 @@ export const UI_ASSET = {
   raidNoticeNone: 'asset.ui.raid_notice_none',
   raidNoticeRaid: 'asset.ui.raid_notice_raid',
   raidNoticeFinal: 'asset.ui.raid_notice_final',
+
+  /**
+   * 일차 시작 화면 (A5 목업, 전성민 8/9).
+   *
+   * 배경 1919×1080 은 16:9 라 무대에 그대로 늘어난다. 오른쪽 나무 기둥은
+   * **배경 그림의 일부**다 — 족자만 그 위에 건다.
+   *
+   * `dayStartScroll` 830×1106 은 농장 일지가 적히는 족자다. **1일차에는 걸지
+   * 않는다** — 그날은 지난밤이 없어 일지도 없고, 목업도 기둥만 비워 뒀다.
+   */
+  bgDayStart: 'asset.ui.bg_day_start',
+  dayStartScroll: 'asset.ui.day_start_scroll',
+
+  /** 조우 결과·밤 결과 화면 배경 (DEC-UI-023) */
+  bgEncounterResult: 'asset.ui.bg_encounter_result',
+  bgNightResult: 'asset.ui.bg_night_result',
 } as const
 
 /**
