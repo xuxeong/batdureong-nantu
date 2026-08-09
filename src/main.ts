@@ -30,11 +30,20 @@ import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from '.
 
   핫스팟(클릭 지점)은 왼쪽 위 2,2 로 뒀다 — 화살표형 커서의 관례다. 그림이
   화살표가 아니면(십자선 등) 이 값을 그림에 맞춰 다시 잰다.
+
+  **크기는 `image-set` 배율로 줄인다** (8/10 — 원본 55×67 이 화면에서 컸다).
+  1.4x 로 선언하면 약 39×48 로 그려진다. 파일을 다시 뽑지 않는 이유는 커서가
+  에셋이고 에셋 수정은 아트 쪽 몫이라서다 — 배율은 표시 문제라 코드가 가진다.
+  `image-set` 을 모르는 브라우저는 앞의 원본 크기 선언으로 떨어진다.
 */
 const cursorUrl = assetUrl(UI_ASSET.cursor)
 if (cursorUrl !== null) {
   const style = document.createElement('style')
-  style.textContent = `body, body * { cursor: url("${cursorUrl}") 2 2, auto !important; }`
+  style.textContent = `body, body * {
+    cursor: url("${cursorUrl}") 2 2, auto !important;
+    cursor: -webkit-image-set(url("${cursorUrl}") 1.4x) 2 2, auto !important;
+    cursor: image-set(url("${cursorUrl}") 1.4x) 2 2, auto !important;
+  }`
   document.head.appendChild(style)
 }
 
