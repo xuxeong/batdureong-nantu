@@ -59,8 +59,15 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node
 }
 
-/** 커서에서 띄우는 거리(px). 커서가 안내를 덮으면 읽을 수 없다 */
-const CURSOR_GAP = 14
+/**
+ * 커서에서 띄우는 거리(px) — 오른쪽 아래로 이만큼 떨어진다 (8/9).
+ *
+ * 14px 로 붙여 뒀더니 안내가 커서를 따라다니며 메뉴를 가렸다. 세로를 더 주는
+ * 이유는 커서 그림이 위가 아니라 **아래로** 뻗기 때문이다 — 가로만큼 주면
+ * 화살표 끝이 안내 머리를 덮는다.
+ */
+const CURSOR_GAP_X = 24
+const CURSOR_GAP_Y = 36
 
 export function createTooltip(container: HTMLElement): Tooltip {
   const root = el('div', 'tip')
@@ -76,11 +83,11 @@ export function createTooltip(container: HTMLElement): Tooltip {
   function place(clientX: number, clientY: number): void {
     // 화면 밖으로 나가면 반대편으로 접는다. 오른쪽 끝 항목에서 안내가 잘린다.
     const box = root.getBoundingClientRect()
-    const overflowRight = clientX + CURSOR_GAP + box.width > window.innerWidth
-    const overflowBottom = clientY + CURSOR_GAP + box.height > window.innerHeight
+    const overflowRight = clientX + CURSOR_GAP_X + box.width > window.innerWidth
+    const overflowBottom = clientY + CURSOR_GAP_Y + box.height > window.innerHeight
 
-    const x = overflowRight ? clientX - CURSOR_GAP - box.width : clientX + CURSOR_GAP
-    const y = overflowBottom ? clientY - CURSOR_GAP - box.height : clientY + CURSOR_GAP
+    const x = overflowRight ? clientX - CURSOR_GAP_X - box.width : clientX + CURSOR_GAP_X
+    const y = overflowBottom ? clientY - CURSOR_GAP_Y - box.height : clientY + CURSOR_GAP_Y
 
     root.style.left = `${Math.max(0, x)}px`
     root.style.top = `${Math.max(0, y)}px`
