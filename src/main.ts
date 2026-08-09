@@ -3463,7 +3463,14 @@ function buildPopup(popup: string): HTMLElement {
       },
     })
 
-    renderOpenPopup = () => modal.render({ money: run?.resources.money ?? 0, items: shopItems(mode) })
+    renderOpenPopup = () =>
+      modal.render({
+        money: run?.resources.money ?? 0,
+        items: shopItems(mode),
+        // 튜토리얼은 판매 창을 기본으로 띄우되 팔 수는 없다 (8/9). 탭 잠금만으로는
+        // 이미 떠 있는 창 안의 실행 버튼을 못 막는다 — 8/6 의 "45% 막힘" 구멍.
+        locked: mode === 'sell' && inTutorial(),
+      })
     return modal.root
   }
 

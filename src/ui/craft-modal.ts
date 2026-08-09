@@ -310,7 +310,11 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
   if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
-  footer.append(timesBlock, needs, preview, action)
+  // 안내·실행은 바닥 묶음이다 (8/9) — 필요 재료는 증감 줄에 붙어 있어야 하므로
+  // 묶음 밖에 남는다. 각각 margin-top: auto 를 주면 공간을 나눠 먹어 중간에 뜬다.
+  const bottom = el('div', 'hub__footer-bottom')
+  bottom.append(preview, action)
+  footer.append(timesBlock, needs, bottom)
 
   /** 횟수를 고쳐 쓴다. 상한은 두지 않고 실행 가능 여부만 `render` 가 판정한다 */
   function setTimes(next: number): void {

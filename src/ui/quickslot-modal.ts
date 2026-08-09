@@ -104,11 +104,7 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
   )
 
   // 슬롯에서 무기를 제거해도 무기 보관함의 수량이 줄지 않는다는 것을 알 수 있게 한다
-  // (DEC-UI-034, DEC-RESOURCE-019). 제거 버튼 옆에 상시로 둔다.
-  footer.append(
-    el('div', 'hub__preview', '칸을 비워도 무기 보관함의 수량은 줄지 않는다.'),
-  )
-
+  // (DEC-UI-034, DEC-RESOURCE-019). 제거 버튼 **바로 위** 에 상시로 둔다 (8/9).
   const clearButton = el('button', 'hub__action', '칸 비우기') as HTMLButtonElement
   clearButton.type = 'button'
   const clearUrl = assetCssUrl(UI_ASSET.buttonNormal)
@@ -117,7 +113,13 @@ export function createQuickslotModal(handlers: QuickslotHandlers): QuickslotModa
     if (selectedIndex === null) return
     handlers.assign(selectedIndex, null)
   })
-  footer.appendChild(clearButton)
+
+  const bottom = el('div', 'hub__footer-bottom')
+  bottom.append(
+    el('div', 'hub__preview', '칸을 비워도 무기 보관함의 수량은 줄지 않는다.'),
+    clearButton,
+  )
+  footer.appendChild(bottom)
 
   /** 칸은 개수가 고정이라 매번 만들지 않고 재사용한다 */
   const slotNodes: {
