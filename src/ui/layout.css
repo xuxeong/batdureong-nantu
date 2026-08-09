@@ -4345,6 +4345,15 @@
 }
 
 /* 느려진 상태임을 알린다 (DEC-UI-037) */
+/* 무엇을 고르는 창인지 (8/10). 안내줄보다 크고 흐리지 않다 */
+.recovery-menu__title {
+  margin: 0;
+  font-size: var(--ui-font-md);
+  font-weight: 700;
+  color: var(--ui-text);
+  text-align: center;
+}
+
 .recovery-menu__notice {
   margin: 0;
   font-size: var(--ui-font-sm);
