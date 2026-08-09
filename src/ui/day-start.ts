@@ -21,8 +21,15 @@
 // 이 파일은 화면만 만든다. 흐름 전진과 일지 생성은 호출하는 쪽이 한다.
 
 import type { RaidNotice, RaidType } from '../data/types.ts'
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
+
+/** 진행 버튼에 팻말 그림을 입힌다. 없으면 글자 버튼이 그대로 남는다 */
+function paintButton(node: HTMLElement): void {
+  const url = assetCssUrl(UI_ASSET.buttonNormal)
+  if (url !== null) node.style.setProperty('--day-start-button-image', url)
+}
 
 /**
  * 일지 영역의 상태.
@@ -118,8 +125,11 @@ const DAY_SUFFIX = '일차'
  * 정보도 담지 않는다. 정비 종료 버튼(`DEC-RUN-006`)과 달리 다음에 무엇이
  * 일어나는지 알리지 않으므로 승인 데이터에서 공급하지 않는다.
  */
-const CONTINUE_LABEL = '시작'
+const CONTINUE_LABEL = '시작하기'
 const JOURNAL_PENDING_LABEL = '일지를 쓰는 중…'
+
+/** 족자 머리의 이름 (A5 목업). 무엇이 적힌 종이인지만 가리키는 라벨이다 */
+const JOURNAL_TITLE = '농장 일지'
 
 export function createDayStart(
   container: HTMLElement,
@@ -128,23 +138,44 @@ export function createDayStart(
   const root = el('div', 'day-start')
   root.hidden = true
 
+  // ── A5 목업 배치 (전성민 8/9) ─────────────────────
+  //
+  // 배경이 마을 풍경 한 장이고 그 위에 두 덩어리가 얹힌다 — 왼쪽 위에 일차와
+  // 예고 문구, 오른쪽에 농장 일지 족자다. **오른쪽 나무 기둥은 배경 그림의
+  // 일부**라 코드가 그리지 않고, 족자만 그 위에 건다.
+  const backgroundUrl = assetCssUrl(UI_ASSET.bgDayStart)
+  if (backgroundUrl !== null) {
+    root.classList.add('day-start--has-art')
+    root.style.setProperty('--day-start-background', backgroundUrl)
+  }
+
   const panel = el('div', 'day-start__panel')
-  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
-  applyHanjiPanel(panel)
+  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다).
+  // **아트가 붙으면 판을 끈다** — 배경 자체가 종이라 판이 한 겹 더 얹히면
+  // 목업의 "풍경 위에 글" 이 "풍경 위 창 안에 글" 이 된다.
+  if (backgroundUrl === null) applyHanjiPanel(panel)
 
   const day = el('h1', 'day-start__day')
   const notice = el('p', 'day-start__notice')
 
   // 일지 영역은 1일차에 **만들지 않는다** (DEC-UI-028). 자리를 비워 두는 것과
   // 다르므로 hidden 이 아니라 붙였다 뗀다.
+  //
+  // 족자도 같이 붙였다 뗀다 — 목업의 1일차는 기둥만 있고 종이가 없다.
+  const scroll = el('div', 'day-start__scroll')
+  const scrollUrl = assetCssUrl(UI_ASSET.dayStartScroll)
+  if (scrollUrl !== null) scroll.style.setProperty('--day-start-scroll', scrollUrl)
+  const journalTitle = el('div', 'day-start__journal-title', JOURNAL_TITLE)
   const journal = el('p', 'day-start__journal')
+  scroll.append(journalTitle, journal)
 
   const continueButton = el('button', 'day-start__continue', CONTINUE_LABEL)
   continueButton.type = 'button'
+  paintButton(continueButton)
   continueButton.addEventListener('click', () => handlers.onContinue())
 
-  panel.append(day, notice, continueButton)
-  root.appendChild(panel)
+  panel.append(day, notice)
+  root.append(panel, continueButton)
   container.appendChild(root)
 
   return {
@@ -157,9 +188,26 @@ export function createDayStart(
       notice.className = `day-start__notice day-start__notice--${view.raidType}`
 
       if (view.journal === null) {
-        journal.remove()
+        // 족자째로 뗀다 — 1일차는 지난밤이 없어 일지도 족자도 없다 (A5 목업).
+        scroll.remove()
+        // 1일차에는 기다릴 일지가 없다. 앞 일차에서 잠근 채로 왔을 수 있으니 푼다.
+        continueButton.disabled = false
         return
       }
+
+      /*
+        일지가 오는 동안 진행 버튼을 잠근다.
+
+        안 잠그면 생성이 끝나기 전에 눌러서 **그날 일지를 아예 못 보고** 넘어간다.
+        LLM 응답이 0.6~1.7초라 잠깐이지만, 빠르게 누르는 플레이어에게는 일지가
+        있다 없다 한다 — 매번 다른 화면이 나오는 셈이다.
+
+        `DEC-JOURNAL-003` 의 *"일지 생성 실패는 일차 진행을 막지 않는다"* 와
+        충돌하지 않는다. 그 문장은 **실패**를 말하는데, 실패하면 승인된 폴백
+        문구가 즉시 채워져 `ready` 가 되므로 여기서 잠기는 시간이 없다.
+        잠기는 것은 생성이 아직 진행 중인 동안뿐이다.
+      */
+      continueButton.disabled = view.journal.state === 'pending'
 
       // 대기 표시와 완성 일지가 같은 자리를 쓴다 (DEC-UI-028).
       // 폴백인지 아닌지로 모양을 바꾸지 않는다 — 이 화면은 그 구분을 받지도 않는다.
@@ -167,9 +215,9 @@ export function createDayStart(
         view.journal.state === 'pending' ? JOURNAL_PENDING_LABEL : view.journal.text
       journal.classList.toggle('day-start__journal--pending', view.journal.state === 'pending')
 
-      // 진행 버튼 앞에 둔다. 일지 생성이 끝나지 않아도 진행은 막지 않는다
-      // (DEC-JOURNAL-003).
-      if (journal.parentElement === null) panel.insertBefore(journal, continueButton)
+      // 족자는 배경의 기둥 자리에 건다. 진행 버튼과 형제라 순서는 상관없다 —
+      // 둘 다 절대 좌표로 앉는다.
+      if (scroll.parentElement === null) root.insertBefore(scroll, continueButton)
     },
 
     show() {

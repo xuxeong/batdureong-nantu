@@ -38,10 +38,15 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | A1-v6 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v6.png` | 0 | 0 | **최신 배치 기준** | 공용 습격 예고와 퀵슬롯 수량 배지를 반영한 재배 화면 |
 | A2-v2 | `assets/source/phase-a/A2_nighttime_gameplay_mockup_v2.png` | 0 | 0 | **최신 배치 기준** | 공용 습격 예고와 퀵슬롯 수량 배지를 반영한 습격 화면 |
 | A3-v8 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 0 | 0 | **최신 배치 기준** | 판매·제작·편성 2상태 4장으로 정비 화면 상태를 분리 |
-| A5-v1 | `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 0 | 0 | **배치 참고** | 1일차와 2~5일차 시작. 두루마리 등 최종 에셋 미반영 |
+| A5-v1 | `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 0 | 0 | **배치 참고** | 1일차와 2~5일차 시작 배치 참고. 최종 배경·두루마리는 별도 에셋으로 반영 |
 | A6-v1 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png` | 0 | 0 | **최신 배치 기준** | 정비와 같은 창호지 셔터 배경 위에 조우 결과 패널 배치 |
 | A7-v1 | `assets/source/phase-a/A7_night_result_mockup_v1.png` | 0 | 0 | **최신 배치 기준** | 정비와 같은 창호지 셔터 배경 위에 밤 결과 패널 배치 |
-| A8-v1 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 0 | 0 | **배치 참고** | 대자보 게시판과 엔딩 컷신 최종 에셋 미반영 |
+| A8-v1 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 0 | 0 | **배치 참고** | 엔딩 UI 배치 참고. 최종 게시판·컷신 6종은 별도 에셋으로 반영 |
+| G-1 | `assets/final/cutscene/*.png` | 15 | 14 | **확정·final 반영** | 인물 중심 시안을 폐기하고 타이틀 배경 변주 6종으로 통일. `new_family`의 인물 크기·복식·환영 동작을 반복 보정 |
+| G-2 | `assets/final/ui/bg_day_start.png` | 1 | 0 | **확정·final 반영** | 타이틀 배경에서 팻말 기둥을 제거하고 해가 오른 직후의 밝은 아침 하늘로 변주 |
+| G-3 | `assets/final/ui/day_start_scroll.png` | 1 | 0 | **확정·final 반영** | 농장 일지 동적 텍스트용 빈 두루마리 제작 후 Figma 누끼·최종 편집 |
+| G-4 | `assets/final/ui/ending_record_board.png` | 1 | 0 | **확정·final 반영** | 엔딩 기록문 동적 텍스트용 빈 대자보 게시판 제작 후 Figma 누끼·최종 편집 |
+| QA-FINAL-001 | `assets/final/portrait/*.png`, `assets/final/ui/player_status_card.png` | 0 | 0 | **확정·final 반영** | 프로젝트 책임자가 Figma에서 초상화 5종과 상태 카드의 여백·배치를 QA 후 재조정·재저장 |
 
 ## 상세 이력
 
@@ -169,10 +174,47 @@ A3 정비 허브 · A4 대화로 바뀌었다. 아래 표의 A2·A3는 **옛 번
 | 타이틀 | `assets/source/phase-a/A0_title_screen_mockup_v2.png` | 게임 시작과 설정 입력 두 개를 팻말에 배치한 최신 기준. |
 | 필드 | `assets/source/phase-a/A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 재배·습격 모두 좌상단 공용 습격 예고와 하단 공용 수량 배지를 사용한다. |
 | 정비 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 판매·제작·편성된 슬롯 선택·빈 슬롯 선택 네 상태를 별도 보존했다. |
-| 일차 시작 | `assets/source/phase-a/A5_day_start_day1_mockup_v1.png`, `A5_day_start_day2_5_mockup_v1.png` | 배치 참고용이다. 2~5일차의 두루마리는 임시 도형이며 최종 에셋이 아니다. |
+| 일차 시작 | `assets/source/phase-a/A5_day_start_day1_mockup_v1.png`, `A5_day_start_day2_5_mockup_v1.png` | 배치 참고용이다. 임시 도형 대신 최종 `bg_day_start.png`·`day_start_scroll.png`를 별도 제작했다. |
 | 결과 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png`, `A7_night_result_mockup_v1.png` | 두 독립 화면이 정비와 같은 창호지 셔터 배경을 재사용한다. 패널 구성은 서로 다르게 유지한다. |
-| 엔딩 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 배치 참고용이다. 대자보 게시판과 엔딩 컷신은 최종 에셋이 아니다. |
+| 엔딩 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 배치 참고용이다. 최종 `ending_record_board.png`와 컷신 6종을 별도 제작했다. |
 
 12장은 모두 프로젝트 책임자가 Figma에서 직접 구성한 1920×1080 PNG이며 이미지 생성 도구
 호출은 없었다. `bg_encounter_result`·`bg_night_result`·`bg_pause`의 스키마 정리는 개발팀에
 인계하고 이 작업에서는 스키마와 코드를 변경하지 않는다.
+
+### G-1 — 엔딩 컷신 6종
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1~4 | 기록만 보존 | 각 엔딩을 독립 인물 삽화로 풀었으나 타이틀·게임 화면과의 화풍 및 공간 연속성이 약해 전부 폐기했다. |
+| 5 | `assets/final/cutscene/neighbors.png` | 타이틀 배경에서 팻말 기둥을 제거하고 마을과 밭으로 빛이 내려오는 변주를 채택했다. |
+| 6~7 | `assets/final/cutscene/beyond_fence.png` | 마을 너머의 작은 사람 형체가 플레이어 쪽을 바라보게 했다. 최초의 어두운 하늘을 폐기하고 타이틀과 비슷한 밝기의 하늘로 보정했다. |
+| 8 | `assets/final/cutscene/silent_field.png` | 사람이 없는 마을과 어둑한 하늘만으로 정적을 표현했다. |
+| 9~13 | `assets/final/cutscene/new_family.png` | 일반 군중, 과도하게 큰 SD 인물, 지나치게 작은 무채색 실루엣을 차례로 폐기했다. 최종본은 마을 근처에 주민 4명을 중간 크기로 두고 얼굴은 생략하되 복식 색으로 구분하며, 손을 흔들거나 팔을 벌려 플레이어를 반기게 했다. |
+| 14 | `assets/final/cutscene/empty_village_master.png` | 모든 집이 불타 사라진 마을을 숯검정 기초·무너진 들보·재·잔불·옅은 연기로 표현했다. |
+| 15 | `assets/final/cutscene/global_fallback.png` | 타이틀 배경에서 팻말 기둥과 그림자만 제거하고 나머지는 유지했다. |
+
+최종 6종은 모두 `bg_title.png`의 구도와 카툰풍을 공유하며, 프로젝트 책임자가 Figma에서
+최종 편집·QA한 파일만 `assets/final/cutscene/`에 반영했다.
+
+### G-2 — 일차 시작 배경
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/final/ui/bg_day_start.png` | 타이틀 배경에서 팻말 기둥과 그림자를 제거하고, 해가 이미 조금 오른 밝은 아침과 상단에 남은 옅은 밤빛만 보정했다. 프로젝트 책임자가 Figma에서 최종 편집·QA했다. |
+
+### G-3·G-4 — 두루마리·대자보 게시판
+
+| 회차 | 파일 | 결과·변경 내용 |
+|---:|---|---|
+| 1 | `assets/final/ui/day_start_scroll.png` | 2~5일차 농장 일지를 동적으로 표시할 빈 두루마리를 생성했다. 프로젝트 책임자가 Figma에서 누끼·최종 편집했다. |
+| 1 | `assets/final/ui/ending_record_board.png` | 엔딩 기록문을 동적으로 표시할 빈 대자보 게시판을 생성했다. 프로젝트 책임자가 Figma에서 누끼·최종 편집했다. |
+
+### QA-FINAL-001 — 초상화·상태 카드 QA 수정
+
+| 구분 | 파일 | 결과·변경 내용 |
+|---|---|---|
+| 초상화 | `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | 프로젝트 책임자가 Figma에서 QA 후 여백·배치를 재조정하고 최종 PNG를 다시 저장했다. |
+| 상태 카드 | `assets/final/ui/player_status_card.png` | 프로젝트 책임자가 Figma에서 QA 후 배치를 재조정하고 최종 PNG를 다시 저장했다. |
+
+이 QA 수정에는 이미지 생성 호출이 없었으며 DEC·스키마·코드 변경도 포함하지 않는다.

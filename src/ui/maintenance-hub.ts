@@ -111,6 +111,14 @@ export interface HubView {
    * 팝업 제목이 있긴 하지만 그건 팝업 안이고, 버튼 줄만 보고는 구분이 없었다.
    */
   openPopup: HubPopupId | null
+  /**
+   * 투척 퀵슬롯 네 칸이 전부 비어 있는가 (작업 7번, 8/9).
+   *
+   * 습격이 오는 밤에 이 상태로 정비를 마치려 하면 확인 창을 한 번 묻는다 —
+   * 투척무기는 편성 없이는 쓸 수 없어서(DEC-RESOURCE-015), 모르고 나가면
+   * 습격 내내 낫뿐이다.
+   */
+  quickslotsEmpty: boolean
 }
 
 export interface HubHandlers {
@@ -167,6 +175,22 @@ const BUTTONS: { id: HubPopupId; label: string }[] = [
 /** 보관함 판 머리의 팻말 문구. `DEC-UI-029` 의 라벨 갈래다 — 영역 이름일 뿐이다 */
 const INVENTORY_HEADING = '보관함'
 
+/**
+ * 퀵슬롯이 빈 채로 정비를 마치려 할 때 한 번 묻는다 (작업 7번, 8/9).
+ *
+ * **`DEC-UI-020` 의 "정비 종료에 별도의 확인 창을 두지 않는다" 와 어긋난다.**
+ * 8/8 QA 작업표 7번으로 팀이 확정한 항목이라 구현하되, 그 확정문의 정리는
+ * 기획 책임자 몫으로 보고했다 — 닫기 버튼 조항과 같은 처리다.
+ *
+ * 습격이 오는 밤에만 묻는다. 조용한 밤에는 투척무기를 쓸 일 자체가 없어서
+ * 물으면 오히려 뭔가 해야 하는 것처럼 읽힌다.
+ */
+const CONFIRM_EMPTY_TEXT =
+  '현재 퀵슬롯에 아무것도 장착되어 있지 않습니다. ' +
+  '투척무기를 퀵슬롯에 장착하지 않으면 사용할 수 없습니다. 정말 정비를 마치시겠습니까?'
+const CONFIRM_YES = '예'
+const CONFIRM_NO = '아니오'
+
 const GROUPS: { key: keyof InventoryView; title: string }[] = [
   { key: 'crops', title: '수확물' },
   { key: 'materials', title: '재료' },
@@ -183,13 +207,22 @@ export function createMaintenanceHub(
 
   // 배경은 닫힌 미닫이문 두 짝이다 (A3 목업, 아트 디렉션 12.5.5). 둘 다 있어야
   // 화면이 채워지므로 한 장만 와 있으면 아트 없는 쪽으로 떨어진다.
+  //
+  // **CSS 배경이 아니라 요소 두 개다** (8/9). 정비에 들어올 때 이 문짝이
+  // 재배 필드 위로 닫히는 연출을 해야 하는데, 배경은 움직일 수 없다. 화면이
+  // 뜰 때마다 문이 닫히고(260ms) 그다음 UI 가 양옆에서 미끄러져 들어온다 —
+  // 붙였다 떼는 것이 아니라 CSS 애니메이션이라 다시 뜰 때마다 저절로 돈다.
   const shutterLeft = assetCssUrl(UI_ASSET.shutterLeft)
   const shutterRight = assetCssUrl(UI_ASSET.shutterRight)
   const hasArt = shutterLeft !== null && shutterRight !== null
   if (hasArt) {
     root.classList.add('hub--has-art')
-    root.style.setProperty('--hub-shutter-left', shutterLeft)
-    root.style.setProperty('--hub-shutter-right', shutterRight)
+    const doorLeft = el('div', 'hub__door hub__door--left')
+    doorLeft.style.setProperty('--shutter-image', shutterLeft)
+    const doorRight = el('div', 'hub__door hub__door--right')
+    doorRight.style.setProperty('--shutter-image', shutterRight)
+    // 다른 자식보다 먼저 넣는다 — 문이 모든 UI 의 뒤에 깔려야 한다
+    root.append(doorLeft, doorRight)
   }
 
   /** 있으면 CSS 변수로 걸어 준다. 없으면 `layout.css` 의 플레이스홀더가 남는다 */
@@ -287,16 +320,75 @@ export function createMaintenanceHub(
   const finish = el('button', 'hub__finish')
   finish.type = 'button'
   paint(finish, '--hub-button-image', UI_ASSET.buttonNormal)
-  finish.addEventListener('click', () => handlers.finish())
+
+  /**
+   * 종료를 누르면 UI 가 먼저 미끄러져 나가고 그다음 진행한다 (8/9 플로우 —
+   * "정비 UI들이 슬라이딩으로 퇴장하고" 문이 열리거나 밤 결과가 올라온다).
+   *
+   * 문짝은 남는다 — 습격이면 그 자리에서 문이 열리고(shutter.openOver),
+   * 조용한 밤이면 밤 결과의 창호지 배경이 같은 그림으로 이어진다.
+   */
+  const EXIT_MS = 280
+  let leaving = false
+
+  function beginFinish(): void {
+    if (leaving) return
+    const animated =
+      root.classList.contains('hub--has-art') &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!animated) {
+      handlers.finish()
+      return
+    }
+    leaving = true
+    root.classList.add('hub--leaving')
+    window.setTimeout(() => handlers.finish(), EXIT_MS)
+  }
+
+  // ── 퀵슬롯 빈 상태 확인 창 (작업 7번) ─────────────
+  const confirmLayer = el('div', 'hub__confirm')
+  confirmLayer.hidden = true
+  const confirmPanel = el('div', 'hub__confirm-panel')
+  applyHanjiPanel(confirmPanel)
+  const confirmYes = el('button', 'hub__confirm-button', CONFIRM_YES)
+  confirmYes.type = 'button'
+  const confirmNo = el('button', 'hub__confirm-button', CONFIRM_NO)
+  confirmNo.type = 'button'
+  const confirmRow = el('div', 'hub__confirm-row')
+  confirmRow.append(confirmYes, confirmNo)
+  confirmPanel.append(el('p', 'hub__confirm-text', CONFIRM_EMPTY_TEXT), confirmRow)
+  confirmLayer.appendChild(confirmPanel)
+
+  confirmYes.addEventListener('click', () => {
+    confirmLayer.hidden = true
+    beginFinish()
+  })
+  confirmNo.addEventListener('click', () => {
+    confirmLayer.hidden = true
+  })
+
+  finish.addEventListener('click', () => {
+    if (leaving) return
+    // 습격이 오는 밤에 퀵슬롯이 비어 있으면 한 번 묻는다 (위 CONFIRM_EMPTY_TEXT 주석)
+    if (currentView !== null && currentView.quickslotsEmpty && currentView.raidType !== 'none') {
+      confirmLayer.hidden = false
+      return
+    }
+    beginFinish()
+  })
 
   // ── 팝업 층 ─────────────────────────────────────
   const popupLayer = el('div', 'hub__popup-layer')
   popupLayer.hidden = true
 
-  root.append(raidNotice, topRight, inventory, buttons, finish, popupLayer)
+  // 확인 창은 팝업 층보다 위다 — 정비의 다른 무엇과도 겹쳐 뜰 수 있어야 한다
+  root.append(raidNotice, topRight, inventory, buttons, finish, popupLayer, confirmLayer)
   container.appendChild(root)
 
   const tooltip = createTooltip(root)
+
+  /** 마지막으로 받은 뷰. 종료 버튼이 퀵슬롯 상태를 이것으로 판정한다 */
+  let currentView: HubView | null = null
 
   /**
    * 지금 화면에 있는 줄. 안내가 뜰 때 **여기서 다시 읽는다** — 붙일 때 값으로
@@ -382,6 +474,7 @@ export function createMaintenanceHub(
 
   return {
     render(view) {
+      currentView = view
       // 판 안의 왼쪽 칸이라 `정비` 를 빼고 일차만 쓴다 (8/8 QA)
       title.textContent = `${view.dayNumber}일차`
       // 문구가 없으면 비워 둔다. 임시 문구를 채우지 않는다 (DEC-RUN-011)
@@ -426,6 +519,13 @@ export function createMaintenanceHub(
     },
 
     show() {
+      // 숨김 → 표시로 바뀌는 순간에만 초기화한다. 렌더 루프가 매 프레임 부르므로
+      // 조건 없이 지우면 퇴장 애니메이션이 도는 중에 끊긴다.
+      if (root.hidden) {
+        leaving = false
+        root.classList.remove('hub--leaving')
+        confirmLayer.hidden = true
+      }
       root.hidden = false
     },
 
@@ -434,6 +534,7 @@ export function createMaintenanceHub(
       tooltip.hide()
       popupLayer.replaceChildren()
       popupLayer.hidden = true
+      confirmLayer.hidden = true
     },
 
     setInteractive(interactive) {

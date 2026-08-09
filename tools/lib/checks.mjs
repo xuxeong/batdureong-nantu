@@ -45,6 +45,41 @@ export function evalCondition(expr, record, ctx) {
   return op === '==' ? hit : !hit
 }
 
+/**
+ * 행마다 칸 수가 헤더와 같은지.
+ *
+ * **헤더 이름만 봐서는 못 잡는 자리다.** `toRecords` 가 헤더 길이만큼만 읽어서
+ * 칸이 더 많으면 남는 값이 조용히 버려지고, 칸이 적으면 뒤쪽이 빈 문자열이 된다.
+ * 둘 다 헤더는 멀쩡하므로 `checkHeader` 를 통과한다.
+ *
+ * 실제로 2026-08-09 에 튜토리얼 안내 문구 안의 쉼표가 따옴표 없이 들어가 열이
+ * 하나 늘었는데, 검증이 통과하고 **화면에서 문구가 잘려야만** 드러났다.
+ * 값이 사라지는 종류라 사람이 눈으로 보기 전에는 아무도 모른다.
+ *
+ * 고치는 방법은 대개 그 칸을 큰따옴표로 감싸는 것이다 —
+ * `dialogue_choice_responses.csv` 와 `story_scenarios.csv` 가 이미 그렇게 쓴다.
+ */
+export function checkCellCount(report, name, table) {
+  const expected = table.header.length
+  for (const record of table.records) {
+    if (record.cellCount === undefined || record.cellCount === expected) continue
+
+    const more = record.cellCount > expected
+    report.block({
+      file: name,
+      line: record.lineNumber,
+      field: '',
+      problem: more
+        ? `칸이 ${record.cellCount}개로 헤더(${expected}개)보다 많다. 남는 값은 어디에도 들어가지 않고 버려진다`
+        : `칸이 ${record.cellCount}개로 헤더(${expected}개)보다 적다. 뒤쪽 열이 빈 값이 된다`,
+      basis: 'DEC-PIPELINE-013 · tools/lib/csv.mjs 는 헤더 길이만큼만 읽는다',
+      fix: more
+        ? '값 안에 쉼표가 있으면 그 칸을 큰따옴표로 감싼다'
+        : '빠진 열을 채운다. 빈 값이면 쉼표만 두고 자리를 남긴다',
+    })
+  }
+}
+
 /** 헤더가 스키마와 맞는지 */
 export function checkHeader(report, name, table, def, schema) {
   const expected = expectedHeader(def, schema.common)

@@ -26,7 +26,9 @@
 // 이 파일은 화면만 만든다. 흐름 전진은 호출하는 쪽이 한다.
 
 import type { NightResultText } from '../data/types.ts'
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
+import { applyClosedDoors } from './shutter.ts'
 import './layout.css'
 
 export interface NightResultView {
@@ -111,6 +113,20 @@ export function createNightResult(
   const root = el('div', 'night-result')
   root.hidden = true
 
+  // 배경은 닫힌 창호지다 (A7 목업). 정비 화면의 문짝과 이어지는 그림이라
+  // 문이 움직이지 않는다 — 정비 UI 가 퇴장하면 이 창이 아래에서 올라올 뿐이다
+  // (8/9 플로우). 확인을 누르면 창이 내려가고 문이 열리며 다음 일차다.
+  //
+  // 전용 그림(bg_night_result)이 오기 전까지는 문짝 두 장을 그대로 깐다 —
+  // 정비의 문짝과 같은 파일이라 픽셀까지 이어진다 (applyClosedDoors 주석).
+  const backgroundUrl = assetCssUrl(UI_ASSET.bgNightResult)
+  if (backgroundUrl !== null) {
+    root.classList.add('night-result--has-art')
+    root.style.setProperty('--result-background', backgroundUrl)
+  } else if (applyClosedDoors(root)) {
+    root.classList.add('night-result--has-art')
+  }
+
   const panel = el('div', 'night-result__panel')
   // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
   applyHanjiPanel(panel)
@@ -118,7 +134,24 @@ export function createNightResult(
 
   const continueButton = el('button', 'night-result__continue', CONTINUE_LABEL)
   continueButton.type = 'button'
-  continueButton.addEventListener('click', () => handlers.onContinue())
+
+  // 확인 → 창이 먼저 내려가고 그다음 화면이 바뀐다. 조우 결과와 같은 처리다
+  // (encounter-result.ts 의 같은 자리 주석 참고).
+  const EXIT_MS = 300
+  let leaving = false
+  continueButton.addEventListener('click', () => {
+    if (leaving) return
+    const animated =
+      root.classList.contains('night-result--has-art') &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!animated) {
+      handlers.onContinue()
+      return
+    }
+    leaving = true
+    root.classList.add('night-result--leaving')
+    window.setTimeout(() => handlers.onContinue(), EXIT_MS)
+  })
 
   panel.append(text, continueButton)
   root.appendChild(panel)
@@ -130,6 +163,10 @@ export function createNightResult(
     },
 
     show() {
+      if (root.hidden) {
+        leaving = false
+        root.classList.remove('night-result--leaving')
+      }
       root.hidden = false
     },
 

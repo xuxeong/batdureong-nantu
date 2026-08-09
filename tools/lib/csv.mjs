@@ -104,7 +104,18 @@ export function toRecords(rows) {
     for (let c = 0; c < header.length; c++) {
       record[header[c]] = cells[c] ?? ''
     }
-    records.push({ lineNumber: r + 1, cells: record })
+    /*
+      원본 칸 수를 같이 들고 나온다.
+
+      위 반복이 **헤더 길이만큼만 돌아서** 칸이 더 많으면 남는 값이 아무 데도
+      안 들어가고 조용히 사라진다. 2026-08-09 에 튜토리얼 문구 안의 쉼표가
+      따옴표 없이 들어가 열이 하나 늘었고, 화면에서 문구가 잘려야만 드러났다 —
+      검증은 그대로 통과했다.
+
+      값을 여기서 판단하지 않고 개수만 넘긴다. 무엇이 문제인지는 `checks.mjs` 가
+      스키마와 대조해서 말한다.
+    */
+    records.push({ lineNumber: r + 1, cells: record, cellCount: cells.length })
   }
 
   return { header, records }

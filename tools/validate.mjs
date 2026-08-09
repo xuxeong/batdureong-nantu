@@ -14,7 +14,7 @@
 import { existsSync } from 'node:fs'
 import { loadSchema, loadDataset, indexIds } from './lib/schema.mjs'
 import { Report, BLOCK, WARN, SUGGEST } from './lib/report.mjs'
-import { checkHeader, checkRows, checkCommonEntry, checkReferences, checkUniqueKey } from './lib/checks.mjs'
+import { checkCellCount, checkHeader, checkRows, checkCommonEntry, checkReferences, checkUniqueKey } from './lib/checks.mjs'
 import { RULES, helpers, COVERED_BY_FIELD_CHECKS, ENFORCED_AT_RUNTIME } from './lib/rules.mjs'
 
 const STAGES = {
@@ -81,6 +81,9 @@ function main() {
   // 표별 검사
   for (const [name, table] of dataset.tables) {
     const def = schema.tables.get(name)
+    // 칸 수를 먼저 본다. 칸이 밀린 행은 아래 검사에서 엉뚱한 열을 탓하는
+    // 오류를 줄줄이 만드는데, 그 원인이 목록 맨 위에 있어야 읽힌다.
+    checkCellCount(report, name, table)
     checkHeader(report, name, table, def, schema)
     checkRows(report, name, table, def, schema, { stage: stageName, findById })
     checkReferences(report, name, table, def, schema, dataset, idIndex)

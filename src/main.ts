@@ -16,10 +16,26 @@ import type { SceneManager } from './scenes/manager.ts'
 import { createInput } from './input/input.ts'
 import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
 import { fillPlayerName, subjectParticle } from './ui/korean.ts'
+import { loadBodyFont } from './ui/font.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { BGM_ASSET, SOUND_ASSET, createAssetImages, UI_ASSET } from './render/assets.ts'
+import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from './render/assets.ts'
+
+/*
+  마우스 커서 (작업 15번). 그림이 있으면 게임 전체가 그것을 쓴다 — 버튼의
+  `cursor: pointer` 까지 덮으려면 CSS 한 줄로는 안 되고 최상위에서 !important
+  로 눌러야 해서, 파일이 있을 때만 스타일 규칙을 만들어 꽂는다.
+
+  핫스팟(클릭 지점)은 왼쪽 위 2,2 로 뒀다 — 화살표형 커서의 관례다. 그림이
+  화살표가 아니면(십자선 등) 이 값을 그림에 맞춰 다시 잰다.
+*/
+const cursorUrl = assetUrl(UI_ASSET.cursor)
+if (cursorUrl !== null) {
+  const style = document.createElement('style')
+  style.textContent = `body, body * { cursor: url("${cursorUrl}") 2 2, auto !important; }`
+  document.head.appendChild(style)
+}
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -93,6 +109,7 @@ import type { TutorialProgress } from './systems/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
 import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
+import { createShutterTransition } from './ui/shutter.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
 import { createRunFailed } from './ui/run-failed.ts'
 import type { RunFailedScreen } from './ui/run-failed.ts'
@@ -1666,6 +1683,9 @@ function buildEncounterResultView(
 
   return {
     residentName: residentNames.get(residentId) ?? residentId,
+    // 대화 화면과 같은 그림이다 (A6 목업 — 카드 왼쪽). portrait 이 없으면
+    // field_sprite 로 떨어지는 것까지 residentPortraits 가 이미 하고 있다.
+    portraitAsset: residentPortraits.get(residentId),
     outcome,
     lifeState: resident.lifeState,
     allegiance: resident.allegiance,
@@ -2900,6 +2920,9 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
 
 const titleScreen: TitleScreen = createTitle(uiRoot, {
   onStart: () => scenes.send({ type: 'confirm' }),
+  // 설정 팻말이 여는 음량 조절 (DEC-UI-032). 일시정지와 같은 mixer 라
+  // 어느 쪽에서 내려도 다른 쪽에 그대로 보인다.
+  mixer,
 })
 
 const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
@@ -3628,6 +3651,11 @@ function hubView() {
     lockedPopups: inTutorial() ? (['sell'] as const) : [],
     // 어느 기능을 보고 있는지 버튼에서 알린다 (8/8 플레이 테스트).
     openPopup,
+    // 습격이 오는 밤에 이 상태로 나가려 하면 화면이 한 번 묻는다 (작업 7번).
+    // 칸이 아예 없으면(런 없음) 묻지 않는다 — 빈 배열의 every 는 참이라서다.
+    quickslotsEmpty:
+      (run?.quickslots.slots.length ?? 0) > 0 &&
+      (run?.quickslots.slots ?? []).every((id) => id === null),
   }
 }
 
@@ -4312,10 +4340,54 @@ bus.on('field.entered', ({ mode }) => {
 bus.on('screen.changed', beginDayStart)
 bus.on('screen.changed', beginNightResult)
 
+/*
+  ── 미닫이문을 거쳐 들어가는 화면 (8/9) ────────────────────
+
+  일차 시작과 조우 결과는 문이 닫혔다 열리면서 등장한다. **화면을 바꾸는 것을
+  문이 닫힌 뒤로 미룬다** — 먼저 바꾸면 바뀌는 순간이 그대로 보이고, 문은 이미
+  바뀐 화면 위를 지나가는 장식이 된다.
+
+  나머지 화면은 지금처럼 즉시 바뀐다. 문을 모든 전환에 걸면 타이틀·이름 입력
+  같은 짧은 걸음까지 매번 0.8 초씩 늘어난다.
+*/
+/*
+  ── 하루의 전환 흐름 (8/9 확정) ────────────────────────────
+
+    일차 시작 ─(즉시)→ 재배 ─(문 닫힘·UI 등장)→ 정비
+      정비 ─(UI 퇴장·창 올라옴)→ 밤 결과 ─(창 내려감·문 열림)→ 다음 일차
+      정비 ─(UI 퇴장·문 열림)→ 습격 ─(문 닫힘·카드 올라옴)→ 조우 결과
+      조우 결과 ─(카드 내려감·문 열림)→ 다음 일차
+
+  문이 움직이는 곳은 세 군데다.
+
+  · 조우 결과 진입 — `closeThen`: 습격 필드 위로 닫히고, 뒤 배경이 같은
+    창호지라 열지 않고 치운다. 카드는 화면 자신이 올린다.
+  · 일차 시작 진입 — `openOver`: 앞 화면(조우·밤 결과)의 배경이 이미 닫힌
+    창호지라 닫힌 채로 나타나 마을 풍경 위로 열린다.
+  · 습격 진입 — `openOver`: 정비 화면의 배경이 닫힌 문 그 자체라, 같은
+    자리에서 문이 열리며 밭이 드러난다.
+
+  정비 진입의 문 닫힘과 밤 결과 진입은 여기 없다 — 정비는 화면이 아니라
+  오버레이라 `screen.changed` 가 오지 않고, 문짝이 정비 화면 자신의 배경이라
+  등장 연출도 그 화면이 한다 (ui/maintenance-hub.ts). 밤 결과는 정비에서
+  오는데 문이 이미 닫혀 있어 움직일 것이 없다 — 창만 올라온다.
+*/
+const shutter = createShutterTransition(uiRoot)
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
-bus.on('screen.changed', syncScreens)
-bus.on('field.entered', syncScreens)
+bus.on('screen.changed', ({ screen }) => {
+  // 그림이 없거나 움직임을 꺼 뒀으면 그 자리에서 `syncScreens` 를 부르고
+  // 끝난다. 이미 연출 중이면 false 라 아래 즉시 경로로 떨어진다.
+  if (screen === 'day_start' && shutter.openOver(syncScreens)) return
+  if (screen === 'encounter_result' && shutter.closeThen(syncScreens)) return
+  syncScreens()
+})
+bus.on('field.entered', ({ mode }) => {
+  // 습격 진입만 문을 연다. 재배 진입은 일차 시작에서 오는 즉시 전환이다 (8/9).
+  if (mode === 'raid' && shutter.openOver(syncScreens)) return
+  syncScreens()
+})
 
 // 기록문이 늦게 도착하면 대기 표시를 실제 문장으로 바꾼다 (DEC-UI-023).
 // 화면은 그대로인데 내용만 바뀌는 경우라 위 두 신호로는 오지 않는다.
@@ -4519,9 +4591,23 @@ if (isDevBuild) {
 // 이미 떠 있는데, 승인 데이터가 없는 타이틀은 눌러도 갈 곳이 없다.
 loadingScreen.show()
 
-void bootData().then((ok) => {
+/*
+  폰트를 승인 데이터와 나란히 받는다 (DEC-ART-004).
+
+  **캔버스 때문에 기다린다.** DOM 은 폰트가 늦게 와도 알아서 다시 그리지만,
+  캔버스는 `ctx.font` 를 쓰는 순간의 상태로 한 번 그리고 만다 — 아직 안 받았으면
+  경고 없이 시스템 폰트로 그려진다. 첫 프레임 전에 끝나 있어야 한다.
+
+  `loadBodyFont()` 는 실패해도 예외를 던지지 않고 `false` 를 준다. 폰트가 없다고
+  게임을 막지 않는다 — 대체 폰트로 글자는 그대로 나온다.
+*/
+void Promise.all([bootData(), loadBodyFont()]).then(([ok, fontLoaded]) => {
   booting = false
   loadingScreen.hide()
+
+  if (isDevBuild && !fontLoaded) {
+    console.info('[폰트] 본문 폰트를 받지 못했다. 대체 폰트로 그린다')
+  }
 
   if (!ok) {
     // 부팅할 수 없으면 데이터 오류 화면이고 여기서 끝이다 (DEC-UI-024).

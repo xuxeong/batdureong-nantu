@@ -50,7 +50,7 @@ const isDevBuild = import.meta.env.VITE_BUILD_MODE !== 'submission'
  * 동작한다. `assets/` 는 `publicDir`(= `public/`) 밖이라 정적 경로로 fetch 할 수 없다 —
  * `generated/runtime/` 을 읽는 `data/loader.ts` 와 같은 이유다.
  */
-const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg,wav,mp3}', {
+const FILES = import.meta.glob<string>('/assets/final/**/*.{png,webp,jpg,jpeg,wav,mp3,ttf}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -118,6 +118,14 @@ export const UI_ASSET = {
   recoverySlot: 'asset.ui.recovery_slot',
   /** 일시정지·설정 겸용 버튼 하나 (아트 디렉션 14.3) */
   settingsButton: 'asset.ui.settings_button',
+  /**
+   * 마우스 커서 (작업 15번, 2026-08-09).
+   *
+   * **파일보다 먼저 등록했다** — `assets/final/ui/cursor.png` 가 들어오면
+   * 코드 변경 없이 커서가 바뀐다 (main.ts 가 부팅 때 확인한다). 그때까지는
+   * 시스템 커서다. 브라우저 제한상 128px 이하여야 하고 32px 안팎을 권장한다.
+   */
+  cursor: 'asset.ui.cursor',
   /**
    * 닫기 버튼.
    *
@@ -211,7 +219,42 @@ export const UI_ASSET = {
   raidNoticeNone: 'asset.ui.raid_notice_none',
   raidNoticeRaid: 'asset.ui.raid_notice_raid',
   raidNoticeFinal: 'asset.ui.raid_notice_final',
+
+  /**
+   * 일차 시작 화면 (A5 목업, 전성민 8/9).
+   *
+   * 배경 1919×1080 은 16:9 라 무대에 그대로 늘어난다. 오른쪽 나무 기둥은
+   * **배경 그림의 일부**다 — 족자만 그 위에 건다.
+   *
+   * `dayStartScroll` 830×1106 은 농장 일지가 적히는 족자다. **1일차에는 걸지
+   * 않는다** — 그날은 지난밤이 없어 일지도 없고, 목업도 기둥만 비워 뒀다.
+   */
+  bgDayStart: 'asset.ui.bg_day_start',
+  dayStartScroll: 'asset.ui.day_start_scroll',
+
+  /** 조우 결과·밤 결과 화면 배경 (DEC-UI-023) */
+  bgEncounterResult: 'asset.ui.bg_encounter_result',
+  bgNightResult: 'asset.ui.bg_night_result',
 } as const
+
+/**
+ * 본문 폰트의 논리 에셋 ID (`DEC-ART-004`).
+ *
+ * **WOFF2 가 아니라 TTF 다.** 저장소 관례(`assets/README.md`)는 WOFF2 지만
+ * 이 폰트는 라이선스가 파일 수정을 금지해서 변환할 수 없다. 자세한 것은
+ * `docs/submission/CREDITS.md` 와 `schema_manifest` 16→17 에 적었다.
+ *
+ * **CSS `@font-face` 를 쓰지 않는 이유.** `src:` 는 CSS 변수를 못 읽어서 경로를
+ * 스타일시트에 직접 적어야 하는데, 그러면 경로를 아는 곳이 이 파일 말고 하나 더
+ * 생긴다. 대신 `ui/font.ts` 가 이 ID 로 URL 을 받아 `FontFace` 로 등록한다.
+ */
+export const FONT_ASSET = {
+  /** 화면 전체의 본문·제목. 굵기 하나뿐이라 역할을 나누지 않는다 */
+  body: 'asset.font.griun_x_hangeul_equal',
+} as const
+
+/** `@font-face` 와 `ctx.font` 가 함께 쓰는 이름. 파일이 없으면 아래 대체 폰트로 내려간다 */
+export const FONT_FAMILY = 'GriunXHangeul Equal'
 
 /**
  * 배경음의 논리 에셋 ID (`DEC-ART-005`).
@@ -321,7 +364,11 @@ export const SOUND_ASSET = {
   recordTyping: 'asset.sfx.record_typing',
 } as const
 
-for (const id of [...Object.values(BGM_ASSET), ...Object.values(SOUND_ASSET)]) {
+for (const id of [
+  ...Object.values(BGM_ASSET),
+  ...Object.values(SOUND_ASSET),
+  ...Object.values(FONT_ASSET),
+]) {
   if (UI_ASSET_IDS.includes(id)) continue
   throw new Error(
     `${id} 가 schema/enums.json 의 ui_system_asset_id 고정 목록에 없다. ` +

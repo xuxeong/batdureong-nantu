@@ -1,36 +1,37 @@
-// 타이틀 화면 (DEC-UI-030, DEC-UI-014)
+// 타이틀 화면 (DEC-UI-032, DEC-UI-014)
 //
 // 런의 시작점이고, 런 실패나 엔딩에서 돌아오는 곳이기도 하다.
 //
-// ── 입력이 하나뿐이다 (DEC-UI-030) ─────────────────────────
+// ── 입력이 둘이다 (DEC-UI-032) ─────────────────────────────
 //
-// **새 런을 시작하는 입력만 둔다.** 이어하기와 저장 슬롯을 두지 않는다고 확정했다.
-// 그 결정이 다른 곳까지 정리했다 — 밤 결과 문구의 순환 선택이 후보에서 빠진 것도
-// 런 사이에 진행 위치를 보관할 데가 없어서다 (DEC-CONTENT-018).
+// **새 런을 시작하는 입력과 음량 설정, 둘만 둔다.** 이어하기·저장 슬롯·게임
+// 종료는 두지 않는다 — 종료는 웹 탭에서 `window.close()` 가 동작하지 않아서
+// 뺐고, 설정 팻말이 목업의 `게임 종료` 자리(두 번째 받침)를 대신 쓴다.
 //
-// **튜토리얼 건너뛰기는 여기 없다.** `DEC-UI-030` 가 "타이틀 또는 튜토리얼 시작
-// 시점에 제공한다" 로 둘 중 하나를 고르게 했고 튜토리얼 화면 쪽을 골랐다 —
-// 안내 문구가 데이터 대기라 그 화면이 지금은 건너뛰기만 있는 상태이기 때문이다.
+// 설정은 `DEC-UI-027` 이 정한 음량 항목만 연다. 새 설정 화면을 만들지 않는다 —
+// 줄 세 개가 일시정지와 **같은 모듈**(ui/volume-panel.ts)이라 두 화면이 다른
+// 조절을 갖게 될 수 없다.
+//
+// **튜토리얼 건너뛰기는 여기 없다.** `DEC-UI-032` 가 이어받은 확정문이 "타이틀
+// 또는 튜토리얼 시작 시점에 제공한다" 로 둘 중 하나를 고르게 했고 튜토리얼
+// 화면 쪽을 골랐다.
 //
 // 이 파일은 화면만 만든다. 런 상태를 새로 만드는 것은 호출하는 쪽이 한다 (로드맵 9-5).
-//
-// ── 목업의 버튼 셋 중 하나만 있다 ──────────────────────────
-//
-// 아트 디렉션 A0 목업(전성민 8/8)에는 `게임 시작`·`게임 종료` 팻말 두 장과 우측 상단
-// 설정 버튼이 그려져 있다. **여기 있는 것은 `게임 시작` 하나뿐이다.**
-// `DEC-UI-030` 이 *"타이틀 화면에는 새 런을 시작하는 입력만 둔다"* 로 확정했고,
-// 나머지 둘을 넣으면 그 확정문을 코드가 어기는 셈이 된다 (`AGENTS.md` 5절).
-//
-// 자리는 비워 두었다 — 아래 `--title-sign-bottom-y` 가 두 번째 받침의 실측 좌표이고,
-// 배경 그림의 기둥에는 받침이 두 개 그려져 있다. DEC 가 바뀌면 팻말 한 장과
-// 핸들러 하나를 더하는 것으로 끝난다.
 
+import type { Mixer } from '../audio/mixer.ts'
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
+import { createVolumeRows } from './volume-panel.ts'
 import './layout.css'
 
 export interface TitleHandlers {
-  /** 새 런을 시작한다. **입력은 이것 하나뿐이다** (DEC-UI-030) */
+  /** 새 런을 시작한다 */
   onStart(): void
+  /**
+   * 음량 설정에 쓴다 (DEC-UI-032). 오디오가 없는 빌드에서는 넘기지 않고,
+   * 그러면 설정 팻말 자체를 만들지 않는다 — 일시정지가 음량 버튼을 빼는 것과
+   * 같은 규칙이다 (DEC-UI-027).
+   */
+  mixer?: Mixer
 }
 
 export interface TitleScreen {
@@ -61,6 +62,8 @@ function el<K extends keyof HTMLElementTagNameMap>(
  */
 const GAME_TITLE = '밭두렁난투'
 const START_LABEL = '게임 시작'
+/** 목업의 `게임 종료` 팻말 자리를 대신 쓴다 (DEC-UI-032) */
+const SETTINGS_LABEL = '설정'
 
 /**
  * 팻말이 흔들리는 시간. `layout.css` 의 `title-sign-shake` 와 같은 값이어야 한다.
@@ -84,6 +87,30 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
   const startButton = el('button', 'title__start', START_LABEL)
   startButton.type = 'button'
 
+  // ── 설정 — 음량 조절만 연다 (DEC-UI-032) ─────────
+  //
+  // 팻말을 다시 누르거나 판 밖을 누르면 닫힌다. 게임 시작을 누르면 그대로
+  // 진입한다 — 설정이 열려 있다고 시작을 막을 이유가 없다.
+  const settingsButton = el('button', 'title__settings', SETTINGS_LABEL)
+  settingsButton.type = 'button'
+
+  const volumePanel = el('div', 'title__volume')
+  volumePanel.hidden = true
+
+  const mixer = handlers.mixer
+  if (mixer !== undefined) {
+    volumePanel.append(el('div', 'title__volume-title', '음량 설정'), createVolumeRows(mixer))
+    settingsButton.addEventListener('click', (event) => {
+      // 아래 "판 밖 클릭이면 닫는다" 가 이 클릭을 받으면 열자마자 닫힌다
+      event.stopPropagation()
+      volumePanel.hidden = !volumePanel.hidden
+    })
+    volumePanel.addEventListener('click', (event) => event.stopPropagation())
+    root.addEventListener('click', () => {
+      volumePanel.hidden = true
+    })
+  }
+
   if (hasArt) {
     root.classList.add('title--has-art')
     root.style.setProperty('--title-background', backgroundUrl)
@@ -94,12 +121,17 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
     logo.role = 'img'
     logo.ariaLabel = GAME_TITLE
 
-    if (signUrl !== null) startButton.style.setProperty('--title-sign-image', signUrl)
+    if (signUrl !== null) {
+      startButton.style.setProperty('--title-sign-image', signUrl)
+      settingsButton.style.setProperty('--title-sign-image', signUrl)
+    }
 
     root.append(logo, startButton)
+    if (mixer !== undefined) root.append(settingsButton, volumePanel)
   } else {
     const panel = el('div', 'title__panel')
     panel.append(el('h1', 'title__name', GAME_TITLE), startButton)
+    if (mixer !== undefined) panel.append(settingsButton, volumePanel)
     root.appendChild(panel)
   }
 
@@ -146,6 +178,8 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
         timer = null
       }
       startButton.classList.remove('title__start--shaking')
+      // 지난번에 열어 둔 음량 판이 그대로 떠 있으면 안 된다
+      volumePanel.hidden = true
       root.hidden = false
     },
 
