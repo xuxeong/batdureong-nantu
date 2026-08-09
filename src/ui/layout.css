@@ -3159,18 +3159,14 @@ body {
   line-height: 1.7;
   min-height: 2.6em;
   /*
-    긴 대사는 25자 안팎에서 줄을 바꾼다 (8/10, 담당자 —
-    영순 투항 대사의 "부모님 누워 계시고" 앞에서 접히는 폭으로 맞췄다).
+    줄바꿈 자리는 코드가 문장 단위로 정한다 (ui/sentence-wrap.ts, 8/10 담당자).
+    여기는 그 `\n` 을 그리기만 한다 — 폭으로 조이던 21em 은 어절("이 밤")에서
+    접혀서 걷었다.
 
-    21em 인 이유: 그 대사의 첫 25자("자, 잠깐만…! ~ 어떡해…")가 공백·문장부호를
-    치면 약 19em 이고 다음 어절(부모님)을 더하면 22em 을 넘는다. keep-all 이라
-    어절 경계에서만 접히므로 21em 이 정확히 그 사이를 가른다. 대사창(73% ≈
-    1402px)보다 훨씬 좁지만 판 크기는 그대로다 — 줄만 일찍 접는다.
-
-    ⚠ .dialogue 는 A 구획이다. 담당자 직접 지시라 이 한 칸만 더했고 다른
-    값은 건드리지 않았다.
+    ⚠ .dialogue 는 A 구획이다. 담당자 직접 지시 두 건(21em 추가 → 철회)이
+    지나간 자리다.
   */
-  max-width: 21em;
+  white-space: pre-line;
 }
 
 /*
@@ -4671,12 +4667,36 @@ body {
     **아래 기준인 것이 펼침 연출의 핵심이다** (아래 unroll 주석).
   */
   height: 910px;
-  /* 컨테이너가 자라며 종이를 드러낸다. 이게 없으면 글이 미리 보인다 */
+  /* 종이가 위로 밀려 숨은 동안을 가두는 창이다. 이게 없으면 그림이 화면
+     위로 삐져나오고 글도 미리 보인다 */
   overflow: hidden;
-  background: var(--day-start-scroll) bottom center / auto no-repeat;
+  /* 그림은 이 요소가 아니라 .day-start__scroll-paper 가 그린다 (펼침 연출) */
   /* 글은 종이의 위쪽에 앉는다. 좌우 150 대칭(8/9·8/10 지적). */
   padding: 150px 150px 0;
   box-sizing: border-box;
+}
+
+/* 족자 그림 전체. 아래 기준이라 컨테이너와 함께 위 196px 이 잘린다 */
+.day-start__scroll-paper {
+  position: absolute;
+  inset: 0;
+  background: var(--day-start-scroll) bottom center / auto no-repeat;
+}
+
+/*
+  그림의 윗부분 조각 (8/10 담당자 설계).
+
+  같은 그림을 **위 기준**으로 150px 만 잘라 제자리에 얹는다. 종이(paper)가
+  이 조각 뒤에서 아래로 흘러나오므로, 걸린 머리에서 종이가 풀려 내려오는
+  것으로 읽힌다. 겹 순서가 곧 연출이다 — 조각이 종이·글보다 위다.
+*/
+.day-start__scroll-cap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 150px;
+  background: var(--day-start-scroll) top center / auto no-repeat;
 }
 
 .day-start__journal-title {
@@ -4750,32 +4770,30 @@ body {
 }
 
 /*
-  ── 족자가 펼쳐진다 (8/10 두 번째 안) ──────────────────────
+  ── 족자가 펼쳐진다 (8/10 세 번째 안 — 담당자 설계) ────────
 
-  통째로 내려오는 첫 안을 버리고 **말린 축이 종이를 풀며 내려가는** 연출이다.
-  따로 그림이 필요 없다 — 그림이 **아래 기준**이라 컨테이너 높이만 키우면 된다:
+  높이를 키우던 두 번째 안은 그림이 아래 기준이라 **통째로 내려오는 것과
+  픽셀이 똑같았다** — 창의 바닥과 그림이 같이 내려가니 구분이 안 된다.
 
-    높이 150 일 때: 그림의 아래쪽 150px = **말린 축**만 보인다 (윗부분처럼 걸림)
-    높이가 자라면: 그림 아래 끝(축)이 컨테이너 바닥을 따라 내려가고,
-                   그 위로 종이가 풀려 나온다
+  이번엔 종이(paper)가 **cap 조각 뒤에서** 내려온다:
 
-  즉 축이 위에서 아래로 내려가며 뒤에 종이를 남긴다 — 실제 두루마리가 펴지는
-  물리 그대로다. `overflow: hidden` 이 글을 같이 가둬서 종이가 닿기 전에는
-  글이 안 보인다.
+    시작: 종이가 위로 740px 밀려 있어 아래 끝(말린 축)만 cap 밑으로 살짝 보인다
+    진행: 종이가 내려오며 cap 뒤에서 계속 풀려 나온다 — cap 은 제자리
+    끝  : 축이 컨테이너 바닥(화면 890)에 닿는다
 
-  글은 종이 위를 미끄러지지 않도록 **다 펴진 뒤 잉크처럼 떠오른다** — 펼침
-  중에 보이면 글만 제자리에 있고 종이가 밑에서 흐르는 것이 어색하다.
+  cap 이 고정돼 있어서 "걸린 머리에서 종이가 풀린다" 로 읽힌다.
+  글은 종이 위를 미끄러지지 않도록 다 펴진 뒤 잉크처럼 떠오른다.
 */
 @keyframes day-start-scroll-unroll {
   from {
-    height: 150px;
+    transform: translateY(-740px);
   }
   to {
-    height: 910px;
+    transform: translateY(0);
   }
 }
 
-.day-start--has-art .day-start__scroll {
+.day-start--has-art .day-start__scroll-paper {
   animation: day-start-scroll-unroll 880ms cubic-bezier(0.3, 0.8, 0.35, 1) 520ms both;
 }
 
@@ -4796,7 +4814,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .day-start--has-art .day-start__panel,
-  .day-start--has-art .day-start__scroll,
+  .day-start--has-art .day-start__scroll-paper,
   .day-start--has-art .day-start__journal-title,
   .day-start--has-art .day-start__journal,
   .day-start--has-art .day-start__continue {
@@ -5132,6 +5150,8 @@ body {
   font-size: 24px;
   line-height: 1.8;
   text-align: center;
+  /* 줄바꿈 자리는 문장 단위로 코드가 정한다 (ui/sentence-wrap.ts, 8/10) */
+  white-space: pre-line;
 }
 
 .hub__confirm-row {

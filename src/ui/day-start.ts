@@ -162,12 +162,22 @@ export function createDayStart(
   // 다르므로 hidden 이 아니라 붙였다 뗀다.
   //
   // 족자도 같이 붙였다 뗀다 — 목업의 1일차는 기둥만 있고 종이가 없다.
+  //
+  // 세 겹이다 (8/10 펼침 연출):
+  //   paper — 족자 그림 전체. 위로 밀려 숨어 있다가 아래로 내려온다
+  //   글    — 종이가 다 펴진 뒤 배어 나온다
+  //   cap   — 그림의 **윗부분 조각**. 제자리에 고정돼 맨 위에 얹힌다.
+  //           종이가 이 조각 **뒤에서** 흘러나와야 펼쳐지는 것으로 보인다
+  //           (담당자 8/10 — "윗부분이 전체보다 위에 있어야 보여")
   const scroll = el('div', 'day-start__scroll')
   const scrollUrl = assetCssUrl(UI_ASSET.dayStartScroll)
   if (scrollUrl !== null) scroll.style.setProperty('--day-start-scroll', scrollUrl)
+  const paper = el('div', 'day-start__scroll-paper')
   const journalTitle = el('div', 'day-start__journal-title', JOURNAL_TITLE)
   const journal = el('p', 'day-start__journal')
-  scroll.append(journalTitle, journal)
+  const cap = el('div', 'day-start__scroll-cap')
+  // 그리는 순서가 곧 겹 순서다 — 종이, 글, 조각
+  scroll.append(paper, journalTitle, journal, cap)
 
   const continueButton = el('button', 'day-start__continue', CONTINUE_LABEL)
   continueButton.type = 'button'

@@ -11,6 +11,7 @@
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
+import { wrapSentences } from './sentence-wrap.ts'
 import { createTooltip } from './tooltip.ts'
 import type { TooltipStat } from './tooltip.ts'
 import { createIcon } from './icon.ts'
@@ -356,7 +357,12 @@ export function createMaintenanceHub(
   confirmNo.type = 'button'
   const confirmRow = el('div', 'hub__confirm-row')
   confirmRow.append(confirmYes, confirmNo)
-  confirmPanel.append(el('p', 'hub__confirm-text', CONFIRM_EMPTY_TEXT), confirmRow)
+  // 문장 단위로 줄을 바꾼다 (8/10 담당자) — 세 문장이 한 덩어리로 흐르면
+  // 마지막 물음이 앞의 설명에 묻힌다. `\n` 은 pre-line 이 그린다.
+  confirmPanel.append(
+    el('p', 'hub__confirm-text', wrapSentences(CONFIRM_EMPTY_TEXT)),
+    confirmRow,
+  )
   confirmLayer.appendChild(confirmPanel)
 
   confirmYes.addEventListener('click', () => {
