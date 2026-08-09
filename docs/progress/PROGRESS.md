@@ -9,18 +9,56 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 388개 · 2026-07-31 ~ 2026-08-09
+커밋 427개 · 2026-07-31 ~ 2026-08-10
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 199 | Feat 62 · Fix 49 · Docs 49 · Chore 19 · (태그 없음) 14 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 216 | Feat 66 · Fix 60 · Docs 49 · Chore 20 · (태그 없음) 15 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 67 | Data 21 · Feat 19 · Docs 12 · (태그 없음) 7 · Fix 5 · Chore 3 | data/approved, data/drafts, docs/progress, schema, src, tests |
-| github-actions[bot] | 17 | Docs 17 | docs/progress |
+| ming9 | 86 | Data 22 · Feat 22 · Fix 15 · Docs 13 · (태그 없음) 11 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
+| github-actions[bot] | 18 | Docs 18 | docs/progress |
+| 전성민 | 2 | Art 1 · Docs 1 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
+
+### 2026-08-10
+
+- `[Fix]` 버튼 hover 를 밝기로 통일 — 그림 위에 회색 판이 얹히지 않게 — SUJEONG CHOI · `53882c0`
+- `[Fix]` 회복 퀵메뉴에 제목을 넣고 여는 법을 알린다 — SUJEONG CHOI · `b0cbfec`
+- `[Fix]` 회복 퀵메뉴에서 느림 문구를 뺀다 (담당자 판단) — SUJEONG CHOI · `efcb06d`
+- `[Data]` 조우·대화 초상화를 전신으로 교체 + 엔딩 컷신 연결 6행 — ming9 · `71d4070`
+- `[Feat]` 폴리싱 B 구획 — 제작 중복 삭제·해금 우측, 컷신·런실패 배경, 잔손질 4건 — ming9 · `1081bd5`
+- `[Docs]` 세션 로그 — 폴리싱 B 8건, 구획 규칙 준수 확인 — ming9 · `0a62947`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `89bfdb6`
+- `[Fix]` 대사창 글자 여백 — 본문 38px 에 여백이 12px 였다 — SUJEONG CHOI · `d2740c9`
+- `[Art]` 2차 QA 에셋 교체와 전신·커서 추가 — 전성민 · `b1bb77c`
+- `[Feat]` 엔딩별 컷신을 화면에 넘긴다 (김민주 인계) — SUJEONG CHOI · `f06859a`
+- `[Fix]` 대사창 나무 테두리를 얇게, 발화자 이름을 크게 — SUJEONG CHOI · `bb70f96`
+- `[Fix]` 줄바꿈을 어절 단위로 — body 에 word-break: keep-all — SUJEONG CHOI · `d69ec0e`
+- `[Chore]` 전신 초상화 역할과 클릭 긁힘 ID 등록 (schema_version 19→20) — SUJEONG CHOI · `c5a9773`
+- `[Fix]` 농장 일지 좌우 여백을 150 으로 대칭 — 오른쪽도 종이 끝에 붙어 보였다 (8/10) — ming9 · `61d9f9b`
+- `[Feat]` 나무판을 누르면 긁힘 자국이 박힌다 — SUJEONG CHOI · `d5ed198`
+- `[Fix]` 회복 칸 hover 안내를 뗀다 — 퀵메뉴가 같은 말을 한다 — SUJEONG CHOI · `db89a45`
+- `[Feat]` 족자가 위에서 말려 내려온다 · 커서를 1.4x 배율로 축소 — ming9 · `fbd09d1`
+- `[Fix]` 툴팁이 커서에서 400px 떨어지고 화면 밖에서 잘리던 것 — SUJEONG CHOI · `07d3a08`
+- `[Feat]` 조우 결과 카드를 전신 초상화로 (김민주 인계) — SUJEONG CHOI · `51466ab`
+- `[Fix]` 족자가 반만 내려온다 — 아래 끝이 시작하기 팻말 위(890)에서 끊기고 그림은 아래 기준이라 위 196px 이 잘린다 (A5 목업) — ming9 · `72fbb68`
+- `[Fix]` 조우 카드 인물을 목업 비율로 — 칸을 버튼 여백까지 내려 세우고 그림을 꽉 채운다 (63%→약 78%) — ming9 · `e7ee973`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `fee8af0`
+- `[Fix]` 체력 수치와 보관함 수량 배지를 그림 홈에 맞춘다 — SUJEONG CHOI · `b5d7ad8`
+- `[Fix]` 회복 퀵메뉴·일시정지에서 재배 타이머가 사라지던 것 — SUJEONG CHOI · `8282840`
+- `[Feat]` 족자가 펼쳐진다 — 축이 종이를 풀며 내려가고 글은 다 펴진 뒤 배어 나온다 · 족자 50px 왼쪽으로 — ming9 · `0424bfc`
+- `[Fix]` 긴 대사를 25자 안팎에서 줄바꿈 — 영순 투항 대사의 '부모님 누워 계시고' 앞에서 접히는 폭(21em)으로 캘리브레이션 — ming9 · `7694821`
+- `[Feat]` 조준선을 낫 판정 모양의 호로 (DEC-UI-031 폐기 → DEC-UI-038) — SUJEONG CHOI · `86dd4e1`
+- `[Fix]` 줄바꿈을 문장 단위로 (대사창·퀵슬롯 확인 창) · 족자 펼침을 조각+종이 두 겹으로 — ming9 · `6fa5bc4`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `aceb770`
+- `[Fix]` 재배 타이머 채움을 각지게 — 홈 그림이 네모라 알약형 끝에서 네 귀가 비었다 — ming9 · `dc29a25`
+- `[Docs]` 제출 자료 최신화 — 게임 소개·AI 활용·팀원 롤·크레딧 — 전성민 · `e611249`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `2af9e84`
+- `[Fix]` 줄 끝에 한 글자 낱말이 혼자 남는 것 — text-wrap: pretty — SUJEONG CHOI · `c5bda8f`
+- Merge branch 'develop' into main (v0.5) — SUJEONG CHOI · `36bc189`
 
 ### 2026-08-09
 
@@ -73,7 +111,12 @@
 - `[Docs]` 세션 로그 — 카드 마감·확인 창, DEC-UI-020 어긋남 보고 — ming9 · `9dc29d3`
 - `[Fix]` 툴팁을 커서 오른쪽 아래로 · 회복 칸에 조작 안내 (작업 14번) — ming9 · `b7db4cd`
 - `[Feat]` 타이틀 설정 팻말 + 음량 모듈 공용화 · 커서 선등록 (작업 3·15번) — ming9 · `ae05a5f`
+- `[Fix]` 타이틀 팻말 두 장을 서로 반대로 살짝 기울인다 — rotate 속성이라 흔들림 연출과 겹쳐 돈다 — ming9 · `621c312`
+- `[Fix]` 게임 시작 팻말은 반듯하게 되돌리고 설정만 5도 기울인다 — ming9 · `034969a`
+- `[Fix]` 튜토리얼 정비도 판매 기본 · 튜토리얼→1일차 즉시 전환 · 투척 처치음 — ming9 · `b90c083`
 - Merge branch 'develop' into main (v0.4) — SUJEONG CHOI · `5328b2a`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `09e28a3`
+- `[Fix]` 튜토리얼 판매 잠금 · 총액을 실행 버튼 위 바닥 묶음으로 · 물음 위치 — ming9 · `ee7b687`
 
 ### 2026-08-08
 
