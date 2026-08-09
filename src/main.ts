@@ -3727,7 +3727,22 @@ function hudView() {
   // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
   // 튜토리얼에는 시간제한이 없으므로 게이지를 아예 숨긴다 (DEC-RUN-003).
   // 안 가리면 60초짜리 게이지가 멈춘 채 떠 있어 "고장났나" 로 읽힌다.
-  const timer = inFarmingStage() && !inTutorial() ? farmingTimer : null
+  /*
+    **`inFarmingStage()` 를 쓰지 않는다** (8/10).
+
+    그 함수는 오버레이가 하나라도 열려 있으면 false 다. "지금 시간이 흐르는가"
+    를 가르는 값이라 시뮬레이션에는 맞지만 **표시 조건으로는 틀리다** — 회복
+    퀵메뉴나 일시정지를 열면 HUD 에서 타이머만 사라졌다.
+
+    HUD 는 필드가 떠 있는 동안 남아 있어야 한다 (`DEC-UI-036` — 필드 공통 HUD).
+    체력·퀵슬롯은 그대로인데 타이머만 없어지면 화면이 망가진 것으로 보인다.
+
+    멈춘 채로 보이는 것이 맞다. 오버레이가 열려 있으면 `syncSimulation` 이
+    시간을 안 흘리므로 값이 그대로 서 있다 — 남은 시간이 얼마인지는 오히려
+    그때 봐야 하는 정보다.
+  */
+  const showTimer = scenes.currentFieldMode() === 'farming' && !inTutorial()
+  const timer = showTimer ? farmingTimer : null
 
   return {
     playerName: run?.playerName ?? '',
@@ -3752,7 +3767,7 @@ function hudView() {
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
     // 대화·정비·일시정지가 입력을 가져가면 위쪽 안내를 띄우지 않는다.
-    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-031).
+    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-038).
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
@@ -3920,6 +3935,9 @@ const loop = createGameLoop(
         player,
         aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
+        // 조준선이 이 반지름의 호로 그려진다 (DEC-UI-038). 판정과 같은 값이다 —
+        // combat.ts 의 swingSickle() 도 여기서 온 `sickle_range` 를 쓴다.
+        sickleRange: runConfig.sickleRange,
         assets: fieldAssets,
         // 방향·공격 교체 스프라이트 (DEC-ART-004). 낫을 휘두르는 동안은
         // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.

@@ -447,7 +447,8 @@ body {
   --hud-card-bar-y: 93px;
   --hud-card-bar-w: 272px;
   --hud-card-bar-h: 47px;
-  --hud-card-num-x: 482px;
+  /* 체력 수치 칸. 8/10 에 카드 그림의 숫자 홈에 맞춰 `482` 에서 6px 옮겼다 */
+  --hud-card-num-x: 488px;
   --hud-card-num-w: 55px;
 
   /* 크림색 판 위의 글자. 무채색 나무 위라 어두워야 읽힌다 (아트 디렉션 4.4) */
@@ -1782,8 +1783,8 @@ body {
 /* 수량은 칸 그림의 배지 홈 안이다 (오른쪽 아래) */
 .hub--has-art .hub__inventory-row .hub__count {
   position: absolute;
-  right: 4%;
-  bottom: 3%;
+  right: 7%;
+  bottom: 9%;
   width: 30%;
   text-align: center;
   font-size: 15px;
