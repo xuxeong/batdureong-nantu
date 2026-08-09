@@ -4644,21 +4644,24 @@ body {
 .day-start--has-art .day-start__scroll {
   display: block;
   position: absolute;
-  left: 1120px;
+  /* 1120 → 1070 (8/10) — 오른쪽 끝이 1950 으로 화면 밖까지 붙어 있었다.
+     50 왼쪽으로 옮겨 오른쪽에 20px 여백이 남는다 */
+  left: 1070px;
   top: -20px;
   width: 830px;
   /*
     반만 내려온다 (8/10, A5 목업) — 아래 끝이 시작하기 팻말(y 925) 위에서
     끊긴다: -20 + 910 = 890. 그림(830×1106)은 **아래 기준**으로 걸어 위쪽
-    196px 이 잘린다 — 종이가 위에서 내려오다 만 모습이고, 말린 축은 그림
-    아래쪽에 있어 그대로 보인다. 크기는 안 줄인다(auto) — contain 으로 줄이면
-    폭까지 줄어 왼쪽 글과의 간격이 무너진다.
+    196px 이 잘린다. 크기는 안 줄인다(auto) — contain 으로 줄이면 폭까지 줄어
+    왼쪽 글과의 간격이 무너진다.
+
+    **아래 기준인 것이 펼침 연출의 핵심이다** (아래 unroll 주석).
   */
   height: 910px;
+  /* 컨테이너가 자라며 종이를 드러낸다. 이게 없으면 글이 미리 보인다 */
+  overflow: hidden;
   background: var(--day-start-scroll) bottom center / auto no-repeat;
-  /* 글은 종이의 위쪽에 앉는다. 좌우 150 대칭(8/9·8/10 지적).
-     위 150 은 화면 기준 y 130 — 그림을 아래 기준으로 바꿔도 글 위치는
-     컨테이너 기준이라 그대로다. */
+  /* 글은 종이의 위쪽에 앉는다. 좌우 150 대칭(8/9·8/10 지적). */
   padding: 150px 150px 0;
   box-sizing: border-box;
 }
@@ -4734,33 +4737,55 @@ body {
 }
 
 /*
-  족자는 다른 글처럼 아래에서 올라오지 않고 **위에서 내려온다** (8/10 —
-  두루마리가 말려 내려오는 느낌). 말렸다 펴지는 것은 그림 없이는 안 되므로
-  화면 밖에서 통째로 내려오는 것으로 갈음한다.
+  ── 족자가 펼쳐진다 (8/10 두 번째 안) ──────────────────────
 
-  1200px 는 족자 높이(1106) + 걸린 위치(-20) 에 여유를 더한 값 — 시작 프레임에
-  아예 안 보인다. 흐림 없이 그림째 내려온다: 종이가 물리적으로 걸리는
-  연출이라 투명도가 끼면 유령처럼 보인다. 글은 족자의 자식이라 같이 내려와
-  멈춘 뒤 그대로 읽힌다.
+  통째로 내려오는 첫 안을 버리고 **말린 축이 종이를 풀며 내려가는** 연출이다.
+  따로 그림이 필요 없다 — 그림이 **아래 기준**이라 컨테이너 높이만 키우면 된다:
 
-  끝에서 살짝 눌렀다 서는 곡선 — 축이 기둥에 탁 걸리는 느낌이다.
+    높이 150 일 때: 그림의 아래쪽 150px = **말린 축**만 보인다 (윗부분처럼 걸림)
+    높이가 자라면: 그림 아래 끝(축)이 컨테이너 바닥을 따라 내려가고,
+                   그 위로 종이가 풀려 나온다
+
+  즉 축이 위에서 아래로 내려가며 뒤에 종이를 남긴다 — 실제 두루마리가 펴지는
+  물리 그대로다. `overflow: hidden` 이 글을 같이 가둬서 종이가 닿기 전에는
+  글이 안 보인다.
+
+  글은 종이 위를 미끄러지지 않도록 **다 펴진 뒤 잉크처럼 떠오른다** — 펼침
+  중에 보이면 글만 제자리에 있고 종이가 밑에서 흐르는 것이 어색하다.
 */
-@keyframes day-start-scroll-drop {
+@keyframes day-start-scroll-unroll {
   from {
-    transform: translateY(-1200px);
+    height: 150px;
   }
   to {
-    transform: translateY(0);
+    height: 910px;
   }
 }
 
 .day-start--has-art .day-start__scroll {
-  animation: day-start-scroll-drop 760ms cubic-bezier(0.2, 0.85, 0.3, 1.04) 520ms both;
+  animation: day-start-scroll-unroll 880ms cubic-bezier(0.3, 0.8, 0.35, 1) 520ms both;
+}
+
+@keyframes day-start-ink {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 펼침이 거의 끝나는 시점(520+880≈1400ms)에 맞춰 글이 배어 나온다 */
+.day-start--has-art .day-start__journal-title,
+.day-start--has-art .day-start__journal {
+  animation: day-start-ink 420ms ease-out 1280ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .day-start--has-art .day-start__panel,
   .day-start--has-art .day-start__scroll,
+  .day-start--has-art .day-start__journal-title,
+  .day-start--has-art .day-start__journal,
   .day-start--has-art .day-start__continue {
     animation: none;
   }
