@@ -31,18 +31,7 @@
 //  퀵슬롯 칸 수다 — 5칸 → 4칸.)
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
-import { KEY_BINDINGS } from '../input/bindings.ts'
-import { createTooltip } from './tooltip.ts'
 import './layout.css'
-
-/**
- * 회복 키의 표시 이름. **바인딩에서 읽는다** — `Q` 를 여기 적으면 키를 바꾸는 날
- * 화면과 조작이 다른 말을 한다. `KeyQ` → `Q` 는 일시정지 화면의 조작 안내와
- * 같은 규칙이다 (pause.ts 의 keyLabel).
- */
-const RECOVER_KEY_LABEL = (
-  Object.entries(KEY_BINDINGS).find(([, action]) => action === 'recover')?.[0] ?? 'KeyQ'
-).replace(/^Key/, '')
 
 /** 퀵슬롯 한 칸의 표시 상태 */
 export interface QuickslotView {
@@ -318,13 +307,18 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
     handlers.onOpenRecoveryMenu()
   })
 
-  // 회복 칸에 마우스를 올리면 조작 안내가 뜬다 (8/9 — 짧게 사용 / 길게 장착 변경).
-  // 두 조작이 한 키에 겹쳐 있어 화면만 봐서는 알 수 없는 정보다 (DEC-UI-037).
-  const tooltip = createTooltip(root)
-  tooltip.bind(recovery, () => ({
-    name: `${RECOVER_KEY_LABEL}를 눌러 회복 아이템 사용`,
-    note: `${RECOVER_KEY_LABEL}를 길게 눌러 장착 변경`,
-  }))
+  /*
+    회복 칸에는 툴팁을 붙이지 않는다 (8/10).
+
+    8/9 에 `Q 를 눌러 사용 / 길게 눌러 장착 변경` 을 마우스 올림 안내로 붙였다.
+    한 키에 두 조작이 겹쳐 있어 화면만 봐서는 알 수 없기 때문이었다.
+
+    그 정보는 이제 **회복 퀵메뉴 안**에 있다 — 창 제목이 `회복 아이템 변경`
+    이고 안내줄이 `Q를 길게 눌러서도 열린다` 다 (`ui/recovery-menu.ts`).
+    같은 말을 두 곳에서 하면 한쪽만 고쳐질 때 서로 어긋난다.
+
+    툴팁 자체를 없앤 것이 아니다. 정비·상점·제작 목록은 계속 쓴다.
+  */
 
   bottomRight.append(quickslots, recovery)
 

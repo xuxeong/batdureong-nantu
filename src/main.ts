@@ -222,6 +222,17 @@ let residentAssets = new Map<string, ContentAssets>()
 let playerPortrait: string | undefined
 let residentSprites = new Map<string, string | undefined>()
 let residentPortraits = new Map<string, string | undefined>()
+/**
+ * 조우 결과 카드의 전신 그림 (`portrait_fullbody`, 8/10).
+ *
+ * **반신과 따로 둔다.** 대화창은 얼굴이 크게 보여야 하고 결과 카드는 인물
+ * 전체가 서야 해서 쓰는 그림이 다르다. 한 맵으로 합치면 둘 중 하나가 어색해진다.
+ *
+ * 연결 CSV 의 고유키가 `(content_id, asset_role)` 이라 한 콘텐츠에 얼굴과 전신을
+ * 같은 역할로 붙일 수 없어 `portrait_fullbody` 역할이 따로 생겼다
+ * (`schema_version` 19→20).
+ */
+let residentFullBodies = new Map<string, string | undefined>()
 let residentProjectiles = new Map<string, string | undefined>()
 let throwableProjectiles = new Map<string, string | undefined>()
 /** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-004) */
@@ -815,6 +826,14 @@ async function bootData(): Promise<boolean> {
     residentPortraits = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.portrait ?? r.assets?.field_sprite]),
     )
+    // 전신이 없으면 반신으로, 그것도 없으면 필드 스프라이트로 떨어진다.
+    // 같은 인물의 그림이라 누구인지는 전달된다.
+    residentFullBodies = new Map(
+      (data.residents ?? []).map((r) => [
+        r.id,
+        r.assets?.portrait_fullbody ?? r.assets?.portrait ?? r.assets?.field_sprite,
+      ]),
+    )
     residentProjectiles = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.projectile]),
     )
@@ -848,6 +867,8 @@ async function bootData(): Promise<boolean> {
       // `UI_ASSET` 전체를 넣는다. 하나씩 고르면 부품이 늘 때마다 여기가 낡는다.
       playerPortrait,
       ...residentPortraits.values(),
+      // 조우 결과 카드의 전신도 같은 이유로 미리 받는다 (8/10)
+      ...residentFullBodies.values(),
       ...Object.values(UI_ASSET),
       // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
@@ -1697,9 +1718,14 @@ function buildEncounterResultView(
 
   return {
     residentName: residentNames.get(residentId) ?? residentId,
-    // 대화 화면과 같은 그림이다 (A6 목업 — 카드 왼쪽). portrait 이 없으면
-    // field_sprite 로 떨어지는 것까지 residentPortraits 가 이미 하고 있다.
-    portraitAsset: residentPortraits.get(residentId),
+    /*
+      **전신이다** (A6 목업 — 카드 왼쪽에 인물이 통째로 선다, 8/10).
+
+      대화창과 다른 그림을 쓴다. 그쪽은 말하는 얼굴이 커야 하고 여기는 인물
+      전체가 서야 한다. 없으면 반신 → 필드 스프라이트로 떨어지는 것까지
+      `residentFullBodies` 가 이미 하고 있다.
+    */
+    portraitAsset: residentFullBodies.get(residentId),
     outcome,
     lifeState: resident.lifeState,
     allegiance: resident.allegiance,

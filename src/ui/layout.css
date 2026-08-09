@@ -2487,6 +2487,15 @@ body {
 .tip {
   position: fixed;
   z-index: 100;
+  /*
+    `max-content` 를 함께 준다.
+
+    `max-width` 만 있으면 상자가 놓인 자리에 따라 폭이 달라진다 — 화면 끝에
+    가까우면 남은 공간에 맞춰 좁아지고 글자가 한 글자씩 접힌다. `max-content`
+    는 "줄바꿈 없이 필요한 폭" 을 기준으로 삼고 `max-width` 가 그 위에 상한을
+    씌우므로, 어디에 놓이든 같은 크기가 된다.
+  */
+  width: max-content;
   max-width: 280px;
   padding: var(--ui-gap-sm) var(--ui-gap-md);
   border: 1px solid var(--ui-border-strong);
