@@ -3767,7 +3767,7 @@ function hudView() {
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
     // 대화·정비·일시정지가 입력을 가져가면 위쪽 안내를 띄우지 않는다.
-    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-031).
+    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-038).
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
@@ -3935,6 +3935,9 @@ const loop = createGameLoop(
         player,
         aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
+        // 조준선이 이 반지름의 호로 그려진다 (DEC-UI-038). 판정과 같은 값이다 —
+        // combat.ts 의 swingSickle() 도 여기서 온 `sickle_range` 를 쓴다.
+        sickleRange: runConfig.sickleRange,
         assets: fieldAssets,
         // 방향·공격 교체 스프라이트 (DEC-ART-004). 낫을 휘두르는 동안은
         // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.

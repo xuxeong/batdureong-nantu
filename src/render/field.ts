@@ -121,6 +121,14 @@ export interface FieldView {
   aimAngle: number
   /** 충돌·상호작용 반경. player_base_stats 에서 온다 */
   collisionRadius: number
+  /**
+   * 낫 사거리 (`player_base_stats.csv` 의 `sickle_range`).
+   *
+   * 조준선이 이 반지름의 호로 그려진다 (`DEC-UI-038`). **판정과 같은 값이어야
+   * 한다** — 여기에 따로 배율을 곱하면 그려진 곳과 맞는 곳이 갈리고, 그러면
+   * 조준선이 오히려 사람을 속인다.
+   */
+  sickleRange: number
   /** 승인 데이터가 없으면 빈 배열이다 */
   plots?: readonly PlotView[]
   /** 상호작용 안내 문구. 대상이 없으면 null (DEC-INPUT-003) */
@@ -592,34 +600,87 @@ export function createFieldRenderer(
     // 여러 번 껌뻑여야** 맞았다는 신호로 읽힌다 — 한 번이면 그리기가 튄 것처럼
     // 보인다. 투명도는 `DEC-ART-004` 가 허용한 표현이다.
     /*
-      조준선 (`DEC-UI-031`). 8/7 까지 확정 규칙이 없어 근거 없이 그려지던 것을
-      그날 밤 확정문으로 만들었다 — 길이는 충돌 반경의 4.5배, 제출 빌드에도 남긴다.
+      조준선 (`DEC-UI-038`, `DEC-UI-031` 폐기).
+
+      **직선이 아니라 낫이 닿는 호다.** 8/10 까지는 충돌 반경의 4.5배 길이의
+      직선이었는데(`DEC-UI-031`), 사거리가 60 인데 선이 90 이라 **닿지 않는
+      곳까지 가리키고 있었다.** 조준선을 믿고 휘두르면 빗나간다.
+
+      호는 `systems/combat.ts` 의 `swingSickle()` 판정과 같은 모양이다 —
+      반지름은 `sickle_range`, 각도는 조준 방향 ±90도. 그리는 것과 맞는 것이
+      갈리면 플레이어가 사거리를 잘못 배운다. 그래서 여기에 배율이나 여유를
+      더하지 않는다.
 
       **플레이어보다 먼저 그린다** (8/9 담당자). 선이 캐릭터 위를 지나가면 몸통을
       가로지르는 줄로 보여서, 조준을 돌릴 때 캐릭터가 아니라 선이 주인공이 된다.
-      밑에 두면 선이 발밑에서 뻗어 나가는 모양이 되고 캐릭터가 위에 남는다.
 
-      **붉은색을 쓰지 않는다.** 확정문이 *"밭 안의 수확 가능 작물과 경쟁하지
-      않도록"* 으로 이유까지 적었다 — 고추와 토마토가 붉은 계열이다.
-      색은 `layout.css` 에서 오고 여기 값을 쓰지 않는다(같은 확정문). 두 겹인
-      것은 밝은 흙과 어두운 수풀 양쪽에서 다 보이게 하려는 것이다.
+      **붉은색을 쓰지 않는다.** `DEC-UI-038` 이 `DEC-UI-031` 의 색 규칙을 그대로
+      잇는다 — 고추와 토마토가 붉은 계열이라 밭 안에서 경쟁한다. 색은
+      `layout.css` 에서 오고 여기 값을 쓰지 않는다. 두 겹인 것은 밝은 흙과
+      어두운 수풀 양쪽에서 다 보이게 하려는 것이다.
     */
-    const aimLength = radius * 4.5
-    const aimToX = screen.x + Math.cos(view.aimAngle) * aimLength
-    const aimToY = screen.y + Math.sin(view.aimAngle) * aimLength
+    /*
+      범위는 판정 그대로 ±90도지만 **가장자리로 갈수록 옅어진다.**
+
+      고르게 그렸더니 반원 고리로 보여서 어디를 겨누는지 안 읽혔다 (8/10 확인).
+      각도를 줄이면 읽히기는 하는데 **닿는 곳을 안 닿는 것처럼** 그리게 된다 —
+      조준선이 사람을 속이는 것은 길어서 속이는 것과 똑같이 나쁘다.
+
+      그래서 범위는 유지하고 진하기만 기울인다. 정면은 또렷하고 옆은 희미해서
+      "여기를 겨누고 있고, 옆까지도 닿기는 한다" 가 한 번에 읽힌다.
+    */
+    const aimRadius = view.sickleRange * WORLD_TO_PIXEL
+    const AIM_HALF_SPAN = Math.PI / 2
+    // 호를 토막 내서 토막마다 투명도를 준다. 한 번에 그으면 진하기를 못 기울인다
+    const AIM_SEGMENTS = 24
+    /**
+     * 가장자리에 남기는 진하기. 0 이면 끝이 잘린 것처럼 보인다.
+     *
+     * **더 낮출 수 없다.** 어두운 수풀 쪽으로 조준하면 옆쪽이 묻힌다 (8/10 확인).
+     * 두 겹(어두운 외곽선 + 밝은 안쪽 선)으로 그리는 것은 밝은 흙과 어두운 수풀
+     * 양쪽에서 다 보이게 하려는 것인데, 투명도를 떨어뜨리면 두 겹이 같이 옅어져
+     * 그 장치가 무력해진다.
+     */
+    const AIM_EDGE_ALPHA = 0.34
+
+    /**
+     * 가장자리의 굵기 배율.
+     *
+     * 방향을 더 또렷하게 하려고 **투명도만 기울이면 옆쪽이 안 보이는 문제로
+     * 돌아간다.** 굵기를 같이 기울이면 옆쪽이 보이면서도 정면과 확실히 갈린다 —
+     * 가늘고 흐린 것과 굵고 진한 것은 나란히 놓았을 때 차이가 크다.
+     */
+    const AIM_EDGE_WIDTH = 0.30
+
     ctx.lineCap = 'round'
-    ctx.strokeStyle = aimOutline
-    ctx.lineWidth = 5
-    ctx.beginPath()
-    ctx.moveTo(screen.x, screen.y)
-    ctx.lineTo(aimToX, aimToY)
-    ctx.stroke()
-    ctx.strokeStyle = aimLine
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo(screen.x, screen.y)
-    ctx.lineTo(aimToX, aimToY)
-    ctx.stroke()
+    /*
+      두 겹의 굵기. 8/10 에 `5/2` 에서 키웠다 — 호로 바뀌면서 같은 굵기라도
+      길게 늘어져 가늘어 보였다. 직선일 때는 짧아서 이 값으로 충분했다.
+    */
+    for (const [color, width] of [
+      [aimOutline, 8],
+      [aimLine, 4],
+    ] as const) {
+      ctx.strokeStyle = color
+      for (let i = 0; i < AIM_SEGMENTS; i++) {
+        // 토막의 가운데가 정면에서 얼마나 벗어났는가 (0 정면 ~ 1 가장자리)
+        const t = (i + 0.5) / AIM_SEGMENTS
+        const offset = Math.abs(t * 2 - 1)
+        // 정면에서 벗어난 정도 (0~1). 지수가 클수록 정면만 또렷해진다
+        const falloff = (1 - offset) ** 2.2
+
+        ctx.globalAlpha = AIM_EDGE_ALPHA + (1 - AIM_EDGE_ALPHA) * falloff
+        ctx.lineWidth = width * (AIM_EDGE_WIDTH + (1 - AIM_EDGE_WIDTH) * falloff)
+
+        const from = view.aimAngle - AIM_HALF_SPAN + t * 2 * AIM_HALF_SPAN
+        // 토막을 반 칸씩 겹쳐 이어 붙인다. 딱 맞추면 사이에 흰 틈이 보인다
+        const step = (AIM_HALF_SPAN * 2) / AIM_SEGMENTS
+        ctx.beginPath()
+        ctx.arc(screen.x, screen.y, aimRadius, from - step * 0.6, from + step * 0.6)
+        ctx.stroke()
+      }
+    }
+    ctx.globalAlpha = 1
     ctx.lineCap = 'butt'
 
     const hit = view.playerHit ?? 0
