@@ -19,7 +19,7 @@
 //
 // `DEC-INPUT-008` 이 퀵메뉴 중에는 게임 전체 속도를 크게 낮추라고 했고
 // `DEC-UI-037` 이 "느려진 상태임을 알 수 있게 한다" 고 했다. 그 표시가 아래
-// `SLOW_NOTICE` 다 — 감속 자체는 화면 매니저가 건다 (`syncSimulation`).
+// `OPEN_AND_SLOW_NOTICE` 다 — 감속 자체는 화면 매니저가 건다 (`syncSimulation`).
 
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
@@ -67,7 +67,28 @@ function el<K extends keyof HTMLElementTagNameMap>(
  * `DEC-UI-029` 의 라벨 갈래다 — 목록의 이름·수량·회복량은 승인 데이터에서 오고,
  * 아래 둘은 상태를 가리킬 뿐 플레이어의 선택을 바꾸지 않는다.
  */
-const SLOW_NOTICE = '시간이 느리게 흐른다'
+/**
+ * 이 창이 무엇인지 (8/10).
+ *
+ * 8/9까지 제목 없이 `SLOW_NOTICE` 한 줄로 시작했다. 느려진 것은 알려 주는데
+ * **무엇을 하는 창인지는 말하지 않아서**, 마우스로 연 사람이 자기가 무엇을
+ * 고르는 중인지 알 수 없었다.
+ */
+const MENU_TITLE = '회복 아이템 변경'
+
+/**
+ * 여는 방법과 느려진 상태를 한 줄에 함께 알린다 (`DEC-UI-037`).
+ *
+ * **느림 표시를 빼지 않는다.** 확정문에 *"퀵메뉴가 열려 있는 동안 화면이
+ * 느려진 상태임을 알 수 있게 한다"* 가 있고 화면에서 그 표시는 이 줄뿐이다.
+ * 제목이 생겼다고 지우면 그 조항을 지킬 수단이 없어진다.
+ *
+ * 여는 방법을 같이 적는 것은 마우스로 연 사람을 위해서다 — 칸을 눌러 연 사람은
+ * `Q` 길게 누르기라는 다른 길이 있다는 것을 알 방법이 없었다 (`DEC-UI-037`
+ * 이 두 가지 여는 법을 정했는데 화면은 하나만 말하고 있었다).
+ */
+const OPEN_AND_SLOW_NOTICE = 'Q를 길게 눌러서도 열린다 · 고르는 동안 시간이 느리게 흐른다'
+
 const EMPTY_TEXT = '쓸 수 있는 회복 아이템이 없다'
 
 export function createRecoveryMenu(
@@ -80,10 +101,11 @@ export function createRecoveryMenu(
   const panel = el('div', 'recovery-menu__panel')
   // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
   applyHanjiPanel(panel)
-  const notice = el('p', 'recovery-menu__notice', SLOW_NOTICE)
+  const title = el('h2', 'recovery-menu__title', MENU_TITLE)
+  const notice = el('p', 'recovery-menu__notice', OPEN_AND_SLOW_NOTICE)
   const list = el('div', 'recovery-menu__list')
 
-  panel.append(notice, list)
+  panel.append(title, notice, list)
   root.appendChild(panel)
   container.appendChild(root)
 
