@@ -57,6 +57,14 @@ export interface ShopView {
   money: number
   /** 목록은 열려 있는 동안 고정이다. 수량 0인 것도 표시하되 거래만 막는다 */
   items: readonly ShopItemView[]
+  /**
+   * 거래 자체가 막혀 있는가 (8/9 — 튜토리얼의 판매).
+   *
+   * 튜토리얼은 판매 창을 기본으로 띄우되 팔 수는 없어야 한다 — 수확물을 다
+   * 팔면 제작 안내를 완료할 수 없다 (8/6 의 "45% 막힘"). 탭 잠금만으로는
+   * 첫 화면에 이미 떠 있는 창 안의 실행 버튼을 못 막는다.
+   */
+  locked?: boolean
 }
 
 export interface ShopHandlers {
@@ -275,11 +283,14 @@ export function createShopModal(
   const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
   if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
-  // 계산 결과(총액·거래 후 남는 값)는 오른쪽 판의 증감 줄 아래다 (A3 목업).
-  // 왼쪽 판에는 고른 품목이 무엇이고 단가가 얼마인지까지만 남는다.
+  // 계산 결과(총액·거래 후 남는 값)는 실행 버튼 바로 위, 판 아래쪽이다 (8/9).
+  // 안내·실행과 한 묶음으로 바닥에 붙인다 — 셋에 각각 margin-top: auto 를 주면
+  // 남는 공간을 나눠 먹어 총액이 판 가운데에 떠 버린다.
   const totals = el('div', 'hub__totals')
+  const bottom = el('div', 'hub__footer-bottom')
+  bottom.append(totals, preview, action)
 
-  footer.append(qtyBlock, totals, preview, action)
+  footer.append(qtyBlock, bottom)
 
   action.addEventListener('click', () => {
     if (busy) return
@@ -338,7 +349,8 @@ export function createShopModal(
         total !== null &&
         (mode === 'sell' ? amount <= selected.held : total <= view.money)
 
-      action.disabled = !allowed || busy
+      // 거래가 통째로 잠겨 있으면(튜토리얼의 판매) 조건과 무관하게 끈다
+      action.disabled = !allowed || busy || view.locked === true
 
       // ── 상세 (DEC-UI-005, 14.9) ──
       //
@@ -394,6 +406,10 @@ export function createShopModal(
 
         preview.textContent = ''
       }
+
+    // 왜 실행이 꺼져 있는지 알린다 — 조용히 꺼 두면 고장으로 읽힌다 (8/9).
+    // DEC-UI-029 의 라벨 갈래다: 상태를 알릴 뿐 무엇을 하라고 이끌지 않는다.
+    if (view.locked === true) preview.textContent = '튜토리얼에서는 판매할 수 없다'
 
     if (notice !== null) preview.textContent = notice
   }

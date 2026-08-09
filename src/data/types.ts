@@ -206,6 +206,14 @@ export type AssetRole =
   | 'crop_ready'
   | 'icon'
   | 'portrait'
+  /**
+   * 전신 초상화 (2026-08-10, 전성민 요청).
+   *
+   * **`portrait` 과 나란히 있어야 한다.** 연결 CSV 의 고유키가
+   * `(content_id, asset_role)` 이라 한 콘텐츠에 같은 역할을 둘 붙일 수 없다 —
+   * 얼굴과 전신을 같은 `portrait` 으로 두면 둘 중 하나만 남는다.
+   */
+  | 'portrait_fullbody'
   | 'projectile'
   | 'effect'
   | 'background'
@@ -725,6 +733,14 @@ export interface Ending extends CommonEntry {
   is_global_fallback: boolean
 
   conditions?: EndingCondition[]
+
+  /**
+   * 엔딩에 붙은 논리 에셋 (`cutscene`).
+   *
+   * `content_assets.csv` 에 행이 있는 엔딩만 온다. 없으면 속성 자체가 없고
+   * 화면이 전역 폴백 컷신을 쓴다 — 여기에 기본값을 만들지 않는다.
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────

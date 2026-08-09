@@ -17,6 +17,7 @@ import { createInput } from './input/input.ts'
 import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
 import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { loadBodyFont } from './ui/font.ts'
+import { enableClickScratch } from './ui/click-scratch.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -29,13 +30,26 @@ import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from '.
 
   핫스팟(클릭 지점)은 왼쪽 위 2,2 로 뒀다 — 화살표형 커서의 관례다. 그림이
   화살표가 아니면(십자선 등) 이 값을 그림에 맞춰 다시 잰다.
+
+  **크기는 `image-set` 배율로 줄인다** (8/10 — 원본 55×67 이 화면에서 컸다).
+  1.4x 로 선언하면 약 39×48 로 그려진다. 파일을 다시 뽑지 않는 이유는 커서가
+  에셋이고 에셋 수정은 아트 쪽 몫이라서다 — 배율은 표시 문제라 코드가 가진다.
+  `image-set` 을 모르는 브라우저는 앞의 원본 크기 선언으로 떨어진다.
 */
 const cursorUrl = assetUrl(UI_ASSET.cursor)
 if (cursorUrl !== null) {
   const style = document.createElement('style')
-  style.textContent = `body, body * { cursor: url("${cursorUrl}") 2 2, auto !important; }`
+  style.textContent = `body, body * {
+    cursor: url("${cursorUrl}") 2 2, auto !important;
+    cursor: -webkit-image-set(url("${cursorUrl}") 1.4x) 2 2, auto !important;
+    cursor: image-set(url("${cursorUrl}") 1.4x) 2 2, auto !important;
+  }`
   document.head.appendChild(style)
 }
+
+// 누른 자리에 남는 긁힘 자국 (전성민 8/10). 커서와 같은 층이라 여기서 켠다 —
+// 그림이 없으면 스스로 아무것도 하지 않는다.
+enableClickScratch()
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -208,6 +222,17 @@ let residentAssets = new Map<string, ContentAssets>()
 let playerPortrait: string | undefined
 let residentSprites = new Map<string, string | undefined>()
 let residentPortraits = new Map<string, string | undefined>()
+/**
+ * 조우 결과 카드의 전신 그림 (`portrait_fullbody`, 8/10).
+ *
+ * **반신과 따로 둔다.** 대화창은 얼굴이 크게 보여야 하고 결과 카드는 인물
+ * 전체가 서야 해서 쓰는 그림이 다르다. 한 맵으로 합치면 둘 중 하나가 어색해진다.
+ *
+ * 연결 CSV 의 고유키가 `(content_id, asset_role)` 이라 한 콘텐츠에 얼굴과 전신을
+ * 같은 역할로 붙일 수 없어 `portrait_fullbody` 역할이 따로 생겼다
+ * (`schema_version` 19→20).
+ */
+let residentFullBodies = new Map<string, string | undefined>()
 let residentProjectiles = new Map<string, string | undefined>()
 let throwableProjectiles = new Map<string, string | undefined>()
 /** 씨앗 그림. 작물별로 두지 않고 맵에 한 장이다 (DEC-ART-004) */
@@ -801,6 +826,14 @@ async function bootData(): Promise<boolean> {
     residentPortraits = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.portrait ?? r.assets?.field_sprite]),
     )
+    // 전신이 없으면 반신으로, 그것도 없으면 필드 스프라이트로 떨어진다.
+    // 같은 인물의 그림이라 누구인지는 전달된다.
+    residentFullBodies = new Map(
+      (data.residents ?? []).map((r) => [
+        r.id,
+        r.assets?.portrait_fullbody ?? r.assets?.portrait ?? r.assets?.field_sprite,
+      ]),
+    )
     residentProjectiles = new Map(
       (data.residents ?? []).map((r) => [r.id, r.assets?.projectile]),
     )
@@ -834,6 +867,8 @@ async function bootData(): Promise<boolean> {
       // `UI_ASSET` 전체를 넣는다. 하나씩 고르면 부품이 늘 때마다 여기가 낡는다.
       playerPortrait,
       ...residentPortraits.values(),
+      // 조우 결과 카드의 전신도 같은 이유로 미리 받는다 (8/10)
+      ...residentFullBodies.values(),
       ...Object.values(UI_ASSET),
       // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
@@ -1683,9 +1718,14 @@ function buildEncounterResultView(
 
   return {
     residentName: residentNames.get(residentId) ?? residentId,
-    // 대화 화면과 같은 그림이다 (A6 목업 — 카드 왼쪽). portrait 이 없으면
-    // field_sprite 로 떨어지는 것까지 residentPortraits 가 이미 하고 있다.
-    portraitAsset: residentPortraits.get(residentId),
+    /*
+      **전신이다** (A6 목업 — 카드 왼쪽에 인물이 통째로 선다, 8/10).
+
+      대화창과 다른 그림을 쓴다. 그쪽은 말하는 얼굴이 커야 하고 여기는 인물
+      전체가 서야 한다. 없으면 반신 → 필드 스프라이트로 떨어지는 것까지
+      `residentFullBodies` 가 이미 하고 있다.
+    */
+    portraitAsset: residentFullBodies.get(residentId),
     outcome,
     lifeState: resident.lifeState,
     allegiance: resident.allegiance,
@@ -3195,6 +3235,13 @@ function syncScreens(): void {
         // 승인 문구의 {player_name} 을 입력받은 이름으로 채운다. 조사도 같이
         // 고른다 — 데이터에는 읽기 좋은 한 형태만 적혀 있다 (ui/korean.ts).
         summary: fillPlayerName(ending.ending_summary, run?.playerName ?? ''),
+        /*
+          엔딩별 컷신 (김민주 인계, 8/10).
+
+          `content_assets.csv` 에 붙은 것만 온다. 안 붙어 있으면 `undefined` 이고
+          화면이 전역 폴백 컷신을 쓴다 — 여기서 기본값을 만들지 않는다.
+        */
+        cutsceneAsset: ending.assets?.cutscene,
         // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
         record: endingRecordPending
           ? { state: 'pending' }
@@ -3463,7 +3510,14 @@ function buildPopup(popup: string): HTMLElement {
       },
     })
 
-    renderOpenPopup = () => modal.render({ money: run?.resources.money ?? 0, items: shopItems(mode) })
+    renderOpenPopup = () =>
+      modal.render({
+        money: run?.resources.money ?? 0,
+        items: shopItems(mode),
+        // 튜토리얼은 판매 창을 기본으로 띄우되 팔 수는 없다 (8/9). 탭 잠금만으로는
+        // 이미 떠 있는 창 안의 실행 버튼을 못 막는다 — 8/6 의 "45% 막힘" 구멍.
+        locked: mode === 'sell' && inTutorial(),
+      })
     return modal.root
   }
 
@@ -3673,7 +3727,22 @@ function hudView() {
   // 받는 쪽이 전체 길이를 따로 알아야 하고, 그 값은 승인 데이터라 HUD 몫이 아니다.
   // 튜토리얼에는 시간제한이 없으므로 게이지를 아예 숨긴다 (DEC-RUN-003).
   // 안 가리면 60초짜리 게이지가 멈춘 채 떠 있어 "고장났나" 로 읽힌다.
-  const timer = inFarmingStage() && !inTutorial() ? farmingTimer : null
+  /*
+    **`inFarmingStage()` 를 쓰지 않는다** (8/10).
+
+    그 함수는 오버레이가 하나라도 열려 있으면 false 다. "지금 시간이 흐르는가"
+    를 가르는 값이라 시뮬레이션에는 맞지만 **표시 조건으로는 틀리다** — 회복
+    퀵메뉴나 일시정지를 열면 HUD 에서 타이머만 사라졌다.
+
+    HUD 는 필드가 떠 있는 동안 남아 있어야 한다 (`DEC-UI-036` — 필드 공통 HUD).
+    체력·퀵슬롯은 그대로인데 타이머만 없어지면 화면이 망가진 것으로 보인다.
+
+    멈춘 채로 보이는 것이 맞다. 오버레이가 열려 있으면 `syncSimulation` 이
+    시간을 안 흘리므로 값이 그대로 서 있다 — 남은 시간이 얼마인지는 오히려
+    그때 봐야 하는 정보다.
+  */
+  const showTimer = scenes.currentFieldMode() === 'farming' && !inTutorial()
+  const timer = showTimer ? farmingTimer : null
 
   return {
     playerName: run?.playerName ?? '',
@@ -3698,7 +3767,7 @@ function hudView() {
     autoSwitchedIndex: autoSwitchFlash?.index ?? null,
     emptyFireNotice: emptyFireRemaining > 0 ? '던질 무기가 없다' : null,
     // 대화·정비·일시정지가 입력을 가져가면 위쪽 안내를 띄우지 않는다.
-    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-031).
+    // 조준선을 굳히는 것과 같은 판단이다 (DEC-UI-026, DEC-UI-038).
     fieldInputLocked: scenes.inputOwner() !== null,
     // 습격 진입 시 어느 주민이 지원하는지 (DEC-UI-012)
     allySupportNotice: allySupportNotice?.text ?? null,
@@ -3817,7 +3886,10 @@ const loop = createGameLoop(
           // 자주 일어난다.
           noteHitFlash(event)
           if (event.type === 'killed' && event.targetId !== undefined) {
-            wildlife?.remove(event.targetId)
+            // `onTargetKilled` 를 거친다 — 처치음이 거기 있다 (8/9). 여기서
+            // `wildlife.remove` 를 직접 부르던 동안 낫 처치만 소리가 나고
+            // 투척 처치는 조용했다. 같은 죽음이 경로마다 다르게 들리면 안 된다.
+            onTargetKilled(event.targetId)
           }
           // 지속 피해도 적대 전환의 계기다 (DEC-CONTENT-007 — 플레이어 공격으로
           // 피해를 받으면). 투척 무기의 지속 피해는 플레이어 공격이다.
@@ -3863,6 +3935,9 @@ const loop = createGameLoop(
         player,
         aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
+        // 조준선이 이 반지름의 호로 그려진다 (DEC-UI-038). 판정과 같은 값이다 —
+        // combat.ts 의 swingSickle() 도 여기서 온 `sickle_range` 를 쓴다.
+        sickleRange: runConfig.sickleRange,
         assets: fieldAssets,
         // 방향·공격 교체 스프라이트 (DEC-ART-004). 낫을 휘두르는 동안은
         // 공격 그림이고, 파일이 없으면 정면으로 떨어진다.
@@ -3966,10 +4041,12 @@ const loop = createGameLoop(
         // 팝업에 닫기 버튼이 없어졌고 기능 버튼 넷이 갈아 끼우는 방식이라,
         // 아무것도 열려 있지 않으면 오른쪽 두 판이 빈 종이로 남는다.
         //
-        // **잠긴 기능은 열지 않는다.** 튜토리얼이 판매를 막아 두는데(수확물을
-        // 팔아 버리면 제작 안내를 완료할 수 없다) 그때 자동으로 열면 막아 둔
-        // 것을 화면이 먼저 펼쳐 보이는 셈이다.
-        if (openPopup === null && !inTutorial()) {
+        // **튜토리얼에서도 연다** (8/9 — 8/8에는 판매가 잠겨 있어 제외했었다).
+        // 안 열면 튜토리얼의 첫 정비가 빈 종이 두 장으로 시작한다. 판매 탭이
+        // 잠겨 있어 구매를 누르는 순간 되돌아올 수 없으므로 노출은 첫 화면
+        // 한 번뿐이지만, **팝업 안의 판매 버튼은 살아 있다** — 수확물을 다
+        // 팔면 제작 안내가 막히는 그 구멍이 이 한 화면만큼 다시 열린다.
+        if (openPopup === null) {
           openPopup = 'sell'
           hub.setPopup(buildPopup('sell'))
         }
@@ -4374,12 +4451,31 @@ bus.on('screen.changed', beginNightResult)
 */
 const shutter = createShutterTransition(uiRoot)
 
+/**
+ * 직전 필드가 튜토리얼이었나.
+ *
+ * 튜토리얼에서 곧장 오는 1일차 시작은 문을 열지 않고 즉시 바뀐다 (8/9) —
+ * 그 앞에 열릴 창호지가 없다. 문이 열리는 일차 시작은 밤·조우 결과처럼 닫힌
+ * 창호지 화면에서 오는 경우다. 튜토리얼은 화면이 아니라 필드라
+ * (`scenes/manager.ts`) 화면 기록으로는 못 가르고 필드에 들어설 때 표시해 둔다.
+ */
+let fromTutorialField = false
+bus.on('field.entered', () => {
+  fromTutorialField = inTutorial()
+})
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
 bus.on('screen.changed', ({ screen }) => {
   // 그림이 없거나 움직임을 꺼 뒀으면 그 자리에서 `syncScreens` 를 부르고
   // 끝난다. 이미 연출 중이면 false 라 아래 즉시 경로로 떨어진다.
-  if (screen === 'day_start' && shutter.openOver(syncScreens)) return
+  if (screen === 'day_start') {
+    const instant = fromTutorialField
+    fromTutorialField = false
+    if (!instant && shutter.openOver(syncScreens)) return
+    syncScreens()
+    return
+  }
   if (screen === 'encounter_result' && shutter.closeThen(syncScreens)) return
   syncScreens()
 })

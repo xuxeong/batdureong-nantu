@@ -38,7 +38,10 @@
 | `assets/source/phase-b/sheets/b4_button_components_sheet_chroma.png` | B4 선택 기능·수량 조절 버튼 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-010` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b4_button_components_sheet_chroma_v2.png` | B4 빼기·더하기 기호 밝은색 보정본 | AI 편집 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-012` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-b/sheets/b5_closed_sliding_paper_doors_1920x1080.png` | B5 닫힌 창호지 미닫이문 단독 배경 | AI 생성 + 직접 리사이즈 | GPT Image (Codex 내장, 모델명 비공개) + System.Drawing | `IMG-B-011` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/ui_cursor_chroma.png` | 나무 화살표형 마우스 커서 크로마키 원본 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-015` 전문 참조 | 해당 없음 (AI 생성) |
+| `assets/source/phase-b/ui_cursor_click_scratch_chroma.png` | 마우스 클릭 시 표시할 나무 긁힘 효과 크로마키 원본 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-016` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/*.png` (B1~B5) | B 시트에서 분리한 UI 부품 17종. `button_selected`는 v8의 네 기능 버튼이 같은 기본 그림을 위치만 옮겨 선택을 표시하므로 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-005`~`IMG-B-013` 참조 | 해당 없음 (AI 생성) |
+| `assets/final/ui/{cursor,cursor_click_scratch}.png` | 게임 전역 마우스 커서와 클릭 위치의 짧은 나무 긁힘 효과 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·축소·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-B-015`·`IMG-B-016` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/quickslot_count_badge.png` | 투척 퀵슬롯·회복 칸 우하단 공용 수량 배지 | 기존 AI 생성 내부 에셋에서 직접 분리·편집 | Figma | `assets/final/ui/item_slot_badge.png`의 배지 형태에서 분리 제작. 원본은 `IMG-B-006`~`IMG-B-008` 참조, 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/ui/coin.png` | 가격·총액·보유량 옆 공용 엽전 아이콘 | 기존 프로젝트 엽전 형태를 프로젝트 책임자가 직접 편집 | Figma | 프로젝트 내부 UI 엽전 형태 참조. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/final/ui/*.png` (A1) | HUD 시트에서 분리한 A1 UI 9종과 숲 앞 겹 1종. 시트의 행동 안내는 글자만 띄우기로 해서 옮기지 않았다 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-B-001`·`IMG-B-002` 참조 | 해당 없음 (AI 생성) |
@@ -55,7 +58,8 @@
 | `assets/final/icon/{fiery,mushy,slippery,sticky}.png` | C3 원본에서 분리·투명화한 작물 속성 아이콘 4종 | AI 생성 + 직접 분리·투명화 | GPT Image (Codex 내장, 모델명 비공개) + 이미지 편집 도구 | 아트 디렉션 12.4.3절 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/concept_lineup.png` | 플레이어·영순·만복·이장·금례 5인의 최종 캐릭터 디자인 기준 | AI 생성 + 직접 선별·합성 | NovelAI | 아트 디렉션 12.6절 태그 블록 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-f/crops/{player,yeongsun,manbok,village_head,geumrye}.png` | 후속 Vibe Transfer에 쓰는 인물별 컨셉아트 크롭 5종 | AI 생성 + 직접 크롭 | NovelAI + 이미지 편집 도구 | `concept_lineup.png`에서 분리 | 해당 없음 (AI 생성) |
-| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | A4 대화·조우 결과에 공용하는 플레이어·주민 초상화 5종. 공통 1080px 높이와 투명 여백으로 인물간 상대 크기를 유지 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 Figma에서 직접 상반신 크롭·투명화하고 QA 후 여백·배치를 재조정 | Figma | `assets/source/phase-f/crops/` 5종에서 파생 | 해당 없음 (AI 생성) |
+| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}.png` | A4 대화·조우 결과에 공용하는 플레이어·주민 초상화 5종. 공통 1080px 높이와 투명 여백으로 인물간 상대 크기를 유지. 영순은 2차 QA에서 최종 교체 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 Figma에서 직접 상반신 크롭·투명화하고 QA 후 여백·배치를 재조정 | Figma | `assets/source/phase-f/crops/` 5종에서 파생 | 해당 없음 (AI 생성) |
+| `assets/final/portrait/{player,yeongsun,manbok,village_head,geumrye}_fullbody.png` | 인게임 화면에서 별도로 사용할 플레이어·주민 전신 일러스트 5종. 높이 601px로 통일 | 기존 AI 생성 컨셉아트를 프로젝트 책임자가 Figma에서 직접 투명화·리사이즈 | Figma | `assets/source/phase-f/crops/` 5종에서 파생. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v1 (구).png` | A4 전투 전 대화 UI의 폐기된 크로마키 배치 원본 | AI 생성 + 크로마 보정 | GPT Image (Codex 내장, 모델명 비공개) + Pillow | `IMG-A-013` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/source/phase-a/A4_precombat_dialogue_mockup_v2.png` | 실제 구현 배치에 맞춘 A4 최종 목업. LD 일러스트와 필드 딤은 합성 전이라 생략 | 기존 AI 생성 UI 부품을 프로젝트 책임자가 직접 배치 | Figma | A4 v1과 기존 B단계 UI 부품을 참고해 직접 제작 | 해당 없음 (내부 제작) |
 | `assets/source/phase-b/sheets/b6_choice_balloon_sheet_chroma.png` | A4 선택지 말풍선 원본 시트 | AI 생성 | GPT Image (Codex 내장, 모델명 비공개) | `IMG-B-014` 전문 참조 | 해당 없음 (AI 생성) |
@@ -74,6 +78,7 @@
 | `assets/final/ui/day_start_scroll.png` | 2~5일차 시작 화면의 농장 일지 두루마리 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-003` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/ending_record_board.png` | 엔딩 기록문을 표시하는 대자보 게시판 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-004` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/player_status_card.png` | 재배·습격 하단 좌측 플레이어 상태 카드 | 기존 A1 HUD 부품을 프로젝트 책임자가 QA 후 재조정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
+| `assets/final/ui/{farming_timer,recovery_slot}.png` | 2차 QA에서 교체한 남은 재배 시간 타이머와 Q 조작 표시 회복 칸 | 기존 A1 HUD 부품을 프로젝트 책임자가 직접 수정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup_v2.png`, `A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 타이틀·재배·습격 화면의 2026-08-09 QA 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
@@ -81,11 +86,16 @@
 | `assets/source/phase-a/A5_day_start_*_mockup_v1.png` | 1일차와 2~5일차 시작 화면의 배치 전용 임시 아트 목업 2장 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 배치만 참고. 최종 배경·두루마리는 `bg_day_start.png`·`day_start_scroll.png`로 별도 반영 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A6_encounter_result_mockup_v1.png`, `A7_night_result_mockup_v1.png` | 창호지 셔터 공용 배경을 사용한 조우 결과·밤 결과 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A8_ending_mockup_v1.png` | 엔딩 화면의 배치 전용 임시 아트 목업 | 기존 프로젝트 에셋과 임시 도형을 프로젝트 책임자가 직접 배치 | Figma | 배치만 참고. 최종 게시판·컷신은 `ending_record_board.png`와 컷신 6종으로 별도 반영 | 해당 없음 (내부 제작) |
+| `assets/source/phase-a/A9_run_failed_mockup_v1.png` | 검은 배경 대신 전역 폴백 컷신을 사용하는 런 실패 화면 배치 목업 | 기존 런 실패 화면과 `assets/final/cutscene/global_fallback.png`를 프로젝트 책임자가 직접 합성 | Figma | 개발 배치 참고용. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 
 ## 사운드 · BGM
 
 `assets/final/bgm/`·`assets/final/sfx/`의 실제 상태와 게임 내 트리거는
 `docs/submission/SOUND_ASSET_INDEX.md`에서 관리한다. 이 표는 크레딧 기록 전용이다.
+
+**모든 효과음·배경음은 VARCO Sound 생성분을 Audacity로 후처리(피치·음량(Amplify)·
+페이드 인·아웃·구간 자르기)한 뒤 최종 반입했다.** 아래 표의 제작 방법 `AI 생성`은 이
+후처리를 포함한 값으로 읽는다.
 
 ### BGM
 
@@ -1428,6 +1438,40 @@ characters, extra frames, duplicate variants, glossy gradients, logo, watermark,
 
 대사창은 `panel_border`·`panel_texture`, 이름판과 선택지 버튼은 기존 `button_normal`·
 `button_disabled`를 재사용하므로 새로 채택한 A4 고정 UI 그림은 말풍선 한 장뿐이다.
+
+### IMG-B-015 — 나무 화살표형 마우스 커서
+
+참조 이미지는 `assets/final/ui/button_normal.png` 한 장이며 화풍 기준으로만 사용했다.
+
+```text
+Use case: stylized-concept
+Asset type: custom mouse cursor for a 1920x1080 browser game
+Input images: Image 1 is a style reference only—the approved wooden UI button. Match its thick dark outline, flat two-step shading, warm muted brown wood, clean interior fills, and slight handmade asymmetry. Do not copy the rectangular button.
+Primary request: create one compact arrow-shaped mouse cursor carved from a small splinter of wood, with a sharp click point at the extreme top-left and the body extending diagonally toward the bottom-right. Strong simple silhouette that stays readable when reduced to about 32x32 pixels.
+Composition/framing: one cursor only, centered with generous padding, no cast shadow.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for background removal; one uniform color with no gradient, texture, floor, reflection, or lighting variation.
+Constraints: the click tip must be the top-left-most opaque point and align with a 2,2 hotspot; crisp edges; use no #00ff00 in the cursor; no text, numbers, logo, watermark, extra object, metal, leaf, rope, ornament, photorealism, 3D bevel, glossy highlight, dense wood grain, hatching, or scratchy repeated linework.
+```
+
+프로젝트 책임자가 Figma에서 누끼·축소하고, 최종 PNG의 불투명 영역이 `(2, 2)`에서
+시작하도록 정렬해 `assets/final/ui/cursor.png`로 저장했다.
+
+### IMG-B-016 — 마우스 클릭 나무 긁힘 효과
+
+참조 이미지는 `assets/final/ui/button_normal.png` 한 장이며 화풍 기준으로만 사용했다.
+
+```text
+Use case: stylized-concept
+Asset type: tiny click-feedback overlay for a custom wooden mouse cursor
+Input images: Image 1 is a style reference only—the approved wooden UI button. Match its thick dark brown line, flat two-step shading, warm muted wood palette, clean shapes, and slight handmade asymmetry.
+Primary request: create one very small cluster of exactly three short fresh gouge marks scratched into wood, arranged like a quick click impact. Each mark is a tapered dark-brown cut with a narrow pale raw-wood edge. The cluster must remain legible when reduced to about 40x40 pixels and briefly shown at the click point.
+Composition/framing: exactly three isolated short marks, close together, centered, compact radial/diagonal arrangement, generous padding; no wooden plank or surface behind them; no cursor arrow.
+Scene/backdrop: perfectly flat solid #00ff00 chroma-key background for background removal; one uniform color with no gradient, texture, floor, reflection, or lighting variation.
+Constraints: crisp edges; use no #00ff00 in the marks; no cast shadow, glow, particles, sparks, dust, splinters, text, numbers, logo, watermark, extra objects, photorealism, 3D bevel, glossy highlight, dense grain, or repeated hatching.
+```
+
+프로젝트 책임자가 생성 결과에서 사용할 긁힘 한 줄을 선별해 Figma에서 누끼·축소하고
+`assets/final/ui/cursor_click_scratch.png`로 저장했다.
 
 ### IMG-E-001 — 탑다운 야생동물 필드 스프라이트 시트
 

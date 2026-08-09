@@ -16,6 +16,7 @@
 // 로 확정했다. 지금 두 화면이 닮아 보이는 것은 둘 다 단순해서일 뿐이고, 묶으면
 // 위 금지 목록이 엔딩 쪽 규칙에 섞여 들어간다.
 
+import { CUTSCENE_GLOBAL_FALLBACK, UI_ASSET, assetCssUrl } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
@@ -73,6 +74,16 @@ export function createRunFailed(
 ): RunFailedScreen {
   const root = el('div', 'run-failed')
   root.hidden = true
+
+  // 배경 — 전용 그림(bg_run_failed, 타이틀 배경에서 표지판을 뺀 판)이 오면 그것,
+  // 올 때까지는 공용 폴백 컷신이다 (8/9 폴리싱). 파일이 들어오는 순간 코드 변경
+  // 없이 갈아탄다 — 둘 다 없으면 기존 어두운 배경이 남는다.
+  const backgroundUrl =
+    assetCssUrl(UI_ASSET.bgRunFailed) ?? assetCssUrl(CUTSCENE_GLOBAL_FALLBACK)
+  if (backgroundUrl !== null) {
+    root.classList.add('run-failed--has-art')
+    root.style.setProperty('--run-failed-background', backgroundUrl)
+  }
 
   const panel = el('div', 'run-failed__panel')
   // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)

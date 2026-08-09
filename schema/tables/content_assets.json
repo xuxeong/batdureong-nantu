@@ -39,6 +39,7 @@
         "crop_ready",
         "icon",
         "portrait",
+        "portrait_fullbody",
         "projectile",
         "effect",
         "background",

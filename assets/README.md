@@ -26,14 +26,22 @@ ID는 영문 소문자·숫자·밑줄·마침표만 쓴다. **`final/`의 하�
 
 ## 구간
 
-콘텐츠에 붙는 13개 — 연결 CSV `content_assets.csv`의 `asset_role`과 같은 값이다.
+콘텐츠에 붙는 17개 — 연결 CSV `content_assets.csv`의 `asset_role`과 같은 값이다.
 
 `field_sprite` `farm_plot` `crop_seed` `crop_growing` `crop_ready` `icon` `portrait`
-`projectile` `effect` `background` `cutscene` `sfx` `bgm`
+`portrait_fullbody` `projectile` `effect` `background` `cutscene` `sfx` `bgm`
+`field_sprite_left` `field_sprite_right` `field_sprite_attack`
 
-어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋 4개 — 연결 CSV를 쓰지 않고 `schema/enums.json`의 고정 허용 목록으로 관리한다.
+`portrait`과 `portrait_fullbody`가 나뉜 것은 취향이 아니라 제약이다. 연결 CSV의
+고유키가 `(content_id, asset_role)`이라 **한 콘텐츠에 같은 역할을 둘 붙일 수 없다.**
+얼굴과 전신을 같은 `portrait`으로 두면 둘 중 하나만 남는다.
 
-`ui` `logo` `hud` `font`
+어떤 콘텐츠에도 속하지 않는 UI·시스템 에셋 6개 — 연결 CSV를 쓰지 않고 `schema/enums.json`의 고정 허용 목록으로 관리한다.
+
+`ui` `logo` `hud` `font` `bgm` `sfx`
+
+`bgm`·`sfx`가 양쪽에 있는 것은 맞다. 부모 콘텐츠가 있는 소리는 연결 CSV로 가고,
+없거나 한 콘텐츠에 여럿 필요한 소리는 고정 목록으로 간다 (`DEC-ART-005`).
 
 새 구간이나 새 `asset_role`의 추가는 콘텐츠 값 추가가 아니라 스키마 변경이다.
 

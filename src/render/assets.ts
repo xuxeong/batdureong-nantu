@@ -127,6 +127,13 @@ export const UI_ASSET = {
    */
   cursor: 'asset.ui.cursor',
   /**
+   * 눌린 순간의 긁힘 자국 (2026-08-10, 전성민 요청).
+   *
+   * 커서 그림을 바꾸는 것이 아니라 **누른 자리에 잠깐 남는 표시**다. 커서와
+   * 별개 파일인 이유가 그것이다 — 커서는 늘 떠 있고 이쪽은 순간이다.
+   */
+  cursorClickScratch: 'asset.ui.cursor_click_scratch',
+  /**
    * 닫기 버튼.
    *
    * **정비 팝업은 더 이상 쓰지 않는다** (2026-08-08). 팝업이 항상 하나 열려 있고
@@ -235,7 +242,27 @@ export const UI_ASSET = {
   /** 조우 결과·밤 결과 화면 배경 (DEC-UI-023) */
   bgEncounterResult: 'asset.ui.bg_encounter_result',
   bgNightResult: 'asset.ui.bg_night_result',
+  /**
+   * 런 실패 화면 배경 — 타이틀 배경에서 표지판을 뺀 판 (8/9 폴리싱).
+   *
+   * ID 는 8/8 에 선등록했고 **파일이 아직 없다** (전성민 제작 대기). 올 때까지
+   * 런 실패 화면은 아래 `CUTSCENE_GLOBAL_FALLBACK` 으로 떨어진다.
+   */
+  bgRunFailed: 'asset.ui.bg_run_failed',
 } as const
+
+/**
+ * 공용 폴백 컷신 (8/9 폴리싱).
+ *
+ * `endings.csv` 의 `ending.global_fallback` 에 연결된 그림과 같은 파일이다.
+ * 런 실패 배경(전용 그림 대기)과 컷신이 없는 화면의 폴백으로 쓴다.
+ *
+ * **`UI_ASSET` 에 넣지 않는 이유** — 저 표는 고정 목록(`ui_system_asset_id`)과
+ * 대조하는데 `cutscene` 은 콘텐츠 연결 구간이라 그 목록에 없다. 콘텐츠 쪽
+ * 정식 경로는 `endings.json` 의 `assets.cutscene` 이고, 이 상수는 화면이 자기
+ * 엔딩을 모를 때의 마지막 폴백이다.
+ */
+export const CUTSCENE_GLOBAL_FALLBACK = 'asset.cutscene.global_fallback'
 
 /**
  * 본문 폰트의 논리 에셋 ID (`DEC-ART-004`).

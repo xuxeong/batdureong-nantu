@@ -95,7 +95,7 @@ flowchart LR
 
 필수 대화와 투항 대화 중에는 필드 입력과 타이머를 정지한다. 대화 선택에는 시간제한이 없고 자유 입력을 사용하지 않는다.
 
-핵심 근거: `DEC-INPUT-001~009`, `DEC-UI-031`, `DEC-RESIDENT-030`, `DEC-RESIDENT-039`.
+핵심 근거: `DEC-INPUT-001~009`, `DEC-UI-038`, `DEC-RESIDENT-030`, `DEC-RESIDENT-039`.
 
 ## 5. 자원과 보관함
 

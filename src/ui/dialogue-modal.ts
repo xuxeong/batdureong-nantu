@@ -29,6 +29,7 @@
 //   이번이 마지막 투항 기회라는 사실 — DEC-UI-010
 
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
+import { wrapSentences } from './sentence-wrap.ts'
 import './layout.css'
 
 export type DialoguePhase = 'precombat' | 'surrender'
@@ -353,9 +354,11 @@ export function createDialogueModal(
 
   function startTyping(full: string): void {
     stopTyping()
-    typingFull = full
+    // 긴 대사는 문장 경계에서 줄을 바꾼다 (8/10 담당자 — 어절에서 접히면
+    // "이 밤" 같은 데서 갈린다). `\n` 은 pre-line 이 줄바꿈으로 그린다.
+    typingFull = wrapSentences(full)
     typingShown = 0
-    typingActive = full !== ''
+    typingActive = typingFull !== ''
     text.textContent = ''
     runTyping()
   }

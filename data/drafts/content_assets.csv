@@ -25,3 +25,14 @@ resident.yeongsun,field_sprite_attack,asset.field_sprite_attack.yeongsun
 resident.manbok,field_sprite_attack,asset.field_sprite_attack.manbok
 resident.geumrye,field_sprite_attack,asset.field_sprite_attack.geumrye
 resident.village_head,field_sprite_attack,asset.field_sprite_attack.village_head
+ending.neighbors,cutscene,asset.cutscene.neighbors
+ending.beyond_fence,cutscene,asset.cutscene.beyond_fence
+ending.silent_field,cutscene,asset.cutscene.silent_field
+ending.new_family,cutscene,asset.cutscene.new_family
+ending.empty_village_master,cutscene,asset.cutscene.empty_village_master
+ending.global_fallback,cutscene,asset.cutscene.global_fallback
+player_base_stats.prototype,portrait_fullbody,asset.portrait_fullbody.player
+resident.yeongsun,portrait_fullbody,asset.portrait_fullbody.yeongsun
+resident.manbok,portrait_fullbody,asset.portrait_fullbody.manbok
+resident.geumrye,portrait_fullbody,asset.portrait_fullbody.geumrye
+resident.village_head,portrait_fullbody,asset.portrait_fullbody.village_head

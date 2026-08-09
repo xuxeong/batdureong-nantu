@@ -168,9 +168,11 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   /** 해금 알림 또는 실패 안내. 다음 선택에서 지운다 */
   let notice: string | null = null
 
+  // 왼쪽 판은 목록만이다 (8/9 폴리싱). 목록 아래 상세(큰 아이콘 + 이름)를 뒀더니
+  // 방금 고른 줄과 같은 그림·같은 이름이 바로 밑에 한 번 더 떴다. 수량과
+  // 무관한 정보는 목록 줄이 이미 다 들고 있고, 해금 조건은 오른쪽 판으로 간다.
   const list = el('div')
-  const detail = el('div', 'hub__detail')
-  body.append(list, detail)
+  body.append(list)
 
   const tooltip = createTooltip(root)
   const rowButtons = new Map<string, HTMLButtonElement>()
@@ -310,7 +312,11 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   const actionUrl = assetCssUrl(UI_ASSET.buttonNormal)
   if (actionUrl !== null) action.style.setProperty('--hub-button-image', actionUrl)
 
-  footer.append(timesBlock, needs, preview, action)
+  // 안내·실행은 바닥 묶음이다 (8/9) — 필요 재료는 증감 줄에 붙어 있어야 하므로
+  // 묶음 밖에 남는다. 각각 margin-top: auto 를 주면 공간을 나눠 먹어 중간에 뜬다.
+  const bottom = el('div', 'hub__footer-bottom')
+  bottom.append(preview, action)
+  footer.append(timesBlock, needs, bottom)
 
   /** 횟수를 고쳐 쓴다. 상한은 두지 않고 실행 가능 여부만 `render` 가 판정한다 */
   function setTimes(next: number): void {
@@ -348,21 +354,13 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   })
 
   /**
-   * 해금된 레시피의 상세 — 이름과 **입력 표만** (DEC-UI-006, 14.9).
+   * 해금된 레시피의 상세 — **입력 표만** (DEC-UI-006, 14.9).
    *
-   * 설명과 결과물 수치는 여기 없다. 왼쪽 목록의 안내로 갔다 — 판매·구매 상세창이
-   * 요구하지 않는 것을 제작만 상세창에 두면 셋이 다른 모양이 된다.
+   * 이름·아이콘 머리를 두지 않는다 (8/9 폴리싱) — 방금 고른 목록 줄이 같은
+   * 그림·같은 이름을 이미 보여주고 있어서 바로 밑에 한 번 더 뜨는 중복이었다.
+   * 설명과 결과물 수치도 여기 없다. 왼쪽 목록의 hover 안내로 갔다.
    */
   function renderUnlocked(recipe: UnlockedRecipeView, count: number | null): void {
-    // 큰 아이콘과 이름이 상세의 머리다 (14.9 공통 구조)
-    const heading = el('div', 'hub__detail-heading')
-    const bigIcon = createIcon(recipe.resultIcon, 'icon--lg')
-    if (bigIcon !== null) heading.appendChild(bigIcon)
-    heading.appendChild(el('div', 'hub__detail-title', recipe.resultName))
-
-    // 왼쪽 판에는 무엇을 만드는지까지만 남는다
-    detail.replaceChildren(heading)
-
     // 필요 재료는 오른쪽 판이다 (8/8 요청)
     const nodes: HTMLElement[] = [el('div', 'hub__popup-group-title', '제작 1회당 필요')]
     for (const input of recipe.inputs) {
@@ -388,10 +386,14 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
   }
 
   /**
-   * 잠긴 레시피의 상세 (DEC-UI-006).
+   * 잠긴 레시피의 상세 — **오른쪽 판**에 해금 조건·진행도만 (DEC-UI-006, 8/9).
    *
-   * 결과물 이름과 해금 조건·진행도만 그린다. 숙련도 규칙을 문장으로 설명하지 않고
-   * 대상 작물과 현재·필요 숙련도, 짧은 안내만 둔다.
+   * 8/9까지 왼쪽 목록 밑에 있었는데 해금된 레시피의 필요 재료가 오른쪽으로
+   * 옮겨 가면서 잠긴 것만 왼쪽에 남아 두 상태의 시선이 갈렸다. 이름·아이콘
+   * 머리도 같은 이유로 뺐다 — 목록 줄이 이미 보여주고 있다.
+   *
+   * 숙련도 규칙을 문장으로 설명하지 않고 대상 작물과 현재·필요 숙련도,
+   * 짧은 안내만 둔다.
    */
   function renderLocked(recipe: LockedRecipeView): void {
     const { cropName, cropAssetId, currentMastery, requiredMastery } = recipe.unlock
@@ -406,13 +408,8 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     const progress = el('div', 'hub__detail-row')
     progress.append(target, el('span', undefined, `${currentMastery} / ${requiredMastery}`))
 
-    const heading = el('div', 'hub__detail-heading')
-    const bigIcon = createIcon(recipe.resultIcon, 'icon--lg')
-    if (bigIcon !== null) heading.appendChild(bigIcon)
-    heading.appendChild(el('div', 'hub__detail-title', recipe.resultName))
-
-    detail.replaceChildren(
-      heading,
+    needs.replaceChildren(
+      el('div', 'hub__popup-group-title', '해금 조건'),
       progress,
       el('p', 'hub__detail-text', `${cropName}을(를) 제작에 더 사용하면 해금된다.`),
     )
@@ -442,14 +439,13 @@ export function createCraftModal(handlers: CraftHandlers): CraftModal {
     }
 
     if (selected === null) {
-      detail.replaceChildren()
       needs.replaceChildren()
       preview.textContent = '레시피를 고른다'
       action.disabled = true
     } else if (selected.locked) {
+      // 오른쪽 판에 해금 조건이 선다. 입력 표는 공개하지 않는다 (DEC-UI-006) —
+      // 잠긴 뷰 타입에 그 필드가 아예 없어 실수로도 그릴 수 없다.
       renderLocked(selected)
-      // 잠긴 레시피의 입력을 공개하지 않는다 (DEC-UI-006)
-      needs.replaceChildren()
       preview.textContent = '아직 해금되지 않았다'
       action.disabled = true
     } else {

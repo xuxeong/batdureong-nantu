@@ -22,6 +22,7 @@
 //
 // 런 실패 화면과 클래스도 파일도 공유하지 않는다 (DEC-UI-014, DEC-UI-023).
 
+import { CUTSCENE_GLOBAL_FALLBACK, assetCssUrl } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
@@ -47,6 +48,16 @@ export interface EndingView {
   summary: string
   record: EndingRecordView
   fear: EndingFearView | null
+  /**
+   * 이 엔딩의 컷신 `asset.cutscene.*` — `endings.json` 의 `assets.cutscene` 이다
+   * (연결 행은 8/10 에 승인됐다). **안 넘기면 공용 폴백 컷신이 배경이 된다** —
+   * 화면은 자기가 어느 엔딩인지 모르므로 고르는 것은 부르는 쪽 몫이다.
+   *
+   * 옵셔널인 이유: 이 값을 채우는 곳이 main.ts(A 구역)라 8/10 폴리싱 분배상
+   * 이 파일에서 채울 수 없다. 한 줄(`cutsceneAsset: ending.assets?.cutscene`)이
+   * 인계 대상이다.
+   */
+  cutsceneAsset?: string | null
 }
 
 export interface EndingHandlers {
@@ -109,6 +120,14 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
 
   return {
     render(view) {
+      // 컷신이 배경이다 (8/9 폴리싱 — 목업의 "cutscene 이 bg 비슷한 역할").
+      // 엔딩별 그림이 안 넘어오면 공용 폴백 컷신으로 떨어진다. 그것마저 없으면
+      // 클래스가 안 붙고 기존 어두운 배경이 남는다.
+      const cutsceneUrl =
+        assetCssUrl(view.cutsceneAsset) ?? assetCssUrl(CUTSCENE_GLOBAL_FALLBACK)
+      root.classList.toggle('ending--has-art', cutsceneUrl !== null)
+      if (cutsceneUrl !== null) root.style.setProperty('--ending-cutscene', cutsceneUrl)
+
       title.textContent = view.title
       summary.textContent = view.summary
 
