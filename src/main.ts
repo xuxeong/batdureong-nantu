@@ -20,7 +20,22 @@ import { loadBodyFont } from './ui/font.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { BGM_ASSET, SOUND_ASSET, createAssetImages, UI_ASSET } from './render/assets.ts'
+import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from './render/assets.ts'
+
+/*
+  마우스 커서 (작업 15번). 그림이 있으면 게임 전체가 그것을 쓴다 — 버튼의
+  `cursor: pointer` 까지 덮으려면 CSS 한 줄로는 안 되고 최상위에서 !important
+  로 눌러야 해서, 파일이 있을 때만 스타일 규칙을 만들어 꽂는다.
+
+  핫스팟(클릭 지점)은 왼쪽 위 2,2 로 뒀다 — 화살표형 커서의 관례다. 그림이
+  화살표가 아니면(십자선 등) 이 값을 그림에 맞춰 다시 잰다.
+*/
+const cursorUrl = assetUrl(UI_ASSET.cursor)
+if (cursorUrl !== null) {
+  const style = document.createElement('style')
+  style.textContent = `body, body * { cursor: url("${cursorUrl}") 2 2, auto !important; }`
+  document.head.appendChild(style)
+}
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
@@ -2905,6 +2920,9 @@ const nightResultScreen: NightResultScreen = createNightResult(uiRoot, {
 
 const titleScreen: TitleScreen = createTitle(uiRoot, {
   onStart: () => scenes.send({ type: 'confirm' }),
+  // 설정 팻말이 여는 음량 조절 (DEC-UI-032). 일시정지와 같은 mixer 라
+  // 어느 쪽에서 내려도 다른 쪽에 그대로 보인다.
+  mixer,
 })
 
 const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {

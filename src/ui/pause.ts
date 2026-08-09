@@ -31,7 +31,8 @@
 // 스스로 선언했으므로(DEC-INPUT-001) 거기서 역으로 끌어온다. 바인딩을 바꾸면
 // 안내가 따라오고, 안 따라오면 안내가 거짓말을 한다.
 
-import type { Mixer, VolumeChannel } from '../audio/mixer.ts'
+import type { Mixer } from '../audio/mixer.ts'
+import { createVolumeRows } from './volume-panel.ts'
 import { KEY_BINDINGS, MOUSE_BINDINGS, QUICKSLOT_KEYS } from '../input/bindings.ts'
 import type { InputAction } from '../input/bindings.ts'
 import { applyHanjiPanel } from './panel.ts'
@@ -122,22 +123,6 @@ const VOLUME_LABEL = '음량 설정'
 const CONTROLS_LABEL = '조작 안내'
 const TITLE_LABEL = '타이틀로 돌아가기'
 
-/** 확정문의 "전체, 배경음, 효과음" 순서를 그대로 쓴다 (DEC-UI-027) */
-const VOLUME_ROWS: { channel: VolumeChannel; label: string }[] = [
-  { channel: 'master', label: '전체' },
-  { channel: 'bgm', label: '배경음' },
-  { channel: 'sfx', label: '효과음' },
-]
-
-/**
- * 슬라이더 눈금.
- *
- * 0~100 정수로 다루고 `mixer` 에 0~1 로 넘긴다. 화면에 백분율을 같이 적는 것은
- * **끝까지 내렸는지 조금 남았는지가 손잡이 위치만으로는 안 갈리기 때문**이다 —
- * 소리가 안 나는 이유를 여기서 찾게 된다.
- */
-const VOLUME_STEPS = 100
-
 /**
  * 타이틀 복귀 확인 (DEC-UI-027 — "현재 런이 사라지므로 확인 절차를 둔다").
  *
@@ -177,31 +162,13 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
   menu.append(resume, volumeToggle, controlsToggle, toTitle)
 
   // ── 음량 (DEC-UI-027) ────────────────────────────
+  //
+  // 줄 세 개는 타이틀 설정과 **같은 모듈**이다 (DEC-UI-032 — 같은 항목만 연다).
   const volume = el('div', 'pause__volume')
   volume.hidden = true
   const mixer = handlers.mixer
   if (mixer !== undefined) {
-    for (const row of VOLUME_ROWS) {
-      const line = el('div', 'pause__volume-row')
-      const slider = el('input', 'pause__volume-slider')
-      slider.type = 'range'
-      slider.min = '0'
-      slider.max = String(VOLUME_STEPS)
-      slider.step = '1'
-      slider.value = String(Math.round(mixer.get(row.channel) * VOLUME_STEPS))
-      slider.setAttribute('aria-label', row.label)
-
-      const readout = el('span', 'pause__volume-value', `${slider.value}%`)
-      slider.addEventListener('input', () => {
-        const steps = Number(slider.value)
-        mixer.set(row.channel, steps / VOLUME_STEPS)
-        readout.textContent = `${steps}%`
-      })
-
-      line.append(el('span', 'pause__volume-label', row.label), slider, readout)
-      volume.appendChild(line)
-    }
-
+    volume.appendChild(createVolumeRows(mixer))
     volumeToggle.addEventListener('click', () => {
       volume.hidden = !volume.hidden
     })

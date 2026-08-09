@@ -1227,30 +1227,35 @@
 }
 
 /*
-  이름 · 슬라이더 · 백분율 세 칸.
+  이름 · 슬라이더 · 백분율 세 칸 (ui/volume-panel.ts — 일시정지·타이틀 공용).
 
   백분율 칸을 고정 폭으로 두는 이유는 `100%` → `9%` 로 자릿수가 줄 때 슬라이더가
   같이 늘어나 손잡이가 손 밑에서 움직이기 때문이다.
 */
-.pause__volume-row {
+.volume-rows {
+  display: grid;
+  gap: var(--ui-gap-sm);
+}
+
+.volume-rows__row {
   display: grid;
   grid-template-columns: 100px 1fr 56px;
   gap: var(--ui-gap-md);
   align-items: center;
 }
 
-.pause__volume-label {
+.volume-rows__label {
   color: var(--ui-text-dim);
 }
 
-.pause__volume-slider {
+.volume-rows__slider {
   pointer-events: auto;
   cursor: pointer;
   width: 100%;
   accent-color: var(--ui-accent);
 }
 
-.pause__volume-value {
+.volume-rows__value {
   color: var(--ui-accent);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -3925,10 +3930,8 @@
   팻말은 `button_normal`(350×116) 을 그대로 얹는다. 기둥 중심이 x 1590 이라
   왼쪽이 1590 - 175 = 1415 다.
 
-  `--title-sign-bottom-y` 는 두 번째 받침이다. 지금은 아무것도 앉지 않는다 —
-  `DEC-UI-030` 이 타이틀 입력을 하나로 못 박아 `게임 종료` 팻말을 넣지 못했다
-  (`ui/title.ts` 머리말). 값을 남겨 두는 이유는 그 결정이 바뀌면 좌표를 다시
-  재지 않기 위해서다.
+  `--title-sign-bottom-y` 는 두 번째 받침 — **설정 팻말 자리다** (DEC-UI-032).
+  목업의 `게임 종료` 자리를 대신 쓴다. 8/8~8/9 사이에는 비어 있었다.
 */
 :root {
   --title-sign-x: 1415px;
@@ -3936,7 +3939,8 @@
   --title-sign-bottom-y: 626px;
 }
 
-.title--has-art .title__start {
+.title--has-art .title__start,
+.title--has-art .title__settings {
   position: absolute;
   left: var(--title-sign-x);
   top: var(--title-sign-top-y);
@@ -3953,6 +3957,46 @@
   letter-spacing: 0.06em;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.55);
   cursor: pointer;
+  font-family: var(--ui-font);
+}
+
+.title--has-art .title__settings {
+  top: var(--title-sign-bottom-y);
+}
+
+.title--has-art .title__settings:hover {
+  filter: brightness(1.08);
+}
+
+/*
+  음량 판 (DEC-UI-032 — 정지 화면과 같은 조절 항목만).
+
+  설정 팻말 왼쪽에 뜬다 — 오른쪽은 화면 끝이라 자리가 없다. 줄 세 개는
+  일시정지와 같은 모듈(ui/volume-panel.ts)이다.
+*/
+.title__volume[hidden] {
+  display: none;
+}
+
+.title__volume {
+  position: absolute;
+  right: 530px;
+  top: var(--title-sign-bottom-y);
+  width: 430px;
+  box-sizing: border-box;
+  padding: var(--ui-gap-lg);
+  display: grid;
+  gap: var(--ui-gap-md);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg-panel);
+  color: var(--ui-text);
+  font-size: var(--ui-font-sm);
+}
+
+.title__volume-title {
+  font-size: var(--ui-font-md);
+  font-weight: 700;
 }
 
 .title--has-art .title__start:hover {
@@ -4148,6 +4192,7 @@
 /* ── 세 화면의 진행 입력 ───────────────────────── */
 
 .title__start,
+.title__settings,
 .name-input__confirm,
 .tutorial__skip,
 .tutorial__continue {
