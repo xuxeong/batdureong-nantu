@@ -4835,11 +4835,21 @@ body {
 }
 
 .encounter-result__portrait {
-  flex: 0 0 280px;
-  /* 가운데 기준으로 세우고 살짝 올린다 (8/9 — "초상화 좀 위로").
-     bottom 기준일 때 그림의 투명 여백 때문에 인물이 카드 바닥에 붙어 보였다 */
-  background: var(--portrait-image) center / auto 96% no-repeat;
-  transform: translateY(-18px);
+  flex: 0 0 320px;
+  /*
+    인물을 목업 비율(카드 높이의 ~78%)로 키운다 (8/10, 최수정 관측 63%).
+
+    칸을 확인 버튼 여백(-72px)까지 내려 세우고 그림을 그 높이에 꽉 채운다 —
+    카드 안쪽(476px)만으로는 전신 그림의 투명 여백까지 치면 63% 에서 못
+    벗어난다. 아래 기준이라 발이 카드 바닥 근처(약 32px 위)에 선다.
+    폭을 320 으로 넓힌 것은 가장 넓은 만복(390/724)이 커진 높이에서도
+    옆이 잘리지 않는 값이라서다 (548 × 0.54 ≈ 296).
+
+    8/9 의 translateY(-18px) 는 반신 그림 시절의 보정이라 걷어냈다 —
+    전신은 발 기준으로 서는 것이 맞다.
+  */
+  margin-bottom: -72px;
+  background: var(--portrait-image) bottom center / auto 100% no-repeat;
 }
 
 .encounter-result__column {
