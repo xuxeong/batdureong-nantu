@@ -9,16 +9,16 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 373개 · 2026-07-31 ~ 2026-08-09
+커밋 388개 · 2026-07-31 ~ 2026-08-09
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 194 | Feat 62 · Docs 49 · Fix 47 · Chore 19 · (태그 없음) 12 · Refactor 3 · Test 1 · Art 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
-| gamome44 | 104 | Docs 72 · Art 17 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 59 | Data 21 · Feat 16 · Docs 10 · (태그 없음) 7 · Fix 3 · Chore 2 | data/approved, data/drafts, docs/progress, schema, src, tests |
-| github-actions[bot] | 16 | Docs 16 | docs/progress |
+| SUJEONG CHOI | 199 | Feat 62 · Fix 49 · Docs 49 · Chore 19 · (태그 없음) 14 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
+| ming9 | 67 | Data 21 · Feat 19 · Docs 12 · (태그 없음) 7 · Fix 5 · Chore 3 | data/approved, data/drafts, docs/progress, schema, src, tests |
+| github-actions[bot] | 17 | Docs 17 | docs/progress |
 
 ## 날짜별 기록
 
@@ -60,6 +60,20 @@
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `ae633a3`
 - `[Feat]` 퀵슬롯·회복 칸을 눌러 고르고 연다 (C·D, DEC-UI-001 폐기 → DEC-UI-037) — SUJEONG CHOI · `2b156ed`
 - [Merge] develop → main — 8/8~8/9 아트·소리·폴리싱 반영 — SUJEONG CHOI · `5b296d5`
+- `[Fix]` 튜토리얼 5단계 문구가 쉼표에서 잘렸다 — SUJEONG CHOI · `c3e407a`
+- @ [Test] CSV 행 칸 수 검사 추가 — 값이 조용히 사라지는 것을 막는다 — SUJEONG CHOI · `e3a3d70`
+- `[Art]` 본문 폰트 GriunXHangeul Equal 반입 — 라이선스상 TTF 원본 유지 — SUJEONG CHOI · `9ebeda5`
+- `[Fix]` 일지·엔딩 기록문이 오기 전에 넘어가지지 않게 한다 — SUJEONG CHOI · `7dcecef`
+- `[Art]` 엔딩 컷신 및 QA 수정 에셋 반영 — gamome44 · `4597012`
+- `[Chore]` day_start_scroll·ending_record_board 등록 (schema_version 17→18) — ming9 · `09ab38a`
+- `[Feat]` 하루의 전환 흐름 — 문·카드·정비 UI 슬라이딩 (8/9 플로우) — ming9 · `3e2c034`
+- `[Docs]` 세션 로그 — 하루 전환 흐름, fade 를 걷어낸 이유 — ming9 · `3c1e9e5`
+- `[Fix]` 조우 카드 — 초상화를 올리고 확인 버튼이 스크롤에 숨지 않게 — ming9 · `43e92d3`
+- `[Feat]` 퀵슬롯 빈 상태 확인 창 — 습격 전 정비 종료에 한 번 묻는다 (작업 7번) — ming9 · `3ac233b`
+- `[Docs]` 세션 로그 — 카드 마감·확인 창, DEC-UI-020 어긋남 보고 — ming9 · `9dc29d3`
+- `[Fix]` 툴팁을 커서 오른쪽 아래로 · 회복 칸에 조작 안내 (작업 14번) — ming9 · `b7db4cd`
+- `[Feat]` 타이틀 설정 팻말 + 음량 모듈 공용화 · 커서 선등록 (작업 3·15번) — ming9 · `ae05a5f`
+- Merge branch 'develop' into main (v0.4) — SUJEONG CHOI · `5328b2a`
 
 ### 2026-08-08
 
@@ -104,6 +118,7 @@
 - `[Feat]` 투척 퀵슬롯 5칸 → 4칸 (DEC-INPUT-013 외 3건 폐기·대체) — SUJEONG CHOI · `f366a35`
 - `[Feat]` BGM 6종 연결과 낫 소리 3종 (DEC-ART-005, schema_version 10) — SUJEONG CHOI · `0a36b82`
 - `[Feat]` 타이틀 BGM 누락 수정 · 효과음 18종 배선 (schema_version 11) — SUJEONG CHOI · `ea58268`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `2b228c8`
 
 ### 2026-08-07
 
