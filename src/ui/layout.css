@@ -3960,8 +3960,22 @@
   font-family: var(--ui-font);
 }
 
+/*
+  팻말 두 장을 서로 반대로 살짝 기울인다 (8/9 — 손으로 박은 못이 조금씩
+  삐뚤어진 느낌). 같은 방향이면 화면이 통째로 기운 것처럼 보인다.
+
+  `transform` 이 아니라 `rotate` 속성인 이유 — 게임 시작의 흔들림 연출
+  (`title-sign-shake`)이 `transform: rotate()` 를 애니메이션하는데, 기울기를
+  transform 에 두면 흔들리는 동안 그 값이 **통째로 교체**돼 팻말이 0도로
+  튀었다가 돌아온다. `rotate` 는 별도 속성이라 둘이 겹쳐 돈다.
+*/
+.title--has-art .title__start {
+  rotate: -2deg;
+}
+
 .title--has-art .title__settings {
   top: var(--title-sign-bottom-y);
+  rotate: 2.5deg;
 }
 
 .title--has-art .title__settings:hover {
