@@ -17,6 +17,7 @@ import { createInput } from './input/input.ts'
 import { KEY_BINDINGS, QUICKSLOT_KEYS } from './input/bindings.ts'
 import { fillPlayerName, subjectParticle } from './ui/korean.ts'
 import { loadBodyFont } from './ui/font.ts'
+import { enableClickScratch } from './ui/click-scratch.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
@@ -36,6 +37,10 @@ if (cursorUrl !== null) {
   style.textContent = `body, body * { cursor: url("${cursorUrl}") 2 2, auto !important; }`
   document.head.appendChild(style)
 }
+
+// 누른 자리에 남는 긁힘 자국 (전성민 8/10). 커서와 같은 층이라 여기서 켠다 —
+// 그림이 없으면 스스로 아무것도 하지 않는다.
+enableClickScratch()
 import { createCamera } from './render/camera.ts'
 import { createFieldRenderer } from './render/field.ts'
 import { createStage } from './render/stage.ts'
