@@ -246,6 +246,20 @@
   --dialogue-portrait-height: 960px;
   --dialogue-box-width: 73%;
   --dialogue-box-height: 300px;
+  /*
+    테두리 안쪽에서 글자까지의 거리 (8/10).
+
+    8/9까지 `12px 20px` 였는데 본문이 38px(`--ui-font-xl`)이라 **글자 높이의
+    3분의 1도 안 되는 여백**이었고 글자가 종이 가장자리에 붙어 보였다.
+
+    테두리 쪽 문제가 아니다 — `panel_border.png` 를 재 보니 테두리 그림이 39px
+    이고 `border-image-slice: 44` 가 그것을 정확히 잡는다. 종이가 시작하는
+    자리는 맞았고 그 뒤 여백만 좁았다.
+
+    글자 크기의 0.6~1배로 잡는다. 좌우를 더 주는 것은 한 줄이 길어서다.
+  */
+  --dialogue-panel-pad-y: 24px;
+  --dialogue-panel-pad-x: 40px;
   /* 말풍선 중심. 가운데가 아니라 플레이어 쪽이다 — 꼬리가 그쪽을 향한다 */
   --dialogue-balloon-center-x: 61%;
   /*
@@ -3029,7 +3043,7 @@
   width: var(--dialogue-box-width);
   min-height: var(--dialogue-box-height);
   box-sizing: border-box;
-  padding: var(--ui-gap-lg) var(--ui-gap-lg) var(--ui-gap-lg);
+  padding: var(--dialogue-panel-pad-y) var(--dialogue-panel-pad-x);
   display: flex;
   flex-direction: column;
   gap: var(--ui-gap-sm);
@@ -3048,7 +3062,7 @@
   background-image: var(--dialogue-panel-texture);
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  padding: var(--ui-gap-md) var(--ui-gap-lg);
+  padding: var(--dialogue-panel-pad-y) var(--dialogue-panel-pad-x);
   color: var(--dialogue-text-on-panel);
 }
 
