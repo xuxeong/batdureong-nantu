@@ -94,6 +94,7 @@ import type { TutorialProgress } from './systems/tutorial.ts'
 import { createRecoveryMenu } from './ui/recovery-menu.ts'
 import type { RecoveryMenu } from './ui/recovery-menu.ts'
 import { createDayStart, selectRaidNotice } from './ui/day-start.ts'
+import { createShutterTransition } from './ui/shutter.ts'
 import type { DayStartJournal, DayStartScreen } from './ui/day-start.ts'
 import { createRunFailed } from './ui/run-failed.ts'
 import type { RunFailedScreen } from './ui/run-failed.ts'
@@ -1667,6 +1668,9 @@ function buildEncounterResultView(
 
   return {
     residentName: residentNames.get(residentId) ?? residentId,
+    // 대화 화면과 같은 그림이다 (A6 목업 — 카드 왼쪽). portrait 이 없으면
+    // field_sprite 로 떨어지는 것까지 residentPortraits 가 이미 하고 있다.
+    portraitAsset: residentPortraits.get(residentId),
     outcome,
     lifeState: resident.lifeState,
     allegiance: resident.allegiance,
@@ -4313,10 +4317,54 @@ bus.on('field.entered', ({ mode }) => {
 bus.on('screen.changed', beginDayStart)
 bus.on('screen.changed', beginNightResult)
 
+/*
+  ── 미닫이문을 거쳐 들어가는 화면 (8/9) ────────────────────
+
+  일차 시작과 조우 결과는 문이 닫혔다 열리면서 등장한다. **화면을 바꾸는 것을
+  문이 닫힌 뒤로 미룬다** — 먼저 바꾸면 바뀌는 순간이 그대로 보이고, 문은 이미
+  바뀐 화면 위를 지나가는 장식이 된다.
+
+  나머지 화면은 지금처럼 즉시 바뀐다. 문을 모든 전환에 걸면 타이틀·이름 입력
+  같은 짧은 걸음까지 매번 0.8 초씩 늘어난다.
+*/
+/*
+  ── 하루의 전환 흐름 (8/9 확정) ────────────────────────────
+
+    일차 시작 ─(즉시)→ 재배 ─(문 닫힘·UI 등장)→ 정비
+      정비 ─(UI 퇴장·창 올라옴)→ 밤 결과 ─(창 내려감·문 열림)→ 다음 일차
+      정비 ─(UI 퇴장·문 열림)→ 습격 ─(문 닫힘·카드 올라옴)→ 조우 결과
+      조우 결과 ─(카드 내려감·문 열림)→ 다음 일차
+
+  문이 움직이는 곳은 세 군데다.
+
+  · 조우 결과 진입 — `closeThen`: 습격 필드 위로 닫히고, 뒤 배경이 같은
+    창호지라 열지 않고 치운다. 카드는 화면 자신이 올린다.
+  · 일차 시작 진입 — `openOver`: 앞 화면(조우·밤 결과)의 배경이 이미 닫힌
+    창호지라 닫힌 채로 나타나 마을 풍경 위로 열린다.
+  · 습격 진입 — `openOver`: 정비 화면의 배경이 닫힌 문 그 자체라, 같은
+    자리에서 문이 열리며 밭이 드러난다.
+
+  정비 진입의 문 닫힘과 밤 결과 진입은 여기 없다 — 정비는 화면이 아니라
+  오버레이라 `screen.changed` 가 오지 않고, 문짝이 정비 화면 자신의 배경이라
+  등장 연출도 그 화면이 한다 (ui/maintenance-hub.ts). 밤 결과는 정비에서
+  오는데 문이 이미 닫혀 있어 움직일 것이 없다 — 창만 올라온다.
+*/
+const shutter = createShutterTransition(uiRoot)
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
-bus.on('screen.changed', syncScreens)
-bus.on('field.entered', syncScreens)
+bus.on('screen.changed', ({ screen }) => {
+  // 그림이 없거나 움직임을 꺼 뒀으면 그 자리에서 `syncScreens` 를 부르고
+  // 끝난다. 이미 연출 중이면 false 라 아래 즉시 경로로 떨어진다.
+  if (screen === 'day_start' && shutter.openOver(syncScreens)) return
+  if (screen === 'encounter_result' && shutter.closeThen(syncScreens)) return
+  syncScreens()
+})
+bus.on('field.entered', ({ mode }) => {
+  // 습격 진입만 문을 연다. 재배 진입은 일차 시작에서 오는 즉시 전환이다 (8/9).
+  if (mode === 'raid' && shutter.openOver(syncScreens)) return
+  syncScreens()
+})
 
 // 기록문이 늦게 도착하면 대기 표시를 실제 문장으로 바꾼다 (DEC-UI-023).
 // 화면은 그대로인데 내용만 바뀌는 경우라 위 두 신호로는 오지 않는다.

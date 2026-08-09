@@ -30,7 +30,9 @@ import type {
   ResidentAllegiance,
   ResidentLifeState,
 } from '../state/types.ts'
+import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
+import { applyClosedDoors } from './shutter.ts'
 import './layout.css'
 
 /** 지급되거나 소비된 자원 한 줄. 표시 이름은 승인 데이터에서 온다 */
@@ -50,6 +52,13 @@ export interface EncounterFearView {
 export interface EncounterResultView {
   /** residents.display_name */
   residentName: string
+  /**
+   * 주민 초상화 `asset.portrait.*` (A6 목업 — 카드 왼쪽에 선다).
+   *
+   * 대화 화면과 같은 그림이다. 없으면 칸을 만들지 않고 글이 왼쪽으로 넓어진다 —
+   * 빈 사각형은 "그림이 깨졌나" 로 읽힌다.
+   */
+  portraitAsset?: string | null
   outcome: FinalOutcome
   lifeState: ResidentLifeState
   allegiance: ResidentAllegiance
@@ -183,11 +192,31 @@ export function createEncounterResult(
   const root = el('div', 'encounter-result')
   root.hidden = true
 
+  // 배경은 닫힌 창호지다 (A6 목업). 그래서 앞의 미닫이문 전환이 문을 닫은 뒤
+  // 열지 않고 그냥 치운다 — 이 배경이 같은 그림으로 이어진다 (shutter.closeThen).
+  //
+  // 전용 그림(bg_encounter_result)이 오기 전까지는 문짝 두 장을 그대로 깐다 —
+  // 전환 층과 같은 파일이라 픽셀까지 이어진다 (applyClosedDoors 주석).
+  const backgroundUrl = assetCssUrl(UI_ASSET.bgEncounterResult)
+  if (backgroundUrl !== null) {
+    root.classList.add('encounter-result--has-art')
+    root.style.setProperty('--result-background', backgroundUrl)
+  } else if (applyClosedDoors(root)) {
+    root.classList.add('encounter-result--has-art')
+  }
+
   const panel = el('div', 'encounter-result__panel')
   // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
   applyHanjiPanel(panel)
 
-  // ── 머리: 주민 이름 + 해결 방식 ──────────────────
+  // ── 카드 두 칸 (A6 목업) ─────────────────────────
+  //
+  // 왼쪽이 주민 초상화, 오른쪽이 글 전부다. 초상화가 없으면 칸을 아예 만들지
+  // 않으므로 항상 두 칸인 것은 아니다 — 오른쪽 칸이 그때 카드 전체가 된다.
+  const portrait = el('div', 'encounter-result__portrait')
+  const column = el('div', 'encounter-result__column')
+
+  // ── 머리: 주민 이름 + 해결 방식 (같은 줄, 아래 밑줄) ──
   const header = el('div', 'encounter-result__header')
   const residentName = el('div', 'encounter-result__resident')
   const outcome = el('div', 'encounter-result__outcome')
@@ -199,11 +228,36 @@ export function createEncounterResult(
   // ── 나머지는 결과마다 있고 없고가 갈려 매번 다시 만든다 ──
   const body = el('div', 'encounter-result__body')
 
+  // 진행 버튼은 팻말 그림이 아니라 목업의 크림 상자다 (A6). 카드 안이라
+  // 나무 팻말이 서면 배경(정비 화면 버튼)과 층위가 섞여 보인다.
   const continueButton = el('button', 'encounter-result__continue', CONTINUE_LABEL)
   continueButton.type = 'button'
-  continueButton.addEventListener('click', () => handlers.onContinue())
 
-  panel.append(header, states, body, continueButton)
+  /**
+   * 확인을 누르면 카드가 먼저 내려가고 그다음 화면이 바뀐다 (8/9 플로우 —
+   * "카드가 내려가고 창호지가 열리면서 새로운 일차").
+   *
+   * 내려가는 동안 `onContinue` 를 잡아 둔다 — 바로 부르면 화면이 즉시 바뀌어
+   * 퇴장이 보이지 않는다. 아트가 없거나 움직임을 꺼 뒀으면 잡지 않는다.
+   */
+  const EXIT_MS = 300
+  let leaving = false
+  continueButton.addEventListener('click', () => {
+    if (leaving) return
+    const animated =
+      root.classList.contains('encounter-result--has-art') &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!animated) {
+      handlers.onContinue()
+      return
+    }
+    leaving = true
+    root.classList.add('encounter-result--leaving')
+    window.setTimeout(() => handlers.onContinue(), EXIT_MS)
+  })
+
+  column.append(header, states, body, continueButton)
+  panel.append(portrait, column)
   root.appendChild(panel)
   container.appendChild(root)
 
@@ -221,6 +275,11 @@ export function createEncounterResult(
     render(view) {
       residentName.textContent = view.residentName
       outcome.textContent = OUTCOME_LABEL[view.outcome]
+
+      // 그림이 없으면 칸을 통째로 숨긴다 — 대화 화면 초상화와 같은 처리다
+      const portraitUrl = assetCssUrl(view.portraitAsset)
+      portrait.hidden = portraitUrl === null
+      if (portraitUrl !== null) portrait.style.setProperty('--portrait-image', portraitUrl)
 
       states.replaceChildren(
         stateChip('생존', LIFE_LABEL[view.lifeState]),
@@ -294,6 +353,11 @@ export function createEncounterResult(
     },
 
     show() {
+      // 지난번 퇴장 상태가 남아 있으면 카드가 내려간 채로 뜬다
+      if (root.hidden) {
+        leaving = false
+        root.classList.remove('encounter-result--leaving')
+      }
       root.hidden = false
     },
 

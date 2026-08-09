@@ -183,13 +183,22 @@ export function createMaintenanceHub(
 
   // 배경은 닫힌 미닫이문 두 짝이다 (A3 목업, 아트 디렉션 12.5.5). 둘 다 있어야
   // 화면이 채워지므로 한 장만 와 있으면 아트 없는 쪽으로 떨어진다.
+  //
+  // **CSS 배경이 아니라 요소 두 개다** (8/9). 정비에 들어올 때 이 문짝이
+  // 재배 필드 위로 닫히는 연출을 해야 하는데, 배경은 움직일 수 없다. 화면이
+  // 뜰 때마다 문이 닫히고(260ms) 그다음 UI 가 양옆에서 미끄러져 들어온다 —
+  // 붙였다 떼는 것이 아니라 CSS 애니메이션이라 다시 뜰 때마다 저절로 돈다.
   const shutterLeft = assetCssUrl(UI_ASSET.shutterLeft)
   const shutterRight = assetCssUrl(UI_ASSET.shutterRight)
   const hasArt = shutterLeft !== null && shutterRight !== null
   if (hasArt) {
     root.classList.add('hub--has-art')
-    root.style.setProperty('--hub-shutter-left', shutterLeft)
-    root.style.setProperty('--hub-shutter-right', shutterRight)
+    const doorLeft = el('div', 'hub__door hub__door--left')
+    doorLeft.style.setProperty('--shutter-image', shutterLeft)
+    const doorRight = el('div', 'hub__door hub__door--right')
+    doorRight.style.setProperty('--shutter-image', shutterRight)
+    // 다른 자식보다 먼저 넣는다 — 문이 모든 UI 의 뒤에 깔려야 한다
+    root.append(doorLeft, doorRight)
   }
 
   /** 있으면 CSS 변수로 걸어 준다. 없으면 `layout.css` 의 플레이스홀더가 남는다 */
@@ -287,7 +296,29 @@ export function createMaintenanceHub(
   const finish = el('button', 'hub__finish')
   finish.type = 'button'
   paint(finish, '--hub-button-image', UI_ASSET.buttonNormal)
-  finish.addEventListener('click', () => handlers.finish())
+
+  /**
+   * 종료를 누르면 UI 가 먼저 미끄러져 나가고 그다음 진행한다 (8/9 플로우 —
+   * "정비 UI들이 슬라이딩으로 퇴장하고" 문이 열리거나 밤 결과가 올라온다).
+   *
+   * 문짝은 남는다 — 습격이면 그 자리에서 문이 열리고(shutter.openOver),
+   * 조용한 밤이면 밤 결과의 창호지 배경이 같은 그림으로 이어진다.
+   */
+  const EXIT_MS = 280
+  let leaving = false
+  finish.addEventListener('click', () => {
+    if (leaving) return
+    const animated =
+      root.classList.contains('hub--has-art') &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!animated) {
+      handlers.finish()
+      return
+    }
+    leaving = true
+    root.classList.add('hub--leaving')
+    window.setTimeout(() => handlers.finish(), EXIT_MS)
+  })
 
   // ── 팝업 층 ─────────────────────────────────────
   const popupLayer = el('div', 'hub__popup-layer')
@@ -426,6 +457,12 @@ export function createMaintenanceHub(
     },
 
     show() {
+      // 숨김 → 표시로 바뀌는 순간에만 초기화한다. 렌더 루프가 매 프레임 부르므로
+      // 조건 없이 지우면 퇴장 애니메이션이 도는 중에 끊긴다.
+      if (root.hidden) {
+        leaving = false
+        root.classList.remove('hub--leaving')
+      }
       root.hidden = false
     },
 

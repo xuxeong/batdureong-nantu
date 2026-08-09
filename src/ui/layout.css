@@ -1327,13 +1327,115 @@
   글자를 진한 갈색으로 뒤집는다.
 */
 .hub--has-art {
-  background:
-    var(--hub-shutter-left) left center / 50% 100% no-repeat,
-    var(--hub-shutter-right) right center / 50% 100% no-repeat;
+  /* 배경이 아니라 .hub__door 요소 두 개다 — 화면이 뜰 때 문이 닫히는 연출을
+     해야 해서다 (8/9). 판 자체는 투명해 문이 닫히는 동안 밭이 비쳐 보인다 */
+  background: none;
   color: var(--hub-text-on-art);
   /* 격자를 버리고 자리를 하나씩 적는다 — 위 :root 의 실측 좌표 주석 참고 */
   display: block;
   padding: 0;
+  overflow: hidden;
+}
+
+/* ── 문짝 두 장 — 정비의 배경이자 입장 연출 (8/9) ──
+   화면이 뜰 때마다 양옆에서 닫힌다. 시간은 shutter.ts 의 CLOSE_MS 와 같다 */
+@keyframes hub-door-close-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes hub-door-close-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.hub__door {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--shutter-image) center / 100% 100% no-repeat;
+}
+
+.hub__door--left {
+  left: 0;
+  animation: hub-door-close-left 260ms cubic-bezier(0.3, 0.9, 0.25, 1) both;
+}
+
+.hub__door--right {
+  right: 0;
+  animation: hub-door-close-right 260ms cubic-bezier(0.3, 0.9, 0.25, 1) both;
+}
+
+/*
+  ── 정비 UI 의 입장·퇴장 (8/9) ─────────────────────────────
+
+  문이 닫힌 다음(260ms) 양옆에서 미끄러져 들어온다 — 보관함·예고 판은
+  왼쪽에서, 메뉴 탭·팝업·소지금·설정·종료 버튼은 오른쪽에서.
+
+  퇴장(.hub--leaving)은 반대 방향으로 나간다. 문짝은 남는다 — 습격이면 그
+  자리에서 문이 열리고, 조용한 밤이면 밤 결과의 창호지가 같은 그림으로
+  이어진다. 시간은 maintenance-hub.ts 의 EXIT_MS 와 같아야 한다.
+*/
+@keyframes hub-slide-from-left {
+  from { transform: translateX(-760px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes hub-slide-from-right {
+  from { transform: translateX(760px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.hub--has-art .hub__inventory,
+.hub--has-art .hub__raid-notice {
+  animation: hub-slide-from-left 380ms ease-out 280ms both;
+}
+
+.hub--has-art .hub__buttons,
+.hub--has-art .hub__popup-layer,
+.hub--has-art .hub__top-right,
+.hub--has-art .hub__finish {
+  animation: hub-slide-from-right 380ms ease-out 280ms both;
+}
+
+@keyframes hub-slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-760px); opacity: 0; }
+}
+
+@keyframes hub-slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(760px); opacity: 0; }
+}
+
+.hub--leaving .hub__inventory,
+.hub--leaving .hub__raid-notice {
+  animation: hub-slide-out-left 280ms ease-in both;
+}
+
+.hub--leaving .hub__buttons,
+.hub--leaving .hub__popup-layer,
+.hub--leaving .hub__top-right,
+.hub--leaving .hub__finish {
+  animation: hub-slide-out-right 280ms ease-in both;
+}
+
+/* 퇴장 중에 문이 다시 닫히는 것처럼 보이면 안 된다 — 입장 애니메이션을 끈다 */
+.hub--leaving .hub__door {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hub__door,
+  .hub--has-art .hub__inventory,
+  .hub--has-art .hub__raid-notice,
+  .hub--has-art .hub__buttons,
+  .hub--has-art .hub__popup-layer,
+  .hub--has-art .hub__top-right,
+  .hub--has-art .hub__finish {
+    animation: none;
+  }
 }
 
 /*
@@ -4202,4 +4304,520 @@
   padding: var(--ui-gap-sm) var(--ui-gap-md);
   font-size: var(--ui-font-md);
   color: var(--ui-text-dim);
+}
+
+/* ─────────────────────────────────────────────────
+   미닫이문 전환 (ui/shutter.ts, 아트 디렉션 12.5.5 B5)
+
+   문짝 두 장이 양옆에서 들어와 가운데서 만나고, 잠시 멈췄다가 다시 물러난다.
+   그 멈춘 사이에 뒤 화면이 바뀐다 — 바뀌는 순간이 보이지 않는 유일한 지점이다.
+
+   **모든 화면 위에 뜬다.** 전환 중에는 아래 화면이 무엇이든 문짝이 덮어야
+   하므로 `z-index` 가 UI 층 중 가장 높다. 입력은 받지 않는다 — 문이 닫힌
+   0.4 초 사이에 누른 클릭이 어느 화면으로 갈지 정해진 바가 없다.
+
+   그림은 정비 화면 배경과 같은 파일이다 (각 960×1080).
+   ───────────────────────────────────────────────── */
+
+.shutter[hidden] {
+  display: none;
+}
+
+.shutter {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.shutter__panel {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--shutter-image) center / 100% 100% no-repeat;
+  /* 열린 자리가 기본이다. 화면 밖에 서 있다가 `--closed` 로 들어온다 */
+  transition: transform 420ms ease-out;
+}
+
+.shutter__panel--left {
+  left: 0;
+  transform: translateX(-100%);
+}
+
+.shutter__panel--right {
+  right: 0;
+  transform: translateX(100%);
+}
+
+/*
+  닫힌 자리. 닫힘이 열림보다 빠르고 끝에서 살짝 멈춰 "탁" 하고 붙는다 —
+  `cubic-bezier` 의 끝 기울기가 그 느낌을 만든다 (8/9 요청).
+
+  시간은 `ui/shutter.ts` 의 CLOSE_MS·OPEN_MS 와 같아야 한다. 그쪽이 이 시간에
+  맞춰 화면을 바꾸므로 한쪽만 고치면 바뀌는 순간이 문틈으로 보인다.
+*/
+.shutter--closed .shutter__panel {
+  transform: translateX(0);
+  transition-duration: 260ms;
+  transition-timing-function: cubic-bezier(0.3, 0.9, 0.25, 1);
+}
+
+/*
+  전환 없이 자리만 잡는다.
+
+  `openOver` 가 문을 **닫힌 채로** 등장시킬 때 쓴다 — 앞 화면의 배경이 이미
+  닫힌 창호지라 닫히는 움직임을 또 보여주면 이미 닫힌 그림 위에서 헛돈다.
+*/
+.shutter--instant .shutter__panel {
+  transition: none;
+}
+
+/*
+  닫힌 문 두 짝을 배경으로 깐다 (ui/shutter.ts 의 applyClosedDoors).
+
+  조우·밤 결과의 배경이다 — 창호지는 문이 열리기 전까지 계속 유지된다 (8/9).
+  전환 층·정비 문짝과 같은 파일이라 화면이 바뀌어도 픽셀까지 이어진다.
+
+  이름을 두 번 적어 명시도를 올린다 — 각 화면의 플레이스홀더 배경
+  (`--screen-backdrop`)과 `--has-art` 배경을 이겨야 한다.
+*/
+.paper-doors.paper-doors {
+  background:
+    var(--paper-doors-left) left center / 50% 100% no-repeat,
+    var(--paper-doors-right) right center / 50% 100% no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 코드에서도 걸러내지만 여기서도 막아 둔다 */
+  .shutter__panel {
+    transition: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   일차 시작 — A5 목업 배치 (전성민 8/9)
+
+   배경 1919×1080 한 장 위에 세 덩어리가 얹힌다. 아래 좌표는 목업에서 잰
+   실측값이고, 무대가 1920 고정이라 픽셀이 그대로 맞는다 (DEC-ART-004).
+
+     일차·문구   왼쪽 위 (105, 90)
+     족자        오른쪽  (1120, -20) · 830×1106
+     시작하기    오른쪽 아래
+
+   **오른쪽 나무 기둥은 배경 그림의 일부다.** 족자만 그 위에 건다. 1일차에는
+   족자를 아예 붙이지 않아 기둥만 남는다 (day-start.ts).
+
+   글은 문이 닫혔다 열린 뒤 아래에서 위로 올라온다 (8/9 요청). 셔터 연출은
+   `ui/shutter.ts` 가 맡고 여기서는 올라오는 부분만 한다.
+   ───────────────────────────────────────────────── */
+
+.day-start--has-art {
+  display: block;
+  background: var(--day-start-background) center / cover no-repeat;
+  /* 종이 위라 크림색 글자가 묻는다. 정비 화면과 같은 진한 갈색 */
+  color: var(--hub-text-on-art);
+}
+
+.day-start--has-art .day-start__panel {
+  position: absolute;
+  left: 105px;
+  top: 90px;
+  width: 620px;
+  padding: 0;
+  align-items: flex-start;
+  text-align: left;
+  gap: var(--ui-gap-md);
+}
+
+/* 일차 아래 가로줄은 목업에 있는 것이라 코드가 긋는다 (그림이 아니다) */
+.day-start--has-art .day-start__day {
+  font-size: 60px;
+  font-weight: 700;
+  padding-bottom: var(--ui-gap-md);
+  border-bottom: 2px solid rgba(58, 43, 28, 0.65);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.day-start--has-art .day-start__notice {
+  font-size: 28px;
+  line-height: 1.9;
+}
+
+/*
+  아트가 붙으면 세 종류의 색 구분을 쓰지 않는다.
+
+  `DEC-RUN-011` 이 요구한 시각 구분은 **문구 자체가 이미 하고 있고**, 종이
+  배경 위에서 붉은 글자는 손으로 쓴 일지의 결을 깬다. 재배 HUD 와 정비 화면의
+  예고 판은 그림으로 구분하므로 확정문의 요구는 그쪽에서 채워진다.
+*/
+.day-start--has-art .day-start__notice--none,
+.day-start--has-art .day-start__notice--raid,
+.day-start--has-art .day-start__notice--final_raid {
+  color: var(--hub-text-on-art);
+}
+
+/* ── 농장 일지 족자 830×1106 ────────────────────
+   위쪽이 화면 밖으로 나가 있다 — 목업에서 종이가 위에서 내려와 걸린 모습이라
+   윗단이 잘려 있다. 아래쪽 말린 축은 그림 안에 있다 */
+.day-start__scroll {
+  display: none;
+}
+
+.day-start--has-art .day-start__scroll {
+  display: block;
+  position: absolute;
+  left: 1120px;
+  top: -20px;
+  width: 830px;
+  height: 1106px;
+  background: var(--day-start-scroll) top center / contain no-repeat;
+  /* 글은 종이의 위쪽 3분의 1에 앉는다. 아래는 빈 종이와 말린 축이다 */
+  padding: 150px 120px 0 90px;
+  box-sizing: border-box;
+}
+
+.day-start__journal-title {
+  font-size: 30px;
+  font-weight: 700;
+  padding-bottom: var(--ui-gap-sm);
+  border-bottom: 2px solid rgba(58, 43, 28, 0.55);
+}
+
+.day-start--has-art .day-start__journal {
+  margin: var(--ui-gap-lg) 0 0;
+  font-size: 26px;
+  line-height: 1.85;
+  color: var(--hub-text-on-art);
+}
+
+/* ── 시작하기 팻말 ────────────────────────────── */
+.day-start--has-art .day-start__continue {
+  position: absolute;
+  left: 1500px;
+  top: 925px;
+  width: 340px;
+  height: 84px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--day-start-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-size: 28px;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+}
+
+.day-start--has-art .day-start__continue:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.day-start--has-art .day-start__continue:disabled {
+  filter: grayscale(0.4);
+  opacity: 0.65;
+}
+
+/*
+  ── 아래에서 위로 올라오는 등장 (8/9 요청) ──────────────────
+
+  문이 열리는 동안 세 덩어리가 차례로 올라온다. 순서를 조금씩 어긋나게 해
+  한꺼번에 솟는 것보다 차분하게 만든다 — 일차 → 족자 → 버튼이다.
+
+  `animation` 이라 화면이 뜰 때마다 다시 돈다. `hidden` 이 풀리는 순간이
+  곧 시작이므로 코드가 따로 켜 주지 않아도 된다.
+*/
+@keyframes day-start-rise {
+  from {
+    opacity: 0;
+    transform: translateY(46px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.day-start--has-art .day-start__panel,
+.day-start--has-art .day-start__scroll,
+.day-start--has-art .day-start__continue {
+  animation: day-start-rise 520ms ease-out both;
+}
+
+/* 문이 다 열린 뒤에 시작한다 — shutter.ts 의 CLOSE_MS + HOLD_MS 만큼 늦춘다 */
+.day-start--has-art .day-start__panel {
+  animation-delay: 400ms;
+}
+
+.day-start--has-art .day-start__scroll {
+  animation-delay: 520ms;
+}
+
+.day-start--has-art .day-start__continue {
+  animation-delay: 640ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-start--has-art .day-start__panel,
+  .day-start--has-art .day-start__scroll,
+  .day-start--has-art .day-start__continue {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   조우 결과 — 배경과 등장 (A6 목업, 8/9)
+
+   **배경이 닫힌 창호지다.** 그래서 앞의 미닫이문 전환이 문을 열지 않고 닫힌
+   채로 흐려서 치운다 (`ui/shutter.ts` 의 `fade`) — 같은 창호지 위로 문이
+   갈라지면 드러나는 것 없이 이음매만 지나간다.
+
+   판은 문이 사라지는 동안 아래에서 올라온다. 일차 시작과 같은 움직임이라
+   두 화면이 한 연출로 읽힌다 (8/9 요청).
+   ───────────────────────────────────────────────── */
+
+.encounter-result--has-art {
+  background: var(--result-background) center / cover no-repeat;
+}
+
+@keyframes result-rise {
+  from {
+    opacity: 0;
+    transform: translateY(52px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.encounter-result--has-art .encounter-result__panel {
+  /* 문이 다 닫힌 뒤에 시작한다 — shutter.ts 의 CLOSE_MS + HOLD_MS */
+  animation: result-rise 520ms ease-out 400ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encounter-result--has-art .encounter-result__panel {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   조우 결과 — A6 카드 배치 (8/9)
+
+   한지 카드 한 장이 가운데 뜬다 (목업 실측 약 980×750). 왼쪽이 주민 초상화,
+   오른쪽이 글 전부다 — 이름·해결 방식이 한 줄에 서고 밑줄, 그 아래 상태 칩
+   셋, 구획들, 오른쪽 아래 확인이다.
+
+   초상화가 없으면 칸이 사라지고 오른쪽 칸이 카드 전체가 된다 (encounter-result.ts).
+   ───────────────────────────────────────────────── */
+
+/* 가로로 긴 카드다 (8/9). 왼쪽 초상화, 오른쪽 정보 */
+.encounter-result--has-art .encounter-result__panel {
+  width: 1240px;
+  max-width: calc(100% - 80px);
+  height: 620px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  gap: 36px;
+  padding: 40px 52px;
+  color: var(--hub-text-on-art);
+}
+
+/* ── 왼쪽: 초상화 ───────────────────────────────
+   대화 화면과 같은 세로 전신 그림이라 아래 기준으로 세운다.
+   폭은 카드의 3분의 1을 넘지 않게 — 넓은 만복도 잘리지 않는 값이다 */
+.encounter-result__portrait[hidden] {
+  display: none;
+}
+
+.encounter-result__portrait {
+  flex: 0 0 280px;
+  background: var(--portrait-image) bottom center / auto 100% no-repeat;
+}
+
+.encounter-result__column {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-gap-md);
+  overflow-y: auto;
+}
+
+/* ── 머리: 이름 크게 + 해결 방식, 아래 밑줄 (A6) ── */
+.encounter-result--has-art .encounter-result__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-lg);
+  padding-bottom: var(--ui-gap-md);
+  border-bottom: 2px solid rgba(58, 43, 28, 0.45);
+}
+
+.encounter-result--has-art .encounter-result__resident {
+  font-size: 44px;
+  font-weight: 700;
+}
+
+/*
+  해결 방식만 주황이다 (A6 목업).
+
+  이 화면에서 유일하게 "이번에 무슨 일이 있었나" 를 말하는 값이라 색이 하나
+  쓰인다면 여기다. 4.2절이 막는 것은 필드의 적대 표시 색이고 결과 화면은
+  그 경쟁 밖이다.
+*/
+.encounter-result--has-art .encounter-result__outcome {
+  font-size: 26px;
+  font-weight: 700;
+  color: #c46a1f;
+}
+
+/* ── 상태 칩 셋 — 테두리 상자 (A6) ─────────────── */
+.encounter-result--has-art .encounter-result__states {
+  display: flex;
+  gap: var(--ui-gap-md);
+}
+
+.encounter-result--has-art .encounter-result__chip {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ui-gap-sm);
+  padding: 6px 16px;
+  border: 2px solid rgba(58, 43, 28, 0.5);
+  border-radius: 6px;
+  background: rgba(255, 250, 240, 0.55);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.encounter-result--has-art .encounter-result__chip-label {
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(58, 43, 28, 0.75);
+}
+
+/* ── 구획 제목 밑줄 (A6 의 "알게 된 것"·"이후 습격") ── */
+.encounter-result--has-art .encounter-result__section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(58, 43, 28, 0.4);
+  width: fit-content;
+  padding-right: 24px;
+}
+
+.encounter-result--has-art .encounter-result__fact,
+.encounter-result--has-art .encounter-result__note,
+.encounter-result--has-art .encounter-result__resource {
+  font-size: 20px;
+  line-height: 1.75;
+  color: var(--hub-text-on-art);
+}
+
+/* ── 확인 — 오른쪽 아래 크림 상자 (A6) ─────────── */
+.encounter-result--has-art .encounter-result__continue {
+  margin-top: auto;
+  align-self: flex-end;
+  min-width: 240px;
+  padding: 14px 32px;
+  border: 2px solid rgba(58, 43, 28, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 248, 236, 0.85);
+  color: var(--hub-text-on-art);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.encounter-result--has-art .encounter-result__continue:hover {
+  background: rgba(255, 242, 220, 1);
+  border-color: rgba(58, 43, 28, 0.8);
+}
+
+/*
+  카드 퇴장 — 위에서 아래로 (8/9 플로우).
+
+  확인을 누르면 카드가 내려가고, 그다음 창호지 문이 열리며 다음 일차다.
+  시간은 encounter-result.ts 의 EXIT_MS 와 같아야 한다 — 그쪽이 이 시간이
+  지난 뒤 화면을 넘긴다.
+*/
+@keyframes result-sink {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(72px);
+  }
+}
+
+.encounter-result--leaving .encounter-result__panel {
+  animation: result-sink 300ms ease-in both;
+}
+
+/* ─────────────────────────────────────────────────
+   밤 결과 — A7 (8/9)
+
+   닫힌 창호지 위에 크림 카드 한 장이다. 정비 UI 가 퇴장한 뒤 아래에서
+   올라오고, 확인을 누르면 내려간 다음 문이 열리며 다음 일차다.
+   문은 움직이지 않는다 — 정비의 문짝과 이 배경이 같은 그림이다.
+   ───────────────────────────────────────────────── */
+
+.night-result--has-art {
+  background: var(--result-background) center / cover no-repeat;
+}
+
+.night-result--has-art .night-result__panel {
+  width: 980px;
+  max-width: calc(100% - 80px);
+  min-height: 380px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-gap-lg);
+  padding: 56px 64px;
+  color: var(--hub-text-on-art);
+  animation: result-rise 520ms ease-out 400ms both;
+}
+
+.night-result--has-art .night-result__text {
+  font-size: 30px;
+  line-height: 2;
+  text-align: center;
+  color: var(--hub-text-on-art);
+}
+
+/* 확인 — 조우 결과와 같은 크림 상자 (A7) */
+.night-result--has-art .night-result__continue {
+  min-width: 220px;
+  padding: 12px 32px;
+  border: 2px solid rgba(58, 43, 28, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 248, 236, 0.85);
+  color: var(--hub-text-on-art);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.night-result--has-art .night-result__continue:hover {
+  background: rgba(255, 242, 220, 1);
+  border-color: rgba(58, 43, 28, 0.8);
+}
+
+.night-result--leaving .night-result__panel {
+  animation: result-sink 300ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encounter-result--has-art .encounter-result__panel,
+  .encounter-result--leaving .encounter-result__panel,
+  .night-result--has-art .night-result__panel,
+  .night-result--leaving .night-result__panel {
+    animation: none;
+  }
 }
