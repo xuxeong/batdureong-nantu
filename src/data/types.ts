@@ -206,6 +206,14 @@ export type AssetRole =
   | 'crop_ready'
   | 'icon'
   | 'portrait'
+  /**
+   * 전신 초상화 (2026-08-10, 전성민 요청).
+   *
+   * **`portrait` 과 나란히 있어야 한다.** 연결 CSV 의 고유키가
+   * `(content_id, asset_role)` 이라 한 콘텐츠에 같은 역할을 둘 붙일 수 없다 —
+   * 얼굴과 전신을 같은 `portrait` 으로 두면 둘 중 하나만 남는다.
+   */
+  | 'portrait_fullbody'
   | 'projectile'
   | 'effect'
   | 'background'
