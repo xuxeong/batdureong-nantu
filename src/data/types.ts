@@ -725,6 +725,14 @@ export interface Ending extends CommonEntry {
   is_global_fallback: boolean
 
   conditions?: EndingCondition[]
+
+  /**
+   * 엔딩에 붙은 논리 에셋 (`cutscene`).
+   *
+   * `content_assets.csv` 에 행이 있는 엔딩만 온다. 없으면 속성 자체가 없고
+   * 화면이 전역 폴백 컷신을 쓴다 — 여기에 기본값을 만들지 않는다.
+   */
+  assets?: ContentAssets
 }
 
 // ─────────────────────────────────────────────────────────────

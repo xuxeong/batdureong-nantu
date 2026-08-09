@@ -4448,3 +4448,19 @@ DEC 를 그렇게 읽는다.
 글자 자리가 달라진다.
 
 **막힌 것** — 없다.
+
+## 2026-08-10 엔딩 컷신 인계 — 한 줄이 아니라 두 줄이었다
+
+**한 일** — 김민주가 인계한 `cutsceneAsset: ending.assets?.cutscene` 을
+`main.ts` 엔딩 뷰 조립에 넣었다. `main.ts` 가 A 구획이라 그쪽에서 못 넣은 건이다.
+
+**왜 이렇게 했나 / AI가 잘못한 것** — 인계 메모대로 한 줄만 넣었더니
+`Property 'assets' does not exist on type 'Ending'` 로 컴파일이 깨졌다.
+**`Ending` 타입에 `assets` 필드가 아예 없었다.** 다른 콘텐츠(maps·crops·wildlife)
+는 다 갖고 있는데 엔딩만 빠져 있었고, 인계한 쪽은 `src/data/types.ts` 를 안
+건드리니 알 수 없는 상태였다.
+
+한 줄이면 되는 줄 알고 확인 없이 커밋했으면 빌드가 깨진 채로 올라갔을 것이다.
+
+**막힌 것** — 없다. `content_assets.csv` 에 cutscene 행이 들어오면 바로 뜬다.
+지금은 행이 0개라 전역 폴백 컷신으로 동작한다.

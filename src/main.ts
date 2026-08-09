@@ -3195,6 +3195,13 @@ function syncScreens(): void {
         // 승인 문구의 {player_name} 을 입력받은 이름으로 채운다. 조사도 같이
         // 고른다 — 데이터에는 읽기 좋은 한 형태만 적혀 있다 (ui/korean.ts).
         summary: fillPlayerName(ending.ending_summary, run?.playerName ?? ''),
+        /*
+          엔딩별 컷신 (김민주 인계, 8/10).
+
+          `content_assets.csv` 에 붙은 것만 온다. 안 붙어 있으면 `undefined` 이고
+          화면이 전역 폴백 컷신을 쓴다 — 여기서 기본값을 만들지 않는다.
+        */
+        cutsceneAsset: ending.assets?.cutscene,
         // 폴백인지 아닌지는 넘기지 않는다 — 구분하지 않는 것이 규칙이다 (DEC-UI-023)
         record: endingRecordPending
           ? { state: 'pending' }
