@@ -458,7 +458,9 @@ body {
   --hud-card-bar-x: 200px;
   --hud-card-bar-y: 93px;
   --hud-card-bar-w: 272px;
-  --hud-card-bar-h: 47px;
+  /* 47 → 38 (8/10 담당자) — 카드 아래로 삐져나온 느낌이었다. 위 모서리는
+     두고 아래만 올라온다 (y 는 그대로) */
+  --hud-card-bar-h: 38px;
   /* 체력 수치 칸. 8/10 에 카드 그림의 숫자 홈에 맞춰 `482` 에서 6px 옮겼다 */
   --hud-card-num-x: 488px;
   --hud-card-num-w: 55px;

@@ -20,6 +20,7 @@
 
 import type { Mixer } from '../audio/mixer.ts'
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
+import { applyHanjiPanel } from './panel.ts'
 import { createVolumeRows, refreshVolumeRows } from './volume-panel.ts'
 import './layout.css'
 
@@ -62,8 +63,14 @@ function el<K extends keyof HTMLElementTagNameMap>(
  */
 const GAME_TITLE = '밭두렁난투'
 const START_LABEL = '게임 시작'
-/** 목업의 `게임 종료` 팻말 자리를 대신 쓴다 (DEC-UI-032) */
-const SETTINGS_LABEL = '설정'
+/**
+ * 목업의 `게임 종료` 팻말 자리를 대신 쓴다 (DEC-UI-032).
+ *
+ * `설정` 이 아니라 `음량 설정` 인 이유 (8/10) — 이 팻말이 여는 것은 음량뿐이라
+ * (확정문이 "음량 조절 항목만 연다") 팻말이 그 사실을 미리 말하는 편이 낫다.
+ * 판 안의 제목은 뺐다 — 팻말과 같은 말을 두 번 하게 된다.
+ */
+const SETTINGS_LABEL = '음량 설정'
 
 /**
  * 팻말이 흔들리는 시간. `layout.css` 의 `title-sign-shake` 와 같은 값이어야 한다.
@@ -100,7 +107,10 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
   const mixer = handlers.mixer
   if (mixer !== undefined) {
     const rows = createVolumeRows(mixer)
-    volumePanel.append(el('div', 'title__volume-title', '음량 설정'), rows)
+    // 제목 줄이 없다 — 팻말이 이미 `음량 설정` 이다 (8/10).
+    volumePanel.append(rows)
+    // 일시정지 창과 같은 한지 판 (8/10 — 어두운 판이 배경 위에서 튀었다)
+    applyHanjiPanel(volumePanel)
 
     settingsButton.addEventListener('click', () => {
       volumePanel.hidden = !volumePanel.hidden

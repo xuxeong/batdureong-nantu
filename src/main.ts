@@ -3144,8 +3144,18 @@ function syncScreens(): void {
   hud.setVisible(scenes.currentFieldMode() !== null)
 
   // 런 시작 세 화면. 표시 외에 할 일이 없어 한 줄씩이다.
-  if (screen === 'title') titleScreen.show()
-  else titleScreen.hide()
+  if (screen === 'title') {
+    titleScreen.show()
+    // 튜토리얼 도중 일시정지 → 타이틀로 돌아오면 안내와 건너뛰기가 화면에
+    // 남아 있었다 (8/10 버그). 튜토리얼은 화면이 아니라 필드에 붙은 DOM 이라
+    // (scenes/manager.ts) 화면 전환이 그를 치우지 않는다 — 끝내는 경로가
+    // finishTutorial() 하나뿐이었는데 타이틀 복귀는 그 길을 안 지난다.
+    // 진행 상태도 버린다. 다음 게임 시작이 처음부터 새로 만든다.
+    tutorial = null
+    tutorialScreen.hide()
+  } else {
+    titleScreen.hide()
+  }
 
   if (screen === 'name_input') nameInputScreen.show()
   else nameInputScreen.hide()
