@@ -9,17 +9,17 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 452개 · 2026-07-31 ~ 2026-08-10
+커밋 459개 · 2026-07-31 ~ 2026-08-10
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 221 | Feat 66 · Fix 60 · Docs 51 · Chore 20 · (태그 없음) 18 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 222 | Feat 66 · Fix 60 · Docs 51 · Chore 20 · (태그 없음) 19 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| ming9 | 105 | Feat 26 · Fix 25 · Data 22 · (태그 없음) 16 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 102 | Feat 25 · Fix 24 · Data 22 · (태그 없음) 15 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
-| github-actions[bot] | 20 | Docs 20 | docs/progress |
-| 전성민 | 4 | Docs 2 · Art 1 · (태그 없음) 1 | assets, docs/progress, docs/submission |
+| github-actions[bot] | 21 | Docs 21 | docs/progress |
+| 전성민 | 6 | Art 2 · Docs 2 · (태그 없음) 2 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
 
@@ -83,6 +83,13 @@
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `3e38f36`
 - `[Docs]` 제출 링크에 플레이 빌드 URL 기재 — SUJEONG CHOI · `66bf95a`
 - [Merge] develop → main — 엔딩 기록문 위치 보정, 제출 링크 기재 — SUJEONG CHOI · `ba62043`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `cd57b67`
+- `[Art]` 이장 전신 초상화(village_head) 수정 — 전성민 · `e792fa8`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — 전성민 · `eda740d`
+- `[Feat]` 조준 호의 정면에 초록 점 — 투척 방향 표시 — ming9 · `16be555`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `47d5476`
+- `[Fix]` 조준 표식을 초록 점에서 호 밖 흐린 붉은 세모로 — ming9 · `514b109`
+- [Merge] develop → main — 조준 표식과 이장 전신 초상화 — SUJEONG CHOI · `4f6b763`
 
 ### 2026-08-09
 
