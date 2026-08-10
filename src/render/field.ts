@@ -402,6 +402,7 @@ export function createFieldRenderer(
   }
   const aimOutline = cssColor('--field-aim-outline', '#2a1c16')
   const aimLine = cssColor('--field-aim-line', '#f2ead1')
+  const aimPointer = cssColor('--field-aim-pointer', '#d98873')
 
   /**
    * 캔버스 백킹 해상도를 **실제로 화면을 덮는 픽셀 수**에 맞춘다.
@@ -694,6 +695,42 @@ export function createFieldRenderer(
     }
     ctx.globalAlpha = 1
     ctx.lineCap = 'butt'
+
+    /*
+      호 살짝 밖의 세모 (8/10 담당자) — 뾰족한 쪽이 투척이 날아가는 방향
+      (조준 방향 그대로, systems/combat.ts 의 fireProjectile).
+
+      호가 반원이라 **어디가 가운데인지 안 읽힌다** — 진하기 기울임만으로는
+      부족했다. 처음엔 호 위의 초록 점이었는데 너무 튀어서(담당자) 호 밖으로
+      빼고 세모로 바꿨다 — 점은 위치만 말하는데 세모는 방향까지 말한다.
+
+      색은 layout.css 의 --field-aim-pointer. 흐린 붉은색이라 붉은 계열
+      금지(아트 디렉션 4.2)와 긴장이 있다 — 담당자 직접 지시고, 익은 고추의
+      진홍과 갈리도록 채도를 뺐다. 어두운 테두리가 없으면 밝은 흙에서 묻힌다.
+    */
+    const AIM_POINTER_GAP = 10
+    const AIM_POINTER_LENGTH = 14
+    const AIM_POINTER_HALF_WIDTH = 7
+    const baseDist = aimRadius + AIM_POINTER_GAP
+    const cos = Math.cos(view.aimAngle)
+    const sin = Math.sin(view.aimAngle)
+    // 밑변의 가운데에서 조준 방향으로 뾰족해진다. 밑변은 조준에 수직.
+    const baseX = screen.x + cos * baseDist
+    const baseY = screen.y + sin * baseDist
+    const tipX = screen.x + cos * (baseDist + AIM_POINTER_LENGTH)
+    const tipY = screen.y + sin * (baseDist + AIM_POINTER_LENGTH)
+    ctx.beginPath()
+    ctx.moveTo(tipX, tipY)
+    ctx.lineTo(baseX - sin * AIM_POINTER_HALF_WIDTH, baseY + cos * AIM_POINTER_HALF_WIDTH)
+    ctx.lineTo(baseX + sin * AIM_POINTER_HALF_WIDTH, baseY - cos * AIM_POINTER_HALF_WIDTH)
+    ctx.closePath()
+    ctx.fillStyle = aimPointer
+    ctx.fill()
+    ctx.strokeStyle = aimOutline
+    ctx.lineWidth = 2
+    ctx.lineJoin = 'round'
+    ctx.stroke()
+    ctx.lineJoin = 'miter'
 
     // 낫 휘두름 (아트 디렉션 12.2 — 이펙트 넷 중 하나).
     //
