@@ -9,16 +9,16 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 447개 · 2026-07-31 ~ 2026-08-10
+커밋 452개 · 2026-07-31 ~ 2026-08-10
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 219 | Feat 66 · Fix 60 · Docs 50 · Chore 20 · (태그 없음) 17 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 221 | Feat 66 · Fix 60 · Docs 51 · Chore 20 · (태그 없음) 18 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 100 | Feat 25 · Fix 23 · Data 22 · (태그 없음) 14 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
-| github-actions[bot] | 19 | Docs 19 | docs/progress |
+| ming9 | 102 | Feat 25 · Fix 24 · Data 22 · (태그 없음) 15 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
+| github-actions[bot] | 20 | Docs 20 | docs/progress |
 | 전성민 | 4 | Docs 2 · Art 1 · (태그 없음) 1 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
@@ -78,6 +78,11 @@
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `c749bab`
 - `[Fix]` 팀 크레딧 말풍선을 시안대로 — 꼬리를 닭에 붙이고 살짝 내림 — ming9 · `bc9b030`
 - [Merge] develop → main — 8/10 폴리싱과 팀 크레딧, 제출 자료 최신화 — SUJEONG CHOI · `33a7030`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `a6a3463`
+- `[Fix]` 엔딩 기록문을 종이 위 끝으로 — 위 여백 제거, 잘림은 스크롤로 — ming9 · `2518f34`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `3e38f36`
+- `[Docs]` 제출 링크에 플레이 빌드 URL 기재 — SUJEONG CHOI · `66bf95a`
+- [Merge] develop → main — 엔딩 기록문 위치 보정, 제출 링크 기재 — SUJEONG CHOI · `ba62043`
 
 ### 2026-08-09
 
