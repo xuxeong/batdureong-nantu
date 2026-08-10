@@ -1,6 +1,6 @@
 {
   "$comment": "콘텐츠 데이터 구조, 엔딩 LLM 입력 구조, 고정 엔딩 시스템 프롬프트의 버전 원본. DEC-PIPELINE-012. 이 세 버전을 콘텐츠 행마다 반복하거나 생성기·게임 코드에 따로 하드코딩하지 않는다.",
-  "schema_version": 20,
+  "schema_version": 21,
   "ending_input_schema_version": 1,
   "ending_prompt_version": 1,
   "journal_prompt_version": 1,
@@ -288,6 +288,19 @@
       "affected": "**전신을 portrait 으로 붙일 수 없어서 역할을 새로 만들었다.** content_assets.csv 의 고유키가 (content_id, asset_role) 이라 한 콘텐츠에 얼굴과 전신을 같은 역할로 둘 다 붙이면 하나만 남는다. 논리 ID 의 구간과 폴더 이름이 같아야 파일로 해석되므로 파일을 assets/final/portrait/<이름>_fullbody.png 에서 assets/final/portrait_fullbody/<이름>.png 로 옮겼다(git mv). 목록이 두 곳에 있다 — schema/enums.json 과 schema/tables/content_assets.json 이 같은 값을 따로 들고 있어 하나만 고치면 검증이 어긋난다. src/data/types.ts 의 AssetRole 도 함께 고쳐야 코드가 그 역할을 읽는다. cursor_click_scratch 는 어떤 콘텐츠에도 속하지 않아 연결 CSV 로 관리할 수 없고, 커서 그림과 별개 파일인 이유는 커서가 늘 떠 있는 반면 이쪽은 누른 순간에만 남기 때문이다. src/render/assets.ts 의 UI_ASSET 에 더했고 클릭 효과 구현은 별도다 — 등록만으로는 화면이 바뀌지 않는다",
       "decisions": [
         "DEC-ART-004",
+        "DEC-ART-005"
+      ]
+    },
+    {
+      "schema_version": {
+        "from": 20,
+        "to": 21
+      },
+      "date": "2026-08-10",
+      "change": "enums.json 의 ui_system_asset_id 고정 목록에 팀 크레딧 3종 추가 — team_nanwoosudak(로고 103×107), team_credit_balloon(말풍선 190×89), team_logo_cluck(클릭 효과음). 타이틀 우측 상단의 팀 크레딧에 쓴다",
+      "csv_migration": "고정 목록은 코드가 참조하는 값이라 승인 CSV 의 변환이 없다",
+      "affected": "타이틀 화면(ui/title.ts)이 로고를 우측 상단에 두고, 누르면 말풍선이 켜졌다 꺼지며 누를 때마다 효과음이 난다. 셋 다 화면 부품·시스템 소리라 붙일 콘텐츠 부모가 없다",
+      "decisions": [
         "DEC-ART-005"
       ]
     }

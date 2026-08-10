@@ -5440,3 +5440,41 @@ body {
     animation: none;
   }
 }
+
+/* ─────────────────────────────────────────────────
+   팀 크레딧 — 타이틀 우측 상단 (8/10)
+
+   로고(103×107)만 서 있다가 누르면 말풍선(190×89)이 로고 왼쪽에 켜졌다
+   꺼진다. 효과음은 누를 때마다 난다 (title.ts). 크레딧 문구는 말풍선
+   그림에 구워져 있어 코드가 글자를 얹지 않는다.
+   ───────────────────────────────────────────────── */
+
+.title__credit {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title__credit-logo {
+  width: 103px;
+  height: 107px;
+  background: var(--credit-logo-image) center / contain no-repeat;
+  cursor: pointer;
+}
+
+.title__credit-logo:hover {
+  filter: brightness(1.08);
+}
+
+.title__credit-balloon[hidden] {
+  display: none;
+}
+
+.title__credit-balloon {
+  width: 190px;
+  height: 89px;
+  background: var(--credit-balloon-image) center / contain no-repeat;
+}

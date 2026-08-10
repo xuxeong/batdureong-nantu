@@ -33,6 +33,11 @@ export interface TitleHandlers {
    * 같은 규칙이다 (DEC-UI-027).
    */
   mixer?: Mixer
+  /**
+   * 팀 크레딧 로고를 눌렀다 (8/10). 누를 때마다 부른다 — 소리는 부르는 쪽
+   * (main.ts 의 sfx)이 낸다. 이 화면은 소리 시스템을 모른다.
+   */
+  onCreditClick?(): void
 }
 
 export interface TitleScreen {
@@ -152,6 +157,33 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
     })
   }
 
+  // ── 팀 크레딧 — 우측 상단 (8/10) ─────────────────
+  //
+  // 로고만 서 있다가 누르면 말풍선이 켜졌다 꺼진다. 효과음은 **누를 때마다**
+  // 난다 — 말풍선이 꺼지는 클릭에도 운다. 로고와 말풍선 둘 다 있어야 만든다.
+  const creditLogoUrl = assetCssUrl(UI_ASSET.teamLogo)
+  const creditBalloonUrl = assetCssUrl(UI_ASSET.teamCreditBalloon)
+  const credit = el('div', 'title__credit')
+  if (creditLogoUrl !== null && creditBalloonUrl !== null) {
+    const creditButton = el('div', 'title__credit-logo')
+    creditButton.style.setProperty('--credit-logo-image', creditLogoUrl)
+    creditButton.role = 'button'
+    creditButton.ariaLabel = '팀 크레딧'
+
+    const balloon = el('div', 'title__credit-balloon')
+    balloon.style.setProperty('--credit-balloon-image', creditBalloonUrl)
+    balloon.hidden = true
+
+    // <button> 이 아니라 div 인 이유 — uiRoot 가 모든 버튼 클릭에 공통
+    // 클릭음을 내는데, 여기는 전용 울음소리가 나야 해서 둘이 겹치면 안 된다.
+    creditButton.addEventListener('click', () => {
+      balloon.hidden = !balloon.hidden
+      handlers.onCreditClick?.()
+    })
+
+    credit.append(balloon, creditButton)
+  }
+
   if (hasArt) {
     root.classList.add('title--has-art')
     root.style.setProperty('--title-background', backgroundUrl)
@@ -175,6 +207,9 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
     if (mixer !== undefined) panel.append(settingsButton, volumePanel)
     root.appendChild(panel)
   }
+
+  // 크레딧은 배경 아트와 무관하다 — 로고·말풍선 그림만 있으면 선다
+  root.appendChild(credit)
 
   container.appendChild(root)
 

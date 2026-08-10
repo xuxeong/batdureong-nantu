@@ -2967,6 +2967,8 @@ const titleScreen: TitleScreen = createTitle(uiRoot, {
   // 설정 팻말이 여는 음량 조절 (DEC-UI-032). 일시정지와 같은 mixer 라
   // 어느 쪽에서 내려도 다른 쪽에 그대로 보인다.
   mixer,
+  // 팀 크레딧 로고 — 누를 때마다 운다 (8/10)
+  onCreditClick: () => sfx.play(SOUND_ASSET.teamLogoCluck),
 })
 
 const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
