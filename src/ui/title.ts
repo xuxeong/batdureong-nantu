@@ -128,6 +128,14 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
       }
     })
 
+    // 흔들림이 끝나면 클래스를 뗀다. 게임 시작은 finish() 가 떼 주는데 설정은
+    // 그 경로가 없어서, 클래스의 pointer-events: none 이 남아 **첫 클릭 뒤
+    // 팻말이 영구히 죽었다** (8/10 버그 — "한 번 누르니까 안 나와"). 죽은
+    // 버튼을 통과한 클릭이 바깥 클릭으로 잡혀 판까지 닫았다.
+    settingsButton.addEventListener('animationend', () => {
+      settingsButton.classList.remove('title__start--shaking')
+    })
+
     /*
       판 밖을 누르면 닫는다.
 

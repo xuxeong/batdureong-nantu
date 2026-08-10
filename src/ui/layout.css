@@ -4203,6 +4203,18 @@ body {
   pointer-events: none;
 }
 
+/*
+  설정 팻말은 흔들리는 동안에도 눌린다 (8/10 버그의 이중 안전장치).
+
+  pointer-events: none 은 게임 시작용이다 — 흔들리는 사이 또 눌러 런이 두 번
+  시작되는 것을 막는다. 설정은 토글이라 잠글 이유가 없고, 클래스가 어떤
+  이유로든 남아도 팻말이 죽지 않아야 한다 (animationend 가 떼 주지만 축소된
+  모션 설정 등으로 이벤트가 안 올 수 있다).
+*/
+.title__settings.title__start--shaking {
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* 코드에서도 걸러내지만, 여기서도 막아 둔다 */
   .title__start--shaking {
