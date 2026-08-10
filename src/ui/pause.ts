@@ -32,7 +32,7 @@
 // 안내가 따라오고, 안 따라오면 안내가 거짓말을 한다.
 
 import type { Mixer } from '../audio/mixer.ts'
-import { createVolumeRows } from './volume-panel.ts'
+import { createVolumeRows, refreshVolumeRows } from './volume-panel.ts'
 import { KEY_BINDINGS, MOUSE_BINDINGS, QUICKSLOT_KEYS } from '../input/bindings.ts'
 import type { InputAction } from '../input/bindings.ts'
 import { applyHanjiPanel } from './panel.ts'
@@ -168,9 +168,12 @@ export function createPause(container: HTMLElement, handlers: PauseHandlers): Pa
   volume.hidden = true
   const mixer = handlers.mixer
   if (mixer !== undefined) {
-    volume.appendChild(createVolumeRows(mixer))
+    const rows = createVolumeRows(mixer)
+    volume.appendChild(rows)
     volumeToggle.addEventListener('click', () => {
       volume.hidden = !volume.hidden
+      // 타이틀 설정에서 바꾼 값이 손잡이에 보이도록 열 때 다시 읽는다 (8/10)
+      if (!volume.hidden) refreshVolumeRows(rows, mixer)
     })
   }
 
