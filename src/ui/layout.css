@@ -5350,17 +5350,27 @@ body {
 }
 
 /* 기록문 — 대자보의 흰 종이 위 (A8). 판이 1020 으로 줄면서 종이도 같이
-   줄었고, 좌우 여백을 더 줬다 (8/10 — 글이 종이 끝에 붙어 어색했다) */
+   줄었고, 좌우 여백을 더 줬다 (8/10 — 글이 종이 끝에 붙어 어색했다).
+
+   8/10 담당자 — top 375 는 종이 위쪽을 200px 가까이 비워 놓고 정작
+   아래에서 글이 잘렸다. 종이 위 끝(약 y 200)에 붙이고 상자를 키웠다.
+   기록문은 LLM 생성이라 길이가 가변(800자 상한)이어서 어떤 상자도 최악을
+   못 담는다 — overflow 를 hidden 에서 auto 로 바꿔 잘리는 대신 넘치면
+   스크롤이 생기게 했다. 보통 분량(3~5문장)은 스크롤 없이 다 들어간다. */
 .ending--board .ending__record {
   position: absolute;
-  left: 990px;
-  top: 375px;
-  width: 600px;
-  max-height: 400px;
-  overflow: hidden;
+  left: 970px;
+  top: 240px;
+  width: 640px;
+  max-height: 470px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(58, 43, 28, 0.45) transparent;
   margin: 0;
-  font-size: 24px;
-  line-height: 2;
+  padding-top: 0;
+  border-top: none;
+  font-size: 22px;
+  line-height: 1.75;
   color: #2b2418;
 }
 
