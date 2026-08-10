@@ -21,7 +21,14 @@ import { enableClickScratch } from './ui/click-scratch.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from './render/assets.ts'
+import {
+  BGM_ASSET,
+  CUTSCENE_GLOBAL_FALLBACK,
+  SOUND_ASSET,
+  assetUrl,
+  createAssetImages,
+  UI_ASSET,
+} from './render/assets.ts'
 
 /*
   마우스 커서 (작업 15번). 그림이 있으면 게임 전체가 그것을 쓴다 — 버튼의
@@ -869,6 +876,19 @@ async function bootData(): Promise<boolean> {
       ...residentPortraits.values(),
       // 조우 결과 카드의 전신도 같은 이유로 미리 받는다 (8/10)
       ...residentFullBodies.values(),
+      /*
+        엔딩 컷신과 공용 폴백도 미리 받는다 (8/10).
+
+        이건 다른 것들보다 늦게 나타나도 되는 그림처럼 보이지만 아니다. 엔딩은
+        필드에서 바로 넘어오는데, 필드를 벗어나면 캔버스가 BACKDROP 으로 칠해진다.
+        컷신을 그 순간에 받기 시작하면 다 받을 때까지 그 바탕이 그대로 보인다.
+
+        어느 엔딩이 나올지는 런이 끝나야 알므로 다섯 개를 전부 받는다. 실패해도
+        진행을 막지 않는 건 위와 같다. 런 실패 배경(bg_run_failed)은 아래
+        `UI_ASSET` 전체에 이미 들어 있다.
+      */
+      ...(data.endings ?? []).map((e) => e.assets?.cutscene),
+      CUTSCENE_GLOBAL_FALLBACK,
       ...Object.values(UI_ASSET),
       // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
