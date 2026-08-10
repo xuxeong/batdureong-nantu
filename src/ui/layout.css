@@ -1815,14 +1815,8 @@ body {
   background: var(--hub-count-badge) center / contain no-repeat;
   font-size: 16px;
   font-weight: 700;
-  color: #fdf6e3;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-/* 배지 그림이 없으면 크림색 글자가 종이에 묻힌다 — 갈색으로 되돌린다 */
-.hub--has-art .hub__inventory-row .hub__count:not([style*='--hub-count-badge']) {
-  color: var(--hub-text-on-art);
-  text-shadow: none;
+  /* 검은 글자 (8/10 담당자) — 배지 판이 밝아 크림색이 묻혔다 */
+  color: #2b2418;
 }
 
 /* 소지금은 정비 단계에서만 표시한다 (DEC-UI-036) */
@@ -4353,6 +4347,33 @@ body {
   text-align: center;
 }
 
+/*
+  닫힌 창호지 위의 카드다 (8/10 — 문이 닫히며 이 화면이 되고, 확인을 누르면
+  열리며 1일차다). 조우·밤 결과와 같은 구조·같은 등장이라 한 연출로 읽힌다.
+  배경 그림은 ui/shutter.ts 의 applyClosedDoors 가 깐다.
+*/
+.tutorial__finished--doors .tutorial__finished-panel {
+  width: 980px;
+  max-width: calc(100% - 80px);
+  min-height: 380px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-gap-lg);
+  padding: 56px 64px;
+  color: var(--hub-text-on-art);
+  animation: result-rise 520ms ease-out 400ms both;
+}
+
+.tutorial__finished-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+}
+
 .tutorial__finished-title {
   margin: 0;
   font-size: var(--ui-font-xl);
@@ -4363,6 +4384,12 @@ body {
   font-size: var(--ui-font-md);
   color: var(--ui-text-dim);
   line-height: 1.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial__finished--doors .tutorial__finished-panel {
+    animation: none;
+  }
 }
 
 /* ── 세 화면의 진행 입력 ───────────────────────── */
@@ -5284,14 +5311,16 @@ body {
   width: auto;
 }
 
-/* 대자보. 글보다 아래 겹이어야 하므로 판의 배경 겹으로 그린다 */
+/* 대자보. 글보다 아래 겹이어야 하므로 판의 배경 겹으로 그린다.
+   8/10 담당자 — 원본(1148)이 커서 1020 으로 줄이고 왼쪽으로 옮겼다:
+   오른쪽 끝이 1938(화면 밖)에서 1800 으로 들어와 여백이 생긴다 */
 .ending--board .ending__panel::before {
   content: '';
   position: absolute;
-  left: 790px;
-  top: -30px;
-  width: 1148px;
-  height: 1148px;
+  left: 780px;
+  top: -10px;
+  width: 1020px;
+  height: 1020px;
   background: var(--ending-board) top center / contain no-repeat;
 }
 
@@ -5319,16 +5348,17 @@ body {
   color: var(--hub-text-on-art);
 }
 
-/* 기록문 — 대자보의 흰 종이 위 (A8). 종이 실측: 화면 x 950~1830 · y 380~ */
+/* 기록문 — 대자보의 흰 종이 위 (A8). 판이 1020 으로 줄면서 종이도 같이
+   줄었고, 좌우 여백을 더 줬다 (8/10 — 글이 종이 끝에 붙어 어색했다) */
 .ending--board .ending__record {
   position: absolute;
-  left: 985px;
-  top: 400px;
-  width: 760px;
-  max-height: 480px;
+  left: 990px;
+  top: 375px;
+  width: 600px;
+  max-height: 400px;
   overflow: hidden;
   margin: 0;
-  font-size: 26px;
+  font-size: 24px;
   line-height: 2;
   color: #2b2418;
 }

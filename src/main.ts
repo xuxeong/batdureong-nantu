@@ -3025,7 +3025,18 @@ function syncTutorial(): void {
 
   if (tutorial.finished) {
     scenes.closeOverlay('maintenance_hub')
-    tutorialScreen.showFinished()
+    // 문이 닫히며 종료 화면이 되고, 확인을 누르면 열리며 1일차다 (8/10).
+    // 한 번만 — syncTutorial 은 진행이 갱신될 때마다 불려서 가드가 없으면
+    // 문이 닫힐 때마다 또 닫는다.
+    if (!tutorialFinishShown) {
+      tutorialFinishShown = true
+      // 종료 화면의 배경이 닫힌 창호지이므로 1일차 시작은 즉시가 아니라
+      // 문이 열리며 온다 — 건너뛰기(필드에서 바로 나감)만 즉시로 남는다.
+      fromTutorialField = false
+      if (!shutter.closeThen(() => tutorialScreen.showFinished())) {
+        tutorialScreen.showFinished()
+      }
+    }
     return
   }
 
@@ -4478,6 +4489,9 @@ bus.on('field.entered', () => {
   fromTutorialField = inTutorial()
 })
 
+/** 튜토리얼 종료 화면(닫힌 문)을 이번 튜토리얼에서 이미 열었나 (syncTutorial) */
+let tutorialFinishShown = false
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
 bus.on('screen.changed', ({ screen }) => {
@@ -4537,6 +4551,8 @@ bus.on('field.entered', ({ mode }) => {
   if (inTutorial()) {
     wildlife?.endFarming()
     tutorial = createTutorialProgress(tutorialSteps)
+    // 새 튜토리얼이니 종료 화면 가드도 새로 (다음 런에서 문이 또 닫혀야 한다)
+    tutorialFinishShown = false
 
     if (tutorial.total === 0) {
       // 안내가 없으면 튜토리얼이 성립하지 않는다. 임시 문구를 지어내지 않고

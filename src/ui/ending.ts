@@ -121,9 +121,6 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
   const summary = el('p', 'ending__summary')
   const record = el('p', 'ending__record')
 
-  // 개발 빌드에서만 붙였다 뗀다. 제출 빌드에서는 DOM 에 존재하지도 않는다.
-  const fear = el('p', 'ending__fear')
-
   const returnButton = el('button', 'ending__return', RETURN_LABEL)
   returnButton.type = 'button'
   // 대자보 배치에서는 목업의 나무 팻말이다 (A8 왼쪽 아래)
@@ -166,13 +163,8 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
       */
       returnButton.disabled = view.record.state === 'pending'
 
-      if (view.fear === null) {
-        fear.remove()
-        return
-      }
-
-      fear.textContent = `[개발] 공포도 ${view.fear.total} · ${view.fear.bandName ?? '구간 없음'}`
-      if (fear.parentElement === null) panel.insertBefore(fear, returnButton)
+      // 공포도는 개발 빌드에서도 더 이상 그리지 않는다 (8/10 담당자 — 제출 전
+      // 정리). 판정에는 계속 쓰이고 콘솔 로그로 남는다.
     },
 
     show() {

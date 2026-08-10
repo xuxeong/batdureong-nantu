@@ -26,6 +26,7 @@
 //     막대로 그리지 않는다
 
 import { applyHanjiPanel } from './panel.ts'
+import { applyClosedDoors } from './shutter.ts'
 import './layout.css'
 
 export interface TutorialView {
@@ -122,15 +123,26 @@ export function createTutorial(
   root.appendChild(skipButton)
 
   // ── 종료 알림 ───────────────────────────────────
+  //
+  // 닫힌 창호지 화면이다 (8/10 담당자) — 미닫이문이 닫히면서 이 화면으로
+  // 바뀌고(main.ts 의 shutter.closeThen), 배경이 문짝과 같은 그림이라 문이
+  // 사라져도 이어진다. 확인을 누르면 문이 열리며 1일차가 시작된다.
+  // 조우·밤 결과와 같은 구조다.
   const finished = el('div', 'tutorial__finished')
+  if (applyClosedDoors(finished)) finished.classList.add('tutorial__finished--doors')
+
+  const finishedPanel = el('div', 'tutorial__finished-panel')
+  applyHanjiPanel(finishedPanel)
+
   const continueButton = el('button', 'tutorial__continue', CONTINUE_LABEL)
   continueButton.type = 'button'
   continueButton.addEventListener('click', () => handlers.onContinue())
-  finished.append(
+  finishedPanel.append(
     el('h2', 'tutorial__finished-title', FINISHED_TITLE),
     el('p', 'tutorial__notice', NOTICE_TEXT),
     continueButton,
   )
+  finished.appendChild(finishedPanel)
   finished.hidden = true
 
   root.append(guide, finished)
