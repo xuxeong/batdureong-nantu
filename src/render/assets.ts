@@ -174,6 +174,12 @@ export const UI_ASSET = {
    */
   bgTitle: 'asset.ui.bg_title',
   logoTitle: 'asset.logo.title',
+  /**
+   * 팀 크레딧 (8/10) — 타이틀 우측 상단. 로고(103×107)를 누르면 말풍선
+   * (190×89)이 켜졌다 꺼진다. 효과음은 `SOUND_ASSET.teamLogoCluck`.
+   */
+  teamLogo: 'asset.logo.team_nanwoosudak',
+  teamCreditBalloon: 'asset.ui.team_credit_balloon',
 
   /**
    * 정비 화면 배경 (아트 디렉션 12.5.5 B5, A3 목업).
@@ -242,6 +248,13 @@ export const UI_ASSET = {
   /** 조우 결과·밤 결과 화면 배경 (DEC-UI-023) */
   bgEncounterResult: 'asset.ui.bg_encounter_result',
   bgNightResult: 'asset.ui.bg_night_result',
+  /**
+   * 엔딩 기록문 대자보 1148×1148 (A8 목업, 8/10 배선).
+   *
+   * 화면 오른쪽에 서고 LLM 기록문이 이 판의 흰 종이 위에 적힌다.
+   * 등록은 8/9 에 해 뒀고 배선이 이날 붙었다.
+   */
+  endingRecordBoard: 'asset.ui.ending_record_board',
   /**
    * 런 실패 화면 배경 — 타이틀 배경에서 표지판을 뺀 판 (8/9 폴리싱).
    *
@@ -331,6 +344,8 @@ export const SOUND_ASSET = {
 
   /** 버튼 클릭 전반. 어느 화면이든 같은 소리다 */
   buttonClick: 'asset.sfx.button_click',
+  /** 타이틀 팀 크레딧 로고를 누를 때 — 누를 때마다 난다 (8/10) */
+  teamLogoCluck: 'asset.sfx.team_logo_cluck',
   /** 눌렸지만 거절된 것 (`request.rejected`) */
   buttonReject: 'asset.sfx.button_reject',
   /** 오버레이가 열릴 때 */

@@ -168,7 +168,10 @@
       "asset.sfx.run_failed",
       "asset.sfx.ending_decided",
       "asset.ui.quickslot_count_badge",
-      "asset.sfx.record_typing"
+      "asset.sfx.record_typing",
+      "asset.ui.team_credit_balloon",
+      "asset.logo.team_nanwoosudak",
+      "asset.sfx.team_logo_cluck"
     ]
   },
   "system_result_id": {

@@ -22,7 +22,7 @@
 //
 // 런 실패 화면과 클래스도 파일도 공유하지 않는다 (DEC-UI-014, DEC-UI-023).
 
-import { CUTSCENE_GLOBAL_FALLBACK, assetCssUrl } from '../render/assets.ts'
+import { CUTSCENE_GLOBAL_FALLBACK, UI_ASSET, assetCssUrl } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
@@ -100,18 +100,34 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
   root.hidden = true
 
   const panel = el('div', 'ending__panel')
-  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
-  applyHanjiPanel(panel)
+
+  // ── A8 목업 배치 (8/10) ──────────────────────────
+  //
+  // 대자보 그림이 있으면 한지 판을 버리고 목업대로 편다 — 왼쪽에 제목·요약,
+  // 오른쪽 대자보의 흰 종이 위에 기록문이 **적힌다.** 판 안에 글이 뜨는 것과
+  // 대자보에 글이 적히는 것은 다른 화면이다 (담당자 8/10 — "대자보에 적히도록").
+  //
+  // 그림이 없으면 기존 한지 판이 플레이스홀더로 남는다.
+  const boardUrl = assetCssUrl(UI_ASSET.endingRecordBoard)
+  if (boardUrl !== null) {
+    root.classList.add('ending--board')
+    root.style.setProperty('--ending-board', boardUrl)
+  } else {
+    // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+    applyHanjiPanel(panel)
+  }
 
   const title = el('h1', 'ending__title')
   const summary = el('p', 'ending__summary')
   const record = el('p', 'ending__record')
 
-  // 개발 빌드에서만 붙였다 뗀다. 제출 빌드에서는 DOM 에 존재하지도 않는다.
-  const fear = el('p', 'ending__fear')
-
   const returnButton = el('button', 'ending__return', RETURN_LABEL)
   returnButton.type = 'button'
+  // 대자보 배치에서는 목업의 나무 팻말이다 (A8 왼쪽 아래)
+  if (boardUrl !== null) {
+    const signUrl = assetCssUrl(UI_ASSET.buttonNormal)
+    if (signUrl !== null) returnButton.style.setProperty('--ending-button-image', signUrl)
+  }
   returnButton.addEventListener('click', () => handlers.onReturnToTitle())
 
   panel.append(title, summary, record, returnButton)
@@ -147,13 +163,8 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
       */
       returnButton.disabled = view.record.state === 'pending'
 
-      if (view.fear === null) {
-        fear.remove()
-        return
-      }
-
-      fear.textContent = `[개발] 공포도 ${view.fear.total} · ${view.fear.bandName ?? '구간 없음'}`
-      if (fear.parentElement === null) panel.insertBefore(fear, returnButton)
+      // 공포도는 개발 빌드에서도 더 이상 그리지 않는다 (8/10 담당자 — 제출 전
+      // 정리). 판정에는 계속 쓰이고 콘솔 로그로 남는다.
     },
 
     show() {

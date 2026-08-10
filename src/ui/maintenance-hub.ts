@@ -437,11 +437,13 @@ export function createMaintenanceHub(
           const node = el('div', 'hub__inventory-row')
           const count = el('span', 'hub__count')
 
-          // 칸 그림은 배지가 붙은 것과 아닌 것 두 장이다 (B2). 아트 디렉션이
-          // "두 아이템 칸은 배지 말고는 완전히 같다" 로 못 박았으므로 배지를
-          // 따로 얹지 않고 **그림을 바꾼다**. 크기가 105×107 대 111×113 으로
-          // 다른 것은 배지가 칸 밖으로 물려 나온 만큼이다.
-          paint(node, '--hub-slot-image', UI_ASSET.itemSlotBadge)
+          // 배지 없는 칸 + 수량 배지를 **따로 얹는다** (8/10 담당자).
+          // 배지가 구워진 그림(item_slot_badge)을 쓰던 8/9까지는 아이콘이
+          // 조금만 커도 구워진 배지를 침범했다 — 그림 안의 배지는 밀 수 없다.
+          // 퀵슬롯과 같은 배지 그림을 수량 칸에 얹으면 겹 순서가 생겨
+          // 배지가 항상 아이콘 위에 있다.
+          paint(node, '--hub-slot-image', UI_ASSET.itemSlot)
+          paint(count, '--hub-count-badge', UI_ASSET.quickslotCountBadge)
 
           // 아이콘이 있으면 이름을 빼고 수량 배지만 남긴다 (14.8).
           // 없으면 이름이 그 자리를 대신한다 — 빈 칸을 두지 않는다.

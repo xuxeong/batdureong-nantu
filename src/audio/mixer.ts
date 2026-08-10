@@ -43,6 +43,9 @@ function clamp01(value: number): number {
 }
 
 export function createMixer(sinks: { bgm: VolumeSink; sfx: VolumeSink }): Mixer {
+  // 기본은 중립(1)이다. 게임의 기본 음량(전체 35%, 8/10)은 부팅이 내린다 —
+  // main.ts 의 createMixer 호출 직후. 여기 박으면 이 모듈의 뜻이
+  // "섞는 것" 에서 "밭두렁난투의 소리 취향" 으로 넓어진다.
   const levels: Record<VolumeChannel, number> = { master: 1, bgm: 1, sfx: 1 }
 
   function apply(): void {

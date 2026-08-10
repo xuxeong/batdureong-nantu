@@ -58,6 +58,8 @@ export function createVolumeRows(mixer: Mixer): HTMLElement {
     slider.step = '1'
     slider.value = String(Math.round(mixer.get(row.channel) * VOLUME_STEPS))
     slider.setAttribute('aria-label', row.label)
+    // refreshVolumeRows 가 이걸로 채널을 다시 찾는다
+    slider.dataset['volumeChannel'] = row.channel
 
     const readout = el('span', 'volume-rows__value', `${slider.value}%`)
     slider.addEventListener('input', () => {
@@ -71,4 +73,22 @@ export function createVolumeRows(mixer: Mixer): HTMLElement {
   }
 
   return wrap
+}
+
+/**
+ * 슬라이더 표시값을 `mixer` 의 현재값으로 다시 맞춘다.
+ *
+ * **여는 순간마다 불러야 한다** (8/10 — "음량 조절이 공유가 되지 않음").
+ * 실제 소리는 늘 같은 mixer 라 공유되고 있었는데, 슬라이더 값은 만들 때
+ * 한 번 읽고 굳어서 — 타이틀에서 내린 뒤 일시정지를 열면 손잡이가 옛 자리에
+ * 있었다. 값이 진실이고 손잡이는 표시일 뿐이므로 열 때 다시 읽는다.
+ */
+export function refreshVolumeRows(wrap: HTMLElement, mixer: Mixer): void {
+  for (const slider of wrap.querySelectorAll<HTMLInputElement>('input[data-volume-channel]')) {
+    const channel = slider.dataset['volumeChannel'] as VolumeChannel
+    const steps = Math.round(mixer.get(channel) * VOLUME_STEPS)
+    slider.value = String(steps)
+    const readout = slider.nextElementSibling
+    if (readout !== null) readout.textContent = `${steps}%`
+  }
 }

@@ -611,8 +611,10 @@ export function createFieldRenderer(
       갈리면 플레이어가 사거리를 잘못 배운다. 그래서 여기에 배율이나 여유를
       더하지 않는다.
 
-      **플레이어보다 먼저 그린다** (8/9 담당자). 선이 캐릭터 위를 지나가면 몸통을
-      가로지르는 줄로 보여서, 조준을 돌릴 때 캐릭터가 아니라 선이 주인공이 된다.
+      **플레이어보다 나중에 그린다** (8/10 담당자 — 8/9 의 "먼저" 를 뒤집었다).
+      8/9 에는 선이 몸통을 가로지르는 것이 문제였는데, 전신 스프라이트가 커지면서
+      반대가 됐다 — 캐릭터가 조준선을 가려 아래쪽 방향을 겨눌 때 호가 안 보였다.
+      가려서 안 보이는 것이 겹쳐 보이는 것보다 나쁘다.
 
       **붉은색을 쓰지 않는다.** `DEC-UI-038` 이 `DEC-UI-031` 의 색 규칙을 그대로
       잇는다 — 고추와 토마토가 붉은 계열이라 밭 안에서 경쟁한다. 색은
@@ -629,6 +631,16 @@ export function createFieldRenderer(
       그래서 범위는 유지하고 진하기만 기울인다. 정면은 또렷하고 옆은 희미해서
       "여기를 겨누고 있고, 옆까지도 닿기는 한다" 가 한 번에 읽힌다.
     */
+    // 플레이어를 먼저 그린다 — 조준선이 그 위에 얹힌다 (위 주석, 8/10)
+    const hit = view.playerHit ?? 0
+    ctx.save()
+    if (hit > 0) ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.cos(hit * Math.PI * 5))
+    if (!drawWorldSprite(view.playerAsset, view.player, view.playerBob)) {
+      ctx.fillStyle = '#e8d9a0'
+      ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
+    }
+    ctx.restore()
+
     const aimRadius = view.sickleRange * WORLD_TO_PIXEL
     const AIM_HALF_SPAN = Math.PI / 2
     // 호를 토막 내서 토막마다 투명도를 준다. 한 번에 그으면 진하기를 못 기울인다
@@ -682,15 +694,6 @@ export function createFieldRenderer(
     }
     ctx.globalAlpha = 1
     ctx.lineCap = 'butt'
-
-    const hit = view.playerHit ?? 0
-    ctx.save()
-    if (hit > 0) ctx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.cos(hit * Math.PI * 5))
-    if (!drawWorldSprite(view.playerAsset, view.player, view.playerBob)) {
-      ctx.fillStyle = '#e8d9a0'
-      ctx.fillRect(screen.x - radius, screen.y - radius, radius * 2, radius * 2)
-    }
-    ctx.restore()
 
     // 낫 휘두름 (아트 디렉션 12.2 — 이펙트 넷 중 하나).
     //

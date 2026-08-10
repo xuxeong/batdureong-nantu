@@ -26,6 +26,7 @@
 //     막대로 그리지 않는다
 
 import { applyHanjiPanel } from './panel.ts'
+import { applyClosedDoors } from './shutter.ts'
 import './layout.css'
 
 export interface TutorialView {
@@ -81,8 +82,15 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node
 }
 
-/** 튜토리얼 자원이 본 런에 반영되지 않는다는 알림 (DEC-UI-030, DEC-RUN-003) */
-const NOTICE_TEXT = '튜토리얼에서 얻거나 쓴 것은 본 런에 넘어오지 않는다.'
+/**
+ * 튜토리얼 종료 문구 (8/10 담당자 교체).
+ *
+ * 8/10까지 "얻거나 쓴 것은 본 런에 넘어오지 않는다"는 규칙 고지였는데, 규칙은
+ * 시스템이 어차피 지키고 있고(DEC-RUN-003 — 자원 미반영) 시작 직전 화면은
+ * 규칙보다 출발 인사가 어울린다는 판단이다. 규칙 자체는 바뀌지 않았다.
+ */
+const NOTICE_TEXT =
+  '이제 나의 농장에서 작물을 기르고 농장을 찾아오는 불청객들을 상대하며 밭을 지켜세요!'
 
 /**
  * 아래 셋은 `DEC-UI-029` 의 두 번째 갈래다 — 누르면 무엇이 되는지 외에 아무
@@ -115,15 +123,26 @@ export function createTutorial(
   root.appendChild(skipButton)
 
   // ── 종료 알림 ───────────────────────────────────
+  //
+  // 닫힌 창호지 화면이다 (8/10 담당자) — 미닫이문이 닫히면서 이 화면으로
+  // 바뀌고(main.ts 의 shutter.closeThen), 배경이 문짝과 같은 그림이라 문이
+  // 사라져도 이어진다. 확인을 누르면 문이 열리며 1일차가 시작된다.
+  // 조우·밤 결과와 같은 구조다.
   const finished = el('div', 'tutorial__finished')
+  if (applyClosedDoors(finished)) finished.classList.add('tutorial__finished--doors')
+
+  const finishedPanel = el('div', 'tutorial__finished-panel')
+  applyHanjiPanel(finishedPanel)
+
   const continueButton = el('button', 'tutorial__continue', CONTINUE_LABEL)
   continueButton.type = 'button'
   continueButton.addEventListener('click', () => handlers.onContinue())
-  finished.append(
+  finishedPanel.append(
     el('h2', 'tutorial__finished-title', FINISHED_TITLE),
     el('p', 'tutorial__notice', NOTICE_TEXT),
     continueButton,
   )
+  finished.appendChild(finishedPanel)
   finished.hidden = true
 
   root.append(guide, finished)

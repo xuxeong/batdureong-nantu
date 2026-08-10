@@ -335,19 +335,9 @@ export function createEncounterResult(
       }
       if (supportNotes.length > 0) sections.push(section('이후 습격', supportNotes))
 
-      // 제출 빌드에서는 fear 가 null 이라 이 구획이 존재하지 않는다 (DEC-UI-013)
-      if (view.fear !== null) {
-        const band = view.fear.bandName ?? '구간 없음'
-        sections.push(
-          section('공포도 (개발 빌드 전용)', [
-            el(
-              'div',
-              'encounter-result__note',
-              `+${view.fear.delta} · 누적 ${view.fear.total} · ${band}`,
-            ),
-          ]),
-        )
-      }
+      // 공포도는 개발 빌드에서도 더 이상 그리지 않는다 (8/10 담당자 — 제출 전
+      // 정리). 판정에는 계속 쓰이고 콘솔 로그로 남는다. view.fear 는 부르는
+      // 쪽 계약이라 그대로 받되 여기서 버린다 — 되살릴 일이 생기면 이 자리다.
 
       body.replaceChildren(...sections)
     },

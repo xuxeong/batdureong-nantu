@@ -20,7 +20,8 @@
 
 import type { Mixer } from '../audio/mixer.ts'
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
-import { createVolumeRows } from './volume-panel.ts'
+import { applyHanjiPanel } from './panel.ts'
+import { createVolumeRows, refreshVolumeRows } from './volume-panel.ts'
 import './layout.css'
 
 export interface TitleHandlers {
@@ -32,6 +33,11 @@ export interface TitleHandlers {
    * 같은 규칙이다 (DEC-UI-027).
    */
   mixer?: Mixer
+  /**
+   * 팀 크레딧 로고를 눌렀다 (8/10). 누를 때마다 부른다 — 소리는 부르는 쪽
+   * (main.ts 의 sfx)이 낸다. 이 화면은 소리 시스템을 모른다.
+   */
+  onCreditClick?(): void
 }
 
 export interface TitleScreen {
@@ -62,8 +68,14 @@ function el<K extends keyof HTMLElementTagNameMap>(
  */
 const GAME_TITLE = '밭두렁난투'
 const START_LABEL = '게임 시작'
-/** 목업의 `게임 종료` 팻말 자리를 대신 쓴다 (DEC-UI-032) */
-const SETTINGS_LABEL = '설정'
+/**
+ * 목업의 `게임 종료` 팻말 자리를 대신 쓴다 (DEC-UI-032).
+ *
+ * `설정` 이 아니라 `음량 설정` 인 이유 (8/10) — 이 팻말이 여는 것은 음량뿐이라
+ * (확정문이 "음량 조절 항목만 연다") 팻말이 그 사실을 미리 말하는 편이 낫다.
+ * 판 안의 제목은 뺐다 — 팻말과 같은 말을 두 번 하게 된다.
+ */
+const SETTINGS_LABEL = '음량 설정'
 
 /**
  * 팻말이 흔들리는 시간. `layout.css` 의 `title-sign-shake` 와 같은 값이어야 한다.
@@ -99,16 +111,77 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
 
   const mixer = handlers.mixer
   if (mixer !== undefined) {
-    volumePanel.append(el('div', 'title__volume-title', '음량 설정'), createVolumeRows(mixer))
-    settingsButton.addEventListener('click', (event) => {
-      // 아래 "판 밖 클릭이면 닫는다" 가 이 클릭을 받으면 열자마자 닫힌다
-      event.stopPropagation()
+    const rows = createVolumeRows(mixer)
+    // 제목 줄이 없다 — 팻말이 이미 `음량 설정` 이다 (8/10).
+    volumePanel.append(rows)
+    // 일시정지 창과 같은 한지 판 (8/10 — 어두운 판이 배경 위에서 튀었다)
+    applyHanjiPanel(volumePanel)
+
+    settingsButton.addEventListener('click', () => {
       volumePanel.hidden = !volumePanel.hidden
+      // 열 때 손잡이를 mixer 현재값으로 다시 맞춘다 (8/10 — 일시정지에서
+      // 바꾼 값이 여기 슬라이더에 안 보였다. 소리는 공유되는데 표시가 굳어 있었다)
+      if (!volumePanel.hidden) refreshVolumeRows(rows, mixer)
+
+      // 게임 시작과 같은 흔들림 (8/10). 시작과 달리 기다릴 것이 없어서
+      // 판은 즉시 열리고 팻말만 흔들린다. 연타 시 다시 처음부터 흔들리도록
+      // 클래스를 뗐다 붙인다 — reflow 강제가 그 사이에 있다.
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        settingsButton.classList.remove('title__start--shaking')
+        void settingsButton.offsetWidth
+        settingsButton.classList.add('title__start--shaking')
+      }
     })
-    volumePanel.addEventListener('click', (event) => event.stopPropagation())
-    root.addEventListener('click', () => {
+
+    // 흔들림이 끝나면 클래스를 뗀다. 게임 시작은 finish() 가 떼 주는데 설정은
+    // 그 경로가 없어서, 클래스의 pointer-events: none 이 남아 **첫 클릭 뒤
+    // 팻말이 영구히 죽었다** (8/10 버그 — "한 번 누르니까 안 나와"). 죽은
+    // 버튼을 통과한 클릭이 바깥 클릭으로 잡혀 판까지 닫았다.
+    settingsButton.addEventListener('animationend', () => {
+      settingsButton.classList.remove('title__start--shaking')
+    })
+
+    /*
+      판 밖을 누르면 닫는다.
+
+      8/9 에는 설정 버튼·판에 stopPropagation 을 걸어 이 핸들러로부터 숨겼는데,
+      **클릭이 버스 최상위(uiRoot)까지 안 올라가 버튼 클릭음이 안 났다** (8/10).
+      전파를 끊는 대신 어디를 눌렀는지 보고 갈래를 정한다 — 소리 배선은
+      uiRoot 에서 버튼 클릭 전부를 듣고 있어서 전파가 살아 있어야 한다.
+    */
+    root.addEventListener('click', (event) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (settingsButton.contains(target) || volumePanel.contains(target)) return
       volumePanel.hidden = true
     })
+  }
+
+  // ── 팀 크레딧 — 우측 상단 (8/10) ─────────────────
+  //
+  // 로고만 서 있다가 누르면 말풍선이 켜졌다 꺼진다. 효과음은 **누를 때마다**
+  // 난다 — 말풍선이 꺼지는 클릭에도 운다. 로고와 말풍선 둘 다 있어야 만든다.
+  const creditLogoUrl = assetCssUrl(UI_ASSET.teamLogo)
+  const creditBalloonUrl = assetCssUrl(UI_ASSET.teamCreditBalloon)
+  const credit = el('div', 'title__credit')
+  if (creditLogoUrl !== null && creditBalloonUrl !== null) {
+    const creditButton = el('div', 'title__credit-logo')
+    creditButton.style.setProperty('--credit-logo-image', creditLogoUrl)
+    creditButton.role = 'button'
+    creditButton.ariaLabel = '팀 크레딧'
+
+    const balloon = el('div', 'title__credit-balloon')
+    balloon.style.setProperty('--credit-balloon-image', creditBalloonUrl)
+    balloon.hidden = true
+
+    // <button> 이 아니라 div 인 이유 — uiRoot 가 모든 버튼 클릭에 공통
+    // 클릭음을 내는데, 여기는 전용 울음소리가 나야 해서 둘이 겹치면 안 된다.
+    creditButton.addEventListener('click', () => {
+      balloon.hidden = !balloon.hidden
+      handlers.onCreditClick?.()
+    })
+
+    credit.append(balloon, creditButton)
   }
 
   if (hasArt) {
@@ -134,6 +207,9 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
     if (mixer !== undefined) panel.append(settingsButton, volumePanel)
     root.appendChild(panel)
   }
+
+  // 크레딧은 배경 아트와 무관하다 — 로고·말풍선 그림만 있으면 선다
+  root.appendChild(credit)
 
   container.appendChild(root)
 

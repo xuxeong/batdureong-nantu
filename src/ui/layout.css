@@ -458,7 +458,9 @@ body {
   --hud-card-bar-x: 200px;
   --hud-card-bar-y: 93px;
   --hud-card-bar-w: 272px;
-  --hud-card-bar-h: 47px;
+  /* 47 → 38 (8/10 담당자) — 카드 아래로 삐져나온 느낌이었다. 위 모서리는
+     두고 아래만 올라온다 (y 는 그대로) */
+  --hud-card-bar-h: 38px;
   /* 체력 수치 칸. 8/10 에 카드 그림의 숫자 홈에 맞춰 `482` 에서 6px 옮겼다 */
   --hud-card-num-x: 488px;
   --hud-card-num-w: 55px;
@@ -1793,16 +1795,28 @@ body {
   color: var(--hub-text-on-art);
 }
 
-/* 수량은 칸 그림의 배지 홈 안이다 (오른쪽 아래) */
+/*
+  수량 배지 — 칸 그림과 별도 겹이다 (8/10 담당자).
+
+  8/9까지 배지가 구워진 칸 그림(item_slot_badge)의 홈에 숫자만 얹었는데,
+  아이콘이 조금만 커도 구워진 배지를 침범했다 — 그림 안의 배지는 밀 수 없다.
+  배지 없는 칸(item_slot) 위에 퀵슬롯과 같은 배지 그림(46×40)을 얹으면
+  배지가 항상 아이콘 위 겹이고, HUD 퀵슬롯·회복 칸과도 같은 모양이 된다.
+*/
 .hub--has-art .hub__inventory-row .hub__count {
   position: absolute;
-  right: 7%;
-  bottom: 9%;
-  width: 30%;
-  text-align: center;
-  font-size: 15px;
+  right: -5px;
+  bottom: -4px;
+  width: 46px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hub-count-badge) center / contain no-repeat;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--hub-text-on-art);
+  /* 검은 글자 (8/10 담당자) — 배지 판이 밝아 크림색이 묻혔다 */
+  color: #2b2418;
 }
 
 /* 소지금은 정비 단계에서만 표시한다 (DEC-UI-036) */
@@ -4183,6 +4197,18 @@ body {
   pointer-events: none;
 }
 
+/*
+  설정 팻말은 흔들리는 동안에도 눌린다 (8/10 버그의 이중 안전장치).
+
+  pointer-events: none 은 게임 시작용이다 — 흔들리는 사이 또 눌러 런이 두 번
+  시작되는 것을 막는다. 설정은 토글이라 잠글 이유가 없고, 클래스가 어떤
+  이유로든 남아도 팻말이 죽지 않아야 한다 (animationend 가 떼 주지만 축소된
+  모션 설정 등으로 이벤트가 안 올 수 있다).
+*/
+.title__settings.title__start--shaking {
+  pointer-events: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* 코드에서도 걸러내지만, 여기서도 막아 둔다 */
   .title__start--shaking {
@@ -4321,6 +4347,33 @@ body {
   text-align: center;
 }
 
+/*
+  닫힌 창호지 위의 카드다 (8/10 — 문이 닫히며 이 화면이 되고, 확인을 누르면
+  열리며 1일차다). 조우·밤 결과와 같은 구조·같은 등장이라 한 연출로 읽힌다.
+  배경 그림은 ui/shutter.ts 의 applyClosedDoors 가 깐다.
+*/
+.tutorial__finished--doors .tutorial__finished-panel {
+  width: 980px;
+  max-width: calc(100% - 80px);
+  min-height: 380px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-gap-lg);
+  padding: 56px 64px;
+  color: var(--hub-text-on-art);
+  animation: result-rise 520ms ease-out 400ms both;
+}
+
+.tutorial__finished-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-gap-lg);
+}
+
 .tutorial__finished-title {
   margin: 0;
   font-size: var(--ui-font-xl);
@@ -4331,6 +4384,12 @@ body {
   font-size: var(--ui-font-md);
   color: var(--ui-text-dim);
   line-height: 1.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial__finished--doors .tutorial__finished-panel {
+    animation: none;
+  }
 }
 
 /* ── 세 화면의 진행 입력 ───────────────────────── */
@@ -5207,13 +5266,14 @@ body {
 .tutorial .tutorial__skip {
   border: 2px solid rgba(58, 43, 28, 0.55);
   border-radius: 8px;
-  background: rgba(255, 248, 236, 0.9);
+  /* 흰색에 가까워 밭 위에서 튀었다 (8/10) — 한지 판과 같은 아이보리 계열로 */
+  background: rgba(238, 224, 197, 0.95);
   color: var(--hub-text-on-art);
   font-weight: 700;
 }
 
 .tutorial .tutorial__skip:hover {
-  background: rgba(255, 242, 220, 1);
+  background: rgba(231, 214, 181, 1);
   border-color: rgba(58, 43, 28, 0.8);
 }
 
@@ -5230,4 +5290,194 @@ body {
 /* 런 실패 배경 — 전용 그림(bg_run_failed) 또는 공용 폴백 컷신 (ui/run-failed.ts) */
 .run-failed--has-art {
   background: var(--run-failed-background) center / cover no-repeat;
+}
+
+/* ─────────────────────────────────────────────────
+   엔딩 — A8 대자보 배치 (8/10)
+
+   배경은 그 엔딩의 컷신(위 .ending--has-art), 왼쪽에 제목·요약, 오른쪽
+   대자보의 흰 종이 위에 기록문이 적힌다. 아래 좌표는 A8 목업 실측이고
+   대자보 그림은 1148×1148 원본 크기 그대로다 — 다리가 화면 아래로
+   내려가는 것까지 목업과 같다.
+   ───────────────────────────────────────────────── */
+
+.ending--board .ending__panel {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  max-width: none;
+  width: auto;
+}
+
+/* 대자보. 글보다 아래 겹이어야 하므로 판의 배경 겹으로 그린다.
+   8/10 담당자 — 원본(1148)이 커서 1020 으로 줄이고 왼쪽으로 옮겼다:
+   오른쪽 끝이 1938(화면 밖)에서 1800 으로 들어와 여백이 생긴다 */
+.ending--board .ending__panel::before {
+  content: '';
+  position: absolute;
+  left: 780px;
+  top: -10px;
+  width: 1020px;
+  height: 1020px;
+  background: var(--ending-board) top center / contain no-repeat;
+}
+
+.ending--board .ending__title {
+  position: absolute;
+  left: 105px;
+  top: 90px;
+  width: 560px;
+  margin: 0;
+  font-size: 60px;
+  font-weight: 700;
+  color: var(--hub-text-on-art);
+  padding-bottom: var(--ui-gap-md);
+  border-bottom: 2px solid rgba(58, 43, 28, 0.65);
+}
+
+.ending--board .ending__summary {
+  position: absolute;
+  left: 105px;
+  top: 225px;
+  width: 560px;
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.9;
+  color: var(--hub-text-on-art);
+}
+
+/* 기록문 — 대자보의 흰 종이 위 (A8). 판이 1020 으로 줄면서 종이도 같이
+   줄었고, 좌우 여백을 더 줬다 (8/10 — 글이 종이 끝에 붙어 어색했다) */
+.ending--board .ending__record {
+  position: absolute;
+  left: 990px;
+  top: 375px;
+  width: 600px;
+  max-height: 400px;
+  overflow: hidden;
+  margin: 0;
+  font-size: 24px;
+  line-height: 2;
+  color: #2b2418;
+}
+
+/* 개발 빌드 공포도 — 요약 아래 작게 */
+.ending--board .ending__fear {
+  position: absolute;
+  left: 105px;
+  top: 560px;
+  margin: 0;
+  font-size: var(--ui-font-sm);
+  color: rgba(58, 43, 28, 0.7);
+}
+
+/* 타이틀로 — 왼쪽 아래 나무 팻말 (A8) */
+.ending--board .ending__return {
+  position: absolute;
+  left: 120px;
+  top: 915px;
+  width: 340px;
+  height: 84px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--ending-button-image) center / 100% 100% no-repeat;
+  color: #fdf6e3;
+  font-size: 26px;
+  font-weight: 700;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.ending--board .ending__return:disabled {
+  filter: grayscale(0.4);
+  opacity: 0.65;
+}
+
+/* ─────────────────────────────────────────────────
+   체력 위험 비네트 (8/10, ui/hud.ts)
+
+   체력 4분의 1 이하에서 화면 테두리가 붉게 숨쉰다. 그림 없이 안쪽 그림자
+   두 겹이다 — 한 겹이면 끝이 밋밋하게 잘리고, 좁고 진한 겹 + 넓고 옅은 겹을
+   포개야 가장자리에서 배어 들어오는 느낌이 난다.
+
+   붉은색이 필드의 익은 작물과 경쟁하지 않는다 — 4.2절이 막는 것은 밭 안
+   개체를 붉게 칠하는 것이고, 이것은 화면 가장자리 띠라 예고판의 붉은 불과
+   같은 자리다. HUD 요소들보다 먼저 그려져 글자를 물들이지 않는다.
+   ───────────────────────────────────────────────── */
+
+.hud__danger[hidden] {
+  display: none;
+}
+
+.hud__danger {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* 8/10 두 번째 조정 — 처음(48/140px) 것이 잘 안 보였다. 더 깊고 진하게 */
+  box-shadow:
+    inset 0 0 70px 24px rgba(184, 55, 26, 0.68),
+    inset 0 0 220px 90px rgba(184, 55, 26, 0.4);
+  animation: hud-danger-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes hud-danger-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 숨쉬기만 끈다 — 위험하다는 사실 자체는 계속 보여야 한다 */
+  .hud__danger {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   팀 크레딧 — 타이틀 우측 상단 (8/10)
+
+   로고(103×107)만 서 있다가 누르면 말풍선(190×89)이 로고 왼쪽에 켜졌다
+   꺼진다. 효과음은 누를 때마다 난다 (title.ts). 크레딧 문구는 말풍선
+   그림에 구워져 있어 코드가 글자를 얹지 않는다.
+   ───────────────────────────────────────────────── */
+
+.title__credit {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  /* 말풍선 그림에 꼬리가 들어 있어 꼬리 끝이 닭 몸에 닿아야 한다 — 시안 기준 */
+  gap: 2px;
+}
+
+.title__credit-logo {
+  width: 103px;
+  height: 107px;
+  background: var(--credit-logo-image) center / contain no-repeat;
+  cursor: pointer;
+}
+
+.title__credit-logo:hover {
+  filter: brightness(1.08);
+}
+
+.title__credit-balloon[hidden] {
+  display: none;
+}
+
+.title__credit-balloon {
+  width: 190px;
+  height: 89px;
+  background: var(--credit-balloon-image) center / contain no-repeat;
+  /* 시안에서 말풍선 중심이 닭 중심보다 살짝 아래다 — 벼슬 높이만큼 내린다 */
+  transform: translateY(12px);
 }

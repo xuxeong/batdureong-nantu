@@ -216,6 +216,14 @@ export function createDialogueModal(
   let reactionPage = 0
 
   /**
+   * 시작 대사도 장으로 나눈다 (8/10 담당자 — 만복 전투 전 대사가 네 줄이
+   * 한 번에 떠서 두 줄씩 끊어 재생). 반응 대사와 같은 paginate 를 쓰므로
+   * 한 장이 최대 60자 ≈ 두 줄이고, **길 때만 나뉜다.**
+   */
+  let openingPages: string[] = []
+  let openingPage = 0
+
+  /**
    * 한 장에 담는 글자 수.
    *
    * **문장 부호로 나누되 이 길이를 넘을 때만 나눈다.** 승인 문구를 고치는 것이
@@ -392,9 +400,15 @@ export function createDialogueModal(
       return
     }
 
-    // 시작 대사를 읽는 중이면 선택지를 연다. 이미 열렸으면 할 일이 없다 —
-    // 고르는 것은 마우스 전용이라 넘기기 입력이 선택을 대신하지 않는다.
+    // 시작 대사를 읽는 중이면 다음 장으로, 마지막 장이면 선택지를 연다.
+    // 이미 열렸으면 할 일이 없다 — 고르는 것은 마우스 전용이라 넘기기 입력이
+    // 선택을 대신하지 않는다.
     if (!openingRead) {
+      if (openingPage < openingPages.length - 1) {
+        openingPage += 1
+        startTyping(openingPages[openingPage] ?? '')
+        return
+      }
       openingRead = true
       showChoices()
     }
@@ -541,7 +555,10 @@ export function createDialogueModal(
       openingRead = false
       beginEnter()
 
-      startTyping(view.openingText)
+      // 긴 시작 대사는 두 줄짜리 장으로 나눠 한 장씩 찍는다 (8/10 담당자)
+      openingPages = paginate(view.openingText)
+      openingPage = 0
+      startTyping(openingPages[0] ?? '')
       // 시작 대사도 주민이 말한다.
       setSpeakingSide('resident')
 

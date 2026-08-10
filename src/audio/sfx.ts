@@ -31,8 +31,12 @@ export interface Sfx {
    *
    * `null`·`undefined` 를 받는 이유는 승인 데이터의 `assets?.sfx` 가 그대로
    * 넘어오기 때문이다. 부르는 쪽마다 가드를 두면 그중 하나는 빠진다.
+   *
+   * `gain` 은 이 소리에만 곱하는 배율이다 (8/10 — 팀 로고 울음이 다른
+   * 효과음보다 원본이 작아 안 들렸다). 파일을 다시 굽는 대신 부르는 쪽이
+   * 올린다. 채널 음량과 곱한 결과는 1 에서 잘린다.
    */
-  play(assetId: string | null | undefined): void
+  play(assetId: string | null | undefined, gain?: number): void
   /** 소리를 낼지. 끄면 이후 `play()` 가 조용히 넘어간다 */
   setEnabled(enabled: boolean): void
   /** 0~1. 범위 밖은 잘라 넣는다 */
@@ -46,7 +50,7 @@ export function createSfx(): Sfx {
   const warned = new Set<string>()
 
   return {
-    play(assetId) {
+    play(assetId, gain = 1) {
       if (!enabled || assetId === null || assetId === undefined) return
 
       const url = assetUrl(assetId)
@@ -62,7 +66,7 @@ export function createSfx(): Sfx {
       }
 
       const audio = new Audio(url)
-      audio.volume = volume
+      audio.volume = Math.min(1, volume * Math.max(0, gain))
       // 자동 재생 거부는 거부된 Promise 로 온다. 게임을 멈출 이유가 아니다.
       void audio.play().catch(() => {})
     },

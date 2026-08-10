@@ -1376,6 +1376,10 @@ const bgm = createBgm()
 
 /** 전체·배경음·효과음 (DEC-UI-027). 일시정지 화면이 이걸 조작한다 */
 const mixer = createMixer({ bgm, sfx })
+// 기본 음량 전체 35% (8/10 담당자) — 원본 소리가 커서 첫 실행이 시끄러웠다.
+// 채널이 아니라 master 를 내려 상대 비율(배경음 대 효과음)은 그대로 둔다.
+// mixer 모듈이 아니라 여기서 내리는 이유는 mixer.ts 의 levels 주석에 있다.
+mixer.set('master', 0.35)
 
 /**
  * 작물 속성 효과가 낼 소리. `combat_mechanic_key` → 논리 에셋 ID.
@@ -2963,6 +2967,8 @@ const titleScreen: TitleScreen = createTitle(uiRoot, {
   // 설정 팻말이 여는 음량 조절 (DEC-UI-032). 일시정지와 같은 mixer 라
   // 어느 쪽에서 내려도 다른 쪽에 그대로 보인다.
   mixer,
+  // 팀 크레딧 로고 — 누를 때마다 운다 (8/10). 원본 파일이 작아 2배로 올린다
+  onCreditClick: () => sfx.play(SOUND_ASSET.teamLogoCluck, 2),
 })
 
 const nameInputScreen: NameInputScreen = createNameInput(uiRoot, {
@@ -3021,7 +3027,18 @@ function syncTutorial(): void {
 
   if (tutorial.finished) {
     scenes.closeOverlay('maintenance_hub')
-    tutorialScreen.showFinished()
+    // 문이 닫히며 종료 화면이 되고, 확인을 누르면 열리며 1일차다 (8/10).
+    // 한 번만 — syncTutorial 은 진행이 갱신될 때마다 불려서 가드가 없으면
+    // 문이 닫힐 때마다 또 닫는다.
+    if (!tutorialFinishShown) {
+      tutorialFinishShown = true
+      // 종료 화면의 배경이 닫힌 창호지이므로 1일차 시작은 즉시가 아니라
+      // 문이 열리며 온다 — 건너뛰기(필드에서 바로 나감)만 즉시로 남는다.
+      fromTutorialField = false
+      if (!shutter.closeThen(() => tutorialScreen.showFinished())) {
+        tutorialScreen.showFinished()
+      }
+    }
     return
   }
 
@@ -3140,8 +3157,18 @@ function syncScreens(): void {
   hud.setVisible(scenes.currentFieldMode() !== null)
 
   // 런 시작 세 화면. 표시 외에 할 일이 없어 한 줄씩이다.
-  if (screen === 'title') titleScreen.show()
-  else titleScreen.hide()
+  if (screen === 'title') {
+    titleScreen.show()
+    // 튜토리얼 도중 일시정지 → 타이틀로 돌아오면 안내와 건너뛰기가 화면에
+    // 남아 있었다 (8/10 버그). 튜토리얼은 화면이 아니라 필드에 붙은 DOM 이라
+    // (scenes/manager.ts) 화면 전환이 그를 치우지 않는다 — 끝내는 경로가
+    // finishTutorial() 하나뿐이었는데 타이틀 복귀는 그 길을 안 지난다.
+    // 진행 상태도 버린다. 다음 게임 시작이 처음부터 새로 만든다.
+    tutorial = null
+    tutorialScreen.hide()
+  } else {
+    titleScreen.hide()
+  }
 
   if (screen === 'name_input') nameInputScreen.show()
   else nameInputScreen.hide()
@@ -4464,6 +4491,9 @@ bus.on('field.entered', () => {
   fromTutorialField = inTutorial()
 })
 
+/** 튜토리얼 종료 화면(닫힌 문)을 이번 튜토리얼에서 이미 열었나 (syncTutorial) */
+let tutorialFinishShown = false
+
 // 독립 화면 표시도 같은 두 신호를 본다. 필드로 나가면 화면이 없어지는데
 // 그때는 `screen.changed` 가 오지 않고 `field.entered` 만 온다.
 bus.on('screen.changed', ({ screen }) => {
@@ -4523,6 +4553,8 @@ bus.on('field.entered', ({ mode }) => {
   if (inTutorial()) {
     wildlife?.endFarming()
     tutorial = createTutorialProgress(tutorialSteps)
+    // 새 튜토리얼이니 종료 화면 가드도 새로 (다음 런에서 문이 또 닫혀야 한다)
+    tutorialFinishShown = false
 
     if (tutorial.total === 0) {
       // 안내가 없으면 튜토리얼이 성립하지 않는다. 임시 문구를 지어내지 않고

@@ -330,7 +330,20 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
   const allyNotice = el('div', 'hud__ally-notice')
   const notices = el('div', 'hud__notices')
 
-  root.append(signboard, timer, pauseButton, card, notices, bottomRight)
+  /**
+   * 체력 위험 비네트 (8/10 담당자).
+   *
+   * 체력이 4분의 1 아래로 내려가면 화면 테두리가 붉게 숨쉰다. 그림이 아니라
+   * CSS 안쪽 그림자다. 체력 바만으로는 전투 중에 시선이 안 가는 곳이라 —
+   * 조준하느라 좌상단을 못 본다 — 화면 가장자리 전체가 신호가 된다.
+   *
+   * **맨 앞에 넣어 다른 HUD 요소가 전부 위에 그려진다.** 붉은 기가 글자를
+   * 물들이면 안 된다.
+   */
+  const danger = el('div', 'hud__danger')
+  danger.hidden = true
+
+  root.append(danger, signboard, timer, pauseButton, card, notices, bottomRight)
   container.appendChild(root)
 
   /** 퀵슬롯 칸은 개수가 고정이라 매번 만들지 않고 재사용한다 */
@@ -400,6 +413,11 @@ export function createHud(container: HTMLElement, handlers: HudHandlers): Hud {
       const ratio = view.maxHealth > 0 ? view.health / view.maxHealth : 0
       healthFill.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`
       healthText.textContent = String(view.health)
+
+      // 4분의 1 이하에서 테두리가 붉게 숨쉰다 (8/10). 0.25 는 위험을 "언제부터
+      // 알리나" 라는 표시 판단이지 게임 규칙 수치가 아니라 여기 둔다 —
+      // 죽는 문턱을 바꾸는 것이 아니고 경고가 뜨는 문턱만 바꾼다.
+      danger.hidden = !(view.maxHealth > 0 && ratio <= 0.25)
 
       day.textContent = `${view.dayNumber}${DAY_SUFFIX}`
 
