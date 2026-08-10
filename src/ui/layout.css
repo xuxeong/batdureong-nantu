@@ -5266,13 +5266,14 @@ body {
 .tutorial .tutorial__skip {
   border: 2px solid rgba(58, 43, 28, 0.55);
   border-radius: 8px;
-  background: rgba(255, 248, 236, 0.9);
+  /* 흰색에 가까워 밭 위에서 튀었다 (8/10) — 한지 판과 같은 아이보리 계열로 */
+  background: rgba(238, 224, 197, 0.95);
   color: var(--hub-text-on-art);
   font-weight: 700;
 }
 
 .tutorial .tutorial__skip:hover {
-  background: rgba(255, 242, 220, 1);
+  background: rgba(231, 214, 181, 1);
   border-color: rgba(58, 43, 28, 0.8);
 }
 
