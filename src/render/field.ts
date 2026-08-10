@@ -402,6 +402,7 @@ export function createFieldRenderer(
   }
   const aimOutline = cssColor('--field-aim-outline', '#2a1c16')
   const aimLine = cssColor('--field-aim-line', '#f2ead1')
+  const aimCenter = cssColor('--field-aim-center', '#58c24a')
 
   /**
    * 캔버스 백킹 해상도를 **실제로 화면을 덮는 픽셀 수**에 맞춘다.
@@ -694,6 +695,28 @@ export function createFieldRenderer(
     }
     ctx.globalAlpha = 1
     ctx.lineCap = 'butt'
+
+    /*
+      호의 정면 점 (8/10 담당자).
+
+      호가 반원이라 **어디가 가운데인지 안 읽힌다** — 진하기 기울임만으로는
+      부족했다. 투척이 날아가는 방향(조준 방향 그대로, systems/combat.ts 의
+      fireProjectile)을 초록 점 하나로 못박는다. 호 위에 두는 이유는 낫과
+      투척이 같은 조준을 쓰기 때문이다 — 점을 투척 사거리에 두면 낫 호와
+      점이 떨어져 조준선이 두 개처럼 보인다.
+
+      점도 두 겹이다 — 어두운 받침 원이 없으면 밝은 흙에서 초록이 묻힌다.
+    */
+    const centerX = screen.x + Math.cos(view.aimAngle) * aimRadius
+    const centerY = screen.y + Math.sin(view.aimAngle) * aimRadius
+    ctx.fillStyle = aimOutline
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, 9, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = aimCenter
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, 6, 0, Math.PI * 2)
+    ctx.fill()
 
     // 낫 휘두름 (아트 디렉션 12.2 — 이펙트 넷 중 하나).
     //
