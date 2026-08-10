@@ -3857,6 +3857,8 @@ body {
 }
 
 .run-failed__panel {
+  /* 컷신 `::before` 위로 올린다 — 없으면 그림에 덮인다 (8/10, 아래 주석 참고) */
+  position: relative;
   width: var(--screen-panel-width);
   max-width: 100%;
   padding: var(--screen-pad);
@@ -3920,6 +3922,8 @@ body {
 }
 
 .ending__panel {
+  /* 런 실패와 같은 이유. `.ending--board` 는 absolute 라 이미 올라가 있다 */
+  position: relative;
   width: var(--screen-panel-width);
   max-width: 100%;
   padding: var(--screen-pad);
@@ -5304,7 +5308,10 @@ body {
   창호지라 같은 그림이 두 번 깜빡였다. 여기는 앞뒤 그림이 아예 다르다.
   판과 글은 따라오지 않는다. 배경만 떠오르고 글은 처음부터 읽힌다.
 
-  `::before` 는 첫 자식이라 판(`__panel`)보다 먼저 칠해진다 — 글을 가리지 않는다.
+  **판을 따로 올려야 한다.** DOM 순서로 먼저 오는 것만으로는 부족하다 —
+  절대배치된 `::before` 는 자리를 잡지 않은(static) 형제보다 나중에 칠해진다.
+  처음에 그것을 빠뜨려서 런 실패 문구와 버튼이 나왔다가 그림에 덮여 사라졌다.
+  아래 `.run-failed__panel`·`.ending__panel` 의 `position: relative` 가 그 짝이다.
 */
 .ending--has-art::before {
   content: '';
