@@ -3857,6 +3857,8 @@ body {
 }
 
 .run-failed__panel {
+  /* 컷신 `::before` 위로 올린다 — 없으면 그림에 덮인다 (8/10, 아래 주석 참고) */
+  position: relative;
   width: var(--screen-panel-width);
   max-width: 100%;
   padding: var(--screen-pad);
@@ -3920,6 +3922,8 @@ body {
 }
 
 .ending__panel {
+  /* 런 실패와 같은 이유. `.ending--board` 는 absolute 라 이미 올라가 있다 */
+  position: relative;
   width: var(--screen-panel-width);
   max-width: 100%;
   padding: var(--screen-pad);
@@ -5289,13 +5293,60 @@ body {
   판은 한지 그대로다. 컷신 위에 종이가 뜨는 것이 목업의 구도이고,
   글이 그림과 섞이면 기록문을 읽을 수 없다.
 */
-.ending--has-art {
+/*
+  컷신을 판 자체가 아니라 `::before` 에 얹고 배어 나오게 한다 (8/10).
+
+  전에는 `.ending--has-art` 가 `background` 단축으로 그림을 덮어썼다. 단축은
+  background-color 를 transparent 로 되돌리므로, 그림이 도착하기 전 한 프레임
+  동안 뒤에 있는 필드 캔버스(BACKDROP #1d2b1a, 어두운 초록)가 그대로 비쳤다.
+  이제 바탕색은 `.ending`·`.run-failed` 의 것이 그대로 남고 그림만 위에 뜬다.
+
+  미리 받아 두면 초록은 사라지지만 그림이 한 프레임에 툭 나타난다. 앞이 필드
+  캔버스라 이음매가 끊겨 보인다. 어두운 바탕에서 그림만 떠오르게 한다.
+
+  조우·밤 결과에서 걷어낸 fade 와 다르다 — 그때는 앞뒤 배경이 둘 다 닫힌
+  창호지라 같은 그림이 두 번 깜빡였다. 여기는 앞뒤 그림이 아예 다르다.
+  판과 글은 따라오지 않는다. 배경만 떠오르고 글은 처음부터 읽힌다.
+
+  **판을 따로 올려야 한다.** DOM 순서로 먼저 오는 것만으로는 부족하다 —
+  절대배치된 `::before` 는 자리를 잡지 않은(static) 형제보다 나중에 칠해진다.
+  처음에 그것을 빠뜨려서 런 실패 문구와 버튼이 나왔다가 그림에 덮여 사라졌다.
+  아래 `.run-failed__panel`·`.ending__panel` 의 `position: relative` 가 그 짝이다.
+*/
+.ending--has-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: var(--ending-cutscene) center / cover no-repeat;
+  animation: screen-cutscene-in 520ms ease-out both;
+  pointer-events: none;
 }
 
 /* 런 실패 배경 — 전용 그림(bg_run_failed) 또는 공용 폴백 컷신 (ui/run-failed.ts) */
-.run-failed--has-art {
+.run-failed--has-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: var(--run-failed-background) center / cover no-repeat;
+  animation: screen-cutscene-in 520ms ease-out both;
+  pointer-events: none;
+}
+
+@keyframes screen-cutscene-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 그림 자체는 남는다 — 배어 나오는 것만 끈다 */
+  .ending--has-art::before,
+  .run-failed--has-art::before {
+    animation: none;
+  }
 }
 
 /* ─────────────────────────────────────────────────
@@ -5362,21 +5413,42 @@ body {
    아래에서 글이 잘렸다. 종이 위 끝(약 y 200)에 붙이고 상자를 키웠다.
    기록문은 LLM 생성이라 길이가 가변(800자 상한)이어서 어떤 상자도 최악을
    못 담는다 — overflow 를 hidden 에서 auto 로 바꿔 잘리는 대신 넘치면
-   스크롤이 생기게 했다. 보통 분량(3~5문장)은 스크롤 없이 다 들어간다. */
+   스크롤이 생기게 했다. 보통 분량(3~5문장)은 스크롤 없이 다 들어간다.
+
+   8/10 — 종이 안 여백을 잡았다. 그림에서 흰 종이를 실측하니 CSS 좌표로
+   x 963~1615, y 223~756 인데 상자가 970~1610, 240~710 이라 좌우 여백이
+   7px 뿐이었다. 글이 종이 가장자리에 닿아 읽기 나빴다. 사방 약 40px 을
+   비운다 — 종이 안쪽에 글이 얹힌 것으로 보인다.
+
+   여백과 글자 크기는 "3~5문장은 스크롤 없이 다 보인다" 를 기준으로 맞췄다.
+   상한 800자는 프롬프트가 허용하는 최악이고 실제 분량이 아니다 — 3~5문장이면
+   300자 안팎이라 그쪽에 맞춘다. 800자에 맞추려면 글자가 13px 까지 내려가
+   읽을 수 없다.
+
+   21px·1.7 이면 452px 에 12줄, 564px 에 한 줄 약 25자로 300자가 들어간다.
+   22px·1.75 는 11줄·24자여서 260자에서 스크롤이 시작됐다. 여백을 줄이는
+   대신 글자를 1px 줄인 이유는, 종이 가장자리에 글이 닿는 것이 1px 보다
+   눈에 크게 걸리기 때문이다.
+
+   드물게 넘치면 아래 `overflow-y: auto` 가 받는다 — 잘리지 않는다.
+
+   좌표는 눈대중이 아니라 `ending_record_board.png`(1148²) 의 밝은 영역
+   경계를 재서 판 배치(left 780, top -10, 1020px, contain)로 환산한 값이다.
+   판 크기나 위치가 바뀌면 이 네 값도 같이 다시 재야 한다. */
 .ending--board .ending__record {
   position: absolute;
-  left: 970px;
-  top: 240px;
-  width: 640px;
-  max-height: 470px;
+  left: 1007px;
+  top: 266px;
+  width: 564px;
+  max-height: 452px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(58, 43, 28, 0.45) transparent;
   margin: 0;
   padding-top: 0;
   border-top: none;
-  font-size: 22px;
-  line-height: 1.75;
+  font-size: 21px;
+  line-height: 1.7;
   color: #2b2418;
 }
 

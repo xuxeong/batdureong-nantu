@@ -21,7 +21,14 @@ import { enableClickScratch } from './ui/click-scratch.ts'
 import { clampToWorld } from './systems/world-bounds.ts'
 import { createAllySupport } from './systems/ally-support.ts'
 import type { AllySupport, AllySupportProfile } from './systems/ally-support.ts'
-import { BGM_ASSET, SOUND_ASSET, assetUrl, createAssetImages, UI_ASSET } from './render/assets.ts'
+import {
+  BGM_ASSET,
+  CUTSCENE_GLOBAL_FALLBACK,
+  SOUND_ASSET,
+  assetUrl,
+  createAssetImages,
+  UI_ASSET,
+} from './render/assets.ts'
 
 /*
   마우스 커서 (작업 15번). 그림이 있으면 게임 전체가 그것을 쓴다 — 버튼의
@@ -869,6 +876,19 @@ async function bootData(): Promise<boolean> {
       ...residentPortraits.values(),
       // 조우 결과 카드의 전신도 같은 이유로 미리 받는다 (8/10)
       ...residentFullBodies.values(),
+      /*
+        엔딩 컷신과 공용 폴백도 미리 받는다 (8/10).
+
+        이건 다른 것들보다 늦게 나타나도 되는 그림처럼 보이지만 아니다. 엔딩은
+        필드에서 바로 넘어오는데, 필드를 벗어나면 캔버스가 BACKDROP 으로 칠해진다.
+        컷신을 그 순간에 받기 시작하면 다 받을 때까지 그 바탕이 그대로 보인다.
+
+        어느 엔딩이 나올지는 런이 끝나야 알므로 다섯 개를 전부 받는다. 실패해도
+        진행을 막지 않는 건 위와 같다. 런 실패 배경(bg_run_failed)은 아래
+        `UI_ASSET` 전체에 이미 들어 있다.
+      */
+      ...(data.endings ?? []).map((e) => e.assets?.cutscene),
+      CUTSCENE_GLOBAL_FALLBACK,
       ...Object.values(UI_ASSET),
       // 좌·우·공격 교체 스프라이트도 같이 받는다 (DEC-ART-004). 미리 안 받으면
       // 방향이 바뀌는 첫 프레임에 그림이 없어 정면으로 한 번 껌뻑인다.
@@ -2375,7 +2395,16 @@ function onInteract(): void {
 /** 재배 상태를 렌더가 쓰는 모양으로 옮긴다 */
 function plotViews(): readonly PlotView[] {
   if (farming === null) return []
-  const target = farming.targetAt(player)
+  /*
+    `E` 대상 강조는 재배 단계의 것이다 — `DEC-UI-018` 이 "재배 단계 HUD와
+    상호작용 피드백" 이고, 습격에서는 심기·수확 자체가 없다(DEC-FARM-004).
+    안 가리면 습격 중 경작지 옆에 설 때마다 강조 틀이 켜졌다 (8/10).
+
+    수확 가능 표식(`stage === 'ready'`)은 여기서 끄지 않는다. 그쪽은
+    `DEC-UI-004` 가 "상태가 유지되는 동안 계속 표시" 로 확정한 것이라
+    단계로 가리려면 결정이 필요하다 — 기획 확인 대기.
+  */
+  const target = inFarmingStage() ? farming.targetAt(player) : null
 
   return farming.plots.map((plot) => {
     const crop = plot.cropId === null ? null : (cropsById.get(plot.cropId) ?? null)
@@ -2639,6 +2668,14 @@ function flashRatio(instanceId: string): number {
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
 function actionPrompt(): string | null {
   if (farming === null) return null
+  /*
+    안내는 `onInteract()` 와 같은 조건을 쓴다 (8/10).
+
+    습격 단계에서는 심거나 수확할 수 없는데(DEC-FARM-004) 안내만 이 조건을
+    안 보고 있어서, 습격 중에 경작지 옆에 서면 `E — 수확` 이 떴다. 눌러도
+    아무 일도 안 일어난다. 조건이 두 군데로 갈리면 반드시 한쪽이 틀린다.
+  */
+  if (!inFarmingStage()) return null
   const target = farming.targetAt(player)
   if (target === null) return null
   return target.kind === 'harvest' ? 'E — 수확' : 'E — 심기'
