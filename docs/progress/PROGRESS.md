@@ -9,17 +9,17 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 427개 · 2026-07-31 ~ 2026-08-10
+커밋 447개 · 2026-07-31 ~ 2026-08-10
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 216 | Feat 66 · Fix 60 · Docs 49 · Chore 20 · (태그 없음) 15 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 219 | Feat 66 · Fix 60 · Docs 50 · Chore 20 · (태그 없음) 17 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| ming9 | 86 | Data 22 · Feat 22 · Fix 15 · Docs 13 · (태그 없음) 11 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
-| github-actions[bot] | 18 | Docs 18 | docs/progress |
-| 전성민 | 2 | Art 1 · Docs 1 | assets, docs/progress, docs/submission |
+| ming9 | 100 | Feat 25 · Fix 23 · Data 22 · (태그 없음) 14 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
+| github-actions[bot] | 19 | Docs 19 | docs/progress |
+| 전성민 | 4 | Docs 2 · Art 1 · (태그 없음) 1 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
 
@@ -59,6 +59,25 @@
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `2af9e84`
 - `[Fix]` 줄 끝에 한 글자 낱말이 혼자 남는 것 — text-wrap: pretty — SUJEONG CHOI · `c5bda8f`
 - Merge branch 'develop' into main (v0.5) — SUJEONG CHOI · `36bc189`
+- `[Feat]` 엔딩을 A8 대자보 배치로 — 기록문이 대자보 흰 종이에 적힌다 — ming9 · `f677fa1`
+- `[Fix]` 8/10 QA 6건 — 기본 음량 35% · 음량 표시 동기화 · 설정 클릭음·흔들림 · 보관함 수량 배지 분리 · 튜토리얼 종료 문구 — ming9 · `da60116`
+- `[Docs]` 제출 자료 — AI 교차 검수 절 신설, 팀원 롤 개발 항목 보강 — SUJEONG CHOI · `2afe465`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — SUJEONG CHOI · `e4dc202`
+- `[Fix]` 8/10 QA 3건 — 타이틀 음량 판 한지화 · 체력바 축소 · 튜토리얼 잔존 버그 — ming9 · `b2a6080`
+- `[Fix]` 설정 팻말이 첫 클릭 뒤 죽던 것 — 흔들림 클래스의 pointer-events: none 이 안 떼졌다. animationend 로 떼고 설정 팻말은 흔들리는 중에도 눌리게 한다 — ming9 · `37ad866`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `83ab679`
+- `[Feat]` 체력 위험 비네트 — 4분의 1 이하에서 화면 테두리가 붉게 숨쉰다. 그림 없이 안쪽 그림자 두 겹, HUD 글자보다 아래 겹 — ming9 · `c3e5b5c`
+- `[Fix]` 8/10 QA — 튜토리얼 종료를 창호지 연출로 · 대사 장 넘김 · 대자보 정리 외 — ming9 · `3984873`
+- `[Fix]` 체력 위험 비네트를 더 깊고 진하게 — 48/140px 두 겹이 잘 안 보였다 (70/220px, 투명도도 올림) — ming9 · `6d1ddf9`
+- `[Fix]` 건너뛰고 시작을 한지 아이보리로 — 흰색에 가까워 밭 위에서 튀었다 — ming9 · `ff07993`
+- [Asset] 난우수닭 팀 로고와 클릭 효과음 추가 — 전성민 · `396b1e8`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `ee199c4`
+- `[Docs]` 난우수닭 에셋 제작 정보와 폰트 출처 보강 — 전성민 · `9c192ae`
+- `[Feat]` 조준선을 캐릭터 앞으로 · 타이틀 팀 크레딧 (schema_version 21) — ming9 · `1cfe488`
+- `[Fix]` 팀 로고 울음소리 2배 — sfx.play 에 소리별 배율 추가 — ming9 · `4edbada`
+- Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `c749bab`
+- `[Fix]` 팀 크레딧 말풍선을 시안대로 — 꼬리를 닭에 붙이고 살짝 내림 — ming9 · `bc9b030`
+- [Merge] develop → main — 8/10 폴리싱과 팀 크레딧, 제출 자료 최신화 — SUJEONG CHOI · `33a7030`
 
 ### 2026-08-09
 
@@ -117,6 +136,7 @@
 - Merge branch 'develop' into main (v0.4) — SUJEONG CHOI · `5328b2a`
 - `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `09e28a3`
 - `[Fix]` 튜토리얼 판매 잠금 · 총액을 실행 버튼 위 바닥 묶음으로 · 물음 위치 — ming9 · `ee7b687`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `7332b5b`
 
 ### 2026-08-08
 
