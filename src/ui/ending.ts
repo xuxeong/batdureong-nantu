@@ -22,7 +22,7 @@
 //
 // 런 실패 화면과 클래스도 파일도 공유하지 않는다 (DEC-UI-014, DEC-UI-023).
 
-import { CUTSCENE_GLOBAL_FALLBACK, assetCssUrl } from '../render/assets.ts'
+import { CUTSCENE_GLOBAL_FALLBACK, UI_ASSET, assetCssUrl } from '../render/assets.ts'
 import { applyHanjiPanel } from './panel.ts'
 import './layout.css'
 
@@ -100,8 +100,22 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
   root.hidden = true
 
   const panel = el('div', 'ending__panel')
-  // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
-  applyHanjiPanel(panel)
+
+  // ── A8 목업 배치 (8/10) ──────────────────────────
+  //
+  // 대자보 그림이 있으면 한지 판을 버리고 목업대로 편다 — 왼쪽에 제목·요약,
+  // 오른쪽 대자보의 흰 종이 위에 기록문이 **적힌다.** 판 안에 글이 뜨는 것과
+  // 대자보에 글이 적히는 것은 다른 화면이다 (담당자 8/10 — "대자보에 적히도록").
+  //
+  // 그림이 없으면 기존 한지 판이 플레이스홀더로 남는다.
+  const boardUrl = assetCssUrl(UI_ASSET.endingRecordBoard)
+  if (boardUrl !== null) {
+    root.classList.add('ending--board')
+    root.style.setProperty('--ending-board', boardUrl)
+  } else {
+    // 한지 판 (팀 결정 8/8 — CSS 로 뜨는 창은 전부 한지다)
+    applyHanjiPanel(panel)
+  }
 
   const title = el('h1', 'ending__title')
   const summary = el('p', 'ending__summary')
@@ -112,6 +126,11 @@ export function createEnding(container: HTMLElement, handlers: EndingHandlers): 
 
   const returnButton = el('button', 'ending__return', RETURN_LABEL)
   returnButton.type = 'button'
+  // 대자보 배치에서는 목업의 나무 팻말이다 (A8 왼쪽 아래)
+  if (boardUrl !== null) {
+    const signUrl = assetCssUrl(UI_ASSET.buttonNormal)
+    if (signUrl !== null) returnButton.style.setProperty('--ending-button-image', signUrl)
+  }
   returnButton.addEventListener('click', () => handlers.onReturnToTitle())
 
   panel.append(title, summary, record, returnButton)

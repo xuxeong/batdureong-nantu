@@ -20,7 +20,7 @@
 
 import type { Mixer } from '../audio/mixer.ts'
 import { assetCssUrl, UI_ASSET } from '../render/assets.ts'
-import { createVolumeRows } from './volume-panel.ts'
+import { createVolumeRows, refreshVolumeRows } from './volume-panel.ts'
 import './layout.css'
 
 export interface TitleHandlers {
@@ -99,14 +99,37 @@ export function createTitle(container: HTMLElement, handlers: TitleHandlers): Ti
 
   const mixer = handlers.mixer
   if (mixer !== undefined) {
-    volumePanel.append(el('div', 'title__volume-title', '음량 설정'), createVolumeRows(mixer))
-    settingsButton.addEventListener('click', (event) => {
-      // 아래 "판 밖 클릭이면 닫는다" 가 이 클릭을 받으면 열자마자 닫힌다
-      event.stopPropagation()
+    const rows = createVolumeRows(mixer)
+    volumePanel.append(el('div', 'title__volume-title', '음량 설정'), rows)
+
+    settingsButton.addEventListener('click', () => {
       volumePanel.hidden = !volumePanel.hidden
+      // 열 때 손잡이를 mixer 현재값으로 다시 맞춘다 (8/10 — 일시정지에서
+      // 바꾼 값이 여기 슬라이더에 안 보였다. 소리는 공유되는데 표시가 굳어 있었다)
+      if (!volumePanel.hidden) refreshVolumeRows(rows, mixer)
+
+      // 게임 시작과 같은 흔들림 (8/10). 시작과 달리 기다릴 것이 없어서
+      // 판은 즉시 열리고 팻말만 흔들린다. 연타 시 다시 처음부터 흔들리도록
+      // 클래스를 뗐다 붙인다 — reflow 강제가 그 사이에 있다.
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        settingsButton.classList.remove('title__start--shaking')
+        void settingsButton.offsetWidth
+        settingsButton.classList.add('title__start--shaking')
+      }
     })
-    volumePanel.addEventListener('click', (event) => event.stopPropagation())
-    root.addEventListener('click', () => {
+
+    /*
+      판 밖을 누르면 닫는다.
+
+      8/9 에는 설정 버튼·판에 stopPropagation 을 걸어 이 핸들러로부터 숨겼는데,
+      **클릭이 버스 최상위(uiRoot)까지 안 올라가 버튼 클릭음이 안 났다** (8/10).
+      전파를 끊는 대신 어디를 눌렀는지 보고 갈래를 정한다 — 소리 배선은
+      uiRoot 에서 버튼 클릭 전부를 듣고 있어서 전파가 살아 있어야 한다.
+    */
+    root.addEventListener('click', (event) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (settingsButton.contains(target) || volumePanel.contains(target)) return
       volumePanel.hidden = true
     })
   }

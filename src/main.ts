@@ -1376,6 +1376,10 @@ const bgm = createBgm()
 
 /** 전체·배경음·효과음 (DEC-UI-027). 일시정지 화면이 이걸 조작한다 */
 const mixer = createMixer({ bgm, sfx })
+// 기본 음량 전체 35% (8/10 담당자) — 원본 소리가 커서 첫 실행이 시끄러웠다.
+// 채널이 아니라 master 를 내려 상대 비율(배경음 대 효과음)은 그대로 둔다.
+// mixer 모듈이 아니라 여기서 내리는 이유는 mixer.ts 의 levels 주석에 있다.
+mixer.set('master', 0.35)
 
 /**
  * 작물 속성 효과가 낼 소리. `combat_mechanic_key` → 논리 에셋 ID.

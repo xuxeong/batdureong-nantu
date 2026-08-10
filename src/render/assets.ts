@@ -243,6 +243,13 @@ export const UI_ASSET = {
   bgEncounterResult: 'asset.ui.bg_encounter_result',
   bgNightResult: 'asset.ui.bg_night_result',
   /**
+   * 엔딩 기록문 대자보 1148×1148 (A8 목업, 8/10 배선).
+   *
+   * 화면 오른쪽에 서고 LLM 기록문이 이 판의 흰 종이 위에 적힌다.
+   * 등록은 8/9 에 해 뒀고 배선이 이날 붙었다.
+   */
+  endingRecordBoard: 'asset.ui.ending_record_board',
+  /**
    * 런 실패 화면 배경 — 타이틀 배경에서 표지판을 뺀 판 (8/9 폴리싱).
    *
    * ID 는 8/8 에 선등록했고 **파일이 아직 없다** (전성민 제작 대기). 올 때까지
