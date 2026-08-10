@@ -5365,3 +5365,46 @@ body {
   filter: grayscale(0.4);
   opacity: 0.65;
 }
+
+/* ─────────────────────────────────────────────────
+   체력 위험 비네트 (8/10, ui/hud.ts)
+
+   체력 4분의 1 이하에서 화면 테두리가 붉게 숨쉰다. 그림 없이 안쪽 그림자
+   두 겹이다 — 한 겹이면 끝이 밋밋하게 잘리고, 좁고 진한 겹 + 넓고 옅은 겹을
+   포개야 가장자리에서 배어 들어오는 느낌이 난다.
+
+   붉은색이 필드의 익은 작물과 경쟁하지 않는다 — 4.2절이 막는 것은 밭 안
+   개체를 붉게 칠하는 것이고, 이것은 화면 가장자리 띠라 예고판의 붉은 불과
+   같은 자리다. HUD 요소들보다 먼저 그려져 글자를 물들이지 않는다.
+   ───────────────────────────────────────────────── */
+
+.hud__danger[hidden] {
+  display: none;
+}
+
+.hud__danger {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 48px 12px rgba(184, 55, 26, 0.5),
+    inset 0 0 140px 48px rgba(184, 55, 26, 0.28);
+  animation: hud-danger-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes hud-danger-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 숨쉬기만 끈다 — 위험하다는 사실 자체는 계속 보여야 한다 */
+  .hud__danger {
+    animation: none;
+  }
+}
