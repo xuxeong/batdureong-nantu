@@ -80,6 +80,8 @@
 | `assets/final/ui/player_status_card.png` | 재배·습격 하단 좌측 플레이어 상태 카드 | 기존 A1 HUD 부품을 프로젝트 책임자가 QA 후 재조정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/ui/{farming_timer,recovery_slot}.png` | 2차 QA에서 교체한 남은 재배 시간 타이머와 Q 조작 표시 회복 칸 | 기존 A1 HUD 부품을 프로젝트 책임자가 직접 수정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
+| `assets/final/logo/team_nanwoosudak.png` | 타이틀 화면의 난우수닭 팀 로고 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
+| `assets/final/ui/team_credit_balloon.png` | 팀 로고 클릭 시 표시하는 `made by 난우수닭` 말풍선 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup_v2.png`, `A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 타이틀·재배·습격 화면의 2026-08-09 QA 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 정비 화면 판매·제작·편성 2상태의 QA 최신 배치 목업 4장 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
@@ -93,9 +95,9 @@
 `assets/final/bgm/`·`assets/final/sfx/`의 실제 상태와 게임 내 트리거는
 `docs/submission/SOUND_ASSET_INDEX.md`에서 관리한다. 이 표는 크레딧 기록 전용이다.
 
-**모든 효과음·배경음은 VARCO Sound 생성분을 Audacity로 후처리(피치·음량(Amplify)·
-페이드 인·아웃·구간 자르기)한 뒤 최종 반입했다.** 아래 표의 제작 방법 `AI 생성`은 이
-후처리를 포함한 값으로 읽는다.
+**표에서 제작 방법이 `AI 생성`인 효과음·배경음은 VARCO Sound 생성분을 Audacity로
+후처리(피치·음량(Amplify)·페이드 인·아웃·구간 자르기)한 뒤 최종 반입했다.** 아래 표의
+제작 방법 `AI 생성`은 이 후처리를 포함한 값으로 읽는다.
 
 ### BGM
 
@@ -147,6 +149,7 @@
 | `assets/final/sfx/day_start_final.wav` | 일차 시작 화면, 마지막 습격 예고 | AI 생성 | VARCO Sound | 고요하고 강한 바람 소리 | 해당 없음 (AI 생성) |
 | `assets/final/sfx/run_failed.wav` | 런 실패 발생 순간의 스팅어 | AI 생성 | VARCO Sound | 낮은 징(대형 공) 한 번의 묵직한 타격음 | 해당 없음 (AI 생성) |
 | `assets/final/sfx/ending_decided.wav` | 엔딩 확정 순간의 전환 스팅어 | AI 생성 | VARCO Sound | 짧은 전환 스팅어. 1초 내외 원샷. 풍경(처마 밑 바람종)이 한 번 가볍게 흔들리며 내는 청아한 금속음 하나 | 해당 없음 (AI 생성) |
+| `assets/final/sfx/team_logo_cluck.wav` | 타이틀 화면의 난우수닭 팀 로고 클릭 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 꼬꼬댁 효과음. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
 
 ## 폰트
 
