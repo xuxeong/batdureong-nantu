@@ -2395,7 +2395,16 @@ function onInteract(): void {
 /** 재배 상태를 렌더가 쓰는 모양으로 옮긴다 */
 function plotViews(): readonly PlotView[] {
   if (farming === null) return []
-  const target = farming.targetAt(player)
+  /*
+    `E` 대상 강조는 재배 단계의 것이다 — `DEC-UI-018` 이 "재배 단계 HUD와
+    상호작용 피드백" 이고, 습격에서는 심기·수확 자체가 없다(DEC-FARM-004).
+    안 가리면 습격 중 경작지 옆에 설 때마다 강조 틀이 켜졌다 (8/10).
+
+    수확 가능 표식(`stage === 'ready'`)은 여기서 끄지 않는다. 그쪽은
+    `DEC-UI-004` 가 "상태가 유지되는 동안 계속 표시" 로 확정한 것이라
+    단계로 가리려면 결정이 필요하다 — 기획 확인 대기.
+  */
+  const target = inFarmingStage() ? farming.targetAt(player) : null
 
   return farming.plots.map((plot) => {
     const crop = plot.cropId === null ? null : (cropsById.get(plot.cropId) ?? null)
@@ -2659,6 +2668,14 @@ function flashRatio(instanceId: string): number {
 /** 상호작용 가능한 대상이 있을 때 행동을 안내한다 (DEC-INPUT-003) */
 function actionPrompt(): string | null {
   if (farming === null) return null
+  /*
+    안내는 `onInteract()` 와 같은 조건을 쓴다 (8/10).
+
+    습격 단계에서는 심거나 수확할 수 없는데(DEC-FARM-004) 안내만 이 조건을
+    안 보고 있어서, 습격 중에 경작지 옆에 서면 `E — 수확` 이 떴다. 눌러도
+    아무 일도 안 일어난다. 조건이 두 군데로 갈리면 반드시 한쪽이 틀린다.
+  */
+  if (!inFarmingStage()) return null
   const target = farming.targetAt(player)
   if (target === null) return null
   return target.kind === 'harvest' ? 'E — 수확' : 'E — 심기'
