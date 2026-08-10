@@ -79,9 +79,9 @@
 | `assets/final/ui/ending_record_board.png` | 엔딩 기록문을 표시하는 대자보 게시판 | AI 생성 후 프로젝트 책임자가 Figma에서 누끼·최종 편집 | GPT Image (Codex 내장, 모델명 비공개) + Figma | `IMG-G-004` 전문 참조 | 해당 없음 (AI 생성) |
 | `assets/final/ui/player_status_card.png` | 재배·습격 하단 좌측 플레이어 상태 카드 | 기존 A1 HUD 부품을 프로젝트 책임자가 QA 후 재조정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
 | `assets/final/ui/{farming_timer,recovery_slot}.png` | 2차 QA에서 교체한 남은 재배 시간 타이머와 Q 조작 표시 회복 칸 | 기존 A1 HUD 부품을 프로젝트 책임자가 직접 수정·재저장 | Figma | `IMG-B-001` 참조. 별도 생성 프롬프트 없음 | 해당 없음 (AI 생성) |
-| `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 | 해당 없음 (내부 제작) |
-| `assets/final/logo/team_nanwoosudak.png` | 타이틀 화면의 난우수닭 팀 로고 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
-| `assets/final/ui/team_credit_balloon.png` | 팀 로고 클릭 시 표시하는 `made by 난우수닭` 말풍선 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
+| `assets/final/logo/title.png` | 타이틀 로고 최종본 | 프로젝트 책임자 직접 제작 | 프로젝트 책임자 작업(제작 도구 미기재) | 글자에 얼리폰트 `제주돌담체` 사용. [눈누 배포·라이선스 안내](https://noonnu.cc/font_page/1032) | 해당 없음 (내부 제작). 폰트는 로고 이미지 사용 허용 |
+| `assets/final/logo/team_nanwoosudak.png` | 타이틀 화면의 난우수닭 팀 로고 | 프로젝트 책임자 직접 제작 | 프로젝트 책임자 작업(제작 도구 미기재) | 글자에 KERIS `학교안심 시간표` 사용. [KERIS 공식 배포·라이선스](https://copyright.keris.or.kr/wft/fntDwnldView?fntGrpId=GFT202508260000000000006) | 해당 없음 (내부 제작). 폰트는 OFL |
+| `assets/final/ui/team_credit_balloon.png` | 팀 로고 클릭 시 표시하는 `made by 난우수닭` 말풍선 | 프로젝트 책임자 직접 제작 | 프로젝트 책임자 작업(제작 도구 미기재) | 글자에 KERIS `학교안심 시간표` 사용. [KERIS 공식 배포·라이선스](https://copyright.keris.or.kr/wft/fntDwnldView?fntGrpId=GFT202508260000000000006) | 해당 없음 (내부 제작). 폰트는 OFL |
 | `assets/source/phase-a/A0_title_screen_mockup.png` | 최종 배경·로고·공용 버튼·설정 버튼의 타이틀 화면 배치 목업 | 기존 최종 에셋을 프로젝트 책임자가 직접 배치 | 프로젝트 책임자 작업(제작 도구 미기재) | 프로젝트 책임자 제공 파일 `Slide 16_9 - 2 (1).png` | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A0_title_screen_mockup_v2.png`, `A1_daytime_gameplay_mockup_v6.png`, `A2_nighttime_gameplay_mockup_v2.png` | 타이틀·재배·습격 화면의 2026-08-09 QA 최신 배치 목업 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
 | `assets/source/phase-a/A3_maintenance_hub_mockup_v8_*.png` | 정비 화면 판매·제작·편성 2상태의 QA 최신 배치 목업 4장 | 기존 프로젝트 에셋을 프로젝트 책임자가 직접 배치 | Figma | 프로젝트 책임자 제공 완성본. 별도 생성 프롬프트 없음 | 해당 없음 (내부 제작) |
@@ -149,7 +149,7 @@
 | `assets/final/sfx/day_start_final.wav` | 일차 시작 화면, 마지막 습격 예고 | AI 생성 | VARCO Sound | 고요하고 강한 바람 소리 | 해당 없음 (AI 생성) |
 | `assets/final/sfx/run_failed.wav` | 런 실패 발생 순간의 스팅어 | AI 생성 | VARCO Sound | 낮은 징(대형 공) 한 번의 묵직한 타격음 | 해당 없음 (AI 생성) |
 | `assets/final/sfx/ending_decided.wav` | 엔딩 확정 순간의 전환 스팅어 | AI 생성 | VARCO Sound | 짧은 전환 스팅어. 1초 내외 원샷. 풍경(처마 밑 바람종)이 한 번 가볍게 흔들리며 내는 청아한 금속음 하나 | 해당 없음 (AI 생성) |
-| `assets/final/sfx/team_logo_cluck.wav` | 타이틀 화면의 난우수닭 팀 로고 클릭 | 프로젝트 책임자 제공 완성본 | 프로젝트 책임자 작업(제작 도구 미기재) | 꼬꼬댁 효과음. 별도 프롬프트 미기재 | 해당 없음 (내부 제작) |
+| `assets/final/sfx/team_logo_cluck.wav` | 타이틀 화면의 난우수닭 팀 로고 클릭 | 프로젝트 책임자 제작 | 프로젝트 책임자 작업(제작 도구 미기재) | 프롬프트: `귀여운 꼬꼬댁 닭 소리` | 해당 없음 (내부 제작) |
 
 ## 폰트
 
@@ -158,6 +158,8 @@
 | 폰트 | 용도 | 배포처 | 웹 임베딩 | 라이선스 |
 |---|---|---|---|---|
 | GriunXHangeul Equal Regular (`assets/final/font/griun_x_hangeul_equal.ttf`) | 게임 UI 본문·제목 전체와 필드 캔버스 글자 | TypeE. Corp. / Griun Type Design Team · <https://www.griun.co.kr> | **허용** — 라이선스표의 "임베딩: 웹사이트 및 프로그램 서버 내 폰트 탑재" 항목이 사용 가능 | <https://www.griun.co.kr/license> · 상업적 이용 허용, **폰트 파일의 수정·복제·배포 및 유료 판매 불가** |
+| 학교안심 시간표 | `team_nanwoosudak.png`·`team_credit_balloon.png` 내부 글자. PNG에 래스터화했으며 폰트 파일은 게임에 포함하지 않음 | KERIS(한국교육학술정보원) / 투게더그룹 · [공식 배포 페이지](https://copyright.keris.or.kr/wft/fntDwnldView?fntGrpId=GFT202508260000000000006) · [눈누 안내](https://noonnu.cc/font_page/1661) | 사용 가능. 현재는 폰트 파일을 임베딩하지 않음 | SIL OFL · 상업적 이용, CI/BI, UI/UX, 임베딩, 수정·재배포 허용. 폰트 파일 자체 및 수정·배포 대가의 유료 판매 금지 |
+| 제주돌담체 | `title.png` 내부 글자. PNG에 래스터화했으며 폰트 파일은 게임에 포함하지 않음 | 얼리폰트 · [눈누 배포·라이선스 안내](https://noonnu.cc/font_page/1032) | 폰트 파일 임베딩은 별도 문의 필요. 현재는 폰트 파일을 임베딩하지 않음 | 상업·비상업 로고(CI/BI)와 웹 이미지 사용 가능. 폰트 파일의 수정·복제·배포·유료 판매 금지 |
 | 시스템 기본 글꼴 | 위 폰트를 받지 못했을 때의 대체 | 사용자 운영체제 | 별도 임베딩 없음 | 해당 없음 |
 
 **`.ttf` 를 그대로 넣은 이유.** 저장소 관례(`assets/README.md`)는 WOFF2 지만 이 폰트는
