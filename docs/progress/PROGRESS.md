@@ -9,16 +9,16 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 459개 · 2026-07-31 ~ 2026-08-10
+커밋 466개 · 2026-07-31 ~ 2026-08-10
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 222 | Feat 66 · Fix 60 · Docs 51 · Chore 20 · (태그 없음) 19 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 228 | Feat 66 · Fix 65 · Docs 51 · Chore 20 · (태그 없음) 20 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 | ming9 | 105 | Feat 26 · Fix 25 · Data 22 · (태그 없음) 16 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| github-actions[bot] | 21 | Docs 21 | docs/progress |
+| github-actions[bot] | 22 | Docs 22 | docs/progress |
 | 전성민 | 6 | Art 2 · Docs 2 · (태그 없음) 2 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
@@ -90,6 +90,13 @@
 - Merge branch 'develop' of https://github.com/xuxeong/batdureong-nantu into develop — ming9 · `47d5476`
 - `[Fix]` 조준 표식을 초록 점에서 호 밖 흐린 붉은 세모로 — ming9 · `514b109`
 - [Merge] develop → main — 조준 표식과 이장 전신 초상화 — SUJEONG CHOI · `4f6b763`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `c7b4bbd`
+- `[Fix]` 엔딩·런 실패 직전에 초록 화면이 스쳤다 — SUJEONG CHOI · `cc9ecce`
+- `[Fix]` 런 실패 문구·버튼이 컷신에 덮여 사라졌다 — SUJEONG CHOI · `9a2c516`
+- `[Fix]` 엔딩 기록문이 대자보 종이 끝에 닿아 있었다 — SUJEONG CHOI · `6c1e0cd`
+- `[Fix]` 엔딩 기록문 상자를 실제 분량(300자)에 맞춘다 — SUJEONG CHOI · `8a94ff7`
+- `[Fix]` 습격 중에 심기·수확 안내와 대상 강조가 켜졌다 — SUJEONG CHOI · `86c2ddd`
+- [Merge] develop → main — 엔딩·런 실패 화면 마감과 습격 중 재배 안내 정리 — SUJEONG CHOI · `6c94944`
 
 ### 2026-08-09
 
