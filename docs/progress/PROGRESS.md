@@ -9,19 +9,24 @@
 > Git 커밋 이력에서 만든다. 커밋 메시지에 담기 어려운 맥락은
 > `docs/progress/sessions/<본인>.md` 에 남긴다.
 
-커밋 466개 · 2026-07-31 ~ 2026-08-10
+커밋 469개 · 2026-07-31 ~ 2026-08-25
 
 ## 담당자별 요약
 
 | 담당자 | 커밋 | 주요 태그 | 작업한 영역 |
 |---|---|---|---|
-| SUJEONG CHOI | 228 | Feat 66 · Fix 65 · Docs 51 · Chore 20 · (태그 없음) 20 · Refactor 3 · Art 2 · Test 1 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
+| SUJEONG CHOI | 230 | Feat 66 · Fix 65 · Docs 51 · (태그 없음) 21 · Chore 20 · Refactor 3 · Test 2 · Art 2 | (루트), .github, api, assets, data/approved, data/candidates, data/drafts, docs, docs/governance, docs/planning, docs/progress, docs/submission, generated, public, schema, src, tests, tools |
 | ming9 | 105 | Feat 26 · Fix 25 · Data 22 · (태그 없음) 16 · Docs 13 · Chore 3 | assets, data/approved, data/drafts, docs/progress, schema, src, tests |
 | gamome44 | 105 | Docs 72 · Art 18 · (태그 없음) 14 · Chore 1 | (루트), assets, docs/governance, docs/planning, docs/progress, docs/submission, schema, src |
-| github-actions[bot] | 22 | Docs 22 | docs/progress |
+| github-actions[bot] | 23 | Docs 23 | docs/progress |
 | 전성민 | 6 | Art 2 · Docs 2 · (태그 없음) 2 | assets, docs/progress, docs/submission |
 
 ## 날짜별 기록
+
+### 2026-08-25
+
+- `[Test]` 승인 데이터 균형을 재현 가능하게 측정 — SUJEONG CHOI · `9a9551c`
+- [Merge] 밸런스 시뮬레이터 — 승인 데이터 기준 5일 런 측정 — SUJEONG CHOI · `dfb0e24`
 
 ### 2026-08-10
 
@@ -97,6 +102,7 @@
 - `[Fix]` 엔딩 기록문 상자를 실제 분량(300자)에 맞춘다 — SUJEONG CHOI · `8a94ff7`
 - `[Fix]` 습격 중에 심기·수확 안내와 대상 강조가 켜졌다 — SUJEONG CHOI · `86c2ddd`
 - [Merge] develop → main — 엔딩·런 실패 화면 마감과 습격 중 재배 안내 정리 — SUJEONG CHOI · `6c94944`
+- `[Docs]` PROGRESS.md 갱신 [skip ci] — github-actions[bot] · `5a1f58b`
 
 ### 2026-08-09
 
