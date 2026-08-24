@@ -3846,9 +3846,18 @@ function hudView() {
   }
 }
 
+// 독립 화면에서는 필드 캔버스를 한 번만 비우면 된다. 매 프레임 비우면 보이지 않는
+// 화면을 계속 합성하게 되고, 필드로 돌아올 때는 다음 draw가 즉시 다시 채운다.
+let fieldWasRendered = false
+
 const loop = createGameLoop(
   {
     update(dt) {
+      // 타이틀·이름 입력·일차 시작·결과·엔딩은 필드를 대체하는 화면이다
+      // (DEC-UI-014). 보이지 않는 플레이어 흔들림·입력·전투 피드백을 갱신할
+      // 이유가 없고, 단계 시간도 이 화면들에서 흘러서는 안 된다.
+      if (scenes.currentFieldMode() === null) return
+
       const move = input.move()
       // 회복 사용 중에는 이동속도가 감소한다 (DEC-INPUT-005). 배율은 승인 데이터에서 온다.
       const speed = runConfig.moveSpeed * recoveryMoveMultiplier()
@@ -3986,6 +3995,8 @@ const loop = createGameLoop(
       }
     },
     render() {
+      const fieldMode = scenes.currentFieldMode()
+
       // 필드는 베이스 화면이고 독립 화면은 그것을 **대체하는 전환**이다 (DEC-UI-014).
       // 그런데 캔버스가 화면 층위와 무관하게 매 프레임 그려서, 런 실패 뒤 타이틀로
       // 돌아가면 죽은 플레이어와 적대 주민이 그대로 남아 있었다 (8/5 플레이 테스트).
@@ -3994,8 +4005,11 @@ const loop = createGameLoop(
       //
       // **여기서 return 하지 않는다.** 아래 오버레이 숨김이 같이 건너뛰어지면
       // 정비 허브가 열린 채 밤 결과로 넘어갔을 때 허브가 화면에 남는다.
-      if (scenes.currentFieldMode() === null) renderer.clear()
-      else renderer.draw({
+      if (fieldMode === null) {
+        if (fieldWasRendered) renderer.clear()
+        fieldWasRendered = false
+      } else {
+        renderer.draw({
         player,
         aimAngle: fieldAimAngle,
         collisionRadius: runConfig.collisionRadius,
@@ -4086,8 +4100,12 @@ const loop = createGameLoop(
                 : residentProjectiles.get(hostile.entity.residentId),
           })),
         ],
-      })
-      hud.render(hudView())
+        })
+        fieldWasRendered = true
+        // HUD 는 필드 공통 요소다 (DEC-UI-036). 독립 화면에서 hidden인 DOM을
+        // 매 프레임 다시 쓰지 않고, 필드로 돌아온 첫 프레임에 최신 상태를 그린다.
+        hud.render(hudView())
+      }
 
       // ── 표시와 입력을 나눈다 (DEC-UI-026) ──────────────────
       //
